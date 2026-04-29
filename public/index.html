@@ -8,8 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/config.js"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -53,15 +51,13 @@
 
       <section class="auth-panel" id="authPanel">
         <div>
-          <strong id="authTitle">Local mode</strong>
-          <p id="authStatus">ยังไม่ได้เชื่อม Supabase ข้อมูลจะอยู่ใน browser นี้เท่านั้น</p>
+          <strong id="authTitle">Password access</strong>
+          <p id="authStatus">ใส่ password เพื่อเปิดข้อมูลพอร์ตจาก Supabase</p>
         </div>
         <form class="auth-form" id="authForm">
-          <input id="authEmailInput" type="email" autocomplete="email" placeholder="email" />
           <input id="authPasswordInput" type="password" autocomplete="current-password" placeholder="password" />
-          <button class="secondary-button" id="signInButton" type="submit">เข้าสู่ระบบ</button>
-          <button class="secondary-button" id="signUpButton" type="button">สมัคร/สร้างบัญชี</button>
-          <button class="secondary-button is-hidden" id="signOutButton" type="button">ออกจากระบบ</button>
+          <button class="secondary-button" id="signInButton" type="submit">เข้าใช้งาน</button>
+          <button class="secondary-button is-hidden" id="signOutButton" type="button">ล็อกออก</button>
         </form>
       </section>
 
