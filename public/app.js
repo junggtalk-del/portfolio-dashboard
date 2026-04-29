@@ -23,7 +23,8 @@ const state = {
   editingId: null,
   activeView: "overview",
   remoteReady: false,
-  hydratingRemote: false
+  hydratingRemote: false,
+  authMessage: ""
 };
 
 const elements = {
@@ -88,26 +89,8 @@ function currentQuarter() {
 }
 
 function loadData() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
-
-    const migratedAssets = loadLegacyAssets();
-    const key = getCurrentQuarterKey();
-    return {
-      currentQuarter: key,
-      quarters: {
-        [key]: {
-          key,
-          assets: migratedAssets,
-          savedAt: migratedAssets.length ? new Date().toISOString() : null
-        }
-      }
-    };
-  } catch {
-    const key = getCurrentQuarterKey();
-    return { currentQuarter: key, quarters: { [key]: { key, assets: [], savedAt: null } } };
-  }
+  const key = getCurrentQuarterKey();
+  return { currentQuarter: key, quarters: { [key]: { key, assets: [], savedAt: null } } };
 }
 
 function loadLegacyAssets() {
@@ -152,21 +135,21 @@ function normalizeAsset(asset) {
 }
 
 function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
   persistRemoteData();
 }
 
 function renderAuth() {
+  document.body.classList.toggle("is-unlocked", state.remoteReady);
   elements.authForm.classList.remove("is-hidden");
   if (state.remoteReady) {
     elements.authTitle.textContent = "Portfolio unlocked";
-    elements.authStatus.textContent = "เชื่อมต่อ Supabase ผ่าน password แล้ว";
+    elements.authStatus.textContent = state.authMessage || "เชื่อมต่อ database แล้ว";
     elements.authPasswordInput.classList.add("is-hidden");
     elements.signInButton.classList.add("is-hidden");
     elements.signOutButton.classList.remove("is-hidden");
   } else {
     elements.authTitle.textContent = "Password access";
-    elements.authStatus.textContent = "ใส่ password เพื่อเปิดข้อมูลพอร์ตจาก Supabase";
+    elements.authStatus.textContent = state.authMessage || "ใส่ password ก่อนเข้า Dashboard";
     elements.authPasswordInput.classList.remove("is-hidden");
     elements.signInButton.classList.remove("is-hidden");
     elements.signOutButton.classList.add("is-hidden");
@@ -175,9 +158,8 @@ function renderAuth() {
 
 async function loadRemoteData() {
   const password = sessionStorage.getItem("portfolioPassword");
-  if (!password) return;
+  if (!password) return false;
   state.hydratingRemote = true;
-  const localBeforeRemote = state.data;
 
   try {
     const response = await fetch("/api/portfolio", {
@@ -193,20 +175,13 @@ async function loadRemoteData() {
       state.data = { currentQuarter: key, quarters: { [key]: { key, assets: [], savedAt: null } } };
     }
 
-    const remoteEmpty = !payload.data?.quarters || !Object.keys(payload.data.quarters).length;
-    const localHasData = Object.values(localBeforeRemote.quarters || {}).some((quarter) => quarter.assets?.length);
-    if (remoteEmpty && localHasData) {
-      state.data = localBeforeRemote;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
-      await persistRemoteData();
-    }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
-    elements.authStatus.textContent = "โหลดข้อมูลจาก Supabase แล้ว";
+    state.authMessage = "โหลดข้อมูลจาก database แล้ว";
+    return true;
   } catch (error) {
-    elements.authStatus.textContent = error.message;
+    state.authMessage = error.message;
     sessionStorage.removeItem("portfolioPassword");
     state.remoteReady = false;
+    return false;
   } finally {
     state.hydratingRemote = false;
   }
@@ -729,20 +704,27 @@ async function signIn(event) {
   event.preventDefault();
   const password = elements.authPasswordInput.value;
   if (!password) {
-    elements.authStatus.textContent = "กรุณาใส่ password";
+    state.authMessage = "กรุณาใส่ password";
+    renderAuth();
     return;
   }
 
-  sessionStorage.setItem("portfolioPassword", password);
-  state.remoteReady = true;
-  await loadRemoteData();
+  state.authMessage = "กำลังตรวจ password และโหลดข้อมูล...";
   renderAuth();
-  render();
+  sessionStorage.setItem("portfolioPassword", password);
+  const ok = await loadRemoteData();
+  state.remoteReady = ok;
+  if (!ok) {
+    elements.authPasswordInput.value = "";
+  }
+  renderAuth();
+  if (ok) render();
 }
 
 function signOut() {
   sessionStorage.removeItem("portfolioPassword");
   state.remoteReady = false;
+  state.authMessage = "";
   renderAuth();
 }
 
@@ -793,13 +775,16 @@ elements.quarterRows.addEventListener("click", (event) => {
 
 setDefaultNewQuarterInputs();
 updateFormMode();
-render();
-refreshQuotes();
 if (sessionStorage.getItem("portfolioPassword")) {
-  state.remoteReady = true;
-  loadRemoteData().then(() => {
+  state.authMessage = "กำลังโหลดข้อมูลจาก database...";
+  renderAuth();
+  loadRemoteData().then((ok) => {
+    state.remoteReady = ok;
     renderAuth();
-    render();
+    if (ok) {
+      render();
+      refreshQuotes();
+    }
   });
 } else {
   renderAuth();

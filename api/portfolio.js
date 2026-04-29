@@ -26,7 +26,7 @@ function supabaseHeaders(extra = {}) {
 }
 
 async function readState() {
-  const url = `${process.env.SUPABASE_URL}/rest/v1/app_state?id=eq.${STATE_ID}&select=data`;
+  const url = `${getSupabaseUrl()}/rest/v1/app_state?id=eq.${STATE_ID}&select=data`;
   const response = await fetch(url, { headers: supabaseHeaders() });
   if (!response.ok) throw new Error(await response.text());
   const rows = await response.json();
@@ -34,7 +34,7 @@ async function readState() {
 }
 
 async function writeState(data) {
-  const url = `${process.env.SUPABASE_URL}/rest/v1/app_state`;
+  const url = `${getSupabaseUrl()}/rest/v1/app_state`;
   const response = await fetch(url, {
     method: "POST",
     headers: supabaseHeaders({
@@ -43,6 +43,10 @@ async function writeState(data) {
     body: JSON.stringify([{ id: STATE_ID, data, updated_at: new Date().toISOString() }])
   });
   if (!response.ok) throw new Error(await response.text());
+}
+
+function getSupabaseUrl() {
+  return String(process.env.SUPABASE_URL || "").trim().replace(/\/+$/, "");
 }
 
 module.exports = async function handler(req, res) {
