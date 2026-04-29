@@ -1,6 +1,3 @@
-const STORAGE_KEY = "investment-dashboard-quarterly-v1";
-const LEGACY_KEYS = ["investment-dashboard-assets-v2", "investment-dashboard-assets"];
-
 const TYPE_LABELS = {
   bitcoin: "Bitcoin",
   "foreign-stock": "หุ้นต่างประเทศ",
@@ -15,15 +12,12 @@ const TYPE_LABELS = {
 const CHART_COLORS = ["#0f8b8d", "#c8902d", "#17324d", "#12805c", "#9b5de5", "#ef476f", "#3a86ff", "#6c778c"];
 
 const state = {
-  data: loadData(),
-  quotes: new Map(),
-  loading: false,
-  lastUpdated: null,
+  data: emptyData(),
   editingId: null,
   activeView: "overview",
-  remoteReady: false,
-  hydratingRemote: false,
-  authMessage: ""
+  saving: false,
+  hydrating: true,
+  lastUpdated: null
 };
 
 const elements = {
@@ -33,13 +27,6 @@ const elements = {
   newQuarterButton: document.querySelector("#newQuarterButton"),
   saveSnapshotButton: document.querySelector("#saveSnapshotButton"),
   quarterStatus: document.querySelector("#quarterStatus"),
-  authPanel: document.querySelector("#authPanel"),
-  authForm: document.querySelector("#authForm"),
-  authTitle: document.querySelector("#authTitle"),
-  authStatus: document.querySelector("#authStatus"),
-  authPasswordInput: document.querySelector("#authPasswordInput"),
-  signInButton: document.querySelector("#signInButton"),
-  signOutButton: document.querySelector("#signOutButton"),
   form: document.querySelector("#assetForm"),
   formTitle: document.querySelector("#formTitle"),
   submitButton: document.querySelector("#submitButton"),
@@ -48,7 +35,6 @@ const elements = {
   nameInput: document.querySelector("#nameInput"),
   valueInput: document.querySelector("#valueInput"),
   investedPercentInput: document.querySelector("#investedPercentInput"),
-  manualValueField: document.querySelector(".manual-value-field"),
   investedPercentField: document.querySelector(".invested-percent-field"),
   rows: document.querySelector("#assetRows"),
   emptyState: document.querySelector("#emptyState"),
@@ -75,109 +61,76 @@ const elements = {
   viewPanels: document.querySelectorAll(".view-panel")
 };
 
-function currentQuarterKey() {
-  return state.data.currentQuarter;
-}
+document.body.classList.add("is-unlocked");
 
-function currentQuarter() {
-  const key = currentQuarterKey();
-  if (!state.data.quarters[key]) {
-    state.data.quarters[key] = { key, assets: [], savedAt: null };
-  }
-  return state.data.quarters[key];
-}
-
-function loadData() {
-  const key = getCurrentQuarterKey();
-  return { currentQuarter: key, quarters: { [key]: { key, assets: [], savedAt: null } } };
-}
-
-function saveData() {
-  persistRemoteData();
-}
-
-function clearLegacyLocalData() {
-  localStorage.removeItem(STORAGE_KEY);
-  for (const key of LEGACY_KEYS) localStorage.removeItem(key);
-}
-
-function renderAuth() {
-  document.body.classList.toggle("is-unlocked", state.remoteReady);
-  elements.authForm.classList.remove("is-hidden");
-  if (state.remoteReady) {
-    elements.authTitle.textContent = "Portfolio unlocked";
-    elements.authStatus.textContent = state.authMessage || "เชื่อมต่อ database แล้ว";
-    elements.authPasswordInput.classList.add("is-hidden");
-    elements.signInButton.classList.add("is-hidden");
-    elements.signOutButton.classList.remove("is-hidden");
-  } else {
-    elements.authTitle.textContent = "Password access";
-    elements.authStatus.textContent = state.authMessage || "ใส่ password ก่อนเข้า Dashboard";
-    elements.authPasswordInput.classList.remove("is-hidden");
-    elements.signInButton.classList.remove("is-hidden");
-    elements.signOutButton.classList.add("is-hidden");
-  }
-}
-
-async function loadRemoteData() {
-  const password = sessionStorage.getItem("portfolioPassword");
-  if (!password) return false;
-  state.hydratingRemote = true;
-
-  try {
-    const response = await fetch("/api/portfolio", {
-      headers: { "x-portfolio-password": password }
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "Unable to load portfolio");
-
-    if (payload.data?.quarters && Object.keys(payload.data.quarters).length) {
-      state.data = payload.data;
-    } else {
-      const key = getCurrentQuarterKey();
-      state.data = { currentQuarter: key, quarters: { [key]: { key, assets: [], savedAt: null } } };
-    }
-
-    clearLegacyLocalData();
-    state.authMessage = "โหลดข้อมูลจาก database แล้ว";
-    return true;
-  } catch (error) {
-    state.authMessage = error.message;
-    sessionStorage.removeItem("portfolioPassword");
-    state.remoteReady = false;
-    return false;
-  } finally {
-    state.hydratingRemote = false;
-  }
-}
-
-async function persistRemoteData() {
-  const password = sessionStorage.getItem("portfolioPassword");
-  if (!password || state.hydratingRemote) return;
-
-  try {
-    const response = await fetch("/api/portfolio", {
-      method: "PUT",
-      headers: {
-        "content-type": "application/json",
-        "x-portfolio-password": password
-      },
-      body: JSON.stringify({ data: state.data })
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "Unable to save portfolio");
-  } catch (error) {
-    elements.quarterStatus.textContent = error.message;
-  }
-}
-
-function getCurrentQuarterKey(date = new Date()) {
+function currentQuarterKey(date = new Date()) {
   const quarter = Math.floor(date.getMonth() / 3) + 1;
   return `${date.getFullYear()}-Q${quarter}`;
 }
 
-function getQuarterOptions() {
-  return Object.keys(state.data.quarters).sort(compareQuarter).reverse();
+function emptyData() {
+  const key = currentQuarterKey();
+  return { currentQuarter: key, quarters: { [key]: { key, assets: [], savedAt: null } } };
+}
+
+function currentQuarter() {
+  const key = state.data.currentQuarter || currentQuarterKey();
+  if (!state.data.quarters[key]) state.data.quarters[key] = { key, assets: [], savedAt: null };
+  return state.data.quarters[key];
+}
+
+async function readJsonResponse(response) {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(text.slice(0, 180) || `Request failed with status ${response.status}`);
+  }
+}
+
+async function loadRemoteData() {
+  state.hydrating = true;
+  elements.statusText.textContent = "กำลังโหลดข้อมูลจาก database...";
+  try {
+    const response = await fetch("/api/portfolio", { cache: "no-store" });
+    const payload = await readJsonResponse(response);
+    if (!response.ok) throw new Error(payload.error || "Unable to load portfolio");
+    if (payload.data?.quarters && Object.keys(payload.data.quarters).length) state.data = payload.data;
+    state.lastUpdated = new Date();
+    elements.statusText.textContent = "โหลดข้อมูลจาก database แล้ว";
+  } catch (error) {
+    elements.statusText.textContent = `โหลดจาก database ไม่สำเร็จ: ${error.message}`;
+  } finally {
+    state.hydrating = false;
+    render();
+  }
+}
+
+async function persistRemoteData() {
+  if (state.hydrating || state.saving) return;
+  state.saving = true;
+  elements.statusText.textContent = "กำลังบันทึกลง database...";
+  try {
+    const response = await fetch("/api/portfolio", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ data: state.data })
+    });
+    const payload = await readJsonResponse(response);
+    if (!response.ok) throw new Error(payload.error || "Unable to save portfolio");
+    state.lastUpdated = new Date();
+    elements.statusText.textContent = "บันทึกลง database แล้ว";
+  } catch (error) {
+    elements.statusText.textContent = `บันทึกไม่สำเร็จ: ${error.message}`;
+  } finally {
+    state.saving = false;
+    renderSummary();
+  }
+}
+
+function saveData() {
+  persistRemoteData();
 }
 
 function compareQuarter(a, b) {
@@ -193,17 +146,12 @@ function clamp(value, min, max) {
 
 function formatMoney(value) {
   if (!Number.isFinite(value)) return "-";
-  return new Intl.NumberFormat("th-TH", {
-    style: "currency",
-    currency: "THB",
-    maximumFractionDigits: value >= 1000 ? 0 : 2
-  }).format(value);
+  return new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: value >= 1000 ? 0 : 2 }).format(value);
 }
 
 function formatPercent(value, signed = false) {
   if (!Number.isFinite(value)) return "0.00%";
-  const prefix = signed && value > 0 ? "+" : "";
-  return `${prefix}${value.toFixed(2)}%`;
+  return `${signed && value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
 function assetGrossValue(asset, options = {}) {
@@ -212,43 +160,24 @@ function assetGrossValue(asset, options = {}) {
 }
 
 function getTotals(assets = currentQuarter().assets, options = {}) {
-  return assets.reduce(
-    (sum, asset) => {
-      const gross = assetGrossValue(asset, options);
-      if (!Number.isFinite(gross)) {
-        sum.hasPendingPrice = true;
-        return sum;
-      }
-
-      const investedPercent = asset.type === "cash" ? 0 : clamp(Number(asset.investedPercent) || 0, 0, 100);
-      const invested = asset.type === "cash" ? 0 : gross * (investedPercent / 100);
-      const cash = asset.type === "cash" ? gross : gross - invested;
-
-      sum.wealth += gross;
-      sum.invested += invested;
-      sum.cash += cash;
-      return sum;
-    },
-    { wealth: 0, invested: 0, cash: 0, hasPendingPrice: false }
-  );
+  return assets.reduce((sum, asset) => {
+    const gross = assetGrossValue(asset, options);
+    const investedPercent = asset.type === "cash" ? 0 : clamp(Number(asset.investedPercent) || 0, 0, 100);
+    const invested = asset.type === "cash" ? 0 : gross * (investedPercent / 100);
+    const cash = asset.type === "cash" ? gross : gross - invested;
+    sum.wealth += gross;
+    sum.invested += invested;
+    sum.cash += cash;
+    return sum;
+  }, { wealth: 0, invested: 0, cash: 0 });
 }
 
 function assetMetrics(asset, totalWealth, options = {}) {
   const gross = assetGrossValue(asset, options);
   const investedPercent = asset.type === "cash" ? 0 : clamp(Number(asset.investedPercent) || 0, 0, 100);
-  if (!Number.isFinite(gross)) {
-    return { gross: null, portfolioPercent: null, investedPercent, invested: null, cash: null };
-  }
-
   const invested = asset.type === "cash" ? 0 : gross * (investedPercent / 100);
   const cash = asset.type === "cash" ? gross : gross - invested;
-  return {
-    gross,
-    portfolioPercent: totalWealth > 0 ? (gross / totalWealth) * 100 : 0,
-    investedPercent,
-    invested,
-    cash
-  };
+  return { gross, portfolioPercent: totalWealth > 0 ? (gross / totalWealth) * 100 : 0, investedPercent, invested, cash };
 }
 
 function growthPercent(current, previous) {
@@ -262,22 +191,23 @@ function assetKey(asset) {
 
 function renderQuarterOptions() {
   elements.quarterInput.innerHTML = "";
-  for (const key of getQuarterOptions()) {
+  for (const key of Object.keys(state.data.quarters).sort(compareQuarter).reverse()) {
     const option = document.createElement("option");
     option.value = key;
     option.textContent = key;
     elements.quarterInput.appendChild(option);
   }
-  elements.quarterInput.value = currentQuarterKey();
+  elements.quarterInput.value = state.data.currentQuarter;
 }
 
 function renderSummary() {
   const totals = getTotals();
   const investedPercent = totals.wealth > 0 ? (totals.invested / totals.wealth) * 100 : 0;
   const cashPercent = totals.wealth > 0 ? (totals.cash / totals.wealth) * 100 : 0;
-  const previousQuarter = getPreviousSavedQuarter(currentQuarterKey());
+  const previousQuarter = getPreviousSavedQuarter(state.data.currentQuarter);
   const previousTotals = previousQuarter ? getTotals(previousQuarter.assets, { useSnapshot: true }) : null;
   const qGrowth = previousTotals ? growthPercent(totals.wealth, previousTotals.wealth) : null;
+  const quarter = currentQuarter();
 
   elements.totalWealth.textContent = formatMoney(totals.wealth);
   elements.investedValue.textContent = formatMoney(totals.invested);
@@ -290,19 +220,8 @@ function renderSummary() {
   elements.currencyNote.textContent = "THB";
   elements.allocationInvested.style.width = `${investedPercent}%`;
   elements.allocationCash.style.width = `${cashPercent}%`;
-
-  const quarter = currentQuarter();
-  elements.quarterStatus.textContent = quarter.savedAt
-    ? `บันทึก ${quarter.key} ล่าสุด ${new Date(quarter.savedAt).toLocaleString("th-TH")}`
-    : `${quarter.key} ยังไม่เคยบันทึก snapshot`;
-
-  if (state.lastUpdated) {
-    elements.lastUpdated.textContent = `อัปเดตหน้าจอล่าสุด ${state.lastUpdated.toLocaleTimeString("th-TH")}`;
-  } else if (totals.hasPendingPrice) {
-    elements.lastUpdated.textContent = "กำลังรอราคา Bitcoin";
-  } else {
-    elements.lastUpdated.textContent = `ข้อมูล ${currentQuarterKey()}`;
-  }
+  elements.quarterStatus.textContent = quarter.savedAt ? `บันทึก ${quarter.key} ล่าสุด ${new Date(quarter.savedAt).toLocaleString("th-TH")}` : `${quarter.key} ยังไม่เคยบันทึก snapshot`;
+  elements.lastUpdated.textContent = state.lastUpdated ? `อัปเดตล่าสุด ${state.lastUpdated.toLocaleTimeString("th-TH")}` : `ข้อมูล ${state.data.currentQuarter}`;
 }
 
 function renderRows() {
@@ -310,32 +229,20 @@ function renderRows() {
   const totals = getTotals();
   elements.rows.innerHTML = "";
   elements.emptyState.classList.toggle("is-visible", assets.length === 0);
-  elements.panelSubtitle.textContent = assets.length
-    ? `ติดตาม ${assets.length} รายการใน ${currentQuarterKey()}`
-    : "เพิ่มรายการเพื่อเริ่มดูสัดส่วนพอร์ต";
+  elements.panelSubtitle.textContent = assets.length ? `ติดตาม ${assets.length} รายการใน ${state.data.currentQuarter}` : "เพิ่มรายการเพื่อเริ่มดูสัดส่วนพอร์ต";
 
   for (const asset of assets) {
     const metrics = assetMetrics(asset, totals.wealth);
-    const row = document.createElement("tr");
     const name = asset.name || TYPE_LABELS[asset.type] || "Asset";
-
+    const row = document.createElement("tr");
     row.innerHTML = `
-      <td>
-        <div class="asset-name">
-          <strong>${escapeHtml(name)}</strong>
-          <span>${escapeHtml(getAssetDetail(asset))}</span>
-        </div>
-      </td>
+      <td><div class="asset-name"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(TYPE_LABELS[asset.type] || asset.type)}</span></div></td>
       <td>${formatMoney(metrics.gross)}</td>
       <td>${formatPercent(metrics.portfolioPercent)}</td>
       <td>${asset.type === "cash" ? "-" : formatPercent(metrics.investedPercent)}</td>
       <td>${formatMoney(metrics.invested)}</td>
       <td>${formatMoney(metrics.cash)}</td>
-      <td class="row-actions">
-        <button class="icon-button edit-button" type="button" title="แก้ไข asset" data-edit-id="${asset.id}">แก้ไข</button>
-        <button class="delete-button" type="button" title="ลบ asset" data-delete-id="${asset.id}">×</button>
-      </td>
-    `;
+      <td class="row-actions"><button class="icon-button edit-button" type="button" data-edit-id="${asset.id}">แก้ไข</button><button class="delete-button" type="button" data-delete-id="${asset.id}">×</button></td>`;
     elements.rows.appendChild(row);
   }
 }
@@ -345,68 +252,35 @@ function renderPieChart() {
   const totals = getTotals();
   const canvas = elements.allocationChart;
   const ctx = canvas.getContext("2d");
-  const size = canvas.width;
-  const center = size / 2;
+  const center = canvas.width / 2;
   const radius = center - 18;
-  ctx.clearRect(0, 0, size, size);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   elements.chartLegend.innerHTML = "";
-  elements.pieSubtitle.textContent = `${currentQuarterKey()} · ${formatMoney(totals.wealth)}`;
-
-  const slices = assets
-    .map((asset, index) => ({
-      asset,
-      value: assetGrossValue(asset),
-      color: CHART_COLORS[index % CHART_COLORS.length]
-    }))
-    .filter((slice) => Number.isFinite(slice.value) && slice.value > 0);
-
+  elements.pieSubtitle.textContent = `${state.data.currentQuarter} · ${formatMoney(totals.wealth)}`;
+  const slices = assets.map((asset, index) => ({ asset, value: assetGrossValue(asset), color: CHART_COLORS[index % CHART_COLORS.length] })).filter((slice) => slice.value > 0);
   if (!slices.length || totals.wealth <= 0) {
-    ctx.beginPath();
-    ctx.arc(center, center, radius, 0, Math.PI * 2);
-    ctx.fillStyle = "#e7edf5";
-    ctx.fill();
-    drawDonutHole(ctx, center, radius);
+    ctx.beginPath(); ctx.arc(center, center, radius, 0, Math.PI * 2); ctx.fillStyle = "#e7edf5"; ctx.fill(); drawDonutHole(ctx, center, radius);
     renderLegendItem("ยังไม่มีข้อมูล", 0, "#dfe6f1");
     return;
   }
-
   let start = -Math.PI / 2;
   for (const slice of slices) {
     const angle = (slice.value / totals.wealth) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.moveTo(center, center);
-    ctx.arc(center, center, radius, start, start + angle);
-    ctx.closePath();
-    ctx.fillStyle = slice.color;
-    ctx.fill();
+    ctx.beginPath(); ctx.moveTo(center, center); ctx.arc(center, center, radius, start, start + angle); ctx.closePath(); ctx.fillStyle = slice.color; ctx.fill();
     start += angle;
     renderLegendItem(slice.asset.name || TYPE_LABELS[slice.asset.type], (slice.value / totals.wealth) * 100, slice.color);
   }
-
   drawDonutHole(ctx, center, radius);
-  ctx.fillStyle = "#17324d";
-  ctx.font = "700 18px Noto Sans Thai, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("Wealth", center, center - 6);
-  ctx.font = "600 15px Noto Sans Thai, sans-serif";
-  ctx.fillText(formatMoney(totals.wealth), center, center + 20);
 }
 
 function drawDonutHole(ctx, center, radius) {
-  ctx.beginPath();
-  ctx.arc(center, center, radius * 0.58, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(center, center, radius * 0.58, 0, Math.PI * 2); ctx.fillStyle = "#ffffff"; ctx.fill();
 }
 
 function renderLegendItem(label, percent, color) {
   const item = document.createElement("div");
   item.className = "legend-item";
-  item.innerHTML = `
-    <span class="legend-color" style="background:${color}"></span>
-    <span>${escapeHtml(label)}</span>
-    <strong>${formatPercent(percent)}</strong>
-  `;
+  item.innerHTML = `<span class="legend-color" style="background:${color}"></span><span>${escapeHtml(label)}</span><strong>${formatPercent(percent)}</strong>`;
   elements.chartLegend.appendChild(item);
 }
 
@@ -414,53 +288,26 @@ function renderGrowthTables() {
   const quarterKeys = Object.keys(state.data.quarters).sort(compareQuarter);
   elements.quarterRows.innerHTML = "";
   elements.assetGrowthRows.innerHTML = "";
-
-  const quarterSummaries = quarterKeys.map((key) => {
-    const quarter = state.data.quarters[key];
-    return { key, assets: quarter.assets, totals: getTotals(quarter.assets, { useSnapshot: true }) };
-  });
-
-  for (let index = quarterSummaries.length - 1; index >= 0; index -= 1) {
-    const summary = quarterSummaries[index];
-    const previous = quarterSummaries[index - 1];
+  const summaries = quarterKeys.map((key) => ({ key, assets: state.data.quarters[key].assets, totals: getTotals(state.data.quarters[key].assets, { useSnapshot: true }) }));
+  for (let index = summaries.length - 1; index >= 0; index -= 1) {
+    const summary = summaries[index];
+    const previous = summaries[index - 1];
     const growth = previous ? growthPercent(summary.totals.wealth, previous.totals.wealth) : null;
     const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${summary.key}</td>
-      <td>${formatMoney(summary.totals.wealth)}</td>
-      <td class="${growth === null || growth >= 0 ? "positive" : "negative"}">${growth === null ? "-" : formatPercent(growth, true)}</td>
-      <td>${summary.assets.length}</td>
-      <td class="row-actions">
-        <button class="delete-button" type="button" title="ลบข้อมูลไตรมาส" data-delete-quarter="${summary.key}">×</button>
-      </td>
-    `;
+    row.innerHTML = `<td>${summary.key}</td><td>${formatMoney(summary.totals.wealth)}</td><td class="${growth === null || growth >= 0 ? "positive" : "negative"}">${growth === null ? "-" : formatPercent(growth, true)}</td><td>${summary.assets.length}</td><td class="row-actions"><button class="delete-button" type="button" data-delete-quarter="${summary.key}">×</button></td>`;
     elements.quarterRows.appendChild(row);
   }
-
   const latestKey = quarterKeys[quarterKeys.length - 1];
-  const previousKey = quarterKeys[quarterKeys.length - 2];
   if (!latestKey) return;
-
   const latestAssets = mapAssetsByKey(state.data.quarters[latestKey].assets, { useSnapshot: true });
+  const previousKey = quarterKeys[quarterKeys.length - 2];
   const previousAssets = previousKey ? mapAssetsByKey(state.data.quarters[previousKey].assets, { useSnapshot: true }) : new Map();
   const latestTotal = getTotals(state.data.quarters[latestKey].assets, { useSnapshot: true }).wealth;
-
   for (const [key, latest] of latestAssets.entries()) {
     const previous = previousAssets.get(key);
     const growth = previous ? growthPercent(latest.value, previous.value) : null;
     const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>
-        <div class="asset-name">
-          <strong>${escapeHtml(latest.name)}</strong>
-          <span>${escapeHtml(TYPE_LABELS[latest.type] || latest.type)}</span>
-        </div>
-      </td>
-      <td>${formatMoney(latest.value)}</td>
-      <td class="${growth === null || growth >= 0 ? "positive" : "negative"}">${growth === null ? "-" : formatPercent(growth, true)}</td>
-      <td>${formatPercent(latestTotal > 0 ? (latest.value / latestTotal) * 100 : 0)}</td>
-      <td>${renderTrendText(key, quarterKeys)}</td>
-    `;
+    row.innerHTML = `<td><div class="asset-name"><strong>${escapeHtml(latest.name)}</strong><span>${escapeHtml(TYPE_LABELS[latest.type] || latest.type)}</span></div></td><td>${formatMoney(latest.value)}</td><td class="${growth === null || growth >= 0 ? "positive" : "negative"}">${growth === null ? "-" : formatPercent(growth, true)}</td><td>${formatPercent(latestTotal > 0 ? (latest.value / latestTotal) * 100 : 0)}</td><td>${renderTrendText(key, quarterKeys)}</td>`;
     elements.assetGrowthRows.appendChild(row);
   }
 }
@@ -470,105 +317,62 @@ function mapAssetsByKey(assets, options = {}) {
   for (const asset of assets) {
     const key = assetKey(asset);
     const value = assetGrossValue(asset, options);
-    if (!Number.isFinite(value)) continue;
     const existing = map.get(key);
-    map.set(key, {
-      key,
-      name: asset.name || TYPE_LABELS[asset.type],
-      type: asset.type,
-      value: (existing?.value || 0) + value
-    });
+    map.set(key, { key, name: asset.name || TYPE_LABELS[asset.type], type: asset.type, value: (existing?.value || 0) + value });
   }
   return map;
 }
 
 function renderTrendText(key, quarterKeys) {
-  return quarterKeys
-    .map((quarterKey) => {
-      const asset = mapAssetsByKey(state.data.quarters[quarterKey].assets, { useSnapshot: true }).get(key);
-      return `${quarterKey}: ${asset ? formatMoney(asset.value) : "-"}`;
-    })
-    .join(" · ");
+  return quarterKeys.map((quarterKey) => {
+    const asset = mapAssetsByKey(state.data.quarters[quarterKey].assets, { useSnapshot: true }).get(key);
+    return `${quarterKey}: ${asset ? formatMoney(asset.value) : "-"}`;
+  }).join(" · ");
 }
 
 function getPreviousSavedQuarter(key) {
   const keys = Object.keys(state.data.quarters).sort(compareQuarter);
   const index = keys.indexOf(key);
-  if (index <= 0) return null;
-  return state.data.quarters[keys[index - 1]];
-}
-
-function getAssetDetail(asset) {
-  const parts = [TYPE_LABELS[asset.type] || "Asset"];
-  if (Number.isFinite(asset.snapshotValue)) parts.push(`Snapshot ${formatMoney(asset.snapshotValue)}`);
-  return parts.join(" · ");
+  return index > 0 ? state.data.quarters[keys[index - 1]] : null;
 }
 
 function render() {
-  renderQuarterOptions();
-  renderSummary();
-  renderRows();
-  renderPieChart();
-  renderGrowthTables();
+  renderQuarterOptions(); renderSummary(); renderRows(); renderPieChart(); renderGrowthTables();
 }
 
 function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => {
-    const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
-    return entities[char];
-  });
+  return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
 }
 
-async function refreshQuotes() {
+function refreshQuotes() {
   state.lastUpdated = new Date();
-  elements.statusText.textContent = "รีเฟรชข้อมูลบนหน้าจอแล้ว";
+  elements.statusText.textContent = "รีเฟรชหน้าจอแล้ว";
   render();
+}
+
+function readAssetFromForm() {
+  const type = elements.typeInput.value;
+  const manualValue = Number(elements.valueInput.value);
+  const investedPercent = clamp(Number(elements.investedPercentInput.value), 0, 100);
+  if (!Number.isFinite(manualValue) || manualValue < 0) {
+    elements.statusText.textContent = "กรุณากรอกมูลค่าปัจจุบันเป็นบาทให้ถูกต้อง";
+    return null;
+  }
+  return { type, name: elements.nameInput.value.trim() || TYPE_LABELS[type], manualValue, investedPercent: type === "cash" ? 0 : investedPercent, snapshotValue: manualValue };
 }
 
 function handleFormSubmit(event) {
   event.preventDefault();
   const asset = readAssetFromForm();
   if (!asset) return;
-
   const quarter = currentQuarter();
   if (state.editingId) {
     const index = quarter.assets.findIndex((item) => item.id === state.editingId);
     if (index >= 0) quarter.assets[index] = { ...quarter.assets[index], ...asset, id: state.editingId, updatedAt: new Date().toISOString() };
-    elements.statusText.textContent = "แก้ไข asset แล้ว";
   } else {
     quarter.assets.push({ ...asset, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: null });
-    elements.statusText.textContent = "เพิ่ม asset แล้ว";
   }
-
-  saveData();
-  resetForm();
-  render();
-  refreshQuotes();
-}
-
-function readAssetFromForm() {
-  const type = elements.typeInput.value;
-  const name = elements.nameInput.value.trim() || TYPE_LABELS[type];
-  const manualValue = Number(elements.valueInput.value);
-  const investedPercent = clamp(Number(elements.investedPercentInput.value), 0, 100);
-
-  if (!Number.isFinite(manualValue) || manualValue < 0) {
-    elements.statusText.textContent = "กรุณากรอกมูลค่าปัจจุบันเป็นบาทให้ถูกต้อง";
-    return null;
-  }
-  if (type !== "cash" && !Number.isFinite(investedPercent)) {
-    elements.statusText.textContent = "กรุณากรอก % ที่ลงทุนจริงระหว่าง 0 ถึง 100";
-    return null;
-  }
-
-  return {
-    type,
-    name,
-    btcQuantity: 0,
-    manualValue,
-    investedPercent: type === "cash" ? 0 : investedPercent,
-    snapshotValue: manualValue
-  };
+  resetForm(); render(); saveData();
 }
 
 function editAsset(id) {
@@ -582,16 +386,13 @@ function editAsset(id) {
   elements.formTitle.textContent = "แก้ไขรายการพอร์ต";
   elements.submitButton.textContent = "บันทึกการแก้ไข";
   elements.cancelEditButton.classList.remove("is-hidden");
-  updateFormMode();
-  setActiveView("manage");
+  updateFormMode(); setActiveView("manage");
 }
 
 function deleteAsset(id) {
   currentQuarter().assets = currentQuarter().assets.filter((asset) => asset.id !== id);
   if (state.editingId === id) resetForm();
-  saveData();
-  render();
-  refreshQuotes();
+  render(); saveData();
 }
 
 function resetForm() {
@@ -606,25 +407,16 @@ function resetForm() {
 
 function saveSnapshot() {
   const quarter = currentQuarter();
-  for (const asset of quarter.assets) {
-    asset.snapshotValue = Number(asset.manualValue) || 0;
-  }
+  for (const asset of quarter.assets) asset.snapshotValue = Number(asset.manualValue) || 0;
   quarter.savedAt = new Date().toISOString();
-  saveData();
-  elements.statusText.textContent = `บันทึก snapshot ${quarter.key} แล้ว`;
-  render();
+  render(); saveData();
 }
 
 function createOrSwitchQuarter() {
   const key = elements.quarterInput.value || currentQuarterKey();
-  if (!state.data.quarters[key]) {
-    state.data.quarters[key] = { key, assets: [], savedAt: null };
-  }
+  if (!state.data.quarters[key]) state.data.quarters[key] = { key, assets: [], savedAt: null };
   state.data.currentQuarter = key;
-  resetForm();
-  saveData();
-  render();
-  refreshQuotes();
+  resetForm(); render(); saveData();
 }
 
 function addQuarterFromInputs() {
@@ -634,75 +426,25 @@ function addQuarterFromInputs() {
     elements.quarterStatus.textContent = "กรุณากรอกปีและไตรมาสให้ถูกต้อง";
     return;
   }
-
   const key = `${year}-Q${quarterNumber}`;
-  if (!state.data.quarters[key]) {
-    state.data.quarters[key] = { key, assets: [], savedAt: null };
-  }
+  if (!state.data.quarters[key]) state.data.quarters[key] = { key, assets: [], savedAt: null };
   state.data.currentQuarter = key;
-  resetForm();
-  saveData();
-  render();
+  resetForm(); render(); saveData();
 }
 
 function deleteQuarter(key) {
-  const quarterKeys = Object.keys(state.data.quarters);
-  if (quarterKeys.length <= 1) {
-    elements.quarterStatus.textContent = "ต้องมีอย่างน้อย 1 ไตรมาสในระบบ";
-    return;
-  }
-
-  const ok = window.confirm(`ลบข้อมูล ${key} ทั้งหมดใช่ไหม? การลบนี้ย้อนกลับไม่ได้`);
-  if (!ok) return;
-
+  if (Object.keys(state.data.quarters).length <= 1) return;
+  if (!window.confirm(`ลบข้อมูล ${key} ทั้งหมดใช่ไหม?`)) return;
   delete state.data.quarters[key];
-  if (state.data.currentQuarter === key) {
-    state.data.currentQuarter = Object.keys(state.data.quarters).sort(compareQuarter).reverse()[0];
-  }
-  resetForm();
-  saveData();
-  render();
-}
-
-async function signIn(event) {
-  event.preventDefault();
-  const password = elements.authPasswordInput.value;
-  if (!password) {
-    state.authMessage = "กรุณาใส่ password";
-    renderAuth();
-    return;
-  }
-
-  state.authMessage = "กำลังตรวจ password และโหลดข้อมูล...";
-  renderAuth();
-  sessionStorage.setItem("portfolioPassword", password);
-  const ok = await loadRemoteData();
-  state.remoteReady = ok;
-  if (!ok) {
-    elements.authPasswordInput.value = "";
-  }
-  renderAuth();
-  if (ok) render();
-}
-
-function signOut() {
-  sessionStorage.removeItem("portfolioPassword");
-  state.remoteReady = false;
-  clearLegacyLocalData();
-  state.authMessage = "";
-  renderAuth();
+  if (state.data.currentQuarter === key) state.data.currentQuarter = Object.keys(state.data.quarters).sort(compareQuarter).reverse()[0];
+  resetForm(); render(); saveData();
 }
 
 function updateFormMode() {
-  const type = elements.typeInput.value;
-  const isCash = type === "cash";
-  elements.manualValueField.classList.remove("is-hidden");
+  const isCash = elements.typeInput.value === "cash";
   elements.investedPercentField.classList.toggle("is-hidden", isCash);
-  elements.valueInput.required = true;
   elements.investedPercentInput.required = !isCash;
-  elements.nameInput.placeholder = TYPE_LABELS[type] || "ชื่อรายการ";
   if (isCash) elements.investedPercentInput.value = "0";
-  if (!isCash && !elements.investedPercentInput.value) elements.investedPercentInput.value = "100";
 }
 
 function setActiveView(view) {
@@ -718,8 +460,6 @@ function setDefaultNewQuarterInputs() {
 }
 
 elements.form.addEventListener("submit", handleFormSubmit);
-elements.authForm.addEventListener("submit", signIn);
-elements.signOutButton.addEventListener("click", signOut);
 elements.typeInput.addEventListener("change", updateFormMode);
 elements.cancelEditButton.addEventListener("click", resetForm);
 elements.refreshButton.addEventListener("click", refreshQuotes);
@@ -740,18 +480,5 @@ elements.quarterRows.addEventListener("click", (event) => {
 
 setDefaultNewQuarterInputs();
 updateFormMode();
-if (sessionStorage.getItem("portfolioPassword")) {
-  state.authMessage = "กำลังโหลดข้อมูลจาก database...";
-  renderAuth();
-  loadRemoteData().then((ok) => {
-    state.remoteReady = ok;
-    renderAuth();
-    if (ok) {
-      render();
-      refreshQuotes();
-    }
-  });
-} else {
-  clearLegacyLocalData();
-  renderAuth();
-}
+render();
+loadRemoteData();
