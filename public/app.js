@@ -1,6 +1,5 @@
 const STORAGE_KEY = "investment-dashboard-quarterly-v1";
 const LEGACY_KEYS = ["investment-dashboard-assets-v2", "investment-dashboard-assets"];
-const BTC_SYMBOL = "BTC-USD";
 
 const TYPE_LABELS = {
   bitcoin: "Bitcoin",
@@ -93,49 +92,13 @@ function loadData() {
   return { currentQuarter: key, quarters: { [key]: { key, assets: [], savedAt: null } } };
 }
 
-function loadLegacyAssets() {
-  for (const storageKey of LEGACY_KEYS) {
-    const saved = localStorage.getItem(storageKey);
-    if (!saved) continue;
-    try {
-      return JSON.parse(saved).map(normalizeAsset);
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
-function normalizeAsset(asset) {
-  if (asset.type) {
-    return {
-      id: asset.id || crypto.randomUUID(),
-      type: asset.type,
-      name: asset.name || TYPE_LABELS[asset.type] || "Asset",
-      btcQuantity: 0,
-      manualValue: Number(asset.manualValue) || Number(asset.snapshotValue) || 0,
-      investedPercent: asset.type === "cash" ? 0 : clamp(Number(asset.investedPercent) || 100, 0, 100),
-      snapshotValue: Number(asset.snapshotValue) || null,
-      createdAt: asset.createdAt || new Date().toISOString(),
-      updatedAt: asset.updatedAt || null
-    };
-  }
-
-  return {
-    id: asset.id || crypto.randomUUID(),
-    type: asset.symbol === BTC_SYMBOL ? "bitcoin" : "custom",
-    name: asset.name || asset.symbol || "Asset",
-    btcQuantity: 0,
-    manualValue: (Number(asset.quantity) || 0) * (Number(asset.cost) || 0),
-    investedPercent: 100,
-    snapshotValue: null,
-    createdAt: asset.createdAt || new Date().toISOString(),
-    updatedAt: null
-  };
-}
-
 function saveData() {
   persistRemoteData();
+}
+
+function clearLegacyLocalData() {
+  localStorage.removeItem(STORAGE_KEY);
+  for (const key of LEGACY_KEYS) localStorage.removeItem(key);
 }
 
 function renderAuth() {
@@ -175,6 +138,7 @@ async function loadRemoteData() {
       state.data = { currentQuarter: key, quarters: { [key]: { key, assets: [], savedAt: null } } };
     }
 
+    clearLegacyLocalData();
     state.authMessage = "โหลดข้อมูลจาก database แล้ว";
     return true;
   } catch (error) {
@@ -724,6 +688,7 @@ async function signIn(event) {
 function signOut() {
   sessionStorage.removeItem("portfolioPassword");
   state.remoteReady = false;
+  clearLegacyLocalData();
   state.authMessage = "";
   renderAuth();
 }
@@ -787,5 +752,6 @@ if (sessionStorage.getItem("portfolioPassword")) {
     }
   });
 } else {
+  clearLegacyLocalData();
   renderAuth();
 }

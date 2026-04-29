@@ -307,11 +307,30 @@ select:focus {
 }
 
 .is-hidden {
-  display: none;
+  display: none !important;
 }
 
-body:not(.is-unlocked) .requires-auth {
-  display: none;
+.requires-auth {
+  display: none !important;
+}
+
+body.is-unlocked .requires-auth {
+  display: flex !important;
+}
+
+body.is-unlocked .summary-grid,
+body.is-unlocked .workspace,
+body.is-unlocked .overview-grid,
+body.is-unlocked .controls-bar {
+  display: grid !important;
+}
+
+body.is-unlocked .view-panel.is-active {
+  display: block !important;
+}
+
+body.is-unlocked .tabs {
+  display: inline-flex !important;
 }
 
 body:not(.is-unlocked) {
