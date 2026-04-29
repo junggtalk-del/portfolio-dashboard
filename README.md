@@ -23,7 +23,7 @@ http://localhost:4173
 5. กดเพิ่มเข้าพอร์ต หรือแก้ไขรายการเดิม
 6. กดบันทึกไตรมาสนี้เพื่อเก็บ snapshot
 
-ถ้ายังไม่ใส่ Supabase config ข้อมูลจะถูกเก็บไว้ใน browser ของเครื่องนี้ หากใส่ Supabase config และ login แล้ว ข้อมูลจะ sync กับ Supabase schema `portfolio_dashboard`
+บน Vercel ข้อมูลจะ sync กับ Supabase ผ่าน password gate และ Vercel Function โดยใช้ schema `portfolio_dashboard`
 
 ## Deploy Live
 

@@ -59,27 +59,9 @@ portfolio_dashboard
 
 ถ้ามี `public` อยู่แล้ว ให้คงไว้ได้ แล้วเพิ่ม `portfolio_dashboard` ต่อท้าย
 
-## Step 4: ตั้งค่า Auth
+## Step 4: ตั้งค่า Vercel Environment Variables
 
-ไปที่:
-
-```text
-Authentication -> Providers -> Email
-```
-
-เปิด Email provider
-
-ถ้าต้องการให้ login ได้ทันทีง่ายๆ ในช่วงทดสอบ ให้ปิด email confirmation ชั่วคราวได้ที่:
-
-```text
-Authentication -> Providers -> Email -> Confirm email
-```
-
-ถ้าเปิด Confirm email ไว้ ผู้ใช้ต้องกดยืนยันอีเมลก่อน login
-
-## Step 5: เอา Supabase URL และ anon key มาใส่ในเว็บ
-
-ไปที่:
+ไปที่ Supabase:
 
 ```text
 Project Settings -> API
@@ -89,28 +71,27 @@ copy:
 
 ```text
 Project URL
-anon public key
+service_role key
 ```
 
-จากนั้นเปิดไฟล์:
+จากนั้นไปที่ Vercel:
 
-```powershell
-notepad "C:\Users\jung\OneDrive\Documents\New project\public\config.js"
+```text
+Project -> Settings -> Environment Variables
 ```
 
-ใส่ค่าแบบนี้:
+เพิ่มค่า:
 
-```js
-window.PORTFOLIO_CONFIG = {
-  SUPABASE_URL: "https://YOUR_PROJECT_REF.supabase.co",
-  SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_KEY",
-  SUPABASE_SCHEMA: "portfolio_dashboard"
-};
+```text
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+SUPABASE_SCHEMA=portfolio_dashboard
+APP_PASSWORD=jung12345
 ```
 
-ห้ามใช้ `service_role key` ใน frontend
+`service_role key` ต้องอยู่ใน Vercel Environment Variables เท่านั้น ห้ามใส่ในไฟล์ frontend
 
-## Step 6: ทดสอบในเครื่อง
+## Step 5: ทดสอบในเครื่อง
 
 เปิดเว็บ:
 
@@ -125,9 +106,9 @@ npm start
 http://localhost:4173
 ```
 
-ลองสมัคร/เข้าสู่ระบบ แล้วเพิ่มข้อมูลพอร์ต
+ในเครื่อง local จะยังใช้ข้อมูลใน browser เป็นหลัก ส่วนบน Vercel จะใช้ password `jung12345` ผ่าน serverless function
 
-## Step 7: Deploy ขึ้น live
+## Step 6: Deploy ขึ้น live
 
 ### Netlify
 
@@ -145,4 +126,6 @@ Publish directory: public
 
 ## หมายเหตุ
 
-`SUPABASE_ANON_KEY` เป็น public key ที่ใช้ใน browser ได้ ความปลอดภัยหลักมาจาก Row Level Security ใน `supabase/schema.sql`
+ระบบนี้ไม่ใช้ Supabase email login แล้ว ผู้ใช้กรอก password `jung12345` เพื่อให้ Vercel Function อ่าน/เขียนข้อมูลใน Supabase ให้
+
+ถ้าต้องการเปลี่ยน password ให้แก้ค่า `APP_PASSWORD` ใน Vercel แล้ว redeploy

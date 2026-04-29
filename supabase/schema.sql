@@ -29,8 +29,15 @@ create table if not exists portfolio_dashboard.portfolio_assets (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists portfolio_dashboard.app_state (
+  id text primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
 alter table portfolio_dashboard.portfolio_quarters enable row level security;
 alter table portfolio_dashboard.portfolio_assets enable row level security;
+alter table portfolio_dashboard.app_state enable row level security;
 
 drop policy if exists "Users can read their quarters" on portfolio_dashboard.portfolio_quarters;
 create policy "Users can read their quarters"

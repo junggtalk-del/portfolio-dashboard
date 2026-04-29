@@ -22,8 +22,6 @@ const state = {
   lastUpdated: null,
   editingId: null,
   activeView: "overview",
-  supabase: null,
-  user: null,
   remoteReady: false,
   hydratingRemote: false
 };
@@ -39,10 +37,8 @@ const elements = {
   authForm: document.querySelector("#authForm"),
   authTitle: document.querySelector("#authTitle"),
   authStatus: document.querySelector("#authStatus"),
-  authEmailInput: document.querySelector("#authEmailInput"),
   authPasswordInput: document.querySelector("#authPasswordInput"),
   signInButton: document.querySelector("#signInButton"),
-  signUpButton: document.querySelector("#signUpButton"),
   signOutButton: document.querySelector("#signOutButton"),
   form: document.querySelector("#assetForm"),
   formTitle: document.querySelector("#formTitle"),
@@ -157,206 +153,82 @@ function normalizeAsset(asset) {
 
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
-  persistCurrentQuarter();
-}
-
-function isSupabaseConfigured() {
-  const config = window.PORTFOLIO_CONFIG || {};
-  return Boolean(config.SUPABASE_URL && config.SUPABASE_ANON_KEY && window.supabase);
-}
-
-async function initSupabase() {
-  if (!isSupabaseConfigured()) {
-    renderAuth();
-    return;
-  }
-
-  const config = window.PORTFOLIO_CONFIG;
-  const supabaseUrl = normalizeSupabaseUrl(config.SUPABASE_URL);
-  if (!isValidSupabaseProjectUrl(supabaseUrl)) {
-    elements.authTitle.textContent = "Supabase config error";
-    elements.authStatus.textContent = "SUPABASE_URL ต้องเป็น Project URL เช่น https://xxxx.supabase.co";
-    return;
-  }
-
-  state.supabase = window.supabase.createClient(supabaseUrl, config.SUPABASE_ANON_KEY, {
-    db: { schema: config.SUPABASE_SCHEMA || "portfolio_dashboard" }
-  });
-  const { data } = await state.supabase.auth.getSession();
-  state.user = data.session?.user || null;
-  state.remoteReady = Boolean(state.user);
-
-  state.supabase.auth.onAuthStateChange(async (_event, session) => {
-    state.user = session?.user || null;
-    state.remoteReady = Boolean(state.user);
-    if (state.user) await loadRemoteData();
-    renderAuth();
-    render();
-  });
-
-  if (state.user) await loadRemoteData();
-  renderAuth();
-  render();
-}
-
-function normalizeSupabaseUrl(url) {
-  return String(url || "").trim().replace(/\/+$/, "");
-}
-
-function isValidSupabaseProjectUrl(url) {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" && parsed.hostname.endsWith(".supabase.co") && parsed.pathname === "/";
-  } catch {
-    return false;
-  }
+  persistRemoteData();
 }
 
 function renderAuth() {
-  if (!isSupabaseConfigured()) {
-    elements.authTitle.textContent = "Local mode";
-    elements.authStatus.textContent = "ยังไม่ได้ใส่ Supabase config ข้อมูลจะอยู่ใน browser นี้เท่านั้น";
-    elements.authForm.classList.add("is-hidden");
-    return;
-  }
-
   elements.authForm.classList.remove("is-hidden");
-  if (state.user) {
-    elements.authTitle.textContent = "Supabase connected";
-    elements.authStatus.textContent = `กำลัง sync กับบัญชี ${state.user.email}`;
-    elements.authEmailInput.classList.add("is-hidden");
+  if (state.remoteReady) {
+    elements.authTitle.textContent = "Portfolio unlocked";
+    elements.authStatus.textContent = "เชื่อมต่อ Supabase ผ่าน password แล้ว";
     elements.authPasswordInput.classList.add("is-hidden");
     elements.signInButton.classList.add("is-hidden");
-    elements.signUpButton.classList.add("is-hidden");
     elements.signOutButton.classList.remove("is-hidden");
   } else {
-    elements.authTitle.textContent = "Supabase login";
-    elements.authStatus.textContent = "เข้าสู่ระบบเพื่อบันทึกและเปิดข้อมูลได้หลายเครื่อง";
-    elements.authEmailInput.classList.remove("is-hidden");
+    elements.authTitle.textContent = "Password access";
+    elements.authStatus.textContent = "ใส่ password เพื่อเปิดข้อมูลพอร์ตจาก Supabase";
     elements.authPasswordInput.classList.remove("is-hidden");
     elements.signInButton.classList.remove("is-hidden");
-    elements.signUpButton.classList.remove("is-hidden");
     elements.signOutButton.classList.add("is-hidden");
   }
 }
 
 async function loadRemoteData() {
-  if (!state.supabase || !state.user) return;
+  const password = sessionStorage.getItem("portfolioPassword");
+  if (!password) return;
   state.hydratingRemote = true;
   const localBeforeRemote = state.data;
 
-  const { data: quarters, error: quarterError } = await state.supabase
-    .from("portfolio_quarters")
-    .select("id,key,saved_at")
-    .order("key", { ascending: true });
-
-  if (quarterError) {
-    elements.quarterStatus.textContent = quarterError.message;
-    state.hydratingRemote = false;
-    return;
-  }
-
-  const remoteData = { currentQuarter: state.data.currentQuarter || getCurrentQuarterKey(), quarters: {} };
-  for (const quarter of quarters || []) {
-    remoteData.quarters[quarter.key] = {
-      key: quarter.key,
-      remoteId: quarter.id,
-      savedAt: quarter.saved_at,
-      assets: []
-    };
-  }
-
-  const { data: assets, error: assetError } = await state.supabase
-    .from("portfolio_assets")
-    .select("id,quarter_id,type,name,manual_value,invested_percent,snapshot_value,created_at,updated_at");
-
-  if (assetError) {
-    elements.quarterStatus.textContent = assetError.message;
-    state.hydratingRemote = false;
-    return;
-  }
-
-  const quarterById = new Map(Object.values(remoteData.quarters).map((quarter) => [quarter.remoteId, quarter]));
-  for (const asset of assets || []) {
-    const quarter = quarterById.get(asset.quarter_id);
-    if (!quarter) continue;
-    quarter.assets.push({
-      id: asset.id,
-      type: asset.type,
-      name: asset.name,
-      btcQuantity: 0,
-      manualValue: Number(asset.manual_value) || 0,
-      investedPercent: Number(asset.invested_percent) || 0,
-      snapshotValue: asset.snapshot_value === null ? null : Number(asset.snapshot_value),
-      createdAt: asset.created_at,
-      updatedAt: asset.updated_at
+  try {
+    const response = await fetch("/api/portfolio", {
+      headers: { "x-portfolio-password": password }
     });
-  }
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Unable to load portfolio");
 
-  if (!Object.keys(remoteData.quarters).length) {
-    const localHasData = Object.values(localBeforeRemote.quarters || {}).some((quarter) => quarter.assets?.length);
-    if (localHasData) {
-      remoteData.currentQuarter = localBeforeRemote.currentQuarter;
-      remoteData.quarters = localBeforeRemote.quarters;
+    if (payload.data?.quarters && Object.keys(payload.data.quarters).length) {
+      state.data = payload.data;
     } else {
       const key = getCurrentQuarterKey();
-      remoteData.currentQuarter = key;
-      remoteData.quarters[key] = { key, assets: [], savedAt: null };
+      state.data = { currentQuarter: key, quarters: { [key]: { key, assets: [], savedAt: null } } };
     }
-  } else if (!remoteData.quarters[remoteData.currentQuarter]) {
-    remoteData.currentQuarter = Object.keys(remoteData.quarters).sort(compareQuarter).reverse()[0];
-  }
 
-  state.data = remoteData;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
-  state.hydratingRemote = false;
-  if (Object.values(localBeforeRemote.quarters || {}).some((quarter) => quarter.assets?.length) && !quarters?.length) {
-    persistCurrentQuarter();
+    const remoteEmpty = !payload.data?.quarters || !Object.keys(payload.data.quarters).length;
+    const localHasData = Object.values(localBeforeRemote.quarters || {}).some((quarter) => quarter.assets?.length);
+    if (remoteEmpty && localHasData) {
+      state.data = localBeforeRemote;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+      await persistRemoteData();
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    elements.authStatus.textContent = "โหลดข้อมูลจาก Supabase แล้ว";
+  } catch (error) {
+    elements.authStatus.textContent = error.message;
+    sessionStorage.removeItem("portfolioPassword");
+    state.remoteReady = false;
+  } finally {
+    state.hydratingRemote = false;
   }
 }
 
-async function persistCurrentQuarter() {
-  if (!state.supabase || !state.user || state.hydratingRemote) return;
-  const quarter = currentQuarter();
+async function persistRemoteData() {
+  const password = sessionStorage.getItem("portfolioPassword");
+  if (!password || state.hydratingRemote) return;
 
-  const { data: savedQuarter, error: quarterError } = await state.supabase
-    .from("portfolio_quarters")
-    .upsert(
-      {
-        user_id: state.user.id,
-        key: quarter.key,
-        saved_at: quarter.savedAt,
-        updated_at: new Date().toISOString()
+  try {
+    const response = await fetch("/api/portfolio", {
+      method: "PUT",
+      headers: {
+        "content-type": "application/json",
+        "x-portfolio-password": password
       },
-      { onConflict: "user_id,key" }
-    )
-    .select("id")
-    .single();
-
-  if (quarterError) {
-    elements.quarterStatus.textContent = quarterError.message;
-    return;
-  }
-
-  quarter.remoteId = savedQuarter.id;
-  await state.supabase.from("portfolio_assets").delete().eq("quarter_id", savedQuarter.id);
-
-  if (quarter.assets.length) {
-    const rows = quarter.assets.map((asset) => ({
-      id: asset.id,
-      quarter_id: savedQuarter.id,
-      user_id: state.user.id,
-      type: asset.type,
-      name: asset.name || TYPE_LABELS[asset.type],
-      manual_value: Number(asset.manualValue) || 0,
-      invested_percent: Number(asset.investedPercent) || 0,
-      snapshot_value: Number.isFinite(asset.snapshotValue) ? asset.snapshotValue : null,
-      created_at: asset.createdAt || new Date().toISOString(),
-      updated_at: asset.updatedAt || new Date().toISOString()
-    }));
-
-    const { error: assetError } = await state.supabase.from("portfolio_assets").insert(rows);
-    if (assetError) elements.quarterStatus.textContent = assetError.message;
+      body: JSON.stringify({ data: state.data })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Unable to save portfolio");
+  } catch (error) {
+    elements.quarterStatus.textContent = error.message;
   }
 }
 
@@ -844,44 +716,32 @@ function deleteQuarter(key) {
   const ok = window.confirm(`ลบข้อมูล ${key} ทั้งหมดใช่ไหม? การลบนี้ย้อนกลับไม่ได้`);
   if (!ok) return;
 
-  const remoteId = state.data.quarters[key]?.remoteId;
   delete state.data.quarters[key];
   if (state.data.currentQuarter === key) {
     state.data.currentQuarter = Object.keys(state.data.quarters).sort(compareQuarter).reverse()[0];
   }
   resetForm();
   saveData();
-  if (state.supabase && state.user && remoteId) {
-    state.supabase.from("portfolio_quarters").delete().eq("id", remoteId).then(({ error }) => {
-      if (error) elements.quarterStatus.textContent = error.message;
-    });
-  }
   render();
 }
 
 async function signIn(event) {
   event.preventDefault();
-  if (!state.supabase) return;
-  const email = elements.authEmailInput.value.trim();
   const password = elements.authPasswordInput.value;
-  const { error } = await state.supabase.auth.signInWithPassword({ email, password });
-  if (error) elements.authStatus.textContent = error.message;
+  if (!password) {
+    elements.authStatus.textContent = "กรุณาใส่ password";
+    return;
+  }
+
+  sessionStorage.setItem("portfolioPassword", password);
+  state.remoteReady = true;
+  await loadRemoteData();
+  renderAuth();
+  render();
 }
 
-async function signUp() {
-  if (!state.supabase) return;
-  const email = elements.authEmailInput.value.trim();
-  const password = elements.authPasswordInput.value;
-  const { error } = await state.supabase.auth.signUp({ email, password });
-  elements.authStatus.textContent = error
-    ? error.message
-    : "สมัครแล้ว ถ้า Supabase เปิด email confirmation ไว้ ให้ยืนยันอีเมลก่อนเข้าสู่ระบบ";
-}
-
-async function signOut() {
-  if (!state.supabase) return;
-  await state.supabase.auth.signOut();
-  state.user = null;
+function signOut() {
+  sessionStorage.removeItem("portfolioPassword");
   state.remoteReady = false;
   renderAuth();
 }
@@ -912,7 +772,6 @@ function setDefaultNewQuarterInputs() {
 
 elements.form.addEventListener("submit", handleFormSubmit);
 elements.authForm.addEventListener("submit", signIn);
-elements.signUpButton.addEventListener("click", signUp);
 elements.signOutButton.addEventListener("click", signOut);
 elements.typeInput.addEventListener("change", updateFormMode);
 elements.cancelEditButton.addEventListener("click", resetForm);
@@ -936,4 +795,12 @@ setDefaultNewQuarterInputs();
 updateFormMode();
 render();
 refreshQuotes();
-initSupabase();
+if (sessionStorage.getItem("portfolioPassword")) {
+  state.remoteReady = true;
+  loadRemoteData().then(() => {
+    renderAuth();
+    render();
+  });
+} else {
+  renderAuth();
+}
