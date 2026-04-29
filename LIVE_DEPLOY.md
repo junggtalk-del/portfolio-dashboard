@@ -33,6 +33,7 @@ portfolio_dashboard
 ```text
 portfolio_dashboard.portfolio_quarters
 portfolio_dashboard.portfolio_assets
+portfolio_dashboard.app_state
 ```
 
 พร้อม Row Level Security เพื่อให้แต่ละ user เห็นเฉพาะข้อมูลของตัวเอง
@@ -126,6 +127,6 @@ Publish directory: public
 
 ## หมายเหตุ
 
-ระบบนี้ไม่ใช้ Supabase email login แล้ว ผู้ใช้กรอก password `jung12345` เพื่อให้ Vercel Function อ่าน/เขียนข้อมูลใน Supabase ให้
+ระบบนี้ไม่ใช้ Supabase email login แล้ว ผู้ใช้ต้องกรอก password `jung12345` ก่อนถึงจะเห็นหน้า Dashboard จากนั้น Vercel Function จะอ่าน/เขียนข้อมูลใน Supabase ให้
 
 ถ้าต้องการเปลี่ยน password ให้แก้ค่า `APP_PASSWORD` ใน Vercel แล้ว redeploy

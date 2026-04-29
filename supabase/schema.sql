@@ -1,10 +1,14 @@
 create schema if not exists portfolio_dashboard;
 
-grant usage on schema portfolio_dashboard to anon, authenticated;
+grant usage on schema portfolio_dashboard to anon, authenticated, service_role;
 grant all on all tables in schema portfolio_dashboard to authenticated;
 grant all on all sequences in schema portfolio_dashboard to authenticated;
+grant all on all tables in schema portfolio_dashboard to service_role;
+grant all on all sequences in schema portfolio_dashboard to service_role;
 alter default privileges in schema portfolio_dashboard grant all on tables to authenticated;
 alter default privileges in schema portfolio_dashboard grant all on sequences to authenticated;
+alter default privileges in schema portfolio_dashboard grant all on tables to service_role;
+alter default privileges in schema portfolio_dashboard grant all on sequences to service_role;
 
 create table if not exists portfolio_dashboard.portfolio_quarters (
   id uuid primary key default gen_random_uuid(),

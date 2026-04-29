@@ -310,6 +310,28 @@ select:focus {
   display: none;
 }
 
+body:not(.is-unlocked) .requires-auth {
+  display: none;
+}
+
+body:not(.is-unlocked) {
+  display: grid;
+  place-items: center;
+}
+
+body:not(.is-unlocked) .app-shell {
+  width: min(560px, calc(100% - 28px));
+}
+
+body:not(.is-unlocked) .auth-panel {
+  grid-template-columns: 1fr;
+  padding: 28px;
+}
+
+body:not(.is-unlocked) .auth-form {
+  grid-template-columns: 1fr;
+}
+
 .two-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
