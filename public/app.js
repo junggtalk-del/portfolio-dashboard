@@ -172,7 +172,14 @@ async function initSupabase() {
   }
 
   const config = window.PORTFOLIO_CONFIG;
-  state.supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY, {
+  const supabaseUrl = normalizeSupabaseUrl(config.SUPABASE_URL);
+  if (!isValidSupabaseProjectUrl(supabaseUrl)) {
+    elements.authTitle.textContent = "Supabase config error";
+    elements.authStatus.textContent = "SUPABASE_URL ต้องเป็น Project URL เช่น https://xxxx.supabase.co";
+    return;
+  }
+
+  state.supabase = window.supabase.createClient(supabaseUrl, config.SUPABASE_ANON_KEY, {
     db: { schema: config.SUPABASE_SCHEMA || "portfolio_dashboard" }
   });
   const { data } = await state.supabase.auth.getSession();
@@ -190,6 +197,19 @@ async function initSupabase() {
   if (state.user) await loadRemoteData();
   renderAuth();
   render();
+}
+
+function normalizeSupabaseUrl(url) {
+  return String(url || "").trim().replace(/\/+$/, "");
+}
+
+function isValidSupabaseProjectUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname.endsWith(".supabase.co") && parsed.pathname === "/";
+  } catch {
+    return false;
+  }
 }
 
 function renderAuth() {
