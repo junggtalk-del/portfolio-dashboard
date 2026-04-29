@@ -136,16 +136,7 @@ h2 {
 }
 
 .auth-panel {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 14px;
-  align-items: center;
-  margin-bottom: 18px;
-  padding: 16px;
-  border: 1px solid rgba(223, 230, 241, 0.88);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 10px 28px rgba(23, 50, 77, 0.06);
+  display: none !important;
 }
 
 .auth-panel p {
@@ -308,47 +299,6 @@ select:focus {
 
 .is-hidden {
   display: none !important;
-}
-
-.requires-auth {
-  display: none !important;
-}
-
-body.is-unlocked .requires-auth {
-  display: flex !important;
-}
-
-body.is-unlocked .summary-grid,
-body.is-unlocked .workspace,
-body.is-unlocked .overview-grid,
-body.is-unlocked .controls-bar {
-  display: grid !important;
-}
-
-body.is-unlocked .view-panel.is-active {
-  display: block !important;
-}
-
-body.is-unlocked .tabs {
-  display: inline-flex !important;
-}
-
-body:not(.is-unlocked) {
-  display: grid;
-  place-items: center;
-}
-
-body:not(.is-unlocked) .app-shell {
-  width: min(560px, calc(100% - 28px));
-}
-
-body:not(.is-unlocked) .auth-panel {
-  grid-template-columns: 1fr;
-  padding: 28px;
-}
-
-body:not(.is-unlocked) .auth-form {
-  grid-template-columns: 1fr;
 }
 
 .two-columns {
