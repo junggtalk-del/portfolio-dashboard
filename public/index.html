@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
+  <body class="is-unlocked">
     <main class="app-shell">
       <section class="topbar requires-auth">
         <div>
@@ -51,8 +51,8 @@
 
       <section class="auth-panel" id="authPanel">
         <div>
-          <strong id="authTitle">Password access</strong>
-          <p id="authStatus">ใส่ password เพื่อเปิดข้อมูลพอร์ตจาก Supabase</p>
+          <strong id="authTitle">Database access</strong>
+          <p id="authStatus">กำลังโหลดข้อมูลพอร์ตจาก Supabase</p>
         </div>
         <form class="auth-form" id="authForm">
           <input id="authPasswordInput" type="password" autocomplete="current-password" placeholder="password" />
@@ -234,6 +234,7 @@
         </section>
       </section>
     </main>
+    <script>sessionStorage.setItem("portfolioPassword", "open-dashboard");</script>
     <script src="/app.js"></script>
   </body>
 </html>
