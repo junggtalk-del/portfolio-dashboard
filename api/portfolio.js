@@ -7,12 +7,6 @@ function send(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
-function checkPassword(req) {
-  const expected = process.env.APP_PASSWORD;
-  const provided = req.headers["x-portfolio-password"];
-  return Boolean(expected && provided && provided === expected);
-}
-
 function supabaseHeaders(extra = {}) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   return {
@@ -50,13 +44,8 @@ function getSupabaseUrl() {
 }
 
 module.exports = async function handler(req, res) {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.APP_PASSWORD) {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     send(res, 500, { error: "Server environment variables are not configured." });
-    return;
-  }
-
-  if (!checkPassword(req)) {
-    send(res, 401, { error: "Password is incorrect." });
     return;
   }
 
