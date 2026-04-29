@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Investment Portfolio Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/config.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">Portfolio Command Center</p>
+          <h1>Dashboard การลงทุน</h1>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-button" id="refreshButton" type="button" title="Refresh live prices">
+            <span aria-hidden="true">↻</span>
+            รีเฟรชหน้าจอ
+          </button>
+          <button class="ghost-button" id="saveSnapshotButton" type="button">
+            บันทึกไตรมาสนี้
+          </button>
+        </div>
+      </section>
+
+      <section class="controls-bar">
+        <label>
+          ไตรมาสข้อมูล
+          <select id="quarterInput"></select>
+        </label>
+        <label>
+          ปีที่ต้องการเพิ่ม
+          <input id="newQuarterYearInput" type="number" min="1900" max="2500" step="1" placeholder="เช่น 2027" />
+        </label>
+        <label>
+          ไตรมาสที่ต้องการเพิ่ม
+          <select id="newQuarterNumberInput">
+            <option value="1">Q1</option>
+            <option value="2">Q2</option>
+            <option value="3">Q3</option>
+            <option value="4">Q4</option>
+          </select>
+        </label>
+        <button class="secondary-button" id="newQuarterButton" type="button">เพิ่มไตรมาส</button>
+        <p id="quarterStatus">เลือกไตรมาสเพื่อดูและแก้ไขข้อมูล</p>
+      </section>
+
+      <section class="auth-panel" id="authPanel">
+        <div>
+          <strong id="authTitle">Local mode</strong>
+          <p id="authStatus">ยังไม่ได้เชื่อม Supabase ข้อมูลจะอยู่ใน browser นี้เท่านั้น</p>
+        </div>
+        <form class="auth-form" id="authForm">
+          <input id="authEmailInput" type="email" autocomplete="email" placeholder="email" />
+          <input id="authPasswordInput" type="password" autocomplete="current-password" placeholder="password" />
+          <button class="secondary-button" id="signInButton" type="submit">เข้าสู่ระบบ</button>
+          <button class="secondary-button" id="signUpButton" type="button">สมัคร/สร้างบัญชี</button>
+          <button class="secondary-button is-hidden" id="signOutButton" type="button">ออกจากระบบ</button>
+        </form>
+      </section>
+
+      <section class="summary-grid" aria-label="Portfolio summary">
+        <article class="summary-card wealth-card">
+          <span>Wealth รวม</span>
+          <strong id="totalWealth">฿0</strong>
+          <small id="lastUpdated">ยังไม่มีข้อมูลราคา</small>
+        </article>
+        <article class="summary-card">
+          <span>ลงทุนจริง</span>
+          <strong id="investedValue">฿0</strong>
+          <small id="investedPercent">0.00% ของพอร์ต</small>
+        </article>
+        <article class="summary-card">
+          <span>เงินสดรวม</span>
+          <strong id="cashValue">฿0</strong>
+          <small id="cashPercent">0.00% ของพอร์ต</small>
+        </article>
+        <article class="summary-card">
+          <span>เติบโตจากไตรมาสก่อน</span>
+          <strong id="quarterGrowth">0.00%</strong>
+          <small id="quarterGrowthNote">ยังไม่มีไตรมาสก่อนหน้า</small>
+        </article>
+      </section>
+
+      <section class="tabs" aria-label="Dashboard views">
+        <button class="tab-button is-active" type="button" data-view="overview">ภาพรวม</button>
+        <button class="tab-button" type="button" data-view="manage">จัดการข้อมูล</button>
+      </section>
+
+      <section class="view-panel is-active" id="overviewView">
+        <section class="overview-grid">
+          <article class="portfolio-panel chart-panel">
+            <div class="panel-header">
+              <div>
+                <h2>สัดส่วนสินทรัพย์</h2>
+                <p id="pieSubtitle">มูลค่ารวมตามไตรมาสที่เลือก</p>
+              </div>
+              <div class="currency-pill">THB</div>
+            </div>
+            <div class="pie-layout">
+              <canvas id="allocationChart" width="340" height="340" aria-label="Portfolio pie chart"></canvas>
+              <div class="legend-list" id="chartLegend"></div>
+            </div>
+          </article>
+
+          <article class="portfolio-panel">
+            <div class="panel-header">
+              <div>
+                <h2>ภาพรวมการเติบโต</h2>
+                <p>สรุป wealth รายไตรมาสของทั้งพอร์ต</p>
+              </div>
+            </div>
+            <div class="table-wrap compact">
+              <table>
+                <thead>
+                <tr>
+                  <th>ไตรมาส</th>
+                  <th>Wealth</th>
+                  <th>เติบโต QoQ</th>
+                  <th>จำนวน Asset</th>
+                  <th></th>
+                </tr>
+                </thead>
+                <tbody id="quarterRows"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="portfolio-panel">
+          <div class="panel-header">
+            <div>
+              <h2>การเติบโตของแต่ละสินทรัพย์</h2>
+              <p>เทียบจากไตรมาสก่อนหน้า และดูแนวโน้มในแต่ละไตรมาส</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th>มูลค่าล่าสุด</th>
+                  <th>เติบโต QoQ</th>
+                  <th>สัดส่วนล่าสุด</th>
+                  <th>แนวโน้มรายไตรมาส</th>
+                </tr>
+              </thead>
+              <tbody id="assetGrowthRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view-panel" id="manageView">
+        <section class="workspace">
+          <form class="asset-form" id="assetForm">
+            <div class="form-header">
+              <h2 id="formTitle">เพิ่มรายการพอร์ต</h2>
+              <p>กรอกมูลค่าปัจจุบันเป็นบาทได้ทุกสินทรัพย์ รวมถึง Bitcoin</p>
+            </div>
+
+            <label>
+              ประเภทสินทรัพย์
+              <select id="typeInput" name="type">
+                <option value="bitcoin">Bitcoin</option>
+                <option value="foreign-stock">หุ้นต่างประเทศ</option>
+                <option value="thai-stock">หุ้นไทย</option>
+                <option value="provident-fund">เงินสำรองเลี้ยงชีพ</option>
+                <option value="rmf-jang">RMF-จัง</option>
+                <option value="rmf-tum">RMF-ตุ๋ม</option>
+                <option value="cash">เงินสด</option>
+                <option value="custom">อื่นๆ</option>
+              </select>
+            </label>
+
+            <label>
+              ชื่อรายการ
+              <input id="nameInput" name="name" autocomplete="off" placeholder="เช่น หุ้นต่างประเทศ" />
+            </label>
+
+            <label class="manual-value-field">
+              มูลค่าปัจจุบัน (บาท)
+              <input id="valueInput" name="value" type="number" min="0" step="any" placeholder="250000" />
+            </label>
+
+            <label class="invested-percent-field">
+              % ที่ลงทุนจริงในรายการนี้
+              <input id="investedPercentInput" name="investedPercent" type="number" min="0" max="100" step="any" value="100" />
+            </label>
+
+            <div class="form-actions">
+              <button class="primary-button" id="submitButton" type="submit">เพิ่มเข้าพอร์ต</button>
+              <button class="secondary-button is-hidden" id="cancelEditButton" type="button">ยกเลิกแก้ไข</button>
+            </div>
+            <p class="form-note" id="statusText">ข้อมูลจะถูกเก็บแยกตามไตรมาสที่เลือก</p>
+          </form>
+
+          <section class="portfolio-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Assets ในไตรมาสนี้</h2>
+                <p id="panelSubtitle">เพิ่มรายการเพื่อเริ่มดูสัดส่วนพอร์ต</p>
+              </div>
+              <div class="currency-pill" id="currencyNote">THB</div>
+            </div>
+            <div class="allocation-strip" aria-label="Allocation">
+              <div class="allocation-invested" id="allocationInvested"></div>
+              <div class="allocation-cash" id="allocationCash"></div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Asset</th>
+                    <th>มูลค่ารวม</th>
+                    <th>% พอร์ต</th>
+                    <th>% ลงทุนจริง</th>
+                    <th>ลงทุนจริง</th>
+                    <th>เงินสดแฝง</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="assetRows"></tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="emptyState">
+              <div class="empty-icon">◇</div>
+              <h3>ยังไม่มี asset</h3>
+              <p>เพิ่มรายการแรก แล้วแดชบอร์ดจะคำนวณ wealth, เงินลงทุนจริง และเงินสดรวมให้ทันที</p>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
