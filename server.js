@@ -15,6 +15,8 @@ const MIME_TYPES = {
   ".jpeg": "image/jpeg",
   ".ico": "image/x-icon"
 };
+const PORTFOLIO_SCHEMA = process.env.SUPABASE_SCHEMA || "portfolio_dashboard";
+const PORTFOLIO_STATE_ID = "main";
 
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, {
@@ -22,6 +24,93 @@ function sendJson(res, statusCode, payload) {
     "cache-control": "no-store"
   });
   res.end(JSON.stringify(payload));
+}
+
+function getRequestBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 1_000_000) {
+        req.destroy();
+        reject(new Error("Request body is too large."));
+      }
+    });
+    req.on("end", () => {
+      if (!body) {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(body));
+      } catch (error) {
+        reject(new Error("Invalid JSON body."));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function portfolioHeaders(extra = {}) {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return {
+    apikey: serviceKey,
+    authorization: `Bearer ${serviceKey}`,
+    "content-type": "application/json",
+    "accept-profile": PORTFOLIO_SCHEMA,
+    "content-profile": PORTFOLIO_SCHEMA,
+    ...extra
+  };
+}
+
+function getSupabaseUrl() {
+  return String(process.env.SUPABASE_URL || "").trim().replace(/\/+$/, "");
+}
+
+function isPortfolioPasswordValid(req) {
+  const expected = process.env.APP_PASSWORD;
+  const provided = req.headers["x-portfolio-password"];
+  return Boolean(expected && provided && provided === expected);
+}
+
+async function handlePortfolio(req, res) {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.APP_PASSWORD) {
+    sendJson(res, 500, { error: "Server env is missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or APP_PASSWORD." });
+    return;
+  }
+
+  if (!isPortfolioPasswordValid(req)) {
+    sendJson(res, 401, { error: "Password is incorrect." });
+    return;
+  }
+
+  try {
+    if (req.method === "GET") {
+      const endpoint = `${getSupabaseUrl()}/rest/v1/app_state?id=eq.${PORTFOLIO_STATE_ID}&select=data`;
+      const response = await fetch(endpoint, { headers: portfolioHeaders() });
+      if (!response.ok) throw new Error(await response.text());
+      const rows = await response.json();
+      sendJson(res, 200, { data: rows[0]?.data || null });
+      return;
+    }
+
+    if (req.method === "PUT") {
+      const body = await getRequestBody(req);
+      const endpoint = `${getSupabaseUrl()}/rest/v1/app_state`;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: portfolioHeaders({ prefer: "resolution=merge-duplicates,return=minimal" }),
+        body: JSON.stringify([{ id: PORTFOLIO_STATE_ID, data: body?.data, updated_at: new Date().toISOString() }])
+      });
+      if (!response.ok) throw new Error(await response.text());
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    sendJson(res, 405, { error: "Method not allowed." });
+  } catch (error) {
+    sendJson(res, 500, { error: error.message });
+  }
 }
 
 function sendFile(res, filePath) {
@@ -135,6 +224,11 @@ const server = http.createServer((req, res) => {
 
   if (requestUrl.pathname === "/api/quotes") {
     handleQuotes(req, res);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/portfolio") {
+    handlePortfolio(req, res);
     return;
   }
 
