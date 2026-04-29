@@ -1,0 +1,14 @@
+{
+  "name": "investment-portfolio-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Modern investment portfolio dashboard with live market prices.",
+  "main": "server.js",
+  "scripts": {
+    "build": "node scripts/write-config.js",
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
