@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Boom Universe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/ai-boom-universe.css" />
+  </head>
+  <body>
+    <main class="ai-shell">
+      <section class="ai-topbar">
+        <div>
+          <p class="ai-eyebrow">AI Investment System</p>
+          <h1>AI Boom Universe</h1>
+        </div>
+        <nav class="ai-nav" aria-label="Main navigation">
+          <a href="/">Portfolio Dashboard</a>
+          <a class="is-active" href="/ai-boom-universe">AI Boom Universe</a>
+        </nav>
+      </section>
+
+      <section class="ai-summary-grid" aria-label="AI universe summary">
+        <article class="ai-card is-primary">
+          <span>Theme</span>
+          <strong>AI Data Center Supercycle</strong>
+          <small>Mock seed data for the first version</small>
+        </article>
+        <article class="ai-card">
+          <span>Assets shown</span>
+          <strong id="assetCount">0</strong>
+          <small id="activeFilterText">Showing full universe</small>
+        </article>
+        <article class="ai-card">
+          <span>Wait for pullback</span>
+          <strong id="waitCount">0</strong>
+          <small>High-quality assets with elevated hype</small>
+        </article>
+        <article class="ai-card">
+          <span>Warnings</span>
+          <strong id="warningCount">0</strong>
+          <small>Extreme hype risk override is active</small>
+        </article>
+      </section>
+
+      <section class="ai-filters" aria-label="AI universe filters">
+        <label>
+          Layer
+          <select id="layerFilter"></select>
+        </label>
+        <label>
+          Asset type
+          <select id="assetTypeFilter"></select>
+        </label>
+        <label>
+          Risk level
+          <select id="riskLevelFilter"></select>
+        </label>
+        <label>
+          Action
+          <select id="actionFilter"></select>
+        </label>
+      </section>
+
+      <section class="ai-panel">
+        <div class="ai-panel-header">
+          <div>
+            <h2>AI Data Center Supercycle Watchlist</h2>
+            <p>Read-only seed universe. Scores are mock values and can later be replaced by live market data or Supabase records.</p>
+          </div>
+          <div class="ai-pill"><span id="accumulateCount">0</span> Accumulate</div>
+        </div>
+
+        <div class="ai-table-wrap">
+          <table class="ai-table">
+            <thead>
+              <tr>
+                <th>ticker</th>
+                <th>layer</th>
+                <th>quality</th>
+                <th>hype</th>
+                <th>valuation</th>
+                <th>final_score</th>
+                <th>action</th>
+              </tr>
+            </thead>
+            <tbody id="aiUniverseRows"></tbody>
+          </table>
+        </div>
+
+        <p class="ai-footnote">
+          This system is a research dashboard, not financial advice. High hype risk intentionally overrides buy signals so the page does not recommend aggressive accumulation when optimism is already extreme.
+        </p>
+      </section>
+    </main>
+
+    <script src="/ai-boom-universe-data.js"></script>
+    <script src="/ai-boom-universe-scoring.js"></script>
+    <script src="/ai-boom-universe-page.js"></script>
+  </body>
+</html>
