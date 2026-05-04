@@ -13,53 +13,91 @@
     <main class="ai-shell">
       <section class="ai-topbar">
         <div>
-          <p class="ai-eyebrow">AI Investment System</p>
+          <p class="ai-eyebrow">ระบบคัดกรองธีม AI</p>
           <h1>AI Boom Universe</h1>
         </div>
-        <nav class="ai-nav" aria-label="Main navigation">
-          <a href="/">Portfolio Dashboard</a>
+        <nav class="ai-nav" aria-label="เมนูหลัก">
+          <a href="/">กลับ Dashboard พอร์ต</a>
           <a class="is-active" href="/ai-boom-universe">AI Boom Universe</a>
         </nav>
       </section>
 
-      <section class="ai-summary-grid" aria-label="AI universe summary">
+      <section class="ai-summary-grid" aria-label="สรุป AI universe">
         <article class="ai-card is-primary">
-          <span>Theme</span>
+          <span>ธีมหลัก</span>
           <strong>AI Data Center Supercycle</strong>
-          <small>Mock seed data for the first version</small>
+          <small>เริ่มจากข้อมูลตัวอย่างก่อน</small>
         </article>
         <article class="ai-card">
-          <span>Assets shown</span>
+          <span>จำนวนรายการที่แสดง</span>
           <strong id="assetCount">0</strong>
-          <small id="activeFilterText">Showing full universe</small>
+          <small id="activeFilterText">แสดงรายการทั้งหมด</small>
         </article>
         <article class="ai-card">
-          <span>Wait for pullback</span>
+          <span>รอย่อราคา</span>
           <strong id="waitCount">0</strong>
-          <small>High-quality assets with elevated hype</small>
+          <small>สินทรัพย์ดี แต่ความคาดหวังสูง</small>
         </article>
         <article class="ai-card">
-          <span>Warnings</span>
+          <span>สัญญาณเตือน</span>
           <strong id="warningCount">0</strong>
-          <small>Extreme hype risk override is active</small>
+          <small>ระบบกันซื้อไล่ราคาทำงานอยู่</small>
         </article>
       </section>
 
-      <section class="ai-filters" aria-label="AI universe filters">
+      <section class="ai-editor" aria-label="เพิ่ม ticker">
+        <div>
+          <h2>เพิ่ม ticker เข้าระบบ</h2>
+          <p>ข้อมูลที่เพิ่มจะเก็บไว้ใน browser เครื่องนี้ก่อน รอบถัดไปค่อยต่อ database จริงได้</p>
+        </div>
+        <form id="tickerForm" class="ticker-form">
+          <label>
+            Ticker
+            <input id="tickerInput" autocomplete="off" placeholder="เช่น AVGO" required />
+          </label>
+          <label>
+            ชื่อสินทรัพย์
+            <input id="nameInput" autocomplete="off" placeholder="ปล่อยว่างได้" />
+          </label>
+          <label>
+            Layer
+            <select id="newLayerInput">
+              <option value="upstream_ai">ต้นน้ำ AI</option>
+              <option value="data_center_cloud">Data center / Cloud</option>
+              <option value="etf">ETF / DR</option>
+              <option value="growth_optional">ตัวเลือกเติบโตสูง</option>
+              <option value="thai_funds">กองทุนไทย</option>
+            </select>
+          </label>
+          <label>
+            ประเภท
+            <select id="newAssetTypeInput">
+              <option value="stock">หุ้น</option>
+              <option value="etf">ETF</option>
+              <option value="crypto">Crypto</option>
+              <option value="fund">กองทุน</option>
+              <option value="dr">DR / DRx</option>
+            </select>
+          </label>
+          <button type="submit">เพิ่ม ticker</button>
+        </form>
+      </section>
+
+      <section class="ai-filters" aria-label="ตัวกรอง AI universe">
         <label>
-          Layer
+          กลุ่มธุรกิจ
           <select id="layerFilter"></select>
         </label>
         <label>
-          Asset type
+          ประเภทสินทรัพย์
           <select id="assetTypeFilter"></select>
         </label>
         <label>
-          Risk level
+          ระดับความเสี่ยง
           <select id="riskLevelFilter"></select>
         </label>
         <label>
-          Action
+          สถานะ
           <select id="actionFilter"></select>
         </label>
       </section>
@@ -67,10 +105,10 @@
       <section class="ai-panel">
         <div class="ai-panel-header">
           <div>
-            <h2>AI Data Center Supercycle Watchlist</h2>
-            <p>Read-only seed universe. Scores are mock values and can later be replaced by live market data or Supabase records.</p>
+            <h2>รายการเฝ้าดูธีม AI Data Center</h2>
+            <p>คะแนนเป็นข้อมูลตัวอย่างสำหรับเริ่มระบบ ยังไม่ใช่ราคา real-time หรือคำแนะนำการลงทุน</p>
           </div>
-          <div class="ai-pill"><span id="accumulateCount">0</span> Accumulate</div>
+          <div class="ai-pill"><span id="accumulateCount">0</span> น่าสะสม</div>
         </div>
 
         <div class="ai-table-wrap">
@@ -78,12 +116,11 @@
             <thead>
               <tr>
                 <th>ticker</th>
-                <th>layer</th>
-                <th>quality</th>
+                <th>กลุ่มธุรกิจ</th>
+                <th>คุณภาพ</th>
                 <th>hype</th>
-                <th>valuation</th>
-                <th>final_score</th>
-                <th>action</th>
+                <th>สถานะ</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="aiUniverseRows"></tbody>
@@ -91,7 +128,7 @@
         </div>
 
         <p class="ai-footnote">
-          This system is a research dashboard, not financial advice. High hype risk intentionally overrides buy signals so the page does not recommend aggressive accumulation when optimism is already extreme.
+          ระบบนี้เป็น dashboard เพื่อช่วยจัดระเบียบความคิด ไม่ใช่คำแนะนำการลงทุน เมื่อ hype สูง ระบบจะกันไม่ให้ขึ้นสัญญาณสะสมเชิงรุก แม้สินทรัพย์นั้นจะคุณภาพดีก็ตาม
         </p>
       </section>
     </main>
