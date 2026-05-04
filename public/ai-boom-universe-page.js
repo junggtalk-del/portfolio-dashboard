@@ -1,8 +1,9 @@
 (function () {
   const STORAGE_KEY = "aiBoomUniverseUserAssets";
+  const REMOVED_KEY = "aiBoomUniverseRemovedAssetIds";
   const seed = window.AIBoomUniverseSeed || { theme: "AI_DataCenter_Supercycle", ai_boom_universe: [] };
   const scoring = window.AIBoomScoring;
-  let assets = seed.ai_boom_universe.map((asset) => scoring.enrichAsset(asset));
+  let assets = [];
 
   const filters = {
     layer: document.querySelector("#layerFilter"),
@@ -45,14 +46,21 @@
     Reduce: "ลดน้ำหนัก"
   };
 
-  function loadUserAssets() {
+  function readJsonArray(key) {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      if (!Array.isArray(saved)) return [];
-      return saved.map((asset) => scoring.enrichAsset(asset));
+      const saved = JSON.parse(localStorage.getItem(key) || "[]");
+      return Array.isArray(saved) ? saved : [];
     } catch (error) {
       return [];
     }
+  }
+
+  function loadUserAssets() {
+    return readJsonArray(STORAGE_KEY).map((asset) => scoring.enrichAsset(asset));
+  }
+
+  function loadRemovedIds() {
+    return new Set(readJsonArray(REMOVED_KEY));
   }
 
   function saveUserAssets() {
@@ -60,9 +68,16 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userAssets));
   }
 
+  function saveRemovedId(id) {
+    const removedIds = loadRemovedIds();
+    removedIds.add(id);
+    localStorage.setItem(REMOVED_KEY, JSON.stringify([...removedIds]));
+  }
+
   function resetAssets() {
+    const removedIds = loadRemovedIds();
     assets = [
-      ...seed.ai_boom_universe.map((asset) => scoring.enrichAsset(asset)),
+      ...seed.ai_boom_universe.filter((asset) => !removedIds.has(asset.id)).map((asset) => scoring.enrichAsset(asset)),
       ...loadUserAssets()
     ];
   }
@@ -245,6 +260,7 @@
     const id = button.dataset.deleteId;
     const asset = assets.find((item) => item.id === id);
     if (!asset) return;
+    if (!asset.is_user_added) saveRemovedId(id);
     assets = assets.filter((item) => item.id !== id);
     saveUserAssets();
     refreshFilterOptions();
