@@ -227,7 +227,7 @@ select:focus {
 
 .ai-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 940px;
   border-collapse: collapse;
 }
 
@@ -264,6 +264,38 @@ select:focus {
 .ai-asset-name strong { color: var(--navy); }
 .ai-asset-name span { color: var(--muted); font-size: 0.84rem; }
 
+.price-chart {
+  display: grid;
+  grid-template-columns: 168px 64px;
+  align-items: center;
+  justify-content: end;
+  gap: 6px 10px;
+  min-width: 246px;
+  color: var(--accent-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.sparkline {
+  width: 168px;
+  height: 54px;
+  color: var(--accent);
+  overflow: visible;
+}
+
+.chart-meta {
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.chart-source {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-align: right;
+}
+
 .ai-score,
 .ai-action,
 .ai-risk {
@@ -285,9 +317,10 @@ select:focus {
 
 .ai-risk { margin-left: 6px; }
 
-.ai-row-actions {
-  width: 1%;
-}
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+
+.ai-row-actions { width: 1%; }
 
 .ai-delete-button {
   min-height: 34px;
@@ -339,4 +372,5 @@ select:focus {
   .ai-editor,
   .ticker-form,
   .ai-filters { grid-template-columns: 1fr; }
+  .price-chart { justify-content: start; }
 }
