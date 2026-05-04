@@ -26,6 +26,7 @@ body {
 }
 
 button,
+input,
 select { font: inherit; }
 
 .ai-shell {
@@ -71,7 +72,9 @@ h1 {
 }
 
 .ai-nav a,
-.ai-nav button {
+.ai-nav button,
+.ticker-form button,
+.ai-delete-button {
   min-height: 42px;
   padding: 9px 14px;
   border: 1px solid var(--line);
@@ -84,7 +87,8 @@ h1 {
 }
 
 .ai-nav a.is-active,
-.ai-nav button.is-active {
+.ai-nav button.is-active,
+.ticker-form button {
   background: var(--navy);
   color: #ffffff;
   box-shadow: 0 10px 22px rgba(23, 50, 77, 0.16);
@@ -98,7 +102,8 @@ h1 {
 }
 
 .ai-card,
-.ai-panel {
+.ai-panel,
+.ai-editor {
   border: 1px solid rgba(223, 230, 241, 0.9);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.94);
@@ -133,6 +138,34 @@ h1 {
 .ai-card.is-primary strong,
 .ai-card.is-primary small { color: #ffffff; }
 
+.ai-editor {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 18px;
+}
+
+.ai-editor h2 {
+  margin-bottom: 4px;
+  font-size: 1.08rem;
+}
+
+.ai-editor p,
+.ai-panel-header p,
+.ai-footnote {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.ticker-form {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
 .ai-filters {
   display: grid;
   grid-template-columns: repeat(4, minmax(150px, 1fr));
@@ -152,6 +185,7 @@ label {
   font-weight: 800;
 }
 
+input,
 select {
   width: 100%;
   min-height: 42px;
@@ -163,6 +197,12 @@ select {
   outline: none;
 }
 
+input:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(15, 139, 141, 0.13);
+}
+
 .ai-panel-header {
   display: flex;
   align-items: center;
@@ -172,7 +212,6 @@ select {
 }
 
 .ai-panel-header h2 { margin-bottom: 4px; font-size: 1.08rem; }
-.ai-panel-header p { margin-bottom: 0; color: var(--muted); line-height: 1.55; }
 
 .ai-pill {
   flex: 0 0 auto;
@@ -188,7 +227,7 @@ select {
 
 .ai-table {
   width: 100%;
-  min-width: 900px;
+  min-width: 760px;
   border-collapse: collapse;
 }
 
@@ -242,7 +281,20 @@ select {
 .ai-neutral { background: rgba(200, 144, 45, 0.15); color: #8a5b12; }
 .ai-risky { background: rgba(194, 65, 58, 0.12); color: var(--red); }
 
-.ai-action { min-width: 128px; }
+.ai-action { min-width: 106px; }
+
+.ai-risk { margin-left: 6px; }
+
+.ai-row-actions {
+  width: 1%;
+}
+
+.ai-delete-button {
+  min-height: 34px;
+  padding: 6px 10px;
+  background: rgba(194, 65, 58, 0.1);
+  color: var(--red);
+}
 
 .ai-warning-row td {
   padding-top: 0;
@@ -265,13 +317,13 @@ select {
 
 .ai-footnote {
   margin: 14px 22px 22px;
-  color: var(--muted);
   font-size: 0.9rem;
-  line-height: 1.55;
 }
 
-@media (max-width: 900px) {
-  .ai-summary-grid { grid-template-columns: 1fr 1fr; }
+@media (max-width: 980px) {
+  .ai-summary-grid,
+  .ai-editor,
+  .ticker-form { grid-template-columns: 1fr 1fr; }
   .ai-card.is-primary { grid-column: 1 / -1; }
   .ai-filters { grid-template-columns: 1fr 1fr; }
 }
@@ -284,5 +336,7 @@ select {
   .ai-nav a,
   .ai-nav button { text-align: center; }
   .ai-summary-grid,
+  .ai-editor,
+  .ticker-form,
   .ai-filters { grid-template-columns: 1fr; }
 }
