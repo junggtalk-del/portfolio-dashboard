@@ -3,6 +3,7 @@
   const REMOVED_KEY = "aiBoomUniverseRemovedAssetIds";
   const seed = window.AIBoomUniverseSeed || { theme: "AI_DataCenter_Supercycle", ai_boom_universe: [] };
   const scoring = window.AIBoomScoring;
+  const technical = window.AITechnicalIndicators;
   const priceCache = new Map();
   let assets = [];
 
@@ -119,29 +120,6 @@
     return LABELS[value] || String(value).replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
-  function scoreClass(value, type) {
-    if (type === "risk") {
-      if (value >= 8) return "ai-risky";
-      if (value >= 6) return "ai-neutral";
-      return "ai-good";
-    }
-    if (value >= 8) return "ai-good";
-    if (value >= 6) return "ai-neutral";
-    return "ai-risky";
-  }
-
-  function actionClass(action) {
-    if (action === "Accumulate") return "ai-good";
-    if (action === "Wait for pullback" || action === "Reduce") return "ai-risky";
-    return "ai-neutral";
-  }
-
-  function riskClass(level) {
-    if (level === "low") return "ai-good";
-    if (level === "high") return "ai-risky";
-    return "ai-neutral";
-  }
-
   function currentFilters() {
     return {
       layer: filters.layer.value,
@@ -153,9 +131,7 @@
 
   function filterAssets() {
     const selected = currentFilters();
-    return assets.filter((asset) => {
-      return Object.entries(selected).every(([key, value]) => !value || asset[key] === value);
-    });
+    return assets.filter((asset) => Object.entries(selected).every(([key, value]) => !value || asset[key] === value));
   }
 
   function renderSummary(filteredAssets) {
@@ -176,7 +152,7 @@
     rows.innerHTML = "";
 
     if (!filteredAssets.length) {
-      rows.innerHTML = '<tr><td colspan="7">ไม่พบรายการที่ตรงกับตัวกรอง</td></tr>';
+      rows.innerHTML = '<tr><td colspan="3">ไม่พบรายการที่ตรงกับตัวกรอง</td></tr>';
       return;
     }
 
@@ -189,14 +165,7 @@
             <span>${escapeHtml(asset.name)} · ${escapeHtml(formatLabel(asset.asset_type))} · ${escapeHtml(asset.thai_access)}</span>
           </div>
         </td>
-        <td><div class="price-chart" data-chart-id="${escapeHtml(asset.id)}">กำลังโหลดกราฟ...</div></td>
-        <td>${escapeHtml(formatLabel(asset.layer))}</td>
-        <td><span class="ai-score ${scoreClass(asset.quality_score, "quality")}">${asset.quality_score}</span></td>
-        <td><span class="ai-score ${scoreClass(asset.hype_risk_score, "risk")}">${asset.hype_risk_score}</span></td>
-        <td>
-          <span class="ai-action ${actionClass(asset.initial_action)}">${escapeHtml(formatLabel(asset.initial_action))}</span>
-          <span class="ai-risk ${riskClass(asset.risk_level)}">${escapeHtml(formatLabel(asset.risk_level))}</span>
-        </td>
+        <td><div class="technical-signal" data-signal-id="${escapeHtml(asset.id)}">กำลังคำนวณสัญญาณ...</div></td>
         <td class="ai-row-actions">
           <button class="ai-delete-button" type="button" data-delete-id="${escapeHtml(asset.id)}">ลบ</button>
         </td>`;
@@ -205,21 +174,21 @@
       if (asset.warning) {
         const warningRow = document.createElement("tr");
         warningRow.className = "ai-warning-row";
-        warningRow.innerHTML = `<td colspan="7"><span class="ai-warning-box">สินทรัพย์แข็งแรง แต่ราคาอาจสะท้อนความคาดหวังสูงเกินไปแล้ว</span></td>`;
+        warningRow.innerHTML = `<td colspan="3"><span class="ai-warning-box">สินทรัพย์แข็งแรง แต่ราคาอาจสะท้อนความคาดหวังสูงเกินไปแล้ว</span></td>`;
         rows.appendChild(warningRow);
       }
     }
 
-    renderPriceCharts(filteredAssets);
+    renderTechnicalCells(filteredAssets);
   }
 
-  async function renderPriceCharts(filteredAssets) {
+  async function renderTechnicalCells(filteredAssets) {
     for (const asset of filteredAssets) {
-      const cell = rows.querySelector(`[data-chart-id="${cssEscape(asset.id)}"]`);
-      if (!cell) continue;
+      const signalCell = rows.querySelector(`[data-signal-id="${cssEscape(asset.id)}"]`);
+      if (!signalCell) continue;
       const result = await getPriceSeries(asset);
-      if (!rows.contains(cell)) continue;
-      cell.innerHTML = renderSparkline(result.series, result.source);
+      if (!rows.contains(signalCell)) continue;
+      signalCell.innerHTML = renderTechnicalSummary(asset, result.technical, result.source);
     }
   }
 
@@ -228,22 +197,51 @@
     if (priceCache.has(cacheKey)) return priceCache.get(cacheKey);
 
     const symbol = getYahooSymbol(asset);
-    if (symbol) {
-      try {
-        const series = await fetchYahooSeries(symbol);
-        if (series.length >= 8) {
-          const result = { series, source: "ราคาจริง 3 ปี" };
-          priceCache.set(cacheKey, result);
-          return result;
-        }
-      } catch (error) {
-        // Fall back to a deterministic mock trend when public price data is unavailable.
-      }
+    if (!symbol) {
+      const result = {
+        closes: [],
+        dates: [],
+        technical: calculateTechnical(asset.ticker, [], []),
+        source: "No market data source"
+      };
+      priceCache.set(cacheKey, result);
+      return result;
     }
 
-    const result = { series: makeMockSeries(asset), source: "กราฟจำลอง" };
-    priceCache.set(cacheKey, result);
-    return result;
+    try {
+      const yahooSeries = await fetchPriceHistoryFromServer(symbol);
+      const technicalResult = calculateTechnical(asset.ticker, yahooSeries.closes, yahooSeries.dates);
+      const result = {
+        closes: yahooSeries.closes,
+        dates: yahooSeries.dates,
+        technical: technicalResult,
+        source: "Daily close"
+      };
+      priceCache.set(cacheKey, result);
+      return result;
+    } catch (error) {
+      const result = {
+        closes: [],
+        dates: [],
+        technical: calculateTechnical(asset.ticker, [], []),
+        source: "Unable to load market data"
+      };
+      priceCache.set(cacheKey, result);
+      return result;
+    }
+  }
+
+  function calculateTechnical(symbol, closes, dates) {
+    if (!technical) {
+      return {
+        symbol,
+        latestClose: closes.length ? closes[closes.length - 1] : null,
+        latestDate: dates.length ? dates[dates.length - 1] : null,
+        ema: { ema12: null, ema26: null, signal: "INSUFFICIENT_DATA", trend: "UNKNOWN", signalDate: null, recentCrossover: null },
+        sma200: { sma200: null, signal: "INSUFFICIENT_DATA", status: "UNKNOWN", signalDate: null, recentCrossover: null }
+      };
+    }
+    return technical.calculateTechnicalSignalsForAsset({ symbol, closes, dates });
   }
 
   function getYahooSymbol(asset) {
@@ -253,50 +251,157 @@
     return "";
   }
 
-  async function fetchYahooSeries(symbol) {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=3y&interval=1mo&includePrePost=false`;
+  async function fetchPriceHistoryFromServer(symbol) {
+    const url = `/api/price-history?symbol=${encodeURIComponent(symbol)}`;
     const response = await fetch(url, { cache: "force-cache" });
     if (!response.ok) throw new Error("price request failed");
     const payload = await response.json();
-    const closes = payload.chart?.result?.[0]?.indicators?.quote?.[0]?.close || [];
-    return closes.filter((value) => Number.isFinite(value));
-  }
-
-  function makeMockSeries(asset) {
-    const values = [];
-    const seedValue = [...asset.ticker].reduce((total, char) => total + char.charCodeAt(0), 0);
-    let value = 100 + (seedValue % 35);
-    const trend = asset.quality_score >= 8 ? 1.012 : 1.004;
-    const volatility = (asset.hype_risk_score || 5) / 70;
-    for (let index = 0; index < 36; index += 1) {
-      const wave = Math.sin((index + seedValue) / 3) * volatility;
-      value = Math.max(20, value * (trend + wave));
-      values.push(Math.round(value * 100) / 100);
+    const dates = Array.isArray(payload.dates) ? payload.dates : [];
+    const closes = Array.isArray(payload.closes) ? payload.closes : [];
+    const rows = [];
+    for (let index = 0; index < Math.min(dates.length, closes.length); index += 1) {
+      const date = String(dates[index] || "");
+      const close = closes[index];
+      if (!date || !Number.isFinite(close)) continue;
+      rows.push({ date, close: Number(close) });
     }
-    return values;
+    rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    return {
+      dates: rows.map((row) => row.date),
+      closes: rows.map((row) => row.close)
+    };
   }
 
-  function renderSparkline(series, source) {
-    const clean = series.filter((value) => Number.isFinite(value));
-    if (clean.length < 2) return '<span class="chart-source">ไม่มีข้อมูล</span>';
-    const width = 168;
-    const height = 54;
-    const min = Math.min(...clean);
-    const max = Math.max(...clean);
-    const range = max - min || 1;
-    const points = clean.map((value, index) => {
-      const x = (index / (clean.length - 1)) * width;
-      const y = height - ((value - min) / range) * (height - 8) - 4;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(" ");
-    const change = ((clean[clean.length - 1] - clean[0]) / clean[0]) * 100;
-    const tone = change >= 0 ? "positive" : "negative";
+  function renderTechnicalSummary(asset, result, source) {
+    const signal = result || {};
+    const latestClose = formatPrice(signal.latestClose);
+    const latestDate = formatDate(signal.latestDate);
+    const emaSignal = signal.ema?.signal || "INSUFFICIENT_DATA";
+    const emaTrend = signal.ema?.trend || "UNKNOWN";
+    const smaSignal = signal.sma200?.signal || "INSUFFICIENT_DATA";
+    const smaStatus = signal.sma200?.status || "UNKNOWN";
+    const recentAlert = buildRecentAlert(signal);
+
     return `
-      <svg class="sparkline" viewBox="0 0 ${width} ${height}" role="img" aria-label="กราฟราคา 3 ปีย้อนหลัง">
-        <polyline points="${points}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
-      </svg>
-      <span class="chart-meta ${tone}">${change >= 0 ? "+" : ""}${change.toFixed(1)}%</span>
-      <span class="chart-source">${escapeHtml(source)}</span>`;
+      <div class="technical-stack" aria-label="Daily technical signals for ${escapeHtml(asset.ticker)}">
+        <div class="technical-header">
+          <div class="technical-identity">
+            <strong>${escapeHtml(asset.ticker)}</strong>
+            <span>${escapeHtml(asset.name)}</span>
+          </div>
+          <div class="technical-close">
+            <span>Close</span>
+            <strong>${latestClose}</strong>
+            <span>${latestDate}</span>
+          </div>
+        </div>
+        <div class="technical-pair">
+          <div class="technical-section">
+            <small>EMA12 / EMA26</small>
+            <div class="technical-values">
+              <span>EMA12 ${formatIndicator(signal.ema?.ema12)}</span>
+              <span>EMA26 ${formatIndicator(signal.ema?.ema26)}</span>
+            </div>
+            <div class="technical-badges">
+              <span class="signal-pill ${toneClassForEmaSignal(emaSignal)}">${escapeHtml(emaSignal)}</span>
+              <span class="signal-pill ${toneClassForTrend(emaTrend)}">${escapeHtml(emaTrend)}</span>
+              <span class="signal-date">${formatDate(signal.ema?.signalDate)}</span>
+            </div>
+          </div>
+          <div class="technical-section">
+            <small>Close / SMA200</small>
+            <div class="technical-values">
+              <span>SMA200 ${formatIndicator(signal.sma200?.sma200)}</span>
+            </div>
+            <div class="technical-badges">
+              <span class="signal-pill ${toneClassForSmaSignal(smaSignal)}">${escapeHtml(smaSignal)}</span>
+              <span class="signal-pill ${toneClassForSmaStatus(smaStatus)}">${escapeHtml(smaStatus)}</span>
+              <span class="signal-date">${formatDate(signal.sma200?.signalDate)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="technical-alert ${recentAlert.toneClass}">${escapeHtml(recentAlert.text)}</div>
+        <div class="technical-source">${escapeHtml(source || "-")}</div>
+      </div>`;
+  }
+
+  function buildRecentAlert(signal) {
+    const recentWindow = 5;
+    const emaRecent = signal.ema?.recentCrossover;
+    const smaRecent = signal.sma200?.recentCrossover;
+    const chunks = [];
+    let toneClass = "alert-neutral";
+
+    if (emaRecent && Number.isFinite(emaRecent.barsAgo) && emaRecent.barsAgo <= recentWindow) {
+      const days = emaRecent.barsAgo;
+      chunks.push(`EMA ${emaRecent.signal} ล่าสุด ${days === 0 ? "วันนี้" : `${days} วันก่อน`}`);
+      if (emaRecent.signal === "SELL") toneClass = "alert-risk";
+      if (emaRecent.signal === "BUY" && toneClass !== "alert-risk") toneClass = "alert-good";
+    }
+
+    if (smaRecent && Number.isFinite(smaRecent.barsAgo) && smaRecent.barsAgo <= recentWindow) {
+      const days = smaRecent.barsAgo;
+      chunks.push(`SMA200 ${smaRecent.signal} ล่าสุด ${days === 0 ? "วันนี้" : `${days} วันก่อน`}`);
+      if (smaRecent.signal === "BEARISH_BREAKDOWN") toneClass = "alert-risk";
+      if (smaRecent.signal === "BULLISH_BREAKOUT" && toneClass !== "alert-risk") toneClass = "alert-good";
+    }
+
+    if (chunks.length) {
+      return { text: `Alert: ${chunks.join(" | ")}`, toneClass };
+    }
+
+    return {
+      text: `No recent crossover in last ${recentWindow} days · ใช้สถานะ trend ปกติ`,
+      toneClass: "alert-neutral"
+    };
+  }
+
+  function formatPrice(value) {
+    if (!Number.isFinite(value)) return "-";
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  }
+
+  function formatIndicator(value) {
+    if (!Number.isFinite(value)) return "-";
+    return Number(value).toFixed(2);
+  }
+
+  function formatDate(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleDateString("en-CA");
+  }
+
+  function toneClassForEmaSignal(signal) {
+    if (signal === "BUY") return "signal-good";
+    if (signal === "SELL") return "signal-risk";
+    if (signal === "INSUFFICIENT_DATA") return "signal-muted";
+    return "signal-hold";
+  }
+
+  function toneClassForSmaSignal(signal) {
+    if (signal === "BULLISH_BREAKOUT") return "signal-good";
+    if (signal === "BEARISH_BREAKDOWN") return "signal-risk";
+    if (signal === "INSUFFICIENT_DATA") return "signal-muted";
+    return "signal-hold";
+  }
+
+  function toneClassForTrend(trend) {
+    if (trend === "BULLISH") return "signal-good";
+    if (trend === "BEARISH") return "signal-risk";
+    if (trend === "UNKNOWN") return "signal-muted";
+    return "signal-hold";
+  }
+
+  function toneClassForSmaStatus(status) {
+    if (status === "ABOVE_SMA200") return "signal-good";
+    if (status === "BELOW_SMA200") return "signal-risk";
+    if (status === "UNKNOWN") return "signal-muted";
+    return "signal-hold";
   }
 
   function makeUserAsset(ticker, name, layer, assetType) {
@@ -376,7 +481,7 @@
       "&": "&amp;",
       "<": "&lt;",
       ">": "&gt;",
-      '"': "&quot;",
+      "\"": "&quot;",
       "'": "&#039;"
     })[char]);
   }

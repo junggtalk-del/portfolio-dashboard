@@ -17,7 +17,8 @@ const state = {
   activeView: "overview",
   saving: false,
   hydrating: true,
-  lastUpdated: null
+  lastUpdated: null,
+  storageMode: "supabase"
 };
 
 const elements = {
@@ -79,6 +80,11 @@ function currentQuarter() {
   return state.data.quarters[key];
 }
 
+function portfolioHeaders() {
+  const password = sessionStorage.getItem("portfolioPassword");
+  return password ? { "x-portfolio-password": password } : {};
+}
+
 async function readJsonResponse(response) {
   const text = await response.text();
   if (!text) return {};
@@ -93,13 +99,21 @@ async function loadRemoteData() {
   state.hydrating = true;
   elements.statusText.textContent = "กำลังโหลดข้อมูลจาก database...";
   try {
-    const response = await fetch("/api/portfolio", { cache: "no-store" });
+    const response = await fetch("/api/portfolio", {
+      cache: "no-store",
+      headers: portfolioHeaders()
+    });
     const payload = await readJsonResponse(response);
     if (!response.ok) throw new Error(payload.error || "Unable to load portfolio");
+    state.storageMode = payload.mode === "local-fallback" ? "local-fallback" : "supabase";
     if (payload.data?.quarters && Object.keys(payload.data.quarters).length) state.data = payload.data;
     state.lastUpdated = new Date();
-    elements.statusText.textContent = "โหลดข้อมูลจาก database แล้ว";
+    elements.statusText.textContent =
+      state.storageMode === "local-fallback"
+        ? "โหลดข้อมูลแล้ว (Local fallback mode)"
+        : "โหลดข้อมูลจาก database แล้ว";
   } catch (error) {
+    state.storageMode = "supabase";
     elements.statusText.textContent = `โหลดจาก database ไม่สำเร็จ: ${error.message}`;
   } finally {
     state.hydrating = false;
@@ -110,17 +124,24 @@ async function loadRemoteData() {
 async function persistRemoteData() {
   if (state.hydrating || state.saving) return;
   state.saving = true;
-  elements.statusText.textContent = "กำลังบันทึกลง database...";
+  elements.statusText.textContent =
+    state.storageMode === "local-fallback"
+      ? "กำลังบันทึกลง local fallback..."
+      : "กำลังบันทึกลง database...";
   try {
     const response = await fetch("/api/portfolio", {
       method: "PUT",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...portfolioHeaders() },
       body: JSON.stringify({ data: state.data })
     });
     const payload = await readJsonResponse(response);
     if (!response.ok) throw new Error(payload.error || "Unable to save portfolio");
+    state.storageMode = payload.mode === "local-fallback" ? "local-fallback" : state.storageMode;
     state.lastUpdated = new Date();
-    elements.statusText.textContent = "บันทึกลง database แล้ว";
+    elements.statusText.textContent =
+      state.storageMode === "local-fallback"
+        ? "บันทึกแล้ว (Local fallback mode)"
+        : "บันทึกลง database แล้ว";
   } catch (error) {
     elements.statusText.textContent = `บันทึกไม่สำเร็จ: ${error.message}`;
   } finally {

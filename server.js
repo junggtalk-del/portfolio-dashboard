@@ -7,6 +7,9 @@ loadLocalEnv();
 
 const PORT = Number(process.env.PORT || 4173);
 const PUBLIC_DIR = path.join(__dirname, "public");
+const LOCAL_DATA_DIR = path.join(__dirname, ".local-data");
+const LOCAL_PORTFOLIO_FILE = path.join(LOCAL_DATA_DIR, "portfolio.json");
+const ENABLE_LOCAL_FALLBACK = String(process.env.ENABLE_LOCAL_FALLBACK || "").toLowerCase() === "true";
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -76,18 +79,65 @@ function isPortfolioPasswordValid(req) {
   return Boolean(expected && provided && provided === expected);
 }
 
-async function handlePortfolio(req, res) {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.APP_PASSWORD) {
-    sendJson(res, 500, { error: "Server env is missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, or APP_PASSWORD." });
-    return;
-  }
+function hasSupabaseConfig() {
+  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.APP_PASSWORD);
+}
 
-  if (!isPortfolioPasswordValid(req)) {
-    sendJson(res, 401, { error: "Password is incorrect." });
-    return;
+function readLocalPortfolioData() {
+  try {
+    if (!fs.existsSync(LOCAL_PORTFOLIO_FILE)) return null;
+    const raw = fs.readFileSync(LOCAL_PORTFOLIO_FILE, "utf8");
+    if (!raw.trim()) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.data ?? null;
+  } catch (error) {
+    return null;
   }
+}
+
+function writeLocalPortfolioData(data) {
+  fs.mkdirSync(LOCAL_DATA_DIR, { recursive: true });
+  fs.writeFileSync(
+    LOCAL_PORTFOLIO_FILE,
+    JSON.stringify({ data, updatedAt: new Date().toISOString() }, null, 2),
+    "utf8"
+  );
+}
+
+async function handlePortfolio(req, res) {
+  const useSupabase = hasSupabaseConfig();
 
   try {
+    if (!useSupabase && ENABLE_LOCAL_FALLBACK) {
+      if (req.method === "GET") {
+        sendJson(res, 200, { data: readLocalPortfolioData(), mode: "local-fallback" });
+        return;
+      }
+
+      if (req.method === "PUT") {
+        const body = await getRequestBody(req);
+        writeLocalPortfolioData(body?.data ?? null);
+        sendJson(res, 200, { ok: true, mode: "local-fallback" });
+        return;
+      }
+
+      sendJson(res, 405, { error: "Method not allowed." });
+      return;
+    }
+
+    if (!useSupabase) {
+      sendJson(res, 500, {
+        error:
+          "Supabase mode is required on local. Please set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and APP_PASSWORD in .env."
+      });
+      return;
+    }
+
+    if (!isPortfolioPasswordValid(req)) {
+      sendJson(res, 401, { error: "Password is incorrect." });
+      return;
+    }
+
     if (req.method === "GET") {
       const endpoint = `${getSupabaseUrl()}/rest/v1/app_state?id=eq.${PORTFOLIO_STATE_ID}&select=data`;
       const response = await fetch(endpoint, { headers: portfolioHeaders() });
@@ -199,6 +249,38 @@ async function fetchQuote(symbol) {
   };
 }
 
+async function fetchDailyHistory(symbol) {
+  const endpoint = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
+  endpoint.searchParams.set("interval", "1d");
+  endpoint.searchParams.set("range", "2y");
+  endpoint.searchParams.set("includePrePost", "false");
+
+  const response = await fetch(endpoint, {
+    headers: {
+      accept: "application/json",
+      "user-agent": "portfolio-dashboard/1.0"
+    }
+  });
+  if (!response.ok) throw new Error("price history request failed");
+
+  const payload = await response.json();
+  const result = payload.chart?.result?.[0];
+  const timestamps = Array.isArray(result?.timestamp) ? result.timestamp : [];
+  const closes = result?.indicators?.quote?.[0]?.close || [];
+  const rows = [];
+  for (let index = 0; index < Math.min(timestamps.length, closes.length); index += 1) {
+    const close = closes[index];
+    const unix = timestamps[index];
+    if (!Number.isFinite(close) || !Number.isFinite(unix)) continue;
+    rows.push({
+      date: new Date(unix * 1000).toISOString().slice(0, 10),
+      close: Number(close)
+    });
+  }
+  rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  return rows;
+}
+
 async function handleQuotes(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const symbols = (url.searchParams.get("symbols") || "")
@@ -222,11 +304,36 @@ async function handleQuotes(req, res) {
   }
 }
 
+async function handlePriceHistory(req, res) {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const symbol = (url.searchParams.get("symbol") || "").trim().toUpperCase();
+  if (!symbol) {
+    sendJson(res, 400, { error: "Please provide symbol." });
+    return;
+  }
+
+  try {
+    const rows = await fetchDailyHistory(symbol);
+    sendJson(res, 200, {
+      symbol,
+      dates: rows.map((row) => row.date),
+      closes: rows.map((row) => row.close)
+    });
+  } catch (error) {
+    sendJson(res, 502, { error: "Unable to fetch daily price history." });
+  }
+}
+
 const server = http.createServer((req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
 
   if (requestUrl.pathname === "/api/quotes") {
     handleQuotes(req, res);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/price-history") {
+    handlePriceHistory(req, res);
     return;
   }
 
@@ -238,10 +345,19 @@ const server = http.createServer((req, res) => {
   const safePath = decodeURIComponent(requestUrl.pathname)
     .replace(/^\/+/, "")
     .replace(/\.\.(\/|\\)/g, "");
-  const filePath = path.join(PUBLIC_DIR, safePath || "index.html");
+  const requestedPath = safePath || "index.html";
+  const hasExtension = Boolean(path.extname(requestedPath));
+  const filePath = path.join(PUBLIC_DIR, requestedPath);
+  const cleanUrlFallbackPath = hasExtension ? "" : path.join(PUBLIC_DIR, `${requestedPath}.html`);
   const resolvedPath = path.resolve(filePath);
+  const resolvedCleanUrlFallbackPath = cleanUrlFallbackPath ? path.resolve(cleanUrlFallbackPath) : "";
 
   if (!resolvedPath.startsWith(path.resolve(PUBLIC_DIR))) {
+    sendJson(res, 403, { error: "Forbidden" });
+    return;
+  }
+
+  if (resolvedCleanUrlFallbackPath && !resolvedCleanUrlFallbackPath.startsWith(path.resolve(PUBLIC_DIR))) {
     sendJson(res, 403, { error: "Forbidden" });
     return;
   }
@@ -249,6 +365,17 @@ const server = http.createServer((req, res) => {
   fs.stat(resolvedPath, (error, stats) => {
     if (!error && stats.isDirectory()) {
       sendFile(res, path.join(resolvedPath, "index.html"));
+      return;
+    }
+
+    if (error && resolvedCleanUrlFallbackPath) {
+      fs.stat(resolvedCleanUrlFallbackPath, (fallbackError, fallbackStats) => {
+        if (!fallbackError && fallbackStats.isFile()) {
+          sendFile(res, resolvedCleanUrlFallbackPath);
+          return;
+        }
+        sendFile(res, resolvedPath);
+      });
       return;
     }
 
