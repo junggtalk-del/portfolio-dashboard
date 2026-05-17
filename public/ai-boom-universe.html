@@ -113,15 +113,16 @@
 
         <div class="ai-table-wrap">
           <table class="ai-table">
+            <colgroup>
+              <col class="col-asset" />
+              <col class="col-signal" />
+              <col class="col-actions" />
+            </colgroup>
             <thead>
               <tr>
                 <th>ticker</th>
-                <th>กราฟราคา 3 ปี</th>
-                <th>กลุ่มธุรกิจ</th>
-                <th>คุณภาพ</th>
-                <th>hype</th>
-                <th>สถานะ</th>
-                <th></th>
+                <th>สัญญาณเทคนิค (Daily)</th>
+                <th>จัดการ</th>
               </tr>
             </thead>
             <tbody id="aiUniverseRows"></tbody>
@@ -129,13 +130,14 @@
         </div>
 
         <p class="ai-footnote">
-          กราฟราคาจะพยายามดึงข้อมูลย้อนหลัง 3 ปีจากแหล่งราคาสาธารณะสำหรับ ticker ที่รองรับ หากดึงไม่ได้ ระบบจะแสดงกราฟจำลองเพื่อให้เห็นช่องทางการต่อ API ในอนาคต ระบบนี้เป็น dashboard เพื่อช่วยจัดระเบียบความคิด ไม่ใช่คำแนะนำการลงทุน
+          สัญญาณเทคนิคใช้ daily close และคำนวณ EMA12, EMA26, SMA200 จากข้อมูลตามลำดับเวลา (เก่าไปใหม่) หากตลาดที่ต้องการไม่มีแหล่งราคาสาธารณะรองรับ ระบบจะแสดงสถานะ INSUFFICIENT_DATA
         </p>
       </section>
     </main>
 
     <script src="/ai-boom-universe-data.js"></script>
     <script src="/ai-boom-universe-scoring.js"></script>
+    <script src="/technical-indicators.js"></script>
     <script src="/ai-boom-universe-page.js"></script>
   </body>
 </html>
