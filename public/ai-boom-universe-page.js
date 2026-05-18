@@ -5,6 +5,11 @@
   const scoring = window.AIBoomScoring;
   const technical = window.AITechnicalIndicators;
   const priceCache = new Map();
+  const LEGACY_HIDDEN_IDS = new Set([
+    "ai-scb-global-tech-fund",
+    "ai-kkp-g-tech-fund",
+    "ai-b-innotech-fund"
+  ]);
   let assets = [];
 
   const filters = {
@@ -88,7 +93,10 @@
   function resetAssets() {
     const removedIds = loadRemovedIds();
     assets = [
-      ...seed.ai_boom_universe.filter((asset) => !removedIds.has(asset.id)).map((asset) => scoring.enrichAsset(asset)),
+      ...seed.ai_boom_universe
+        .filter((asset) => !removedIds.has(asset.id))
+        .filter((asset) => !LEGACY_HIDDEN_IDS.has(asset.id))
+        .map((asset) => scoring.enrichAsset(asset)),
       ...loadUserAssets()
     ];
   }
@@ -215,7 +223,7 @@
         closes: yahooSeries.closes,
         dates: yahooSeries.dates,
         technical: technicalResult,
-        source: "Daily close"
+        source: symbol === asset.ticker ? `Daily close (${symbol})` : `Daily close proxy (${symbol})`
       };
       priceCache.set(cacheKey, result);
       return result;
@@ -248,6 +256,17 @@
     if (YAHOO_SYMBOLS[asset.ticker]) return YAHOO_SYMBOLS[asset.ticker];
     if (asset.asset_type === "stock" && asset.country === "US") return asset.ticker;
     if (asset.asset_type === "crypto" && asset.ticker === "BTC") return "BTC-USD";
+    // Thai funds do not expose public daily NAV in Yahoo with stable tickers.
+    // Use explicit benchmark proxies to keep technical panels actionable.
+    if (asset.ticker === "SCBNDQ" || asset.ticker === "KKP_NDQ") return "^NDX";
+    if (
+      asset.ticker === "SCB_GLOBAL_TECH" ||
+      asset.ticker === "KKP_G_TECH" ||
+      asset.ticker === "B_INNOTECH" ||
+      asset.ticker === "ONE_UGG_RA"
+    ) {
+      return "XLK";
+    }
     return "";
   }
 
