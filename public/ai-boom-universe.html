@@ -48,7 +48,7 @@
       <section class="ai-editor" aria-label="เพิ่ม ticker">
         <div>
           <h2>เพิ่ม ticker เข้าระบบ</h2>
-          <p>ข้อมูลที่เพิ่มจะเก็บไว้ใน browser เครื่องนี้ก่อน รอบถัดไปค่อยต่อ database จริงได้</p>
+          <p>ข้อมูลที่เพิ่มจะบันทึกลงฐานข้อมูลกลางทันที เพื่อให้ทุกเครื่องเห็นข้อมูลชุดเดียวกัน</p>
         </div>
         <form id="tickerForm" class="ticker-form">
           <label>
@@ -76,6 +76,7 @@
               <option value="etf">ETF</option>
               <option value="crypto">Crypto</option>
               <option value="fund">กองทุน</option>
+              <option value="THAI_MUTUAL_FUND">Thai Mutual Fund</option>
               <option value="dr">DR / DRx</option>
             </select>
           </label>
@@ -111,22 +112,14 @@
           <div class="ai-pill"><span id="accumulateCount">0</span> น่าสะสม</div>
         </div>
 
-        <div class="ai-table-wrap">
-          <table class="ai-table">
-            <colgroup>
-              <col class="col-asset" />
-              <col class="col-signal" />
-              <col class="col-actions" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>ticker</th>
-                <th>สัญญาณเทคนิค (Daily)</th>
-                <th>จัดการ</th>
-              </tr>
-            </thead>
-            <tbody id="aiUniverseRows"></tbody>
-          </table>
+        <section class="signal-filter-tabs" aria-label="Signal filters">
+          <div id="signalFilterTabs" class="tab-group"></div>
+        </section>
+
+        <div id="marketSignalDashboard" class="market-signal-dashboard"></div>
+
+        <div class="asset-card-grid" id="assetCardGrid">
+          <div class="asset-card-empty">กำลังโหลดข้อมูล...</div>
         </div>
 
         <p class="ai-footnote">

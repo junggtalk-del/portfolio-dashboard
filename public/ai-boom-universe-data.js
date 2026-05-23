@@ -393,6 +393,64 @@ window.AIBoomUniverseSeed = {
         outperformance_vs_benchmark: 4
       },
       created_at: "2026-05-04T00:00:00.000Z"
+    },
+    {
+      id: "ai-k-gtechrmf-fund",
+      ticker: "K-GTECHRMF",
+      aliases: ["K-GTECHRMF", "KGTECHRMF"],
+      name: "K Global Technology RMF",
+      asset_type: "THAI_MUTUAL_FUND",
+      country: "Thailand",
+      theme: "AI_DataCenter_Supercycle",
+      sub_theme: "Thai RMF technology exposure",
+      layer: "thai_funds",
+      investment_thesis: "Thai RMF route for long-term technology and AI theme participation under retirement tax-benefit wrapper.",
+      risk_level: "medium",
+      quality_score: 7,
+      momentum_score: 4,
+      hype_risk_score: 5,
+      valuation_risk_score: 5,
+      final_score: null,
+      initial_action: null,
+      thai_access: "Thai Fund",
+      notes: "Default RMF holding. NAV provider placeholder enabled until direct NAV history is connected.",
+      mock_signals: {
+        price_vs_moving_averages: 5,
+        valuation_vs_historical_average: 5,
+        rsi: 5,
+        sentiment: 5,
+        outperformance_vs_benchmark: 5
+      },
+      created_at: "2026-05-04T00:00:00.000Z"
+    },
+    {
+      id: "ai-k-usxndqrmf-fund",
+      ticker: "K-USXNDQRMF",
+      aliases: ["K-USXNDQRMF", "KUSXNDQRMF"],
+      name: "K USXNDQ RMF",
+      asset_type: "THAI_MUTUAL_FUND",
+      country: "Thailand",
+      theme: "AI_DataCenter_Supercycle",
+      sub_theme: "Thai RMF Nasdaq exposure",
+      layer: "thai_funds",
+      investment_thesis: "Thai RMF wrapper for Nasdaq-oriented growth exposure suitable for long-term retirement allocation.",
+      risk_level: "medium",
+      quality_score: 7,
+      momentum_score: 4,
+      hype_risk_score: 5,
+      valuation_risk_score: 5,
+      final_score: null,
+      initial_action: null,
+      thai_access: "Thai Fund",
+      notes: "Default RMF holding. NAV provider placeholder enabled until direct NAV history is connected.",
+      mock_signals: {
+        price_vs_moving_averages: 5,
+        valuation_vs_historical_average: 5,
+        rsi: 5,
+        sentiment: 5,
+        outperformance_vs_benchmark: 5
+      },
+      created_at: "2026-05-04T00:00:00.000Z"
     }
   ]
 };
