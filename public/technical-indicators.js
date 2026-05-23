@@ -131,6 +131,48 @@
     return null;
   }
 
+  function buildEmaStateSeries(ema12, ema26) {
+    const states = [];
+    for (let index = 0; index < Math.min(ema12.length, ema26.length); index += 1) {
+      const fast = ema12[index];
+      const slow = ema26[index];
+      if (!hasNumber(fast) || !hasNumber(slow)) {
+        states.push(null);
+        continue;
+      }
+      if (fast > slow) states.push("BULLISH");
+      else if (fast < slow) states.push("BEARISH");
+      else states.push("NEUTRAL");
+    }
+    return states;
+  }
+
+  function buildCloseSmaStateSeries(prices, sma200) {
+    const states = [];
+    for (let index = 0; index < Math.min(prices.length, sma200.length); index += 1) {
+      const close = prices[index];
+      const average = sma200[index];
+      if (!hasNumber(close) || !hasNumber(average)) {
+        states.push(null);
+        continue;
+      }
+      if (close > average) states.push("ABOVE_SMA200");
+      else if (close < average) states.push("BELOW_SMA200");
+      else states.push("AT_SMA200");
+    }
+    return states;
+  }
+
+  function countTrailingStateDays(states, targetState) {
+    if (!states.length || !targetState) return 0;
+    let count = 0;
+    for (let index = states.length - 1; index >= 0; index -= 1) {
+      if (states[index] !== targetState) break;
+      count += 1;
+    }
+    return count;
+  }
+
   function normalizeSeries(closes, dates) {
     const cleanCloses = [];
     const cleanDates = [];
@@ -169,6 +211,10 @@
     });
     const lastEmaCrossover = findLastEmaCrossover(closes, dates, ema12Series, ema26Series);
     const lastSmaCrossover = findLastCloseSmaCrossover(closes, dates, sma200Series);
+    const emaStates = buildEmaStateSeries(ema12Series, ema26Series);
+    const smaStates = buildCloseSmaStateSeries(closes, sma200Series);
+    const emaTrendDays = countTrailingStateDays(emaStates, ema.trend);
+    const smaStatusDays = countTrailingStateDays(smaStates, sma200.status);
 
     return {
       symbol,
@@ -180,14 +226,16 @@
         signal: ema.signal,
         trend: ema.trend,
         signalDate: ema.signalDate,
-        recentCrossover: lastEmaCrossover
+        recentCrossover: lastEmaCrossover,
+        consecutiveTrendDays: emaTrendDays
       },
       sma200: {
         sma200: sma200Series.length ? sma200Series[sma200Series.length - 1] : null,
         signal: sma200.signal,
         status: sma200.status,
         signalDate: sma200.signalDate,
-        recentCrossover: lastSmaCrossover
+        recentCrossover: lastSmaCrossover,
+        consecutiveStatusDays: smaStatusDays
       }
     };
   }
