@@ -178,6 +178,7 @@
   const newAssetTypeInput = document.querySelector("#newAssetTypeInput");
   const assetCardGrid = document.querySelector("#assetCardGrid");
   const signalFilterTabs = document.querySelector("#signalFilterTabs");
+  const refreshMarketDataButton = document.querySelector("#refreshMarketDataButton");
   const count = document.querySelector("#assetCount");
   const waitCount = document.querySelector("#waitCount");
   const accumulateCount = document.querySelector("#accumulateCount");
@@ -189,6 +190,7 @@
   let renderVersion = 0;
   let persistedState = { userAssets: [], removedIds: [] };
   let storageMode = "supabase";
+  const isDevClient = Boolean(location.hostname === "localhost" || location.hostname === "127.0.0.1");
 
   function readJsonArray(key) {
     try {
@@ -274,13 +276,13 @@
 
   function resetAssets() {
     const removedIds = loadRemovedIds();
-    assets = [
+    assets = dedupeAssetsByCanonicalTicker([
       ...seed.ai_boom_universe
         .filter((asset) => !removedIds.has(asset.id))
         .filter((asset) => !LEGACY_HIDDEN_IDS.has(asset.id))
         .map((asset) => scoring.enrichAsset(asset)),
       ...loadUserAssets()
-    ];
+    ]);
   }
 
   function uniqueValues(key) {
@@ -684,6 +686,8 @@
     return {
       asset,
       source: marketData.source,
+      sourceType: marketData.sourceType || "",
+      lastUpdated: marketData.lastUpdated || null,
       marketSymbol: marketData.marketSymbol,
       navStatus: marketData.navStatus || "",
       fundName: marketData.fundName || "",
@@ -704,6 +708,23 @@
 
   function SignalBadge(text, tone) {
     return `<span class="badge ${tone}">${escapeHtml(text)}</span>`;
+  }
+
+  function sourceLabelForRow(row) {
+    switch (row.sourceType) {
+      case "LIVE_MARKET_DATA":
+        return { text: "Live market data", tone: "badge-green" };
+      case "SERVER_CACHED_DATA":
+        return { text: "Server cached data", tone: "badge-yellow" };
+      case "BROWSER_CACHED_DATA":
+        return { text: "Browser cached data", tone: "badge-bluegreen" };
+      case "FALLBACK_DATA":
+        return { text: "Fallback data", tone: "badge-redgray" };
+      case "ERROR":
+        return { text: "Unable to load market data", tone: "badge-light" };
+      default:
+        return { text: row.source || "Unknown source", tone: "badge-light" };
+    }
   }
 
   function indicatorLine(label, value) {
@@ -742,6 +763,7 @@
       : "-";
     const showSmaExplain = cls.groupKey === "insufficient";
     const groupClass = `signal-card-item ${cls.groupKey}`;
+    const sourceLabel = sourceLabelForRow(row);
 
     return `
       <article class="${groupClass}">
@@ -757,7 +779,7 @@
 
         <div class="signal-meta-row">
           <span>${escapeHtml(displayAssetType)}</span>
-          <span>${escapeHtml(row.source || "-")}</span>
+          <span>${escapeHtml(row.lastUpdated ? `Updated ${formatDate(row.lastUpdated)}` : row.source || "-")}</span>
         </div>
 
         <div class="signal-main-line">
@@ -770,7 +792,10 @@
 
         ${badges ? `<div class="signal-badges-wrap">${badges}</div>` : ""}
 
-        ${sourceBadge ? `<div class="signal-badges-wrap">${sourceBadge}</div>` : ""}
+        <div class="signal-badges-wrap">
+          ${SignalBadge(sourceLabel.text, sourceLabel.tone)}
+          ${sourceBadge || ""}
+        </div>
 
         <div class="core-status-wrap">
           <span>Core Status</span>
@@ -870,19 +895,48 @@
     return String(rawTicker || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
   }
 
+  function canonicalSymbolFromTicker(rawTicker) {
+    const normalized = normalizeTicker(rawTicker);
+    const compact = normalized.replace(/[^A-Z0-9]/g, "");
+    return THAI_MUTUAL_FUND_ALIASES[normalized] || THAI_MUTUAL_FUND_ALIASES[compact] || normalized;
+  }
+
+  function dedupeAssetsByCanonicalTicker(list) {
+    const seen = new Set();
+    const result = [];
+    for (const asset of list) {
+      const key = canonicalSymbolFromTicker(asset?.ticker);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      result.push(asset);
+    }
+    return result;
+  }
+
   function isThaiMutualFundAsset(asset) {
     return asset.asset_type === "THAI_MUTUAL_FUND" || asset.asset_type === "fund";
   }
 
-  async function getPriceSeries(asset) {
+  async function getPriceSeries(asset, options = {}) {
+    const forceRefresh = Boolean(options.forceRefresh);
     const cacheKey = `${asset.ticker}:${asset.layer}:${asset.id}`;
-    if (priceCache.has(cacheKey)) return priceCache.get(cacheKey);
+    if (!forceRefresh && priceCache.has(cacheKey)) {
+      const cached = priceCache.get(cacheKey);
+      return {
+        ...cached,
+        sourceType: "BROWSER_CACHED_DATA",
+        source: "Browser cached data",
+        lastUpdated: cached.lastUpdated || null
+      };
+    }
 
     const symbol = getYahooSymbol(asset);
     if (!symbol) {
       const empty = {
         marketSymbol: "",
         source: isThaiMutualFundAsset(asset) ? "รอข้อมูล NAV" : "No market data source",
+        sourceType: "ERROR",
+        lastUpdated: null,
         historyCount: 0,
         technical: calculateTechnical(asset.ticker, [], [])
       };
@@ -891,15 +945,13 @@
     }
 
     try {
-      const history = await fetchPriceHistoryFromServer(symbol);
-      const sourceText = history.source
-        ? `${history.source}${history.navStatus === "CACHED_NAV" ? " · Cached NAV" : history.navStatus === "FALLBACK_NAV" ? " · Fallback NAV" : ""}`
-        : symbol === asset.ticker
-          ? `Daily close (${symbol})`
-          : `Daily close proxy (${symbol})`;
+      const history = await fetchPriceHistoryFromServer(symbol, { forceRefresh });
+      const sourceText = history.source || (symbol === asset.ticker ? `Daily close (${symbol})` : `Daily close proxy (${symbol})`);
       const result = {
         marketSymbol: symbol,
         source: sourceText,
+        sourceType: history.sourceType || "LIVE_MARKET_DATA",
+        lastUpdated: history.lastUpdated || null,
         navStatus: history.navStatus || "",
         assetType: history.assetType || "",
         fundName: history.fundName || "",
@@ -912,6 +964,8 @@
       const empty = {
         marketSymbol: symbol,
         source: isThaiMutualFundAsset(asset) ? "รอข้อมูล NAV" : "Unable to load market data",
+        sourceType: "ERROR",
+        lastUpdated: null,
         navStatus: "",
         assetType: isThaiMutualFundAsset(asset) ? "Thai Mutual Fund" : "",
         fundName: "",
@@ -971,9 +1025,10 @@
     return "";
   }
 
-  async function fetchPriceHistoryFromServer(symbol) {
-    const url = `/api/price-history?symbol=${encodeURIComponent(symbol)}`;
-    const response = await fetch(url, { cache: "force-cache" });
+  async function fetchPriceHistoryFromServer(symbol, options = {}) {
+    const forceRefresh = Boolean(options.forceRefresh);
+    const url = `/api/market-data?symbol=${encodeURIComponent(symbol)}${forceRefresh ? "&refresh=1" : ""}`;
+    const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) throw new Error("price request failed");
     const payload = await response.json();
     const dates = Array.isArray(payload.dates) ? payload.dates : [];
@@ -992,6 +1047,8 @@
       source: payload.source || "",
       provider: payload.provider || "",
       navStatus: payload.navStatus || "",
+      sourceType: payload.sourceType || "",
+      lastUpdated: payload.lastUpdated || null,
       assetType: payload.assetType || "",
       fundName: payload.fundName || ""
     };
@@ -1008,15 +1065,25 @@
     return grouped;
   }
 
-  async function renderDashboard() {
+  async function renderDashboard(options = {}) {
+    const forceRefresh = Boolean(options.forceRefresh);
     const myRenderVersion = ++renderVersion;
     const baseFilteredAssets = filterAssetsBySelects();
     assetCardGrid.innerHTML = '<div class="asset-card-empty">กำลังคำนวณสัญญาณ...</div>';
 
     const analyses = await Promise.all(
       baseFilteredAssets.map(async (asset) => {
-        const marketData = await getPriceSeries(asset);
-        return analyzeAsset(asset, marketData);
+        const marketData = await getPriceSeries(asset, { forceRefresh });
+        const analysis = analyzeAsset(asset, marketData);
+        if (isDevClient) {
+          console.log("[market-data-debug]", {
+            symbol: analysis.asset.ticker,
+            sourceUsed: analysis.sourceType || "UNKNOWN",
+            lastUpdated: analysis.lastUpdated || null,
+            error: analysis.sourceType === "ERROR" ? analysis.source : ""
+          });
+        }
+        return analysis;
       })
     );
     if (myRenderVersion !== renderVersion) return;
@@ -1033,7 +1100,7 @@
   }
 
   function makeUserAsset(ticker, name, layer, assetType) {
-    const upperTicker = normalizeTicker(ticker);
+    const upperTicker = canonicalSymbolFromTicker(ticker);
     const resolvedAssetType = THAI_MUTUAL_FUND_ALIASES[upperTicker] ? "THAI_MUTUAL_FUND" : assetType;
     const quality = layer === "upstream_ai" || layer === "data_center_cloud" ? 8 : 7;
     const hype = layer === "growth_optional" || layer === "upstream_ai" ? 7 : 5;
@@ -1071,9 +1138,9 @@
 
   function handleAddTicker(event) {
     event.preventDefault();
-    const ticker = normalizeTicker(tickerInput.value);
+    const ticker = canonicalSymbolFromTicker(tickerInput.value);
     if (!ticker) return;
-    const exists = assets.some((asset) => asset.ticker === ticker && asset.layer === newLayerInput.value);
+    const exists = assets.some((asset) => canonicalSymbolFromTicker(asset.ticker) === ticker);
     if (exists) {
       tickerInput.setCustomValidity("Ticker นี้มีอยู่ในกลุ่มนี้แล้ว");
       tickerInput.reportValidity();
@@ -1109,6 +1176,11 @@
     renderDashboard();
   }
 
+  function handleRefreshMarketData() {
+    priceCache.clear();
+    renderDashboard({ forceRefresh: true });
+  }
+
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, (char) => ({
       "&": "&amp;",
@@ -1130,5 +1202,6 @@
   form.addEventListener("submit", handleAddTicker);
   assetCardGrid.addEventListener("click", handleDelete);
   signalFilterTabs.addEventListener("click", handleSignalTabClick);
+  if (refreshMarketDataButton) refreshMarketDataButton.addEventListener("click", handleRefreshMarketData);
   initialize();
 })();

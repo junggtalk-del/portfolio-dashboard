@@ -1,5 +1,6 @@
 const SCHEMA = process.env.SUPABASE_SCHEMA || "portfolio_dashboard";
 const THAI_NAV_CACHE_STATE_ID = "thai_nav_cache_v1";
+const MARKET_DATA_CACHE_STATE_ID = "market_data_cache_v1";
 const THAI_FUND_SYMBOL_ALIASES = {
   "K-GTECHRMF": "K-GTECHRMF",
   KGTECHRMF: "K-GTECHRMF",
@@ -145,6 +146,30 @@ async function writeThaiNavCacheToSupabase(cache) {
   });
 }
 
+function sanitizeMarketCache(data) {
+  if (!data || typeof data !== "object") return {};
+  return data;
+}
+
+async function readMarketDataCacheFromSupabase() {
+  if (!hasSupabaseCoreConfig()) return {};
+  const url = `${getSupabaseUrl()}/rest/v1/app_state?id=eq.${MARKET_DATA_CACHE_STATE_ID}&select=data`;
+  const response = await fetch(url, { headers: supabaseHeaders() });
+  if (!response.ok) return {};
+  const rows = await response.json();
+  return sanitizeMarketCache(rows[0]?.data);
+}
+
+async function writeMarketDataCacheToSupabase(cache) {
+  if (!hasSupabaseCoreConfig()) return;
+  const url = `${getSupabaseUrl()}/rest/v1/app_state`;
+  await fetch(url, {
+    method: "POST",
+    headers: supabaseHeaders({ prefer: "resolution=merge-duplicates,return=minimal" }),
+    body: JSON.stringify([{ id: MARKET_DATA_CACHE_STATE_ID, data: sanitizeMarketCache(cache), updated_at: new Date().toISOString() }])
+  });
+}
+
 async function fetchThaiFundNavLive(symbol) {
   const config = THAI_FUND_PROVIDER_CONFIG[symbol];
   if (!config) throw new Error(`Unsupported Thai fund symbol: ${symbol}`);
@@ -174,18 +199,21 @@ function shapeThaiNavAsHistory(snapshot) {
     source: snapshot.source || "KAsset",
     provider: snapshot.provider || "KAsset",
     navStatus: snapshot.status || "LIVE_NAV",
+    sourceType: snapshot.status === "CACHED_NAV" ? "SERVER_CACHED_DATA" : snapshot.status === "FALLBACK_NAV" ? "FALLBACK_DATA" : "LIVE_MARKET_DATA",
+    lastUpdated: snapshot.fetchedAt || null,
     dates: snapshot.navDate ? [snapshot.navDate] : [],
     closes: Number.isFinite(snapshot.nav) ? [Number(snapshot.nav)] : []
   };
 }
 
-async function fetchThaiFundNavSnapshot(rawSymbol) {
+async function fetchThaiFundNavSnapshot(rawSymbol, options = {}) {
+  const forceRefresh = Boolean(options.forceRefresh);
   const symbol = normalizeThaiFundSymbol(rawSymbol);
   if (!symbol) return null;
 
   const cache = await readThaiNavCacheFromSupabase();
   const cached = cache[symbol];
-  if (cached && shouldSkipThaiNavRefetch(cached)) {
+  if (!forceRefresh && cached && shouldSkipThaiNavRefetch(cached)) {
     return shapeThaiNavAsHistory(cached);
   }
 
@@ -253,31 +281,66 @@ async function fetchDailyHistory(symbol) {
   return rows;
 }
 
+function shapeMarketRows(symbol, rows, sourceType, sourceText, fetchedAt) {
+  return {
+    symbol,
+    assetType: "Market",
+    source: sourceText,
+    provider: "Yahoo",
+    navStatus: "LIVE_MARKET",
+    sourceType,
+    lastUpdated: fetchedAt || null,
+    dates: rows.map((row) => row.date),
+    closes: rows.map((row) => row.close)
+  };
+}
+
+async function fetchMarketHistoryWithServerCache(symbol) {
+  const cache = await readMarketDataCacheFromSupabase();
+  try {
+    const liveRows = await fetchDailyHistory(symbol);
+    const now = new Date().toISOString();
+    const payload = {
+      symbol,
+      rows: liveRows,
+      fetchedAt: now
+    };
+    const nextCache = { ...cache, [symbol]: payload };
+    await writeMarketDataCacheToSupabase(nextCache);
+    return shapeMarketRows(symbol, liveRows, "LIVE_MARKET_DATA", "Yahoo Finance", now);
+  } catch (error) {
+    const cached = cache[symbol];
+    if (cached?.rows && Array.isArray(cached.rows) && cached.rows.length) {
+      return shapeMarketRows(symbol, cached.rows, "SERVER_CACHED_DATA", "Server cached data", cached.fetchedAt || null);
+    }
+    throw error;
+  }
+}
+
 module.exports = async function handler(req, res) {
   const symbol = String(req.query?.symbol || "").trim().toUpperCase();
+  const forceRefresh = String(req.query?.refresh || "") === "1";
   if (!symbol) {
     send(res, 400, { error: "Please provide symbol." });
     return;
   }
 
   try {
-    const thaiNav = await fetchThaiFundNavSnapshot(symbol);
+    const thaiNav = await fetchThaiFundNavSnapshot(symbol, { forceRefresh });
     if (thaiNav) {
       send(res, 200, thaiNav);
       return;
     }
-
-    const rows = await fetchDailyHistory(symbol);
-    send(res, 200, {
-      symbol,
-      assetType: "Market",
-      source: "Yahoo Finance",
-      provider: "Yahoo",
-      navStatus: "LIVE_MARKET",
-      dates: rows.map((row) => row.date),
-      closes: rows.map((row) => row.close)
-    });
+    const marketData = await fetchMarketHistoryWithServerCache(symbol);
+    send(res, 200, marketData);
   } catch (_error) {
     send(res, 502, { error: "Unable to fetch daily price history." });
   }
+};
+
+module.exports.__internals = {
+  hasSupabaseCoreConfig,
+  fetchDailyHistory,
+  readMarketDataCacheFromSupabase,
+  fetchMarketHistoryWithServerCache
 };

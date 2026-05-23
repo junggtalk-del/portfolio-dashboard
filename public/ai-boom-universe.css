@@ -619,6 +619,30 @@ select:focus {
   margin: 0 22px 12px;
 }
 
+.signal-filter-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.refresh-market-button {
+  min-height: 34px;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--navy);
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.refresh-market-button:hover {
+  border-color: #c8d4e6;
+}
+
 .tab-group {
   display: flex;
   flex-wrap: wrap;
