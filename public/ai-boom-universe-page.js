@@ -59,7 +59,11 @@
     MSFT: "MSFT",
     AMZN: "AMZN",
     GOOG: "GOOG",
-    NDX01: "^NDX"
+    NDX01: "^NDX",
+    BTC: "BTC-USD",
+    BTCUSD: "BTC-USD",
+    XBTUSD: "BTC-USD",
+    ETHUSD: "ETH-USD"
   };
 
   function readJsonArray(key) {
@@ -253,9 +257,19 @@
   }
 
   function getYahooSymbol(asset) {
-    if (YAHOO_SYMBOLS[asset.ticker]) return YAHOO_SYMBOLS[asset.ticker];
+    const rawTicker = String(asset.ticker || "").trim().toUpperCase();
+    const compactTicker = rawTicker.replace(/[^A-Z0-9]/g, "");
+    if (YAHOO_SYMBOLS[rawTicker]) return YAHOO_SYMBOLS[rawTicker];
+    if (YAHOO_SYMBOLS[compactTicker]) return YAHOO_SYMBOLS[compactTicker];
     if (asset.asset_type === "stock" && asset.country === "US") return asset.ticker;
-    if (asset.asset_type === "crypto" && asset.ticker === "BTC") return "BTC-USD";
+    if (asset.asset_type === "crypto" && (compactTicker === "BTC" || compactTicker === "BTCUSD")) return "BTC-USD";
+    if (asset.asset_type === "crypto" && compactTicker === "ETHUSD") return "ETH-USD";
+
+    // Generic RMF/SSF Thai fund fallback proxy.
+    if (/(^|_)(RMF|SSF)($|_)/.test(compactTicker) || compactTicker.includes("RMF") || compactTicker.includes("SSF")) {
+      return "^SET.BK";
+    }
+
     // Thai funds do not expose public daily NAV in Yahoo with stable tickers.
     // Use explicit benchmark proxies to keep technical panels actionable.
     if (asset.ticker === "SCBNDQ" || asset.ticker === "KKP_NDQ") return "^NDX";
