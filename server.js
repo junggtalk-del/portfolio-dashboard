@@ -11,6 +11,7 @@ const LOCAL_DATA_DIR = path.join(__dirname, ".local-data");
 const LOCAL_PORTFOLIO_FILE = path.join(LOCAL_DATA_DIR, "portfolio.json");
 const LOCAL_AI_UNIVERSE_FILE = path.join(LOCAL_DATA_DIR, "ai-universe.json");
 const LOCAL_THAI_NAV_CACHE_FILE = path.join(LOCAL_DATA_DIR, "thai-fund-nav-cache.json");
+const LOCAL_MARKET_DATA_CACHE_FILE = path.join(LOCAL_DATA_DIR, "market-data-cache.json");
 const ENABLE_LOCAL_FALLBACK = String(process.env.ENABLE_LOCAL_FALLBACK || "").toLowerCase() === "true";
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -120,6 +121,23 @@ function writeThaiFundNavCache(cache) {
   fs.writeFileSync(LOCAL_THAI_NAV_CACHE_FILE, JSON.stringify(cache, null, 2), "utf8");
 }
 
+function readLocalMarketDataCache() {
+  try {
+    if (!fs.existsSync(LOCAL_MARKET_DATA_CACHE_FILE)) return {};
+    const raw = fs.readFileSync(LOCAL_MARKET_DATA_CACHE_FILE, "utf8");
+    if (!raw.trim()) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_error) {
+    return {};
+  }
+}
+
+function writeLocalMarketDataCache(cache) {
+  fs.mkdirSync(LOCAL_DATA_DIR, { recursive: true });
+  fs.writeFileSync(LOCAL_MARKET_DATA_CACHE_FILE, JSON.stringify(cache, null, 2), "utf8");
+}
+
 function formatIsoDate(date) {
   return `${date.getUTCFullYear().toString().padStart(4, "0")}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
 }
@@ -188,18 +206,21 @@ function shapeThaiNavAsHistory(navSnapshot) {
     source: navSnapshot.source || "KAsset",
     provider: navSnapshot.provider || "KAsset",
     navStatus: navSnapshot.status || "LIVE_NAV",
+    sourceType: navSnapshot.status === "CACHED_NAV" ? "SERVER_CACHED_DATA" : navSnapshot.status === "FALLBACK_NAV" ? "FALLBACK_DATA" : "LIVE_MARKET_DATA",
+    lastUpdated: navSnapshot.fetchedAt || null,
     dates: navSnapshot.navDate ? [navSnapshot.navDate] : [],
     closes: Number.isFinite(navSnapshot.nav) ? [Number(navSnapshot.nav)] : []
   };
 }
 
-async function fetchThaiFundNavSnapshot(rawSymbol) {
+async function fetchThaiFundNavSnapshot(rawSymbol, options = {}) {
+  const forceRefresh = Boolean(options.forceRefresh);
   const symbol = normalizeThaiFundSymbol(rawSymbol);
   if (!symbol) return null;
 
   const cache = readThaiFundNavCache();
   const cached = cache[symbol];
-  if (cached && shouldSkipThaiNavRefetch(cached)) {
+  if (!forceRefresh && cached && shouldSkipThaiNavRefetch(cached)) {
     return shapeThaiNavAsHistory(cached);
   }
 
@@ -574,6 +595,37 @@ async function fetchDailyHistory(symbol) {
   return rows;
 }
 
+function shapeMarketRows(symbol, rows, sourceType, sourceText, fetchedAt) {
+  return {
+    symbol,
+    assetType: "Market",
+    source: sourceText,
+    provider: "Yahoo",
+    navStatus: "LIVE_MARKET",
+    sourceType,
+    lastUpdated: fetchedAt || null,
+    dates: rows.map((row) => row.date),
+    closes: rows.map((row) => row.close)
+  };
+}
+
+async function fetchMarketHistoryWithServerCache(symbol) {
+  const cache = readLocalMarketDataCache();
+  try {
+    const liveRows = await fetchDailyHistory(symbol);
+    const now = new Date().toISOString();
+    cache[symbol] = { symbol, rows: liveRows, fetchedAt: now };
+    writeLocalMarketDataCache(cache);
+    return shapeMarketRows(symbol, liveRows, "LIVE_MARKET_DATA", "Yahoo Finance", now);
+  } catch (error) {
+    const cached = cache[symbol];
+    if (cached?.rows && Array.isArray(cached.rows) && cached.rows.length) {
+      return shapeMarketRows(symbol, cached.rows, "SERVER_CACHED_DATA", "Server cached data", cached.fetchedAt || null);
+    }
+    throw error;
+  }
+}
+
 async function handleQuotes(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const symbols = (url.searchParams.get("symbols") || "")
@@ -600,31 +652,66 @@ async function handleQuotes(req, res) {
 async function handlePriceHistory(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const symbol = (url.searchParams.get("symbol") || "").trim().toUpperCase();
+  const forceRefresh = String(url.searchParams.get("refresh") || "") === "1";
   if (!symbol) {
     sendJson(res, 400, { error: "Please provide symbol." });
     return;
   }
 
   try {
-    const thaiNav = await fetchThaiFundNavSnapshot(symbol);
+    const thaiNav = await fetchThaiFundNavSnapshot(symbol, { forceRefresh });
     if (thaiNav) {
       sendJson(res, 200, thaiNav);
       return;
     }
-
-    const rows = await fetchDailyHistory(symbol);
-    sendJson(res, 200, {
-      symbol,
-      assetType: "Market",
-      source: "Yahoo Finance",
-      provider: "Yahoo",
-      navStatus: "LIVE_MARKET",
-      dates: rows.map((row) => row.date),
-      closes: rows.map((row) => row.close)
-    });
+    const marketData = await fetchMarketHistoryWithServerCache(symbol);
+    sendJson(res, 200, marketData);
   } catch (error) {
     sendJson(res, 502, { error: "Unable to fetch daily price history." });
   }
+}
+
+async function handleDebugMarketData(_req, res) {
+  const runtime = {
+    node: process.version,
+    platform: process.platform,
+    env: process.env.VERCEL ? "vercel" : "local-node"
+  };
+  const env = {
+    hasSupabaseUrl: Boolean(process.env.SUPABASE_URL),
+    hasSupabaseServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    hasSupabaseSchema: Boolean(process.env.SUPABASE_SCHEMA)
+  };
+
+  let providerTest = { ok: false, error: "not-run" };
+  try {
+    const rows = await fetchDailyHistory("NVDA");
+    providerTest = {
+      ok: true,
+      rows: rows.length,
+      latestDate: rows.length ? rows[rows.length - 1].date : null
+    };
+  } catch (error) {
+    providerTest = {
+      ok: false,
+      error: String(error.message || error)
+    };
+  }
+
+  const cache = readLocalMarketDataCache();
+  const cacheKeys = Object.keys(cache || {});
+  const cacheTimestamp = cache?.NVDA?.fetchedAt || null;
+  sendJson(res, 200, {
+    runtime,
+    marketDataProvider: "Yahoo Finance (+ KAsset for Thai mutual funds via /api/market-data)",
+    env,
+    providerTest,
+    serverCache: {
+      exists: cacheKeys.length > 0,
+      keys: cacheKeys.slice(0, 20),
+      cacheTimestamp
+    }
+  });
 }
 
 const server = http.createServer((req, res) => {
@@ -637,6 +724,16 @@ const server = http.createServer((req, res) => {
 
   if (requestUrl.pathname === "/api/price-history") {
     handlePriceHistory(req, res);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/market-data") {
+    handlePriceHistory(req, res);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/debug/market-data") {
+    handleDebugMarketData(req, res);
     return;
   }
 
