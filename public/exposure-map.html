@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Exposure Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/exposure-map.css?v=20260611-exposure-1" />
+      <link rel="stylesheet" href="/app-navigation.css?v=20260617-nav-1" />
+      <script src="/data-snapshot.js?v=20260617-snapshot-2"></script>
+  </head>
+  <body>
+    <main class="exposure-shell">
+      <section class="exposure-topbar">
+        <div>
+          <p class="exposure-eyebrow">Concentration & Overlap Risk</p>
+          <h1>Portfolio Exposure Map</h1>
+          <p class="exposure-subtitle">ดูว่าสินทรัพย์ใน watchlist มี exposure ซ้อนกันตรงไหน และพอร์ตพึ่งธีมใดมากเกินไปหรือไม่</p>
+        </div>
+        <nav class="exposure-nav" aria-label="เมนูหลัก">
+          <a href="/">กลับ Dashboard พอร์ต</a>
+          <a href="/ai-boom-universe">AI Boom Universe</a>
+          <a href="/technical-signals">Technical Signals</a>
+          <a href="/action-center">Action Center</a>
+          <a href="/portfolio-status">Portfolio Status</a>
+          <a href="/portfolio-holdings">Holdings</a>
+          <a class="is-active" href="/exposure-map">Exposure Map</a>
+          <a href="/market-risk">Market Risk</a>
+          <a href="/backtest">Backtest Lab</a>
+        </nav>
+      </section>
+
+      <section class="exposure-toolbar">
+        <div>
+          <strong id="exposureStatus">กำลังโหลด exposure map...</strong>
+          <p id="exposureSubtitle">รวมข้อมูลจาก watchlist เดิมและ asset tags</p>
+        </div>
+        <button id="refreshExposureButton" type="button">Refresh exposure</button>
+      </section>
+
+      <section id="riskSummary" class="risk-summary">
+        <div class="empty-box">กำลังคำนวณ concentration risk...</div>
+      </section>
+
+      <section id="warningPanel" class="warning-panel">
+        <div class="empty-box">กำลังตรวจ overlap warnings...</div>
+      </section>
+
+      <section id="exposureSections" class="exposure-sections">
+        <div class="empty-box">กำลังจัดกลุ่ม exposure...</div>
+      </section>
+
+      <footer class="exposure-disclaimer">
+        <p>Exposure Map ใช้นับจาก watchlist และ tag ของสินทรัพย์ ยังไม่ใช่น้ำหนักพอร์ตจริง หากต้องการความแม่นยำขั้นถัดไปควรเชื่อมกับ position size / market value</p>
+      </footer>
+    </main>
+    <script src="/ai-boom-universe-data.js?v=20260611-exposure-1"></script>
+    <script src="/ai-boom-universe-scoring.js?v=20260611-exposure-1"></script>
+    <script src="/portfolio-core.js?v=20260611-exposure-2"></script>
+    <script src="/exposure-map-page.js?v=20260611-exposure-1"></script>
+<script src="/app-navigation.js?v=20260617-nav-1"></script>
+  </body>
+</html>

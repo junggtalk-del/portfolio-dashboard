@@ -29,6 +29,7 @@
     {
       key: "new_bullish",
       panel: "focus",
+      sectionId: "new-bullish-signals",
       title: "New Bullish Signals",
       description: "สัญญาณบวกใหม่ในช่วง 1-3 วันทำการ",
       empty: "ยังไม่มี bullish signal ใหม่",
@@ -37,6 +38,7 @@
     {
       key: "new_bearish",
       panel: "focus",
+      sectionId: "new-bearish-signals",
       title: "New Bearish Signals",
       description: "สัญญาณลบใหม่ในช่วง 1-3 วันทำการ",
       empty: "ยังไม่มี bearish signal ใหม่",
@@ -45,48 +47,63 @@
     {
       key: "bullish_watch",
       panel: "focus",
+      sectionId: "bullish-watchlist",
       title: "Bullish Watchlist",
-      description: "ใกล้ยืนยันขาขึ้น แต่ยังต้องรอ confirmation",
+      description: "ใกล้เกิดสัญญาณบวก / เริ่มฟื้น แต่ยังไม่ confirm",
       empty: "ยังไม่มีตัวที่เข้า bullish watchlist",
       tone: "group-amber"
     },
     {
       key: "bearish_watch",
       panel: "focus",
+      sectionId: "bearish-watchlist",
       title: "Bearish Watchlist",
-      description: "เริ่มอ่อนแรงหรือใกล้หลุดแนวรับหลัก",
+      description: "ใกล้เกิดสัญญาณลบ / เริ่มอ่อนแรง แต่ยังไม่ confirm",
       empty: "ยังไม่มีตัวที่เข้า bearish watchlist",
       tone: "group-orange"
     },
     {
       key: "ongoing_bullish",
       panel: "trend",
+      sectionId: "ongoing-bullish-trend",
       title: "Ongoing Bullish Trend",
-      description: "แนวโน้มบวกต่อเนื่อง แต่ยังไม่มี cross ใหม่",
+      description: "ขาขึ้นต่อเนื่อง ยังไม่มีสัญญาณตัดใหม่",
       empty: "ยังไม่มีตัวที่อยู่ในขาขึ้นต่อเนื่อง",
       tone: "group-bluegreen"
     },
     {
       key: "ongoing_bearish",
       panel: "trend",
+      sectionId: "ongoing-bearish-trend",
       title: "Ongoing Bearish Trend",
-      description: "แนวโน้มลบต่อเนื่อง ต้องระวังความเสี่ยง",
+      description: "ขาลงต่อเนื่อง ยังไม่มีสัญญาณกลับตัวใหม่",
       empty: "ยังไม่มีตัวที่อยู่ในขาลงต่อเนื่อง",
       tone: "group-redgray"
     },
     {
       key: "neutral",
       panel: "trend",
+      sectionId: "neutral-sideway",
       title: "Neutral / Sideway",
       description: "สัญญาณยังผสมและยังไม่ชัดเจน",
-      empty: "ยังไม่มีตัวที่เป็น neutral / sideway",
+      empty: "ยังไม่มีตัวที่เป็น sideway / neutral",
       tone: "group-gray"
+    },
+    {
+      key: "nav_waiting_technical",
+      panel: "trend",
+      sectionId: "latest-nav-waiting-technical-data",
+      title: "Latest Price/NAV Available / Waiting for Technical Data",
+      description: "มีราคาหรือ NAV ล่าสุดแล้ว แต่ข้อมูลย้อนหลังยังไม่พอสำหรับคำนวณ EMA/SMA200",
+      empty: "ยังไม่มีตัวที่มีราคาหรือ NAV ล่าสุดแต่ข้อมูลเทคนิคยังไม่พอ",
+      tone: "group-slate"
     },
     {
       key: "insufficient",
       panel: "trend",
+      sectionId: "insufficient-data",
       title: "Insufficient Data",
-      description: "ข้อมูลยังไม่ถึงเกณฑ์คำนวณสัญญาณครบชุด",
+      description: "ยังไม่มีทั้งราคาปัจจุบันหรือข้อมูลพอสำหรับคำนวณสัญญาณ",
       empty: "ไม่มีรายการที่ข้อมูลไม่พอ",
       tone: "group-lightgray"
     }
@@ -100,7 +117,7 @@
     bullish: new Set(["new_bullish", "bullish_watch", "ongoing_bullish"]),
     bearish: new Set(["new_bearish", "bearish_watch", "ongoing_bearish"]),
     neutral: new Set(["neutral"]),
-    insufficient: new Set(["insufficient"])
+    insufficient: new Set(["nav_waiting_technical", "insufficient"])
   };
 
   const LABELS = {
@@ -114,6 +131,9 @@
     growth_optional: "ตัวเลือกเติบโตสูง",
     thai_funds: "กองทุนไทย",
     stock: "หุ้น",
+    THAI_STOCK: "หุ้นไทย (SET)",
+    THAI_INDEX: "ดัชนีไทย (SET)",
+    INDEX: "ดัชนี",
     crypto: "Crypto",
     fund: "กองทุน",
     THAI_MUTUAL_FUND: "Thai Mutual Fund",
@@ -151,6 +171,57 @@
     "K-USXNDQRMF": "K-USXNDQRMF",
     KUSXNDQRMF: "K-USXNDQRMF"
   };
+  const THAI_INDEX_ALIASES = {
+    SET: "^SET.BK",
+    "SET.BK": "^SET.BK",
+    "^SET.BK": "^SET.BK",
+    SETINDEX: "^SET.BK",
+    SET50: "^SET50.BK",
+    "SET50.BK": "^SET50.BK",
+    "^SET50.BK": "^SET50.BK",
+    SET50INDEX: "^SET50.BK",
+    SET100: "^SET100.BK",
+    "SET100.BK": "^SET100.BK",
+    "^SET100.BK": "^SET100.BK",
+    SET100INDEX: "^SET100.BK"
+  };
+  const THAI_INDEX_METADATA = {
+    "^SET.BK": {
+      displaySymbol: "SET",
+      displayName: "SET Index",
+      assetType: "THAI_INDEX",
+      market: "SET",
+      currency: "THB"
+    },
+    "^SET50.BK": {
+      displaySymbol: "SET50",
+      displayName: "SET50 Index",
+      assetType: "THAI_INDEX",
+      market: "SET",
+      currency: "THB"
+    },
+    "^SET100.BK": {
+      displaySymbol: "SET100",
+      displayName: "SET100 Index",
+      assetType: "THAI_INDEX",
+      market: "SET",
+      currency: "THB"
+    }
+  };
+  const US_INDEX_ALIASES = {
+    SPX: "^GSPC",
+    "^GSPC": "^GSPC",
+    GSPC: "^GSPC",
+    IXIC: "^IXIC",
+    "^IXIC": "^IXIC",
+    NDX: "^NDX",
+    "^NDX": "^NDX"
+  };
+  const THAI_STOCK_ALIASES = {
+    "GULF.BK": "GULF.BK",
+    GULFBK: "GULF.BK",
+    GULF: "GULF.BK"
+  };
 
   const YAHOO_SYMBOLS = {
     NVDA: "NVDA",
@@ -179,18 +250,20 @@
   const assetCardGrid = document.querySelector("#assetCardGrid");
   const signalFilterTabs = document.querySelector("#signalFilterTabs");
   const refreshMarketDataButton = document.querySelector("#refreshMarketDataButton");
-  const count = document.querySelector("#assetCount");
-  const waitCount = document.querySelector("#waitCount");
+  const tickerFeedback = document.querySelector("#tickerFeedback");
+  const summaryGrid = document.querySelector("#summaryCards");
   const accumulateCount = document.querySelector("#accumulateCount");
-  const warningCount = document.querySelector("#warningCount");
-  const activeFilterText = document.querySelector("#activeFilterText");
 
   let assets = [];
   let activeSignalFilter = "all";
   let renderVersion = 0;
+  let latestAnalysesByCanonical = new Map();
+  let pendingRevealCanonical = "";
   let persistedState = { userAssets: [], removedIds: [] };
+  let portfolioHoldings = [];
   let storageMode = "supabase";
   const isDevClient = Boolean(location.hostname === "localhost" || location.hostname === "127.0.0.1");
+  const isProductionClient = !isDevClient;
 
   function readJsonArray(key) {
     try {
@@ -211,8 +284,15 @@
 
   function sanitizePersistedState(data) {
     const safe = data && typeof data === "object" ? data : {};
+    const seen = new Set();
+    const dedupedUserAssets = (Array.isArray(safe.userAssets) ? safe.userAssets : []).filter((asset) => {
+      const key = canonicalSymbolFromTicker(asset?.ticker);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
     return {
-      userAssets: Array.isArray(safe.userAssets) ? safe.userAssets : [],
+      userAssets: dedupedUserAssets,
       removedIds: Array.isArray(safe.removedIds) ? safe.removedIds : []
     };
   }
@@ -240,6 +320,11 @@
       writeLocalPersistedState(persistedState);
       return;
     } catch (_error) {
+      if (isProductionClient) {
+        persistedState = { userAssets: [], removedIds: [] };
+        storageMode = "server-unavailable";
+        return;
+      }
       persistedState = readLocalPersistedState();
       storageMode = "local-cache";
     }
@@ -258,7 +343,7 @@
       if (!response.ok) throw new Error("save state failed");
       storageMode = "supabase";
     } catch (_error) {
-      storageMode = "local-cache";
+      storageMode = isProductionClient ? "server-unavailable" : "local-cache";
     }
   }
 
@@ -321,21 +406,36 @@
     };
   }
 
-  function filterAssetsBySelects() {
-    const selected = currentFilters();
-    return assets.filter((asset) => Object.entries(selected).every(([key, value]) => !value || asset[key] === value));
+  function assetMatchesSelects(asset, selected) {
+    return Object.entries(selected).every(([key, value]) => !value || asset[key] === value);
   }
 
-  function renderSummary(allRows, shownCount) {
-    count.textContent = shownCount;
-    waitCount.textContent = allRows.filter((row) => row.asset.initial_action === "Wait for pullback").length;
-    accumulateCount.textContent = allRows.filter((row) => row.asset.initial_action === "Accumulate").length;
-    warningCount.textContent = allRows.filter((row) => row.asset.warning).length;
-    const selected = Object.entries(currentFilters()).filter(([, value]) => value);
-    const activeFilterLabel = SIGNAL_FILTERS.find((item) => item.key === activeSignalFilter)?.label || "All";
-    activeFilterText.textContent = selected.length
-      ? `${selected.map(([key, value]) => `${formatLabel(key)}: ${formatLabel(value)}`).join(" · ")} · ${activeFilterLabel}`
-      : `แสดง ${activeFilterLabel} ในธีม AI Data Center`;
+  function filterAssetsBySelects() {
+    const selected = currentFilters();
+    return assets.filter((asset) => assetMatchesSelects(asset, selected));
+  }
+
+  function renderSummary(groupedRows) {
+    if (!summaryGrid) return;
+    const cards = GROUPS.map((group) => {
+      const count = (groupedRows[group.key] || []).length;
+      return `
+        <button type="button" class="ai-card summary-card ${group.tone}" data-summary-target="${escapeHtml(group.sectionId || "")}">
+          <span>${escapeHtml(group.title)}</span>
+          <strong>${count}</strong>
+          <small>${escapeHtml(group.description)}</small>
+          <small class="summary-hint">คลิกเพื่อดูรายการ</small>
+        </button>`;
+    }).join("");
+    summaryGrid.innerHTML = cards;
+
+    const focusedCount = [
+      "new_bullish",
+      "new_bearish",
+      "bullish_watch",
+      "bearish_watch"
+    ].reduce((sum, key) => sum + (groupedRows[key] || []).length, 0);
+    accumulateCount.textContent = String(focusedCount);
   }
 
   function safeNumber(value) {
@@ -373,6 +473,7 @@
     if (groupKey === "bearish_watch") return "badge-orange";
     if (groupKey === "ongoing_bullish") return "badge-bluegreen";
     if (groupKey === "ongoing_bearish") return "badge-redgray";
+    if (groupKey === "nav_waiting_technical") return "badge-slate";
     if (groupKey === "neutral") return "badge-gray";
     return "badge-light";
   }
@@ -478,12 +579,15 @@
     return { bullish, bearish };
   }
 
-  function classifySignal(asset, info, events) {
+  function classifySignal(asset, info, events, marketData = null) {
     const latestClose = safeNumber(info.latestClose);
+    const hasLatestPrice = Number.isFinite(latestClose) && Boolean(info.latestDate);
     const ema12 = safeNumber(info.ema.ema12);
     const ema26 = safeNumber(info.ema.ema26);
     const sma200 = safeNumber(info.sma200.sma200);
-    const insufficient = info.ema.signal === "INSUFFICIENT_DATA" || info.sma200.signal === "INSUFFICIENT_DATA";
+    const emaInsufficient = info.ema.signal === "INSUFFICIENT_DATA" || !Number.isFinite(ema12) || !Number.isFinite(ema26);
+    const smaInsufficient = info.sma200.signal === "INSUFFICIENT_DATA" || !Number.isFinite(sma200);
+    const insufficient = emaInsufficient && smaInsufficient;
 
     const emaBull = info.ema.trend === "BULLISH";
     const emaBear = info.ema.trend === "BEARISH";
@@ -524,6 +628,28 @@
     const emaStatus = getEmaCoreStatus(ema12, ema26);
     const smaStatus = getSmaCoreStatus(latestClose, sma200, info.sma200.status);
     const coreExplanation = getCoreExplanation(emaStatus.key, smaStatus.key);
+    const isNavAsset = isThaiMutualFundAsset(asset) || marketData?.marketAssetType === "Thai Mutual Fund";
+    const waitingExplanation = isNavAsset
+      ? "มี NAV ล่าสุดแล้ว แต่ข้อมูลย้อนหลังยังไม่พอสำหรับคำนวณ EMA/SMA200"
+      : marketData?.historicalSourceLimited
+        ? "มีราคาล่าสุดแล้ว แต่ผู้ให้บริการยังส่งข้อมูลย้อนหลังของสินทรัพย์นี้จำกัด ระบบจะสะสมย้อนหลังรายวันให้อัตโนมัติ"
+        : "มีราคาล่าสุดแล้ว แต่ข้อมูลย้อนหลังยังไม่พอสำหรับคำนวณ EMA/SMA200";
+
+    if (hasLatestPrice && !emaInsufficient && smaInsufficient) {
+      return {
+        groupKey: "nav_waiting_technical",
+        mainClassification: "Latest Price/NAV Available",
+        mainSetup: "Partial Technical Data Available",
+        mainStatus: "Partial Technical Data Available",
+        actionLabel: "รอข้อมูลย้อนหลัง",
+        explanation: "มีข้อมูลเพียงพอสำหรับ EMA แต่ยังไม่พอสำหรับ SMA200",
+        reasonBadges: [{ text: "SMA200 Not Available", tone: "badge-gray" }],
+        coreStatusBadges: [emaStatus.badge, smaStatus.badge],
+        signalDate: info.latestDate,
+        emaGapPct,
+        smaDistancePct
+      };
+    }
 
     if (hasFreshBullish) {
       const primary = freshBullishEvents[0];
@@ -566,14 +692,37 @@
     }
 
     if (insufficient) {
-      const isThaiFund = isThaiMutualFundAsset(asset);
+      if (hasLatestPrice) {
+        const waitingBadges = [{ text: "Insufficient Historical Data", tone: "badge-gray" }];
+        if (marketData?.historicalSourceLimited) {
+          waitingBadges.unshift({ text: "Historical feed limited", tone: "badge-slate" });
+        }
+        return {
+          groupKey: "nav_waiting_technical",
+          mainClassification: isNavAsset ? "มี NAV ล่าสุด" : "มีราคาล่าสุด",
+          mainSetup: "ข้อมูลย้อนหลังยังไม่พอ",
+          mainStatus: "Latest Price/NAV Available",
+          actionLabel: "รอข้อมูลย้อนหลัง",
+          explanation: waitingExplanation,
+          reasonBadges: waitingBadges,
+          coreStatusBadges: [emaStatus.badge, smaStatus.badge],
+          signalDate: info.latestDate,
+          emaGapPct,
+          smaDistancePct
+        };
+      }
       return {
         groupKey: "insufficient",
         mainClassification: "Insufficient Data",
-        mainSetup: isThaiFund ? "รอข้อมูล NAV" : "Insufficient Data",
+        mainSetup: isNavAsset ? "NAV Not Available" : "Insufficient Data",
         mainStatus: "Insufficient Data",
         actionLabel: "Wait for more data",
-        explanation: isThaiFund ? "ข้อมูลยังไม่พอสำหรับคำนวณ SMA200 และกำลังรอข้อมูล NAV" : coreExplanation,
+        explanation:
+          isNavAsset && marketData?.sourceType === "ERROR"
+            ? (marketData.source || "Unable to fetch historical NAV from KAsset")
+            : isNavAsset
+              ? "ยังไม่พบ NAV ล่าสุดของกองทุน กรุณาลองรีเฟรชอีกครั้ง"
+              : coreExplanation,
         reasonBadges: [],
         coreStatusBadges: [emaStatus.badge, smaStatus.badge],
         signalDate: info.latestDate,
@@ -605,9 +754,9 @@
 
     if (!ongoingBullish && !ongoingBearish && (nearEmaBear || nearSmaBear || earlyBearish)) {
       const reasons = [];
-      if (nearEmaBear) reasons.push({ text: SIGNAL_LABELS.NEAR_EMA_DOWN, tone: "badge-red" });
-      if (nearSmaBear) reasons.push({ text: SIGNAL_LABELS.NEAR_SMA_BREAKDOWN, tone: "badge-red" });
-      if (earlyBearish) reasons.push({ text: SIGNAL_LABELS.EARLY_BEARISH, tone: "badge-red" });
+      if (nearEmaBear) reasons.push({ text: SIGNAL_LABELS.NEAR_EMA_DOWN, tone: "badge-orange" });
+      if (nearSmaBear) reasons.push({ text: SIGNAL_LABELS.NEAR_SMA_BREAKDOWN, tone: "badge-orange" });
+      if (earlyBearish) reasons.push({ text: SIGNAL_LABELS.EARLY_BEARISH, tone: "badge-orange" });
       const primarySetup = earlyBearish ? SIGNAL_LABELS.EARLY_BEARISH : SIGNAL_LABELS.NEAR_EMA_DOWN;
       return {
         groupKey: "bearish_watch",
@@ -682,12 +831,15 @@
   function analyzeAsset(asset, marketData) {
     const info = marketData.technical;
     const events = buildEvents(info);
-    const classification = classifySignal(asset, info, events);
+    const classification = classifySignal(asset, info, events, marketData);
     return {
       asset,
       source: marketData.source,
       sourceType: marketData.sourceType || "",
       lastUpdated: marketData.lastUpdated || null,
+      historicalSourceLimited: Boolean(marketData.historicalSourceLimited),
+      latestLiveRows: Number.isFinite(marketData.latestLiveRows) ? marketData.latestLiveRows : null,
+      sourceRange: marketData.sourceRange || null,
       marketSymbol: marketData.marketSymbol,
       navStatus: marketData.navStatus || "",
       fundName: marketData.fundName || "",
@@ -711,6 +863,12 @@
   }
 
   function sourceLabelForRow(row) {
+    if (row.marketAssetType === "Thai Mutual Fund") {
+      if (row.navStatus === "LIVE_NAV_KASSET" || row.navStatus === "LIVE_NAV_SETTRADE" || row.navStatus === "LIVE_NAV") return { text: "Live NAV", tone: "badge-bluegreen" };
+      if (row.navStatus === "CACHED_NAV_HISTORY" || row.navStatus === "CACHED_NAV") return { text: "Cached NAV", tone: "badge-slate" };
+      if (row.navStatus === "FALLBACK_NAV") return { text: "Fallback NAV", tone: "badge-orange" };
+      return { text: "NAV Not Available", tone: "badge-light" };
+    }
     switch (row.sourceType) {
       case "LIVE_MARKET_DATA":
         return { text: "Live market data", tone: "badge-green" };
@@ -735,14 +893,9 @@
     const info = row.technical;
     const cls = row.classification;
     const trendTone = trendToneForGroup(cls.groupKey);
-    const displayName = row.fundName || row.asset.name || row.asset.ticker;
+    const displayTicker = displaySymbolForAsset(row.asset);
+    const displayName = row.fundName || displayNameForAsset(row.asset) || row.asset.ticker;
     const displayAssetType = row.asset.asset_type === "THAI_MUTUAL_FUND" ? "Thai Mutual Fund" : formatLabel(row.asset.asset_type);
-    const sourceBadge =
-      row.navStatus === "CACHED_NAV"
-        ? SignalBadge("Cached NAV", "badge-orange")
-        : row.navStatus === "FALLBACK_NAV"
-          ? SignalBadge("Fallback NAV", "badge-redgray")
-          : "";
     const reasonBadges = Array.isArray(cls.reasonBadges) ? cls.reasonBadges : [];
     const coreStatusBadges = Array.isArray(cls.coreStatusBadges) ? cls.coreStatusBadges : [];
     const coreStatusTexts = new Set(coreStatusBadges.map((badge) => badge.text));
@@ -761,14 +914,23 @@
     const smaDays = Number.isFinite(info.sma200.consecutiveStatusDays) && info.sma200.consecutiveStatusDays > 0
       ? `${info.sma200.consecutiveStatusDays} วัน`
       : "-";
-    const showSmaExplain = cls.groupKey === "insufficient";
+    const showSmaExplain = cls.groupKey === "insufficient" || cls.groupKey === "nav_waiting_technical";
+    const waitingExplainByAsset =
+      row.marketAssetType === "Thai Mutual Fund" || isThaiMutualFundAsset(row.asset)
+        ? "มี NAV ล่าสุดแล้ว แต่ข้อมูลย้อนหลังยังไม่พอสำหรับคำนวณ EMA/SMA200"
+        : "มีราคาล่าสุดแล้ว แต่ข้อมูลย้อนหลังยังไม่พอสำหรับคำนวณ EMA/SMA200";
+    const smaExplainText =
+      cls.groupKey === "nav_waiting_technical"
+        ? waitingExplainByAsset
+        : "ต้องมีข้อมูลอย่างน้อย 200 วันทำการเพื่อคำนวณ SMA200";
     const groupClass = `signal-card-item ${cls.groupKey}`;
     const sourceLabel = sourceLabelForRow(row);
+    const canonical = canonicalSymbolFromTicker(row.asset.ticker);
 
     return `
-      <article class="${groupClass}">
+      <article class="${groupClass}" data-canonical-symbol="${escapeHtml(canonical)}" data-group-key="${escapeHtml(cls.groupKey)}">
         <div class="signal-card-top-row">
-          <h4>${escapeHtml(row.asset.ticker)}</h4>
+          <h4>${escapeHtml(displayTicker)}</h4>
           <strong>${formatPrice(info.latestClose)}</strong>
         </div>
 
@@ -778,12 +940,17 @@
         </div>
 
         <div class="signal-meta-row">
-          <span>${escapeHtml(displayAssetType)}</span>
-          <span>${escapeHtml(row.lastUpdated ? `Updated ${formatDate(row.lastUpdated)}` : row.source || "-")}</span>
+          <span>${escapeHtml(displayAssetType)}${row.asset.market ? ` · ${escapeHtml(row.asset.market)}` : ""}${row.asset.currency ? ` · ${escapeHtml(row.asset.currency)}` : ""}</span>
+          <span>${escapeHtml(row.marketSymbol ? `Provider ${row.marketSymbol}` : row.lastUpdated ? `Updated ${formatDate(row.lastUpdated)}` : row.source || "-")}</span>
         </div>
 
         <div class="signal-main-line">
           ${SignalBadge(cls.mainClassification, trendTone)}
+          ${
+            row.portfolio?.isHolding
+              ? SignalBadge(`Holding ${formatPrice(row.portfolio.marketValue)} · ${row.portfolio.weight.toFixed(1)}%`, "badge-blue")
+              : SignalBadge("Watchlist Only", "badge-light")
+          }
         </div>
 
         <div class="signal-main-line">
@@ -794,7 +961,6 @@
 
         <div class="signal-badges-wrap">
           ${SignalBadge(sourceLabel.text, sourceLabel.tone)}
-          ${sourceBadge || ""}
         </div>
 
         <div class="core-status-wrap">
@@ -819,7 +985,7 @@
         </div>
 
         <p class="signal-description">${escapeHtml(cls.explanation)}</p>
-        ${showSmaExplain ? '<p class="signal-description is-muted">ต้องมีข้อมูลอย่างน้อย 200 วันทำการเพื่อคำนวณ SMA200</p>' : ""}
+        ${showSmaExplain ? `<p class="signal-description is-muted">${escapeHtml(smaExplainText)}</p>` : ""}
 
         <footer class="signal-card-footer">
           ${SignalBadge(cls.actionLabel, "badge-navy")}
@@ -837,7 +1003,7 @@
       ? `<div class="signal-cards-wrap">${rows.map((row) => renderCard(row)).join("")}</div>`
       : EmptySignalState(group.empty);
     return `
-      <section class="signal-section-row ${group.tone}" data-group-key="${group.key}">
+      <section id="${escapeHtml(group.sectionId || "")}" class="signal-section-row ${group.tone}" data-group-key="${group.key}">
         <header class="signal-section-header">
           <div>
             <h3>${escapeHtml(group.title)}</h3>
@@ -892,13 +1058,92 @@
   }
 
   function normalizeTicker(rawTicker) {
-    return String(rawTicker || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
+    return String(rawTicker || "").trim().toUpperCase().replace(/[^A-Z0-9.^-]/g, "");
   }
 
   function canonicalSymbolFromTicker(rawTicker) {
     const normalized = normalizeTicker(rawTicker);
     const compact = normalized.replace(/[^A-Z0-9]/g, "");
-    return THAI_MUTUAL_FUND_ALIASES[normalized] || THAI_MUTUAL_FUND_ALIASES[compact] || normalized;
+    return (
+      THAI_INDEX_ALIASES[normalized] ||
+      THAI_INDEX_ALIASES[compact] ||
+      US_INDEX_ALIASES[normalized] ||
+      US_INDEX_ALIASES[compact] ||
+      THAI_MUTUAL_FUND_ALIASES[normalized] ||
+      THAI_MUTUAL_FUND_ALIASES[compact] ||
+      THAI_STOCK_ALIASES[normalized] ||
+      THAI_STOCK_ALIASES[compact] ||
+      normalized
+    );
+  }
+
+  function validateTickerInput(rawTicker) {
+    const input = String(rawTicker || "");
+    if (!input.trim()) {
+      return { ok: false, reason: "Ticker is empty." };
+    }
+    if (/[^A-Za-z0-9.^\-\s]/.test(input)) {
+      return {
+        ok: false,
+        reason: "Ticker contains invalid characters. Allowed: letters, numbers, dot (.), caret (^), hyphen (-)."
+      };
+    }
+    const normalized = normalizeTicker(input);
+    if (!normalized) {
+      return { ok: false, reason: "Ticker is invalid after normalization." };
+    }
+    return { ok: true, normalized, canonical: canonicalSymbolFromTicker(normalized) };
+  }
+
+  function detectAssetTypeBySymbol(symbol, selectedAssetType) {
+    const canonical = canonicalSymbolFromTicker(symbol);
+    const compact = canonical.replace(/[^A-Z0-9]/g, "");
+    if (THAI_INDEX_METADATA[canonical]) return "THAI_INDEX";
+    if (US_INDEX_ALIASES[canonical] || US_INDEX_ALIASES[compact] || canonical.startsWith("^")) return "INDEX";
+    if (canonical.endsWith(".BK")) return "THAI_STOCK";
+    if (THAI_MUTUAL_FUND_ALIASES[canonical] || THAI_MUTUAL_FUND_ALIASES[compact] || compact.includes("RMF")) {
+      return "THAI_MUTUAL_FUND";
+    }
+    return selectedAssetType || "stock";
+  }
+
+  function providerRouteForAsset(asset) {
+    const canonical = canonicalSymbolFromTicker(asset?.ticker || "");
+    const compact = canonical.replace(/[^A-Z0-9]/g, "");
+    if (!canonical) {
+      return { provider: "none", providerSymbol: "", market: "", currency: "" };
+    }
+    if (THAI_INDEX_METADATA[canonical]) {
+      return {
+        provider: "yahoo-thai-index",
+        providerSymbol: canonical,
+        market: THAI_INDEX_METADATA[canonical].market,
+        currency: THAI_INDEX_METADATA[canonical].currency
+      };
+    }
+    if (canonical.startsWith("^")) {
+      return { provider: "yahoo-index", providerSymbol: canonical, market: "INDEX", currency: "USD" };
+    }
+    if (canonical.endsWith(".BK")) {
+      return { provider: "yahoo-thai-stock", providerSymbol: canonical, market: "SET", currency: "THB" };
+    }
+    if (THAI_MUTUAL_FUND_ALIASES[canonical] || THAI_MUTUAL_FUND_ALIASES[compact]) {
+      return { provider: "kasset-thai-mutual-fund", providerSymbol: canonical, market: "TH_FUND", currency: "THB" };
+    }
+    return { provider: "yahoo-us-market", providerSymbol: canonical, market: "US", currency: "USD" };
+  }
+
+  function displaySymbolForAsset(asset) {
+    const canonical = canonicalSymbolFromTicker(asset?.ticker || "");
+    if (THAI_INDEX_METADATA[canonical]) return THAI_INDEX_METADATA[canonical].displaySymbol;
+    if (asset?.asset_type === "THAI_STOCK" && canonical.endsWith(".BK")) return canonical.slice(0, -3);
+    return canonical || String(asset?.ticker || "");
+  }
+
+  function displayNameForAsset(asset) {
+    const canonical = canonicalSymbolFromTicker(asset?.ticker || "");
+    if (THAI_INDEX_METADATA[canonical]) return THAI_INDEX_METADATA[canonical].displayName;
+    return asset?.name || canonical || "";
   }
 
   function dedupeAssetsByCanonicalTicker(list) {
@@ -920,6 +1165,7 @@
   async function getPriceSeries(asset, options = {}) {
     const forceRefresh = Boolean(options.forceRefresh);
     const cacheKey = `${asset.ticker}:${asset.layer}:${asset.id}`;
+    const route = providerRouteForAsset(asset);
     if (!forceRefresh && priceCache.has(cacheKey)) {
       const cached = priceCache.get(cacheKey);
       return {
@@ -931,6 +1177,18 @@
     }
 
     const symbol = getYahooSymbol(asset);
+    if (isDevClient) {
+      console.log("[add-ticker-debug:provider-route]", {
+        rawInput: asset.ticker,
+        normalizedSymbol: normalizeTicker(asset.ticker),
+        canonicalSymbol: canonicalSymbolFromTicker(asset.ticker),
+        displaySymbol: displaySymbolForAsset(asset),
+        assetType: asset.asset_type,
+        providerSymbol: route.providerSymbol || symbol,
+        providerSelected: route.provider || "unknown",
+        validationResult: Boolean(symbol)
+      });
+    }
     if (!symbol) {
       const empty = {
         marketSymbol: "",
@@ -952,26 +1210,55 @@
         source: sourceText,
         sourceType: history.sourceType || "LIVE_MARKET_DATA",
         lastUpdated: history.lastUpdated || null,
+        historicalSourceLimited: Boolean(history.historicalSourceLimited),
+        latestLiveRows: Number.isFinite(history.latestLiveRows) ? history.latestLiveRows : null,
+        sourceRange: history.sourceRange || null,
         navStatus: history.navStatus || "",
         assetType: history.assetType || "",
         fundName: history.fundName || "",
         historyCount: history.closes.length,
         technical: calculateTechnical(asset.ticker, history.closes, history.dates)
       };
+      if (isDevClient) {
+        console.log("[add-ticker-debug:fetch-result]", {
+          symbol: asset.ticker,
+          displaySymbol: displaySymbolForAsset(asset),
+          providerSymbol: symbol,
+          fetchResult: "ok",
+          sourceType: result.sourceType,
+          historyCount: result.historyCount
+        });
+      }
       priceCache.set(cacheKey, result);
       return result;
     } catch (_error) {
+      const errorMessage = _error && _error.message ? String(_error.message) : "Unable to load market data";
+      const errorCode = _error && _error.code ? String(_error.code) : "";
       const empty = {
         marketSymbol: symbol,
-        source: isThaiMutualFundAsset(asset) ? "รอข้อมูล NAV" : "Unable to load market data",
+        source: isThaiMutualFundAsset(asset) ? errorMessage : "Unable to load market data",
         sourceType: "ERROR",
         lastUpdated: null,
+        historicalSourceLimited: false,
+        latestLiveRows: null,
+        sourceRange: null,
+        errorCode,
         navStatus: "",
         assetType: isThaiMutualFundAsset(asset) ? "Thai Mutual Fund" : "",
         fundName: "",
         historyCount: 0,
         technical: calculateTechnical(asset.ticker, [], [])
       };
+      if (isDevClient) {
+        console.log("[add-ticker-debug:fetch-result]", {
+          symbol: asset.ticker,
+          displaySymbol: displaySymbolForAsset(asset),
+          providerSymbol: symbol,
+          fetchResult: "error",
+          errorMessage,
+          errorCode
+        });
+      }
       priceCache.set(cacheKey, empty);
       return empty;
     }
@@ -1006,22 +1293,27 @@
   }
 
   function getYahooSymbol(asset) {
-    const rawTicker = String(asset.ticker || "").trim().toUpperCase();
-    const compactTicker = rawTicker.replace(/[^A-Z0-9]/g, "");
+    const canonicalTicker = canonicalSymbolFromTicker(asset.ticker || "");
+    const compactTicker = canonicalTicker.replace(/[^A-Z0-9]/g, "");
+    if (THAI_INDEX_METADATA[canonicalTicker]) return canonicalTicker;
     if (asset.asset_type === "THAI_MUTUAL_FUND") {
-      return THAI_MUTUAL_FUND_ALIASES[rawTicker] || THAI_MUTUAL_FUND_ALIASES[compactTicker] || rawTicker;
+      return THAI_MUTUAL_FUND_ALIASES[canonicalTicker] || THAI_MUTUAL_FUND_ALIASES[compactTicker] || canonicalTicker;
     }
-    if (THAI_MUTUAL_FUND_ALIASES[rawTicker] || THAI_MUTUAL_FUND_ALIASES[compactTicker]) {
-      return THAI_MUTUAL_FUND_ALIASES[rawTicker] || THAI_MUTUAL_FUND_ALIASES[compactTicker];
+    if (canonicalTicker.endsWith(".BK")) return canonicalTicker;
+    if (canonicalTicker.startsWith("^")) return canonicalTicker;
+    if (THAI_MUTUAL_FUND_ALIASES[canonicalTicker] || THAI_MUTUAL_FUND_ALIASES[compactTicker]) {
+      return THAI_MUTUAL_FUND_ALIASES[canonicalTicker] || THAI_MUTUAL_FUND_ALIASES[compactTicker];
     }
-    if (YAHOO_SYMBOLS[rawTicker]) return YAHOO_SYMBOLS[rawTicker];
+    if (YAHOO_SYMBOLS[canonicalTicker]) return YAHOO_SYMBOLS[canonicalTicker];
     if (YAHOO_SYMBOLS[compactTicker]) return YAHOO_SYMBOLS[compactTicker];
-    if (asset.asset_type === "stock" && asset.country === "US") return rawTicker;
     if (asset.asset_type === "crypto" && (compactTicker === "BTC" || compactTicker === "BTCUSD")) return "BTC-USD";
     if (asset.asset_type === "crypto" && compactTicker === "ETHUSD") return "ETH-USD";
     if (/(^|_)(RMF|SSF)($|_)/.test(compactTicker) || compactTicker.includes("RMF") || compactTicker.includes("SSF")) return "^SET.BK";
-    if (rawTicker === "SCBNDQ" || rawTicker === "KKP_NDQ") return "^NDX";
-    if (rawTicker === "SCB_GLOBAL_TECH" || rawTicker === "KKP_G_TECH" || rawTicker === "B_INNOTECH" || rawTicker === "ONE_UGG_RA") return "XLK";
+    if (canonicalTicker === "SCBNDQ" || canonicalTicker === "KKP_NDQ") return "^NDX";
+    if (canonicalTicker === "SCB_GLOBAL_TECH" || canonicalTicker === "KKP_G_TECH" || canonicalTicker === "B_INNOTECH" || canonicalTicker === "ONE_UGG_RA") return "XLK";
+    if (asset.asset_type === "THAI_STOCK") return canonicalTicker.endsWith(".BK") ? canonicalTicker : `${canonicalTicker}.BK`;
+    if (asset.asset_type === "INDEX") return canonicalTicker.startsWith("^") ? canonicalTicker : `^${canonicalTicker}`;
+    if (asset.asset_type === "stock" || asset.asset_type === "etf") return canonicalTicker;
     return "";
   }
 
@@ -1029,7 +1321,20 @@
     const forceRefresh = Boolean(options.forceRefresh);
     const url = `/api/market-data?symbol=${encodeURIComponent(symbol)}${forceRefresh ? "&refresh=1" : ""}`;
     const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) throw new Error("price request failed");
+    if (!response.ok) {
+      let errorMessage = "price request failed";
+      let errorCode = "";
+      try {
+        const errorPayload = await response.json();
+        errorMessage = errorPayload?.error || errorMessage;
+        errorCode = errorPayload?.code || "";
+      } catch (_error) {
+        // Ignore parse errors and keep fallback message
+      }
+      const requestError = new Error(errorMessage);
+      requestError.code = errorCode;
+      throw requestError;
+    }
     const payload = await response.json();
     const dates = Array.isArray(payload.dates) ? payload.dates : [];
     const closes = Array.isArray(payload.closes) ? payload.closes : [];
@@ -1050,7 +1355,10 @@
       sourceType: payload.sourceType || "",
       lastUpdated: payload.lastUpdated || null,
       assetType: payload.assetType || "",
-      fundName: payload.fundName || ""
+      fundName: payload.fundName || "",
+      historicalSourceLimited: Boolean(payload.historicalSourceLimited),
+      latestLiveRows: Number.isFinite(payload.latestLiveRows) ? Number(payload.latestLiveRows) : null,
+      sourceRange: payload.sourceRange || null
     };
   }
 
@@ -1062,17 +1370,21 @@
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(row);
     }
+    if (window.PortfolioCore) {
+      for (const key of Object.keys(grouped)) grouped[key].sort(window.PortfolioCore.comparePortfolioPriority);
+    }
     return grouped;
   }
 
   async function renderDashboard(options = {}) {
     const forceRefresh = Boolean(options.forceRefresh);
     const myRenderVersion = ++renderVersion;
-    const baseFilteredAssets = filterAssetsBySelects();
+    const selectedFilters = currentFilters();
+    const allAssets = dedupeAssetsByCanonicalTicker(assets);
     assetCardGrid.innerHTML = '<div class="asset-card-empty">กำลังคำนวณสัญญาณ...</div>';
 
-    const analyses = await Promise.all(
-      baseFilteredAssets.map(async (asset) => {
+    const rawAnalyses = await Promise.all(
+      allAssets.map(async (asset) => {
         const marketData = await getPriceSeries(asset, { forceRefresh });
         const analysis = analyzeAsset(asset, marketData);
         if (isDevClient) {
@@ -1086,31 +1398,63 @@
         return analysis;
       })
     );
+    const totalValue = window.PortfolioCore ? window.PortfolioCore.totalMarketValue(portfolioHoldings) : 0;
+    const analyses = window.PortfolioCore
+      ? rawAnalyses.map((row) => window.PortfolioCore.enrichWithHolding(row, portfolioHoldings, totalValue))
+      : rawAnalyses;
     if (myRenderVersion !== renderVersion) return;
 
+    latestAnalysesByCanonical = new Map();
+    for (const row of analyses) {
+      latestAnalysesByCanonical.set(canonicalSymbolFromTicker(row.asset.ticker), row);
+    }
+
+    const visibleBySelectRows = analyses.filter((row) => assetMatchesSelects(row.asset, selectedFilters));
+
     signalFilterTabs.innerHTML = SignalFilterTabs();
-    const grouped = groupRows(analyses);
-    const visibleGroups = FILTER_GROUP_VISIBILITY[activeSignalFilter] || FILTER_GROUP_VISIBILITY.all;
-    const shownCount = Object.entries(grouped)
-      .filter(([key]) => visibleGroups.has(key))
-      .reduce((sum, [, list]) => sum + list.length, 0);
-    renderSummary(analyses, shownCount);
+    const grouped = groupRows(visibleBySelectRows);
+    renderSummary(grouped);
 
     assetCardGrid.innerHTML = MarketSignalDashboard(grouped);
+
+    if (pendingRevealCanonical) {
+      const target = [...assetCardGrid.querySelectorAll("[data-canonical-symbol]")].find(
+        (node) => node.dataset.canonicalSymbol === pendingRevealCanonical
+      );
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("is-highlight");
+        window.setTimeout(() => target.classList.remove("is-highlight"), 1500);
+      }
+      pendingRevealCanonical = "";
+    }
   }
 
   function makeUserAsset(ticker, name, layer, assetType) {
     const upperTicker = canonicalSymbolFromTicker(ticker);
-    const resolvedAssetType = THAI_MUTUAL_FUND_ALIASES[upperTicker] ? "THAI_MUTUAL_FUND" : assetType;
+    const resolvedAssetType = detectAssetTypeBySymbol(upperTicker, assetType);
+    const route = providerRouteForAsset({ ticker: upperTicker, asset_type: resolvedAssetType });
+    const isThailandAsset =
+      resolvedAssetType === "fund" ||
+      resolvedAssetType === "dr" ||
+      resolvedAssetType === "THAI_MUTUAL_FUND" ||
+      resolvedAssetType === "THAI_STOCK" ||
+      resolvedAssetType === "THAI_INDEX";
     const quality = layer === "upstream_ai" || layer === "data_center_cloud" ? 8 : 7;
     const hype = layer === "growth_optional" || layer === "upstream_ai" ? 7 : 5;
     const valuation = layer === "thai_funds" ? 5 : 6;
+    const defaultDisplayName =
+      THAI_INDEX_METADATA[upperTicker]?.displayName ||
+      `${displaySymbolForAsset({ ticker: upperTicker, asset_type: resolvedAssetType })} placeholder`;
     return scoring.enrichAsset({
       id: `user-${upperTicker}-${Date.now()}`,
       ticker: upperTicker,
-      name: name.trim() || `${upperTicker} placeholder`,
+      name: name.trim() || defaultDisplayName,
       asset_type: resolvedAssetType,
-      country: resolvedAssetType === "fund" || resolvedAssetType === "dr" || resolvedAssetType === "THAI_MUTUAL_FUND" ? "Thailand" : "US",
+      country: isThailandAsset ? "Thailand" : "US",
+      market: route.market || "",
+      currency: route.currency || "",
+      provider_symbol: route.providerSymbol || upperTicker,
       theme: seed.theme,
       sub_theme: "User added watchlist item",
       layer,
@@ -1122,7 +1466,14 @@
       valuation_risk_score: valuation,
       final_score: null,
       initial_action: null,
-      thai_access: resolvedAssetType === "fund" || resolvedAssetType === "THAI_MUTUAL_FUND" ? "Thai Fund" : resolvedAssetType === "dr" ? "DR / DRx" : "Direct",
+      thai_access:
+        resolvedAssetType === "fund" || resolvedAssetType === "THAI_MUTUAL_FUND"
+          ? "Thai Fund"
+          : resolvedAssetType === "THAI_INDEX"
+            ? "Thai Index"
+            : resolvedAssetType === "dr"
+              ? "DR / DRx"
+              : "Direct",
       notes: "รายการที่ผู้ใช้เพิ่มเอง คะแนนเป็นค่าเริ่มต้นแบบ mock",
       mock_signals: {
         price_vs_moving_averages: hype,
@@ -1136,21 +1487,192 @@
     });
   }
 
-  function handleAddTicker(event) {
+  function getGroupTitle(groupKey) {
+    return GROUPS.find((group) => group.key === groupKey)?.title || "watchlist";
+  }
+
+  function clearTickerFeedback() {
+    if (!tickerFeedback) return;
+    tickerFeedback.innerHTML = "";
+    tickerFeedback.classList.remove("is-error", "is-info");
+  }
+
+  function setTickerFeedback(message, options = {}) {
+    if (!tickerFeedback) return;
+    const tone = options.tone || "info";
+    tickerFeedback.classList.remove("is-error", "is-info");
+    tickerFeedback.classList.add(tone === "error" ? "is-error" : "is-info");
+    const actionButton = options.showExistingSymbol
+      ? `<button type="button" class="ticker-feedback-action" data-show-symbol="${escapeHtml(options.showExistingSymbol)}">Show existing item</button>`
+      : "";
+    tickerFeedback.innerHTML = `<span>${escapeHtml(message)}</span>${actionButton}`;
+  }
+
+  function findExistingAsset(symbol) {
+    const canonicalSymbol = canonicalSymbolFromTicker(symbol);
+    if (!canonicalSymbol) {
+      return { exists: false, canonicalSymbol: "" };
+    }
+
+    const existingAsset = assets.find((asset) => canonicalSymbolFromTicker(asset.ticker) === canonicalSymbol);
+    if (!existingAsset) {
+      return { exists: false, canonicalSymbol };
+    }
+
+    const analysis = latestAnalysesByCanonical.get(canonicalSymbol);
+    const section = analysis ? getGroupTitle(analysis.classification.groupKey) : undefined;
+    const selected = currentFilters();
+    const visibleBySelect = assetMatchesSelects(existingAsset, selected);
+    const visibleGroups = FILTER_GROUP_VISIBILITY[activeSignalFilter] || FILTER_GROUP_VISIBILITY.all;
+    const visibleBySignal = analysis ? visibleGroups.has(analysis.classification.groupKey) : false;
+
+    return {
+      exists: true,
+      canonicalSymbol,
+      section,
+      source: storageMode === "supabase" ? "database" : storageMode === "local-cache" ? "localStorage" : "server",
+      visibleInCurrentFilter: Boolean(visibleBySelect && visibleBySignal)
+    };
+  }
+
+  async function fetchServerStateDirect() {
+    const response = await fetch("/api/ai-universe", { cache: "no-store" });
+    if (!response.ok) return null;
+    const payload = await response.json();
+    return {
+      state: sanitizePersistedState(payload?.data),
+      mode: payload?.mode || "supabase"
+    };
+  }
+
+  async function clearStaleLocalDuplicate(canonicalSymbol) {
+    try {
+      const remote = await fetchServerStateDirect();
+      if (!remote || remote.mode !== "supabase") return false;
+
+      const remoteSet = new Set(
+        (remote.state.userAssets || []).map((asset) => canonicalSymbolFromTicker(asset?.ticker)).filter(Boolean)
+      );
+      if (remoteSet.has(canonicalSymbol)) return false;
+
+      const localHas = (persistedState.userAssets || []).some(
+        (asset) => canonicalSymbolFromTicker(asset?.ticker) === canonicalSymbol
+      );
+      if (!localHas) return false;
+
+      persistedState.userAssets = (persistedState.userAssets || []).filter(
+        (asset) => canonicalSymbolFromTicker(asset?.ticker) !== canonicalSymbol
+      );
+      assets = dedupeAssetsByCanonicalTicker(
+        assets.filter((asset) => !(asset.is_user_added && canonicalSymbolFromTicker(asset.ticker) === canonicalSymbol))
+      );
+      writeLocalPersistedState(persistedState);
+      storageMode = "supabase";
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function revealExistingAsset(canonicalSymbol) {
+    Object.values(filters).forEach((select) => {
+      select.value = "";
+    });
+    activeSignalFilter = "all";
+    pendingRevealCanonical = canonicalSymbol;
+    refreshFilterOptions();
+    renderDashboard();
+  }
+
+  function scrollToSection(sectionId) {
+    const target = sectionId ? document.getElementById(sectionId) : null;
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.classList.add("is-summary-highlight");
+    window.setTimeout(() => target.classList.remove("is-summary-highlight"), 1600);
+  }
+
+  async function handleAddTicker(event) {
     event.preventDefault();
-    const ticker = canonicalSymbolFromTicker(tickerInput.value);
-    if (!ticker) return;
-    const exists = assets.some((asset) => canonicalSymbolFromTicker(asset.ticker) === ticker);
-    if (exists) {
-      tickerInput.setCustomValidity("Ticker นี้มีอยู่ในกลุ่มนี้แล้ว");
+    clearTickerFeedback();
+    const rawInput = tickerInput.value;
+    const validation = validateTickerInput(rawInput);
+    if (!validation.ok) {
+      tickerInput.setCustomValidity(validation.reason || "Invalid ticker");
       tickerInput.reportValidity();
+      if (isDevClient) {
+        console.log("[add-ticker-debug]", {
+          rawInput,
+          normalizedSymbol: normalizeTicker(rawInput),
+          canonicalSymbol: "",
+          displaySymbol: "",
+          assetType: "",
+          providerSymbol: "",
+          providerSelected: "",
+          validationResult: false,
+          fetchResult: "not-run",
+          errorMessage: validation.reason || "Invalid ticker"
+        });
+      }
       return;
     }
     tickerInput.setCustomValidity("");
-    assets.push(makeUserAsset(ticker, nameInput.value, newLayerInput.value, newAssetTypeInput.value));
+    const ticker = validation.canonical;
+    const detectedAssetType = detectAssetTypeBySymbol(ticker, newAssetTypeInput.value);
+    const route = providerRouteForAsset({ ticker, asset_type: detectedAssetType });
+    const displaySymbol = displaySymbolForAsset({ ticker, asset_type: detectedAssetType });
+    if (isDevClient) {
+      console.log("[add-ticker-debug]", {
+        rawInput,
+        normalizedSymbol: validation.normalized,
+        canonicalSymbol: ticker,
+        displaySymbol,
+        assetType: detectedAssetType,
+        providerSymbol: route.providerSymbol,
+        providerSelected: route.provider,
+        validationResult: true,
+        fetchResult: "pending",
+        errorMessage: ""
+      });
+    }
+
+    const existing = findExistingAsset(ticker);
+    if (existing.exists) {
+      const staleCleared = await clearStaleLocalDuplicate(existing.canonicalSymbol);
+      if (staleCleared) {
+        tickerInput.setCustomValidity("");
+        setTickerFeedback(`${existing.canonicalSymbol}: ล้าง cache เก่าแล้ว สามารถเพิ่มใหม่ได้`, { tone: "info" });
+      } else {
+        const inSection = existing.section ? ` under ${existing.section}` : "";
+        const hiddenMessage = existing.visibleInCurrentFilter
+          ? `${existing.canonicalSymbol} already exists in your watchlist${inSection}.`
+          : `${existing.canonicalSymbol} already exists but is hidden by the current filter. Switch to All to view it.`;
+        tickerInput.setCustomValidity(hiddenMessage);
+        setTickerFeedback(hiddenMessage, {
+          tone: "error",
+          showExistingSymbol: existing.canonicalSymbol
+        });
+        tickerInput.reportValidity();
+        return;
+      }
+    }
+
+    const existsAfterCleanup = findExistingAsset(ticker);
+    if (existsAfterCleanup.exists) {
+      tickerInput.setCustomValidity(`${existsAfterCleanup.canonicalSymbol} already exists in your watchlist.`);
+      tickerInput.reportValidity();
+      return;
+    }
+
+    tickerInput.setCustomValidity("");
+    assets = dedupeAssetsByCanonicalTicker([
+      ...assets,
+      makeUserAsset(ticker, nameInput.value, newLayerInput.value, detectedAssetType)
+    ]);
     saveUserAssets();
     form.reset();
     refreshFilterOptions();
+    setTickerFeedback(`เพิ่ม ${ticker} สำเร็จ`, { tone: "info", showExistingSymbol: ticker });
     renderDashboard();
   }
 
@@ -1181,6 +1703,29 @@
     renderDashboard({ forceRefresh: true });
   }
 
+  function handleSummaryCardClick(event) {
+    const button = event.target.closest("[data-summary-target]");
+    if (!button) return;
+    const sectionId = String(button.dataset.summaryTarget || "");
+    if (!sectionId) return;
+    const target = document.getElementById(sectionId);
+    if (target) {
+      scrollToSection(sectionId);
+      return;
+    }
+    activeSignalFilter = "all";
+    renderDashboard();
+    window.setTimeout(() => scrollToSection(sectionId), 180);
+  }
+
+  function handleTickerFeedbackClick(event) {
+    const button = event.target.closest("[data-show-symbol]");
+    if (!button) return;
+    const symbol = canonicalSymbolFromTicker(button.dataset.showSymbol);
+    if (!symbol) return;
+    revealExistingAsset(symbol);
+  }
+
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, (char) => ({
       "&": "&amp;",
@@ -1193,15 +1738,27 @@
 
   async function initialize() {
     await loadPersistedState();
+    if (window.PortfolioCore) {
+      const holdingResult = await window.PortfolioCore.loadHoldings();
+      portfolioHoldings = holdingResult.holdings;
+    }
     resetAssets();
     refreshFilterOptions();
+    const focusSymbol = new URLSearchParams(window.location.search).get("focus");
+    if (focusSymbol) pendingRevealCanonical = canonicalSymbolFromTicker(focusSymbol);
     renderDashboard();
   }
 
   Object.values(filters).forEach((select) => select.addEventListener("change", renderDashboard));
+  tickerInput.addEventListener("input", () => {
+    tickerInput.setCustomValidity("");
+    clearTickerFeedback();
+  });
   form.addEventListener("submit", handleAddTicker);
+  if (tickerFeedback) tickerFeedback.addEventListener("click", handleTickerFeedbackClick);
   assetCardGrid.addEventListener("click", handleDelete);
   signalFilterTabs.addEventListener("click", handleSignalTabClick);
+  if (summaryGrid) summaryGrid.addEventListener("click", handleSummaryCardClick);
   if (refreshMarketDataButton) refreshMarketDataButton.addEventListener("click", handleRefreshMarketData);
   initialize();
 })();

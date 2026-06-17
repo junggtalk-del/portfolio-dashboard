@@ -7,7 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/ai-boom-universe.css" />
+    <link rel="stylesheet" href="/ai-boom-universe.css?v=20260524-summary-1" />
+      <link rel="stylesheet" href="/app-navigation.css?v=20260617-nav-1" />
+      <script src="/data-snapshot.js?v=20260617-snapshot-2"></script>
   </head>
   <body>
     <main class="ai-shell">
@@ -19,30 +21,18 @@
         <nav class="ai-nav" aria-label="เมนูหลัก">
           <a href="/">กลับ Dashboard พอร์ต</a>
           <a class="is-active" href="/ai-boom-universe">AI Boom Universe</a>
+          <a href="/technical-signals">Technical Signals</a>
+          <a href="/action-center">Action Center</a>
+          <a href="/portfolio-status">Portfolio Status</a>
+          <a href="/portfolio-holdings">Holdings</a>
+          <a href="/exposure-map">Exposure Map</a>
+          <a href="/backtest">Backtest Lab</a>
+          <a href="/market-risk">Market Risk</a>
         </nav>
       </section>
 
-      <section class="ai-summary-grid" aria-label="สรุป AI universe">
-        <article class="ai-card is-primary">
-          <span>ธีมหลัก</span>
-          <strong>AI Data Center Supercycle</strong>
-          <small>เริ่มจากข้อมูลตัวอย่างก่อน</small>
-        </article>
-        <article class="ai-card">
-          <span>จำนวนรายการที่แสดง</span>
-          <strong id="assetCount">0</strong>
-          <small id="activeFilterText">แสดงรายการทั้งหมด</small>
-        </article>
-        <article class="ai-card">
-          <span>รอย่อราคา</span>
-          <strong id="waitCount">0</strong>
-          <small>สินทรัพย์ดี แต่ความคาดหวังสูง</small>
-        </article>
-        <article class="ai-card">
-          <span>สัญญาณเตือน</span>
-          <strong id="warningCount">0</strong>
-          <small>ระบบกันซื้อไล่ราคาทำงานอยู่</small>
-        </article>
+      <section class="ai-summary-grid" id="summaryCards" aria-label="สรุปสัญญาณ">
+        <div class="asset-card-empty">กำลังโหลดสรุปสัญญาณ...</div>
       </section>
 
       <section class="ai-editor" aria-label="เพิ่ม ticker">
@@ -73,8 +63,11 @@
             ประเภท
             <select id="newAssetTypeInput">
               <option value="stock">หุ้น</option>
+              <option value="THAI_STOCK">หุ้นไทย (SET)</option>
+              <option value="THAI_INDEX">ดัชนีไทย (SET)</option>
               <option value="etf">ETF</option>
               <option value="crypto">Crypto</option>
+              <option value="INDEX">Index</option>
               <option value="fund">กองทุน</option>
               <option value="THAI_MUTUAL_FUND">Thai Mutual Fund</option>
               <option value="dr">DR / DRx</option>
@@ -82,6 +75,7 @@
           </label>
           <button type="submit">เพิ่ม ticker</button>
         </form>
+        <div id="tickerFeedback" class="ticker-feedback" aria-live="polite"></div>
       </section>
 
       <section class="ai-filters" aria-label="ตัวกรอง AI universe">
@@ -131,9 +125,11 @@
       </section>
     </main>
 
-    <script src="/ai-boom-universe-data.js"></script>
-    <script src="/ai-boom-universe-scoring.js"></script>
-    <script src="/technical-indicators.js"></script>
-    <script src="/ai-boom-universe-page.js"></script>
+    <script src="/ai-boom-universe-data.js?v=20260524-summary-1"></script>
+    <script src="/ai-boom-universe-scoring.js?v=20260524-summary-1"></script>
+    <script src="/portfolio-core.js?v=20260611-holdings-1"></script>
+    <script src="/technical-indicators.js?v=20260524-summary-1"></script>
+    <script src="/ai-boom-universe-page.js?v=20260524-summary-1"></script>
+<script src="/app-navigation.js?v=20260617-nav-1"></script>
   </body>
 </html>

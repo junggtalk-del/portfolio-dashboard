@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
+      <link rel="stylesheet" href="/app-navigation.css?v=20260617-nav-1" />
+      <script src="/data-snapshot.js?v=20260617-snapshot-2"></script>
   </head>
   <body class="is-unlocked">
     <main class="app-shell">
@@ -18,6 +20,13 @@
         </div>
         <div class="top-actions">
           <a class="ghost-button" href="/ai-boom-universe">AI Boom Universe</a>
+          <a class="ghost-button" href="/technical-signals">Technical Signals</a>
+          <a class="ghost-button" href="/action-center">Action Center</a>
+          <a class="ghost-button" href="/portfolio-status">Portfolio Status</a>
+          <a class="ghost-button" href="/portfolio-holdings">Holdings</a>
+          <a class="ghost-button" href="/exposure-map">Exposure Map</a>
+          <a class="ghost-button" href="/backtest">Backtest Lab</a>
+          <a class="ghost-button" href="/market-risk">Market Risk</a>
           <button class="ghost-button" id="refreshButton" type="button" title="Refresh live prices">
             <span aria-hidden="true">↻</span>
             รีเฟรชหน้าจอ
@@ -235,5 +244,6 @@
     </main>
     <script>sessionStorage.setItem("portfolioPassword", "open-dashboard");</script>
     <script src="/app.js"></script>
+<script src="/app-navigation.js?v=20260617-nav-1"></script>
   </body>
 </html>

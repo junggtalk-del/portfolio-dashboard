@@ -1,5 +1,39 @@
 const SCHEMA = process.env.SUPABASE_SCHEMA || "portfolio_dashboard";
 const STATE_ID = "ai_boom_universe_main";
+const THAI_MUTUAL_FUND_ALIASES = {
+  "K-GTECHRMF": "K-GTECHRMF",
+  KGTECHRMF: "K-GTECHRMF",
+  "K-USXNDQRMF": "K-USXNDQRMF",
+  KUSXNDQRMF: "K-USXNDQRMF"
+};
+const THAI_STOCK_ALIASES = {
+  "GULF.BK": "GULF.BK",
+  GULFBK: "GULF.BK",
+  GULF: "GULF.BK"
+};
+const THAI_INDEX_ALIASES = {
+  SET: "^SET.BK",
+  "SET.BK": "^SET.BK",
+  "^SET.BK": "^SET.BK",
+  SETINDEX: "^SET.BK",
+  SET50: "^SET50.BK",
+  "SET50.BK": "^SET50.BK",
+  "^SET50.BK": "^SET50.BK",
+  SET50INDEX: "^SET50.BK",
+  SET100: "^SET100.BK",
+  "SET100.BK": "^SET100.BK",
+  "^SET100.BK": "^SET100.BK",
+  SET100INDEX: "^SET100.BK"
+};
+const US_INDEX_ALIASES = {
+  SPX: "^GSPC",
+  "^GSPC": "^GSPC",
+  GSPC: "^GSPC",
+  IXIC: "^IXIC",
+  "^IXIC": "^IXIC",
+  NDX: "^NDX",
+  "^NDX": "^NDX"
+};
 
 function send(res, status, payload) {
   res.statusCode = status;
@@ -25,9 +59,36 @@ function getSupabaseUrl() {
 
 function sanitizeState(data) {
   const safe = data && typeof data === "object" ? data : {};
-  const userAssets = Array.isArray(safe.userAssets) ? safe.userAssets : [];
+  const seen = new Set();
+  const userAssets = (Array.isArray(safe.userAssets) ? safe.userAssets : []).filter((asset) => {
+    const symbol = canonicalSymbolFromTicker(asset?.ticker);
+    if (!symbol || seen.has(symbol)) return false;
+    seen.add(symbol);
+    asset.ticker = symbol;
+    return true;
+  });
   const removedIds = Array.isArray(safe.removedIds) ? safe.removedIds : [];
   return { userAssets, removedIds };
+}
+
+function normalizeTicker(rawTicker) {
+  return String(rawTicker || "").trim().toUpperCase().replace(/[^A-Z0-9.^-]/g, "");
+}
+
+function canonicalSymbolFromTicker(rawTicker) {
+  const normalized = normalizeTicker(rawTicker);
+  const compact = normalized.replace(/[^A-Z0-9]/g, "");
+  return (
+    THAI_INDEX_ALIASES[normalized] ||
+    THAI_INDEX_ALIASES[compact] ||
+    US_INDEX_ALIASES[normalized] ||
+    US_INDEX_ALIASES[compact] ||
+    THAI_MUTUAL_FUND_ALIASES[normalized] ||
+    THAI_MUTUAL_FUND_ALIASES[compact] ||
+    THAI_STOCK_ALIASES[normalized] ||
+    THAI_STOCK_ALIASES[compact] ||
+    normalized
+  );
 }
 
 async function readState() {

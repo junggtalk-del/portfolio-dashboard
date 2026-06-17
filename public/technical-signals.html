@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Technical Signals</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/technical-signals.css?v=20260603-rsi-1" />
+      <link rel="stylesheet" href="/app-navigation.css?v=20260617-nav-1" />
+      <script src="/data-snapshot.js?v=20260617-snapshot-2"></script>
+  </head>
+  <body>
+    <main class="signal-shell">
+      <section class="signal-topbar">
+        <div>
+          <p class="signal-eyebrow">RSI Signal Monitor</p>
+          <h1>Technical Signals</h1>
+          <p class="signal-subtitle">ติดตามสัญญาณ RSI สำหรับจังหวะเฝ้าระวังซื้อและขาย</p>
+        </div>
+        <nav class="signal-nav" aria-label="เมนูหลัก">
+          <a href="/">กลับ Dashboard พอร์ต</a>
+          <a href="/ai-boom-universe">AI Boom Universe</a>
+          <a class="is-active" href="/technical-signals">Technical Signals</a>
+          <a href="/action-center">Action Center</a>
+          <a href="/portfolio-status">Portfolio Status</a>
+          <a href="/portfolio-holdings">Holdings</a>
+          <a href="/exposure-map">Exposure Map</a>
+          <a href="/backtest">Backtest Lab</a>
+          <a href="/market-risk">Market Risk</a>
+        </nav>
+      </section>
+
+      <section id="rsiSummaryCards" class="rsi-summary-grid" aria-label="สรุป RSI">
+        <div class="rsi-empty">กำลังโหลดสัญญาณ RSI...</div>
+      </section>
+
+      <section class="rsi-toolbar" aria-label="ตัวกรอง RSI">
+        <div class="rsi-toolbar-groups">
+          <div id="rsiScopeTabs" class="rsi-scope-tabs" aria-label="Portfolio scope">
+            <button class="is-active" type="button" data-scope="portfolio">Portfolio Only</button>
+            <button type="button" data-scope="watchlist">Watchlist Only</button>
+            <button type="button" data-scope="all">All</button>
+          </div>
+          <div id="rsiFilterTabs" class="rsi-filter-tabs"></div>
+        </div>
+        <button id="refreshRsiButton" class="rsi-refresh-button" type="button">Refresh RSI data</button>
+      </section>
+
+      <section id="rsiSections" class="rsi-sections" aria-live="polite">
+        <div class="rsi-empty">กำลังคำนวณ RSI14...</div>
+      </section>
+
+      <footer class="rsi-disclaimer">
+        <p>สัญญาณ RSI เป็นเครื่องมือช่วยตัดสินใจ ไม่ใช่คำแนะนำการลงทุน ควรใช้ร่วมกับแนวโน้มหลัก EMA/SMA200 และการบริหารความเสี่ยง</p>
+        <p>RSI signals are decision-support tools, not investment advice. Use together with EMA/SMA200 trend and risk management.</p>
+      </footer>
+    </main>
+
+    <script src="/ai-boom-universe-data.js?v=20260603-rsi-1"></script>
+    <script src="/ai-boom-universe-scoring.js?v=20260603-rsi-1"></script>
+    <script src="/portfolio-core.js?v=20260617-rsi-scope"></script>
+    <script src="/technical-signals-page.js?v=20260617-rsi-scope"></script>
+<script src="/app-navigation.js?v=20260617-nav-1"></script>
+  </body>
+</html>

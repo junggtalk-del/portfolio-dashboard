@@ -2,6 +2,13 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { loadLocalEnv } = require("./local-env");
+const marketDataApiHandler = require("./api/price-history");
+const backtestApiHandler = require("./api/backtest");
+const marketRiskApiHandler = require("./api/market-risk");
+const portfolioHoldingsApiHandler = require("./api/portfolio-holdings");
+const fundNavHistoryApiHandler = require("./api/fund-nav/history");
+const fundNavRefreshApiHandler = require("./api/fund-nav/refresh");
+const debugFundNavApiHandler = require("./api/debug/fund-nav");
 
 loadLocalEnv();
 
@@ -32,6 +39,34 @@ const THAI_FUND_SYMBOL_ALIASES = {
   KGTECHRMF: "K-GTECHRMF",
   "K-USXNDQRMF": "K-USXNDQRMF",
   KUSXNDQRMF: "K-USXNDQRMF"
+};
+const THAI_STOCK_SYMBOL_ALIASES = {
+  "GULF.BK": "GULF.BK",
+  GULFBK: "GULF.BK",
+  GULF: "GULF.BK"
+};
+const THAI_INDEX_SYMBOL_ALIASES = {
+  SET: "^SET.BK",
+  "SET.BK": "^SET.BK",
+  "^SET.BK": "^SET.BK",
+  SETINDEX: "^SET.BK",
+  SET50: "^SET50.BK",
+  "SET50.BK": "^SET50.BK",
+  "^SET50.BK": "^SET50.BK",
+  SET50INDEX: "^SET50.BK",
+  SET100: "^SET100.BK",
+  "SET100.BK": "^SET100.BK",
+  "^SET100.BK": "^SET100.BK",
+  SET100INDEX: "^SET100.BK"
+};
+const US_INDEX_SYMBOL_ALIASES = {
+  SPX: "^GSPC",
+  "^GSPC": "^GSPC",
+  GSPC: "^GSPC",
+  IXIC: "^IXIC",
+  "^IXIC": "^IXIC",
+  NDX: "^NDX",
+  "^NDX": "^NDX"
 };
 const THAI_FUND_PROVIDER_CONFIG = {
   "K-GTECHRMF": {
@@ -288,6 +323,18 @@ function getRequestBody(req) {
   });
 }
 
+async function invokeApiHandler(handler, req, res, requestUrl) {
+  try {
+    req.query = Object.fromEntries(requestUrl.searchParams.entries());
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      req.body = await getRequestBody(req);
+    }
+    await handler(req, res);
+  } catch (error) {
+    sendJson(res, 500, { error: String(error.message || error) });
+  }
+}
+
 function portfolioHeaders(extra = {}) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   return {
@@ -341,10 +388,34 @@ function writeLocalPortfolioData(data) {
 
 function sanitizeAiUniverseState(data) {
   const safe = data && typeof data === "object" ? data : {};
+  const seen = new Set();
+  const userAssets = (Array.isArray(safe.userAssets) ? safe.userAssets : []).filter((asset) => {
+    const key = canonicalAiUniverseSymbol(asset?.ticker);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    asset.ticker = key;
+    return true;
+  });
   return {
-    userAssets: Array.isArray(safe.userAssets) ? safe.userAssets : [],
+    userAssets,
     removedIds: Array.isArray(safe.removedIds) ? safe.removedIds : []
   };
+}
+
+function canonicalAiUniverseSymbol(rawTicker) {
+  const normalized = String(rawTicker || "").trim().toUpperCase().replace(/[^A-Z0-9.^-]/g, "");
+  const compact = normalized.replace(/[^A-Z0-9]/g, "");
+  return (
+    THAI_INDEX_SYMBOL_ALIASES[normalized] ||
+    THAI_INDEX_SYMBOL_ALIASES[compact] ||
+    US_INDEX_SYMBOL_ALIASES[normalized] ||
+    US_INDEX_SYMBOL_ALIASES[compact] ||
+    THAI_FUND_SYMBOL_ALIASES[normalized] ||
+    THAI_FUND_SYMBOL_ALIASES[compact] ||
+    THAI_STOCK_SYMBOL_ALIASES[normalized] ||
+    THAI_STOCK_SYMBOL_ALIASES[compact] ||
+    normalized
+  );
 }
 
 function readLocalAiUniverseState() {
@@ -563,10 +634,33 @@ async function fetchQuote(symbol) {
   };
 }
 
-async function fetchDailyHistory(symbol) {
+function sortAndNormalizeRows(rows) {
+  if (!Array.isArray(rows)) return [];
+  const map = new Map();
+  for (const row of rows) {
+    const date = String(row?.date || "");
+    const close = Number(row?.close);
+    if (!date || !Number.isFinite(close)) continue;
+    map.set(date, { date, close });
+  }
+  return [...map.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+function mergeHistoricalRows(existingRows, incomingRows) {
+  const merged = new Map();
+  for (const row of sortAndNormalizeRows(existingRows)) {
+    merged.set(row.date, row);
+  }
+  for (const row of sortAndNormalizeRows(incomingRows)) {
+    merged.set(row.date, row);
+  }
+  return [...merged.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+async function fetchDailyHistoryByRange(symbol, range) {
   const endpoint = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
   endpoint.searchParams.set("interval", "1d");
-  endpoint.searchParams.set("range", "2y");
+  endpoint.searchParams.set("range", range);
   endpoint.searchParams.set("includePrePost", "false");
 
   const response = await fetch(endpoint, {
@@ -591,11 +685,37 @@ async function fetchDailyHistory(symbol) {
       close: Number(close)
     });
   }
-  rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-  return rows;
+  return sortAndNormalizeRows(rows);
 }
 
-function shapeMarketRows(symbol, rows, sourceType, sourceText, fetchedAt) {
+async function fetchDailyHistory(symbol) {
+  const ranges = ["2y", "5y", "10y", "max"];
+  let bestRows = [];
+  let bestRange = ranges[0];
+  let lastError = null;
+
+  for (const range of ranges) {
+    try {
+      const rows = await fetchDailyHistoryByRange(symbol, range);
+      if (rows.length > bestRows.length) {
+        bestRows = rows;
+        bestRange = range;
+      }
+      if (rows.length >= 220) break;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!bestRows.length && lastError) throw lastError;
+  return {
+    rows: bestRows,
+    range: bestRange,
+    isSparse: bestRows.length <= 1
+  };
+}
+
+function shapeMarketRows(symbol, rows, sourceType, sourceText, fetchedAt, extra = {}) {
   return {
     symbol,
     assetType: "Market",
@@ -605,22 +725,58 @@ function shapeMarketRows(symbol, rows, sourceType, sourceText, fetchedAt) {
     sourceType,
     lastUpdated: fetchedAt || null,
     dates: rows.map((row) => row.date),
-    closes: rows.map((row) => row.close)
+    closes: rows.map((row) => row.close),
+    historicalSourceLimited: Boolean(extra.historicalSourceLimited),
+    latestLiveRows: Number.isFinite(extra.latestLiveRows) ? Number(extra.latestLiveRows) : null,
+    sourceRange: extra.sourceRange || null
   };
 }
 
 async function fetchMarketHistoryWithServerCache(symbol) {
   const cache = readLocalMarketDataCache();
   try {
-    const liveRows = await fetchDailyHistory(symbol);
+    const liveResult = await fetchDailyHistory(symbol);
+    const liveRows = liveResult.rows;
     const now = new Date().toISOString();
-    cache[symbol] = { symbol, rows: liveRows, fetchedAt: now };
+    const cachedRows = Array.isArray(cache?.[symbol]?.rows) ? cache[symbol].rows : [];
+    const mergedRows = mergeHistoricalRows(cachedRows, liveRows);
+    const hasMergedHistory = mergedRows.length > liveRows.length;
+    cache[symbol] = {
+      symbol,
+      rows: mergedRows,
+      latestLiveRows: liveRows.length,
+      sourceRange: liveResult.range || "2y",
+      historicalSourceLimited: Boolean(liveResult.isSparse && mergedRows.length < 26),
+      fetchedAt: now
+    };
     writeLocalMarketDataCache(cache);
-    return shapeMarketRows(symbol, liveRows, "LIVE_MARKET_DATA", "Yahoo Finance", now);
+    return shapeMarketRows(
+      symbol,
+      mergedRows,
+      hasMergedHistory ? "SERVER_CACHED_DATA" : "LIVE_MARKET_DATA",
+      hasMergedHistory ? "Yahoo latest + server historical cache" : "Yahoo Finance",
+      now,
+      {
+        historicalSourceLimited: Boolean(liveResult.isSparse && mergedRows.length < 26),
+        latestLiveRows: liveRows.length,
+        sourceRange: liveResult.range || "2y"
+      }
+    );
   } catch (error) {
     const cached = cache[symbol];
     if (cached?.rows && Array.isArray(cached.rows) && cached.rows.length) {
-      return shapeMarketRows(symbol, cached.rows, "SERVER_CACHED_DATA", "Server cached data", cached.fetchedAt || null);
+      return shapeMarketRows(
+        symbol,
+        cached.rows,
+        "SERVER_CACHED_DATA",
+        "Server cached data",
+        cached.fetchedAt || null,
+        {
+          historicalSourceLimited: Boolean(cached.historicalSourceLimited),
+          latestLiveRows: Number.isFinite(cached.latestLiveRows) ? cached.latestLiveRows : null,
+          sourceRange: cached.sourceRange || null
+        }
+      );
     }
     throw error;
   }
@@ -685,11 +841,16 @@ async function handleDebugMarketData(_req, res) {
 
   let providerTest = { ok: false, error: "not-run" };
   try {
-    const rows = await fetchDailyHistory("NVDA");
+    const nvda = await fetchDailyHistory("NVDA");
+    const set50 = await fetchDailyHistory("^SET50.BK");
     providerTest = {
       ok: true,
-      rows: rows.length,
-      latestDate: rows.length ? rows[rows.length - 1].date : null
+      nvdaRows: nvda.rows.length,
+      nvdaLatestDate: nvda.rows.length ? nvda.rows[nvda.rows.length - 1].date : null,
+      set50Rows: set50.rows.length,
+      set50LatestDate: set50.rows.length ? set50.rows[set50.rows.length - 1].date : null,
+      set50SourceRange: set50.range,
+      set50Sparse: set50.isSparse
     };
   } catch (error) {
     providerTest = {
@@ -700,7 +861,9 @@ async function handleDebugMarketData(_req, res) {
 
   const cache = readLocalMarketDataCache();
   const cacheKeys = Object.keys(cache || {});
-  const cacheTimestamp = cache?.NVDA?.fetchedAt || null;
+  const cacheTimestamp = cache?.["^SET50.BK"]?.fetchedAt || cache?.NVDA?.fetchedAt || null;
+  const set50CacheRows = Array.isArray(cache?.["^SET50.BK"]?.rows) ? cache["^SET50.BK"].rows.length : 0;
+  const set50HistoricalSourceLimited = Boolean(cache?.["^SET50.BK"]?.historicalSourceLimited);
   sendJson(res, 200, {
     runtime,
     marketDataProvider: "Yahoo Finance (+ KAsset for Thai mutual funds via /api/market-data)",
@@ -709,7 +872,9 @@ async function handleDebugMarketData(_req, res) {
     serverCache: {
       exists: cacheKeys.length > 0,
       keys: cacheKeys.slice(0, 20),
-      cacheTimestamp
+      cacheTimestamp,
+      set50CacheRows,
+      set50HistoricalSourceLimited
     }
   });
 }
@@ -723,17 +888,47 @@ const server = http.createServer((req, res) => {
   }
 
   if (requestUrl.pathname === "/api/price-history") {
-    handlePriceHistory(req, res);
+    invokeApiHandler(marketDataApiHandler, req, res, requestUrl);
     return;
   }
 
   if (requestUrl.pathname === "/api/market-data") {
-    handlePriceHistory(req, res);
+    invokeApiHandler(marketDataApiHandler, req, res, requestUrl);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/fund-nav/history") {
+    invokeApiHandler(fundNavHistoryApiHandler, req, res, requestUrl);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/fund-nav/refresh") {
+    invokeApiHandler(fundNavRefreshApiHandler, req, res, requestUrl);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/debug/fund-nav") {
+    invokeApiHandler(debugFundNavApiHandler, req, res, requestUrl);
     return;
   }
 
   if (requestUrl.pathname === "/api/debug/market-data") {
     handleDebugMarketData(req, res);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/backtest") {
+    invokeApiHandler(backtestApiHandler, req, res, requestUrl);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/market-risk") {
+    invokeApiHandler(marketRiskApiHandler, req, res, requestUrl);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/portfolio-holdings") {
+    invokeApiHandler(portfolioHoldingsApiHandler, req, res, requestUrl);
     return;
   }
 

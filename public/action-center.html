@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Action Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/action-center.css?v=20260617-action-priority" />
+      <link rel="stylesheet" href="/app-navigation.css?v=20260617-nav-1" />
+      <script src="/data-snapshot.js?v=20260617-snapshot-2"></script>
+  </head>
+  <body>
+    <main class="action-shell">
+      <section class="action-topbar">
+        <div>
+          <p class="action-eyebrow">Unified Signal Summary</p>
+          <h1>Action Center</h1>
+          <p class="action-subtitle">สรุป RSI, EMA/SMA และ Market Risk เป็น action list เดียวที่อ่านง่าย</p>
+        </div>
+        <nav class="action-nav" aria-label="เมนูหลัก">
+          <a href="/">กลับ Dashboard พอร์ต</a>
+          <a href="/ai-boom-universe">AI Boom Universe</a>
+          <a href="/technical-signals">Technical Signals</a>
+          <a class="is-active" href="/action-center">Action Center</a>
+          <a href="/portfolio-status">Portfolio Status</a>
+          <a href="/portfolio-holdings">Holdings</a>
+          <a href="/exposure-map">Exposure Map</a>
+          <a href="/market-risk">Market Risk</a>
+          <a href="/backtest">Backtest Lab</a>
+        </nav>
+      </section>
+
+      <section class="action-toolbar">
+        <div>
+          <strong id="actionStatus">กำลังรวมสัญญาณจากทุก dashboard...</strong>
+          <p id="marketRiskText">Market Risk: กำลังโหลด</p>
+        </div>
+        <div class="toolbar-actions">
+          <div id="actionScopeTabs" class="scope-tabs" aria-label="Portfolio scope">
+            <button class="is-active" type="button" data-scope="portfolio">Portfolio Only</button>
+            <button type="button" data-scope="watchlist">Watchlist Only</button>
+            <button type="button" data-scope="all">All</button>
+          </div>
+          <a class="secondary-link" href="/technical-signals">ดู RSI</a>
+          <a class="secondary-link" href="/market-risk">ดู Market Risk</a>
+          <button id="refreshActionButton" type="button">Refresh action list</button>
+        </div>
+      </section>
+
+      <section id="actionSummaryCards" class="action-summary-grid" aria-label="สรุป action">
+        <div class="empty-box">กำลังคำนวณ action...</div>
+      </section>
+
+      <section id="signalConflicts" class="conflict-panel" aria-label="Signal conflicts">
+        <div class="empty-box">กำลังตรวจ signal conflicts...</div>
+      </section>
+
+      <section id="portfolioPrioritySections" class="conflict-panel" aria-label="Portfolio priority actions">
+        <div class="empty-box">กำลังจัดลำดับความสำคัญตาม holdings...</div>
+      </section>
+
+      <section id="actionSections" class="action-sections" aria-label="รายการ action">
+        <div class="empty-box">กำลังโหลดรายการสินทรัพย์...</div>
+      </section>
+
+      <footer class="action-disclaimer">
+        <p>Action Center เป็นเครื่องมือช่วยจัดลำดับความสำคัญ ไม่ใช่คำแนะนำการลงทุน ใช้ร่วมกับแผนจัดพอร์ตและการบริหารความเสี่ยงเสมอ</p>
+      </footer>
+    </main>
+    <script src="/ai-boom-universe-data.js?v=20260611-action-1"></script>
+    <script src="/ai-boom-universe-scoring.js?v=20260611-action-1"></script>
+    <script src="/portfolio-core.js?v=20260617-action-priority"></script>
+    <script src="/technical-indicators.js?v=20260617-action-priority"></script>
+    <script src="/action-center-page.js?v=20260617-action-priority"></script>
+<script src="/app-navigation.js?v=20260617-nav-1"></script>
+  </body>
+</html>

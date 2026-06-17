@@ -1,25 +1,36 @@
 const SCHEMA = process.env.SUPABASE_SCHEMA || "portfolio_dashboard";
-const THAI_NAV_CACHE_STATE_ID = "thai_nav_cache_v1";
 const MARKET_DATA_CACHE_STATE_ID = "market_data_cache_v1";
-const THAI_FUND_SYMBOL_ALIASES = {
-  "K-GTECHRMF": "K-GTECHRMF",
-  KGTECHRMF: "K-GTECHRMF",
-  "K-USXNDQRMF": "K-USXNDQRMF",
-  KUSXNDQRMF: "K-USXNDQRMF"
+const {
+  canonicalSymbolFromTicker: canonicalThaiFundSymbol,
+  getHistoricalThaiFundNav
+} = require("../lib/data-providers/thaiMutualFundHistoricalNavProvider");
+const THAI_STOCK_ALIASES = {
+  "GULF.BK": "GULF.BK",
+  GULFBK: "GULF.BK",
+  GULF: "GULF.BK"
 };
-const THAI_FUND_PROVIDER_CONFIG = {
-  "K-GTECHRMF": {
-    name: "K Global Technology RMF",
-    url: "https://www.kasikornasset.com/kasset/en/mutual-fund/fund-template/Pages/K-GTECHRMF.aspx"
-  },
-  "K-USXNDQRMF": {
-    name: "K US Equity NDQ 100 Index RMF",
-    url: "https://www.kasikornasset.com/kasset/en/mutual-fund/fund-template/Pages/K-USXNDQRMF.aspx"
-  }
+const THAI_INDEX_ALIASES = {
+  SET: "^SET.BK",
+  "SET.BK": "^SET.BK",
+  "^SET.BK": "^SET.BK",
+  SETINDEX: "^SET.BK",
+  SET50: "^SET50.BK",
+  "SET50.BK": "^SET50.BK",
+  "^SET50.BK": "^SET50.BK",
+  SET50INDEX: "^SET50.BK",
+  SET100: "^SET100.BK",
+  "SET100.BK": "^SET100.BK",
+  "^SET100.BK": "^SET100.BK",
+  SET100INDEX: "^SET100.BK"
 };
-const THAI_FUND_FALLBACK_NAV = {
-  "K-GTECHRMF": { nav: 22.8378, navDate: "2026-05-20" },
-  "K-USXNDQRMF": { nav: 14.3474, navDate: "2026-05-21" }
+const US_INDEX_ALIASES = {
+  SPX: "^GSPC",
+  "^GSPC": "^GSPC",
+  GSPC: "^GSPC",
+  IXIC: "^IXIC",
+  "^IXIC": "^IXIC",
+  NDX: "^NDX",
+  "^NDX": "^NDX"
 };
 
 function send(res, status, payload) {
@@ -49,103 +60,6 @@ function supabaseHeaders(extra = {}) {
   };
 }
 
-function normalizeThaiFundSymbol(raw) {
-  const upper = String(raw || "").trim().toUpperCase();
-  const compact = upper.replace(/[^A-Z0-9]/g, "");
-  return THAI_FUND_SYMBOL_ALIASES[upper] || THAI_FUND_SYMBOL_ALIASES[compact] || "";
-}
-
-function formatIsoDate(date) {
-  return `${date.getUTCFullYear().toString().padStart(4, "0")}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
-}
-
-function latestBusinessDayIso(baseDate = new Date()) {
-  const day = new Date(Date.UTC(baseDate.getUTCFullYear(), baseDate.getUTCMonth(), baseDate.getUTCDate()));
-  while (day.getUTCDay() === 0 || day.getUTCDay() === 6) {
-    day.setUTCDate(day.getUTCDate() - 1);
-  }
-  return formatIsoDate(day);
-}
-
-function previousBusinessDayIso(baseDate = new Date()) {
-  const day = new Date(Date.UTC(baseDate.getUTCFullYear(), baseDate.getUTCMonth(), baseDate.getUTCDate()));
-  day.setUTCDate(day.getUTCDate() - 1);
-  while (day.getUTCDay() === 0 || day.getUTCDay() === 6) {
-    day.setUTCDate(day.getUTCDate() - 1);
-  }
-  return formatIsoDate(day);
-}
-
-function parseKAssetDate(rawDate) {
-  const text = String(rawDate || "").trim();
-  if (!text) return null;
-  const parsed = new Date(`${text} UTC`);
-  if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
-
-  const months = {
-    jan: 1, january: 1,
-    feb: 2, february: 2,
-    mar: 3, march: 3,
-    apr: 4, april: 4,
-    may: 5,
-    jun: 6, june: 6,
-    jul: 7, july: 7,
-    aug: 8, august: 8,
-    sep: 9, sept: 9, september: 9,
-    oct: 10, october: 10,
-    nov: 11, november: 11,
-    dec: 12, december: 12
-  };
-  const match = text.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
-  if (!match) return null;
-  const day = Number(match[1]);
-  const month = months[match[2].toLowerCase()];
-  const year = Number(match[3]);
-  if (!day || !month || !year) return null;
-  return `${year.toString().padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-}
-
-function parseKAssetNavFromHtml(html, symbol, url) {
-  const navDateMatch = html.match(/Data as of\s+([0-9]{1,2}\s+[A-Za-z]+\s+[0-9]{4})/i);
-  const navValueMatch = html.match(/NAV\s*[\r\n\s]*per unit\s*[\r\n\s]*([0-9][0-9,]*\.[0-9]+)/i);
-  if (!navDateMatch || !navValueMatch) throw new Error(`Unable to parse NAV page for ${symbol}`);
-  const navDate = parseKAssetDate(navDateMatch[1]);
-  const nav = Number(String(navValueMatch[1]).replace(/,/g, ""));
-  if (!Number.isFinite(nav) || !navDate) throw new Error(`Invalid NAV payload for ${symbol}`);
-  return { symbol, nav, navDate, source: `KAsset ${url}` };
-}
-
-function shouldSkipThaiNavRefetch(cached) {
-  if (!cached?.fetchedAt || !cached?.navDate) return false;
-  const now = new Date();
-  const fetchedAt = new Date(cached.fetchedAt);
-  if (Number.isNaN(fetchedAt.getTime())) return false;
-  if (formatIsoDate(fetchedAt) !== formatIsoDate(now)) return false;
-  const latestBiz = latestBusinessDayIso(now);
-  const prevBiz = previousBusinessDayIso(now);
-  return cached.navDate === formatIsoDate(now) || cached.navDate === latestBiz || cached.navDate === prevBiz;
-}
-
-async function readThaiNavCacheFromSupabase() {
-  if (!hasSupabaseCoreConfig()) return {};
-  const url = `${getSupabaseUrl()}/rest/v1/app_state?id=eq.${THAI_NAV_CACHE_STATE_ID}&select=data`;
-  const response = await fetch(url, { headers: supabaseHeaders() });
-  if (!response.ok) return {};
-  const rows = await response.json();
-  const data = rows[0]?.data;
-  return data && typeof data === "object" ? data : {};
-}
-
-async function writeThaiNavCacheToSupabase(cache) {
-  if (!hasSupabaseCoreConfig()) return;
-  const url = `${getSupabaseUrl()}/rest/v1/app_state`;
-  await fetch(url, {
-    method: "POST",
-    headers: supabaseHeaders({ prefer: "resolution=merge-duplicates,return=minimal" }),
-    body: JSON.stringify([{ id: THAI_NAV_CACHE_STATE_ID, data: cache, updated_at: new Date().toISOString() }])
-  });
-}
-
 function sanitizeMarketCache(data) {
   if (!data || typeof data !== "object") return {};
   return data;
@@ -170,87 +84,103 @@ async function writeMarketDataCacheToSupabase(cache) {
   });
 }
 
-async function fetchThaiFundNavLive(symbol) {
-  const config = THAI_FUND_PROVIDER_CONFIG[symbol];
-  if (!config) throw new Error(`Unsupported Thai fund symbol: ${symbol}`);
-  const response = await fetch(config.url, {
-    headers: {
-      accept: "text/html,application/xhtml+xml",
-      "user-agent": "portfolio-dashboard/1.0"
-    }
-  });
-  if (!response.ok) throw new Error(`KAsset request failed (${response.status})`);
-  const html = await response.text();
-  const parsed = parseKAssetNavFromHtml(html, symbol, config.url);
+function shapeThaiNavAsHistory(snapshot) {
+  const sourceType =
+    snapshot.source === "Cache"
+      ? "SERVER_CACHED_DATA"
+      : snapshot.source === "KAssetLatestOnly"
+        ? "LIVE_MARKET_DATA"
+      : snapshot.source === "Settrade"
+        ? "LIVE_MARKET_DATA"
+        : "LIVE_MARKET_DATA";
+  const navStatus =
+    snapshot.source === "Cache"
+      ? "CACHED_NAV_HISTORY"
+      : snapshot.source === "KAssetLatestOnly"
+        ? "LIVE_NAV"
+      : snapshot.source === "Settrade"
+        ? "LIVE_NAV_SETTRADE"
+        : "LIVE_NAV_KASSET";
   return {
-    ...parsed,
-    fundName: config.name,
-    provider: "KAsset",
-    status: "LIVE_NAV",
-    fetchedAt: new Date().toISOString()
+    symbol: snapshot.canonicalSymbol,
+    fundName: snapshot.fundName || snapshot.canonicalSymbol,
+    assetType: "Thai Mutual Fund",
+    source: snapshot.source === "KAssetLatestOnly" ? "KAsset latest NAV only" : `${snapshot.source} historical NAV`,
+    provider: snapshot.source || "KAsset",
+    navStatus,
+    sourceType,
+    lastUpdated: snapshot.fetchedAt || null,
+    dates: snapshot.navHistory.map((row) => row.date),
+    closes: snapshot.navHistory.map((row) => Number(row.nav))
   };
 }
 
-function shapeThaiNavAsHistory(snapshot) {
-  return {
-    symbol: snapshot.symbol,
-    fundName: snapshot.fundName || THAI_FUND_PROVIDER_CONFIG[snapshot.symbol]?.name || snapshot.symbol,
-    assetType: "Thai Mutual Fund",
-    source: snapshot.source || "KAsset",
-    provider: snapshot.provider || "KAsset",
-    navStatus: snapshot.status || "LIVE_NAV",
-    sourceType: snapshot.status === "CACHED_NAV" ? "SERVER_CACHED_DATA" : snapshot.status === "FALLBACK_NAV" ? "FALLBACK_DATA" : "LIVE_MARKET_DATA",
-    lastUpdated: snapshot.fetchedAt || null,
-    dates: snapshot.navDate ? [snapshot.navDate] : [],
-    closes: Number.isFinite(snapshot.nav) ? [Number(snapshot.nav)] : []
-  };
+function canonicalMarketSymbol(rawSymbol) {
+  const normalized = String(rawSymbol || "").trim().toUpperCase().replace(/[^A-Z0-9.^-]/g, "");
+  const compact = normalized.replace(/[^A-Z0-9]/g, "");
+  return (
+    THAI_INDEX_ALIASES[normalized] ||
+    THAI_INDEX_ALIASES[compact] ||
+    US_INDEX_ALIASES[normalized] ||
+    US_INDEX_ALIASES[compact] ||
+    THAI_STOCK_ALIASES[normalized] ||
+    THAI_STOCK_ALIASES[compact] ||
+    normalized
+  );
 }
 
 async function fetchThaiFundNavSnapshot(rawSymbol, options = {}) {
   const forceRefresh = Boolean(options.forceRefresh);
-  const symbol = normalizeThaiFundSymbol(rawSymbol);
+  const symbol = canonicalThaiFundSymbol(rawSymbol);
   if (!symbol) return null;
-
-  const cache = await readThaiNavCacheFromSupabase();
-  const cached = cache[symbol];
-  if (!forceRefresh && cached && shouldSkipThaiNavRefetch(cached)) {
-    return shapeThaiNavAsHistory(cached);
-  }
-
-  try {
-    const live = await fetchThaiFundNavLive(symbol);
-    const nextCache = { ...cache, [symbol]: live };
-    await writeThaiNavCacheToSupabase(nextCache);
-    return shapeThaiNavAsHistory(live);
-  } catch (_error) {
-    if (cached && Number.isFinite(cached.nav) && cached.navDate) {
-      return shapeThaiNavAsHistory({
-        ...cached,
-        status: "CACHED_NAV",
-        source: `${cached.source || "KAsset"} (cached)`
-      });
-    }
-    const fallback = THAI_FUND_FALLBACK_NAV[symbol];
-    if (fallback) {
-      return shapeThaiNavAsHistory({
-        symbol,
-        fundName: THAI_FUND_PROVIDER_CONFIG[symbol]?.name || symbol,
-        nav: fallback.nav,
-        navDate: fallback.navDate,
-        provider: "KAsset",
-        source: "KAsset (fallback)",
-        status: "FALLBACK_NAV",
-        fetchedAt: new Date().toISOString()
-      });
-    }
-    throw new Error(`Unable to load Thai NAV for ${symbol}`);
-  }
+  const historyPayload = await getHistoricalThaiFundNav(symbol, { minPoints: 220, forceRefresh });
+  return shapeThaiNavAsHistory(historyPayload);
 }
 
-async function fetchDailyHistory(symbol) {
+function shapeMarketRows(symbol, rows, sourceType, sourceText, fetchedAt, extra = {}) {
+  return {
+    symbol,
+    assetType: "Market",
+    source: sourceText,
+    provider: "Yahoo",
+    navStatus: "LIVE_MARKET",
+    sourceType,
+    lastUpdated: fetchedAt || null,
+    dates: rows.map((row) => row.date),
+    closes: rows.map((row) => row.close),
+    historicalSourceLimited: Boolean(extra.historicalSourceLimited),
+    latestLiveRows: Number.isFinite(extra.latestLiveRows) ? Number(extra.latestLiveRows) : null,
+    sourceRange: extra.sourceRange || null
+  };
+}
+
+function sortAndNormalizeRows(rows) {
+  if (!Array.isArray(rows)) return [];
+  const map = new Map();
+  for (const row of rows) {
+    const date = String(row?.date || "");
+    const close = Number(row?.close);
+    if (!date || !Number.isFinite(close)) continue;
+    map.set(date, { date, close });
+  }
+  return [...map.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+function mergeHistoricalRows(existingRows, incomingRows) {
+  const merged = new Map();
+  for (const row of sortAndNormalizeRows(existingRows)) {
+    merged.set(row.date, row);
+  }
+  for (const row of sortAndNormalizeRows(incomingRows)) {
+    merged.set(row.date, row);
+  }
+  return [...merged.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+async function fetchDailyHistoryByRange(symbol, range) {
   const endpoint = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
   endpoint.searchParams.set("interval", "1d");
-  endpoint.searchParams.set("range", "2y");
+  endpoint.searchParams.set("range", range);
   endpoint.searchParams.set("includePrePost", "false");
 
   const response = await fetch(endpoint, {
@@ -277,48 +207,89 @@ async function fetchDailyHistory(symbol) {
     });
   }
 
-  rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-  return rows;
+  return sortAndNormalizeRows(rows);
 }
 
-function shapeMarketRows(symbol, rows, sourceType, sourceText, fetchedAt) {
+async function fetchDailyHistory(symbol) {
+  const ranges = ["2y", "5y", "10y", "max"];
+  let bestRows = [];
+  let bestRange = ranges[0];
+  let lastError = null;
+
+  for (const range of ranges) {
+    try {
+      const rows = await fetchDailyHistoryByRange(symbol, range);
+      if (rows.length > bestRows.length) {
+        bestRows = rows;
+        bestRange = range;
+      }
+      if (rows.length >= 220) break;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!bestRows.length && lastError) throw lastError;
   return {
-    symbol,
-    assetType: "Market",
-    source: sourceText,
-    provider: "Yahoo",
-    navStatus: "LIVE_MARKET",
-    sourceType,
-    lastUpdated: fetchedAt || null,
-    dates: rows.map((row) => row.date),
-    closes: rows.map((row) => row.close)
+    rows: bestRows,
+    range: bestRange,
+    isSparse: bestRows.length <= 1
   };
 }
 
 async function fetchMarketHistoryWithServerCache(symbol) {
   const cache = await readMarketDataCacheFromSupabase();
   try {
-    const liveRows = await fetchDailyHistory(symbol);
+    const liveResult = await fetchDailyHistory(symbol);
+    const liveRows = liveResult.rows;
     const now = new Date().toISOString();
+    const cachedRows = Array.isArray(cache?.[symbol]?.rows) ? cache[symbol].rows : [];
+    const mergedRows = mergeHistoricalRows(cachedRows, liveRows);
+    const hasMergedHistory = mergedRows.length > liveRows.length;
     const payload = {
       symbol,
-      rows: liveRows,
+      rows: mergedRows,
+      latestLiveRows: liveRows.length,
+      sourceRange: liveResult.range || "2y",
+      historicalSourceLimited: Boolean(liveResult.isSparse && mergedRows.length < 26),
       fetchedAt: now
     };
     const nextCache = { ...cache, [symbol]: payload };
     await writeMarketDataCacheToSupabase(nextCache);
-    return shapeMarketRows(symbol, liveRows, "LIVE_MARKET_DATA", "Yahoo Finance", now);
+    return shapeMarketRows(
+      symbol,
+      mergedRows,
+      hasMergedHistory ? "SERVER_CACHED_DATA" : "LIVE_MARKET_DATA",
+      hasMergedHistory ? "Yahoo latest + server historical cache" : "Yahoo Finance",
+      now,
+      {
+        historicalSourceLimited: Boolean(liveResult.isSparse && mergedRows.length < 26),
+        latestLiveRows: liveRows.length,
+        sourceRange: liveResult.range || "2y"
+      }
+    );
   } catch (error) {
     const cached = cache[symbol];
     if (cached?.rows && Array.isArray(cached.rows) && cached.rows.length) {
-      return shapeMarketRows(symbol, cached.rows, "SERVER_CACHED_DATA", "Server cached data", cached.fetchedAt || null);
+      return shapeMarketRows(
+        symbol,
+        cached.rows,
+        "SERVER_CACHED_DATA",
+        "Server cached data",
+        cached.fetchedAt || null,
+        {
+          historicalSourceLimited: Boolean(cached.historicalSourceLimited),
+          latestLiveRows: Number.isFinite(cached.latestLiveRows) ? cached.latestLiveRows : null,
+          sourceRange: cached.sourceRange || null
+        }
+      );
     }
     throw error;
   }
 }
 
 module.exports = async function handler(req, res) {
-  const symbol = String(req.query?.symbol || "").trim().toUpperCase();
+  const symbol = canonicalMarketSymbol(req.query?.symbol || "");
   const forceRefresh = String(req.query?.refresh || "") === "1";
   if (!symbol) {
     send(res, 400, { error: "Please provide symbol." });
@@ -333,14 +304,19 @@ module.exports = async function handler(req, res) {
     }
     const marketData = await fetchMarketHistoryWithServerCache(symbol);
     send(res, 200, marketData);
-  } catch (_error) {
-    send(res, 502, { error: "Unable to fetch daily price history." });
+  } catch (error) {
+    send(res, 502, {
+      error: String(error.message || "Unable to fetch daily price history."),
+      code: error.code || ""
+    });
   }
 };
 
 module.exports.__internals = {
   hasSupabaseCoreConfig,
   fetchDailyHistory,
+  fetchDailyHistoryByRange,
+  mergeHistoricalRows,
   readMarketDataCacheFromSupabase,
   fetchMarketHistoryWithServerCache
 };

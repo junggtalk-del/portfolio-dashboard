@@ -39,9 +39,63 @@ create table if not exists portfolio_dashboard.app_state (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists portfolio_dashboard.fund_nav_history (
+  id uuid primary key default gen_random_uuid(),
+  symbol text not null,
+  canonical_symbol text not null,
+  nav_date date not null,
+  nav numeric not null,
+  offer_price numeric,
+  bid_price numeric,
+  change_value numeric,
+  change_percent numeric,
+  total_net_asset numeric,
+  source text not null default 'KAsset',
+  fetched_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (canonical_symbol, nav_date)
+);
+
+create table if not exists portfolio_dashboard.portfolio_holdings (
+  id uuid primary key default gen_random_uuid(),
+  canonical_symbol text not null,
+  display_symbol text not null,
+  asset_name text not null,
+  asset_type text,
+  provider_symbol text,
+  is_holding boolean not null default false,
+  watchlist_only boolean not null default true,
+  quantity numeric,
+  average_cost numeric,
+  cost_value numeric,
+  market_value numeric,
+  currency text not null default 'THB',
+  latest_price numeric,
+  latest_price_date date,
+  target_weight numeric,
+  portfolio_bucket text,
+  account_type text,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (canonical_symbol)
+);
+
+alter table portfolio_dashboard.portfolio_holdings
+  add column if not exists provider_symbol text;
+
+alter table portfolio_dashboard.portfolio_holdings
+  add column if not exists latest_price numeric;
+
+alter table portfolio_dashboard.portfolio_holdings
+  add column if not exists latest_price_date date;
+
 alter table portfolio_dashboard.portfolio_quarters enable row level security;
 alter table portfolio_dashboard.portfolio_assets enable row level security;
 alter table portfolio_dashboard.app_state enable row level security;
+alter table portfolio_dashboard.fund_nav_history enable row level security;
+alter table portfolio_dashboard.portfolio_holdings enable row level security;
 
 drop policy if exists "Users can read their quarters" on portfolio_dashboard.portfolio_quarters;
 create policy "Users can read their quarters"
@@ -84,3 +138,14 @@ drop policy if exists "Users can delete their assets" on portfolio_dashboard.por
 create policy "Users can delete their assets"
 on portfolio_dashboard.portfolio_assets for delete
 using (auth.uid() = user_id);
+
+drop policy if exists "Authenticated can read fund nav history" on portfolio_dashboard.fund_nav_history;
+create policy "Authenticated can read fund nav history"
+on portfolio_dashboard.fund_nav_history for select
+using (true);
+
+drop policy if exists "Service role can manage portfolio holdings" on portfolio_dashboard.portfolio_holdings;
+create policy "Service role can manage portfolio holdings"
+on portfolio_dashboard.portfolio_holdings for all
+using (true)
+with check (true);
