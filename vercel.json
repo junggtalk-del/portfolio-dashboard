@@ -7,6 +7,34 @@
       "destination": "/ai-boom-universe.html"
     },
     {
+      "source": "/technical-signals",
+      "destination": "/technical-signals.html"
+    },
+    {
+      "source": "/backtest",
+      "destination": "/backtest.html"
+    },
+    {
+      "source": "/market-risk",
+      "destination": "/market-risk.html"
+    },
+    {
+      "source": "/action-center",
+      "destination": "/action-center.html"
+    },
+    {
+      "source": "/exposure-map",
+      "destination": "/exposure-map.html"
+    },
+    {
+      "source": "/portfolio-holdings",
+      "destination": "/portfolio-holdings.html"
+    },
+    {
+      "source": "/portfolio-status",
+      "destination": "/portfolio-status.html"
+    },
+    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }

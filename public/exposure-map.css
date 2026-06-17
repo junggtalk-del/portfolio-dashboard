@@ -1,0 +1,390 @@
+:root {
+  color-scheme: light;
+  --ink: #1b2d46;
+  --muted: #6f7b91;
+  --line: #dbe4f0;
+  --page: #f3f7fb;
+  --panel: #ffffff;
+  --green: #18865d;
+  --green-bg: #ecfdf5;
+  --amber: #a5660b;
+  --amber-bg: #fff8df;
+  --orange: #b75d1b;
+  --orange-bg: #fff4ea;
+  --red: #b83a36;
+  --red-bg: #fff1f1;
+  --blue: #2f5f8f;
+  --blue-bg: #edf6ff;
+  font-family: "Noto Sans Thai", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(47, 95, 143, 0.14), transparent 34rem),
+    linear-gradient(180deg, #f8fbff 0%, var(--page) 100%);
+  min-height: 100vh;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+.exposure-shell {
+  width: min(1280px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.exposure-topbar,
+.exposure-toolbar,
+.exposure-panel,
+.warning-panel,
+.risk-summary,
+.exposure-disclaimer {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 18px 44px rgba(40, 65, 96, 0.08);
+}
+
+.exposure-topbar {
+  padding: 22px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.exposure-eyebrow {
+  margin: 0 0 6px;
+  color: #31736e;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.15rem, 6.6vw, 4.6rem);
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.exposure-subtitle,
+.exposure-toolbar p,
+.panel-heading p,
+.asset-name,
+.asset-meta,
+.risk-copy,
+.exposure-disclaimer,
+.empty-box {
+  color: var(--muted);
+}
+
+.exposure-subtitle {
+  margin: 10px 0 0;
+  font-size: 1.05rem;
+}
+
+.exposure-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.exposure-nav a,
+.exposure-toolbar button {
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.exposure-nav a.is-active,
+.exposure-toolbar button {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.exposure-toolbar {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.exposure-toolbar p {
+  margin: 4px 0 0;
+}
+
+.exposure-toolbar button {
+  cursor: pointer;
+}
+
+.risk-summary {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.2fr);
+  gap: 14px;
+}
+
+.risk-score-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  background: #fff;
+}
+
+.risk-score-card span {
+  display: block;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.risk-score-card strong {
+  display: block;
+  font-size: 3rem;
+  line-height: 1;
+  margin: 8px 0;
+}
+
+.risk-level {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-weight: 900;
+}
+
+.risk-copy {
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+
+.exposure-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.summary-tile {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: #fff;
+}
+
+.summary-tile span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.summary-tile strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.warning-panel {
+  padding: 16px;
+}
+
+.warning-list {
+  display: grid;
+  gap: 10px;
+}
+
+.warning-item {
+  border: 1px solid rgba(183, 93, 27, 0.3);
+  background: var(--orange-bg);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.warning-item strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.warning-item p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.exposure-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.exposure-panel {
+  padding: 16px;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.panel-heading h2 {
+  margin: 0;
+  font-size: 1.22rem;
+}
+
+.panel-heading p {
+  margin: 3px 0 0;
+}
+
+.count-badge {
+  min-width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-weight: 900;
+}
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.asset-card {
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 13px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.asset-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.asset-symbol {
+  font-weight: 900;
+  font-size: 1.15rem;
+}
+
+.asset-name,
+.asset-meta {
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #24527e;
+  background: #dbeeff;
+}
+
+.tag.is-overlap {
+  color: #825107;
+  background: #ffedb5;
+}
+
+.tone-low {
+  color: #09633f;
+  background: #d8f8e8;
+}
+
+.tone-medium {
+  color: #825107;
+  background: #ffedb5;
+}
+
+.tone-high {
+  color: #9a4714;
+  background: #ffe0c7;
+}
+
+.tone-extreme {
+  color: #9d2f2c;
+  background: #ffd8d5;
+}
+
+.empty-box {
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  font-weight: 800;
+}
+
+.exposure-disclaimer {
+  padding: 14px 16px;
+  font-weight: 700;
+}
+
+.exposure-disclaimer p {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .exposure-topbar,
+  .exposure-toolbar,
+  .risk-summary {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .exposure-nav {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .exposure-shell {
+    width: min(100% - 20px, 1280px);
+    padding-top: 14px;
+  }
+
+  .asset-grid,
+  .exposure-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Market Risk Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/market-risk.css?v=20260609-risk-2" />
+      <link rel="stylesheet" href="/app-navigation.css?v=20260617-nav-1" />
+      <script src="/data-snapshot.js?v=20260617-snapshot-2"></script>
+  </head>
+  <body>
+    <main class="risk-shell">
+      <section class="risk-topbar">
+        <div>
+          <p class="risk-eyebrow">Market Fragility Monitor</p>
+          <h1>Market Risk Monitor</h1>
+          <p class="risk-subtitle">ติดตามความเสี่ยงตลาดจากหุ้นเทค, VIX, VVIX และ VIXEQ</p>
+        </div>
+        <nav class="risk-nav" aria-label="เมนูหลัก">
+          <a href="/">กลับ Dashboard พอร์ต</a>
+          <a href="/ai-boom-universe">AI Boom Universe</a>
+          <a href="/technical-signals">Technical Signals</a>
+          <a href="/action-center">Action Center</a>
+          <a href="/portfolio-status">Portfolio Status</a>
+          <a href="/portfolio-holdings">Holdings</a>
+          <a href="/exposure-map">Exposure Map</a>
+          <a href="/backtest">Backtest Lab</a>
+          <a class="is-active" href="/market-risk">Market Risk</a>
+        </nav>
+      </section>
+
+      <section class="risk-toolbar">
+        <div>
+          <strong id="riskStatus">กำลังโหลดข้อมูลความเสี่ยงตลาด...</strong>
+          <p id="riskTimestamp">รอข้อมูลจาก provider</p>
+        </div>
+        <button id="refreshRiskButton" type="button">Refresh risk data</button>
+      </section>
+
+      <section id="riskSummaryCards" class="risk-summary-grid" aria-label="สรุปความเสี่ยง">
+        <div class="risk-empty">กำลังคำนวณ Market Risk...</div>
+      </section>
+
+      <section class="risk-panel interpretation-panel">
+        <div class="panel-heading">
+          <h2>สรุปภาวะตลาดตอนนี้</h2>
+          <p>Dashboard interpretation summary</p>
+        </div>
+        <div id="marketInterpretation" class="market-interpretation">
+          กำลังรอสัญญาณจาก SPX, XLK, VIX, VVIX และ VIXEQ
+        </div>
+      </section>
+
+      <section class="risk-panel guide-panel">
+        <div class="panel-heading">
+          <h2>คำอธิบายตัวชี้วัด</h2>
+          <p>Indicator Guide</p>
+        </div>
+        <div id="indicatorGuide" class="indicator-guide"></div>
+      </section>
+
+      <section class="risk-panel combined-panel">
+        <div class="panel-heading">
+          <h2>สัญญาณที่ต้องระวังเป็นพิเศษ</h2>
+          <p>Important Combined Risk Signals</p>
+        </div>
+        <div id="combinedSignals" class="combined-signal-grid"></div>
+      </section>
+
+      <section class="risk-panels">
+        <article class="risk-panel">
+          <div class="panel-heading">
+            <h2>Market Leadership</h2>
+            <p>ดูว่าตลาดขึ้นกว้าง หรือหุ้นเทคกำลังแบกตลาดมากเกินไป</p>
+          </div>
+          <div id="leadershipPanel" class="metric-list"></div>
+        </article>
+
+        <article class="risk-panel">
+          <div class="panel-heading">
+            <h2>Volatility Regime</h2>
+            <p>อ่านระดับ VIX, VVIX และการเร่งขึ้นของความต้องการ hedge</p>
+          </div>
+          <div id="volatilityPanel" class="metric-list"></div>
+        </article>
+
+        <article class="risk-panel">
+          <div class="panel-heading">
+            <h2>Hidden Risk / Hedging Signal</h2>
+            <p>จับสัญญาณ VIX ยังนิ่ง แต่ตลาดเริ่มซื้อ protection หรือ risk รายตัวสูงขึ้น</p>
+          </div>
+          <div id="hiddenRiskPanel" class="metric-list"></div>
+        </article>
+
+        <article class="risk-panel">
+          <div class="panel-heading">
+            <h2>Risk Flags</h2>
+            <p>รายการ warning ที่ active อยู่ตอนนี้</p>
+          </div>
+          <div id="riskFlags" class="flag-list"></div>
+        </article>
+
+        <article class="risk-panel">
+          <div class="panel-heading">
+            <h2>Action Guide</h2>
+            <p>แนวทางใช้งานตามระดับ risk score</p>
+          </div>
+          <div id="actionGuide" class="action-guide"></div>
+        </article>
+      </section>
+
+      <footer class="risk-disclaimer">
+        <p>อินดิเคเตอร์เหล่านี้ใช้เพื่อเฝ้าระวังความเสี่ยง ไม่ใช่คำแนะนำการลงทุน ควรใช้ร่วมกับการจัดพอร์ต แนวโน้มหลัก และการบริหารความเสี่ยง</p>
+        <p>These indicators are risk-monitoring tools, not investment advice. Use together with portfolio allocation, trend signals, and risk management.</p>
+      </footer>
+    </main>
+    <script src="/market-risk-page.js?v=20260609-risk-2"></script>
+<script src="/app-navigation.js?v=20260617-nav-1"></script>
+  </body>
+</html>

@@ -1,0 +1,229 @@
+.app-premium-nav {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.app-primary-nav,
+.app-secondary-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-primary-nav {
+  padding: 6px;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid rgba(219, 228, 240, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 10px 24px rgba(42, 62, 90, 0.06);
+}
+
+.app-primary-nav a,
+.app-secondary-nav a {
+  color: #1b2d46;
+  text-decoration: none;
+  white-space: nowrap;
+  font-weight: 900;
+}
+
+.app-primary-nav a {
+  border-radius: 999px;
+  padding: 9px 14px;
+  color: #5f6d82;
+  font-size: 0.9rem;
+}
+
+.app-primary-nav a:hover,
+.app-secondary-nav a:hover {
+  color: #17324d;
+  background: rgba(23, 50, 77, 0.07);
+}
+
+.app-primary-nav a.is-active {
+  color: #fff;
+  background: #17324d;
+  box-shadow: 0 8px 18px rgba(23, 50, 77, 0.18);
+}
+
+.app-page-context {
+  color: #718096;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.app-page-context span + span {
+  margin-left: 8px;
+}
+
+.app-page-context span[aria-hidden="true"] {
+  color: #a7b1c2;
+}
+
+.app-secondary-nav {
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px;
+  border: 1px solid rgba(219, 228, 240, 0.86);
+  border-radius: 14px;
+  background: rgba(244, 247, 251, 0.82);
+}
+
+.app-secondary-nav a {
+  border-radius: 10px;
+  padding: 8px 11px;
+  color: #68768c;
+  font-size: 0.84rem;
+}
+
+.app-secondary-nav a.is-active {
+  color: #17324d;
+  background: #fff;
+  box-shadow: 0 6px 14px rgba(42, 62, 90, 0.08);
+}
+
+.app-data-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(219, 228, 240, 0.9);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.app-data-status > div:first-child {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.app-data-status strong {
+  color: #17324d;
+}
+
+.app-data-status span {
+  color: #68768c;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+#appDataFreshness[data-freshness="fresh"],
+#appDataFreshness[data-freshness="recent"] {
+  color: #167a58;
+}
+
+#appDataFreshness[data-freshness="stale"] {
+  color: #a5660b;
+}
+
+#appDataFreshness[data-freshness="outdated"],
+#appDataFreshness[data-freshness="missing"] {
+  color: #b83a36;
+}
+
+.app-data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.app-data-actions button {
+  border: 1px solid #17324d;
+  border-radius: 11px;
+  padding: 8px 11px;
+  color: #fff;
+  background: #17324d;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.app-data-actions button[hidden] {
+  display: none;
+}
+
+.app-data-actions button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+#appRetryFailedButton {
+  color: #17324d;
+  background: #fff;
+}
+
+body.has-premium-nav .action-topbar,
+body.has-premium-nav .holdings-topbar,
+body.has-premium-nav .status-topbar,
+body.has-premium-nav .exposure-topbar,
+body.has-premium-nav .risk-topbar,
+body.has-premium-nav .ai-topbar,
+body.has-premium-nav .signal-topbar,
+body.has-premium-nav .backtest-topbar,
+body.has-premium-nav .topbar {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 14px;
+}
+
+body.has-premium-nav .action-nav,
+body.has-premium-nav .holdings-nav,
+body.has-premium-nav .status-nav,
+body.has-premium-nav .exposure-nav,
+body.has-premium-nav .risk-nav,
+body.has-premium-nav .ai-nav,
+body.has-premium-nav .signal-nav,
+body.has-premium-nav .backtest-nav {
+  display: none !important;
+}
+
+body.has-premium-nav .top-actions a.ghost-button {
+  display: none !important;
+}
+
+body.has-premium-nav .top-actions {
+  justify-content: flex-start;
+}
+
+@media (max-width: 720px) {
+  .app-premium-nav {
+    gap: 10px;
+  }
+
+  .app-primary-nav,
+  .app-secondary-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+    border-radius: 14px;
+    scrollbar-width: none;
+  }
+
+  .app-primary-nav::-webkit-scrollbar,
+  .app-secondary-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-data-status {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .app-data-actions {
+    justify-content: flex-start;
+  }
+}

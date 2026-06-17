@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Backtest Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/backtest.css?v=20260603-backtest-2" />
+      <link rel="stylesheet" href="/app-navigation.css?v=20260617-nav-1" />
+      <script src="/data-snapshot.js?v=20260617-snapshot-2"></script>
+  </head>
+  <body>
+    <main class="backtest-shell">
+      <section class="backtest-topbar">
+        <div>
+          <p class="backtest-eyebrow">Strategy Research</p>
+          <h1>Backtest Lab</h1>
+          <p class="backtest-subtitle">ห้องทดลองกลยุทธ์ ทดสอบย้อนหลังด้วยข้อมูลราคาในอดีต</p>
+          <p class="backtest-warning">ผลลัพธ์ย้อนหลังไม่รับประกันผลลัพธ์ในอนาคต และหน้านี้ไม่มีการส่งคำสั่งซื้อขายจริง</p>
+        </div>
+        <nav class="backtest-nav" aria-label="เมนูหลัก">
+          <a href="/">กลับ Dashboard พอร์ต</a>
+          <a href="/ai-boom-universe">AI Boom Universe</a>
+          <a href="/technical-signals">Technical Signals</a>
+          <a href="/action-center">Action Center</a>
+          <a href="/portfolio-status">Portfolio Status</a>
+          <a href="/portfolio-holdings">Holdings</a>
+          <a href="/exposure-map">Exposure Map</a>
+          <a class="is-active" href="/backtest">Backtest Lab</a>
+          <a href="/market-risk">Market Risk</a>
+        </nav>
+      </section>
+
+      <section class="backtest-layout">
+        <aside class="setup-panel">
+          <div class="panel-heading">
+            <h2>Strategy Setup</h2>
+            <p>เลือกหุ้น/ETF และสมมติฐานสำหรับ backtest</p>
+          </div>
+
+          <label>
+            หุ้น/ETF
+            <select id="symbolSelect" multiple size="8"></select>
+          </label>
+
+          <label>
+            กลยุทธ์
+            <select id="strategySelect" multiple size="2"></select>
+          </label>
+
+          <div class="form-grid two">
+            <label>
+              เริ่ม
+              <input id="startDateInput" type="date" value="2015-01-01" />
+            </label>
+            <label>
+              สิ้นสุด
+              <input id="endDateInput" type="date" />
+            </label>
+          </div>
+
+          <label>
+            เงินเริ่มต้น
+            <input id="capitalInput" type="number" min="1000" step="1000" value="10000" />
+          </label>
+
+          <div class="form-grid two">
+            <label>
+              ค่า Slippage (%)
+              <input id="slippageInput" type="number" min="0" max="5" step="0.01" value="0.10" />
+            </label>
+            <label>
+              ค่าคอมมิชชั่น
+              <input id="commissionInput" type="number" min="0" step="0.01" value="0" />
+            </label>
+          </div>
+
+          <div class="button-stack">
+            <button id="runBacktestButton" class="run-button" type="button">เริ่ม Backtest</button>
+            <button id="runUniverseButton" class="secondary-button" type="button">Run Universe Backtest</button>
+          </div>
+          <div class="export-grid" aria-label="Export backtest CSV">
+            <button id="exportRankingButton" class="secondary-button" type="button" disabled>Export Ranking</button>
+            <button id="exportTradesButton" class="secondary-button" type="button" disabled>Export Trades</button>
+            <button id="exportEquityButton" class="secondary-button" type="button" disabled>Export Equity</button>
+          </div>
+          <p id="setupStatus" class="setup-status">Phase 2 รองรับ US stocks และ ETFs เท่านั้น ยังไม่มี crypto / broker / live trading</p>
+        </aside>
+
+        <section class="results-panel">
+          <div class="tab-row" aria-label="Backtest sections">
+            <button class="tab-button is-active" data-target="summarySection" type="button">Backtest Results</button>
+            <button class="tab-button" data-target="rankingSection" type="button">Strategy Ranking</button>
+            <button class="tab-button" data-target="tradesSection" type="button">Trade Details</button>
+            <button class="tab-button" data-target="chartsSection" type="button">Equity Curve</button>
+          </div>
+
+          <section id="summarySection" class="result-section">
+            <div class="panel-heading">
+              <h2>Backtest Results</h2>
+              <p id="resultSubtitle">กดเริ่ม Backtest เพื่อดูผลลัพธ์</p>
+            </div>
+            <div id="summaryCards" class="summary-grid">
+              <div class="empty-box">ยังไม่มีผลลัพธ์</div>
+            </div>
+            <div id="periodCards" class="period-grid"></div>
+          </section>
+
+          <section id="chartsSection" class="result-section">
+            <div class="panel-heading">
+              <h2>กราฟพอร์ตย้อนหลัง</h2>
+              <p>Equity curve และ drawdown ของผลลัพธ์ที่เลือก</p>
+            </div>
+            <div class="chart-grid">
+              <article class="chart-card">
+                <h3>Equity Curve</h3>
+                <canvas id="equityCanvas" width="800" height="280"></canvas>
+              </article>
+              <article class="chart-card">
+                <h3>Drawdown</h3>
+                <canvas id="drawdownCanvas" width="800" height="220"></canvas>
+              </article>
+            </div>
+          </section>
+
+          <section id="rankingSection" class="result-section">
+            <div class="panel-heading">
+              <h2>Strategy Ranking</h2>
+              <p>จัดอันดับด้วยคะแนนรวม ไม่ใช่อัตราชนะอย่างเดียว</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Strategy</th>
+                    <th>Full Return %</th>
+                    <th>In-sample %</th>
+                    <th>Out-of-sample %</th>
+                    <th>Recent %</th>
+                    <th>Win Rate %</th>
+                    <th>Profit Factor</th>
+                    <th>Max Drawdown %</th>
+                    <th>Expectancy</th>
+                    <th>Trade Count</th>
+                    <th>Strategy Score</th>
+                    <th>Verdict</th>
+                    <th>Warning</th>
+                  </tr>
+                </thead>
+                <tbody id="rankingRows"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="tradesSection" class="result-section">
+            <div class="panel-heading">
+              <h2>รายการซื้อขาย</h2>
+              <p id="tradesSubtitle">แสดงรายการซื้อขายของผลลัพธ์ที่เลือกจาก ranking</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Entry</th>
+                    <th>Exit</th>
+                    <th>Entry Price</th>
+                    <th>Exit Price</th>
+                    <th>Shares</th>
+                    <th>P/L</th>
+                    <th>P/L %</th>
+                    <th>Reason</th>
+                    <th>Holding Days</th>
+                  </tr>
+                </thead>
+                <tbody id="tradeRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+    <script src="/backtest-page.js?v=20260603-backtest-2"></script>
+<script src="/app-navigation.js?v=20260617-nav-1"></script>
+  </body>
+</html>
