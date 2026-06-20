@@ -172,6 +172,7 @@ body.has-premium-nav .exposure-topbar,
 body.has-premium-nav .risk-topbar,
 body.has-premium-nav .ai-topbar,
 body.has-premium-nav .signal-topbar,
+body.has-premium-nav .thai-scan-topbar,
 body.has-premium-nav .backtest-topbar,
 body.has-premium-nav .topbar {
   flex-direction: column;
@@ -187,6 +188,7 @@ body.has-premium-nav .exposure-nav,
 body.has-premium-nav .risk-nav,
 body.has-premium-nav .ai-nav,
 body.has-premium-nav .signal-nav,
+body.has-premium-nav .thai-scan-nav,
 body.has-premium-nav .backtest-nav {
   display: none !important;
 }

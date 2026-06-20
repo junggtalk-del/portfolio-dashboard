@@ -17,7 +17,9 @@ body {
   background: linear-gradient(180deg, #f8fbff 0%, var(--page) 100%);
   min-height: 100vh;
 }
-button { font: inherit; }
+button,
+select,
+input { font: inherit; }
 .status-shell {
   width: min(1280px, calc(100% - 32px));
   margin: 0 auto;
@@ -91,6 +93,29 @@ h1 {
   gap: 16px;
 }
 .status-toolbar p { margin: 4px 0 0; }
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: end;
+  gap: 10px;
+}
+.status-actions label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: .8rem;
+  font-weight: 900;
+}
+.status-actions select {
+  min-width: 170px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  padding: 10px 12px;
+  font-weight: 800;
+}
 .health-summary {
   padding: 16px;
   font-weight: 800;
@@ -107,6 +132,12 @@ h1 {
 .metric-card span {
   display: block;
   font-size: .84rem;
+  font-weight: 800;
+}
+.metric-card small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
   font-weight: 800;
 }
 .metric-card strong {
@@ -136,6 +167,83 @@ h1 {
 .holding-card p {
   margin: 5px 0;
 }
+.table-scroll {
+  overflow-x: auto;
+}
+.status-table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+.status-table th,
+.status-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 9px;
+  text-align: left;
+  vertical-align: top;
+}
+.status-table th {
+  color: var(--muted);
+  font-size: .78rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.status-table td {
+  color: var(--ink);
+  font-weight: 700;
+}
+.status-main-row:hover {
+  background: rgba(47,95,143,.04);
+}
+.status-detail-row td {
+  background: #f8fbff;
+  padding: 0 9px 12px;
+}
+.table-detail-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+.table-detail-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+  font-weight: 800;
+}
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 5px 8px;
+  margin: 2px 4px 2px 0;
+  color: #24527e;
+  background: #dbeeff;
+  font-size: .76rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+.detail-toggle {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  padding: 7px 9px;
+  font-size: .82rem;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.detail-toggle:hover {
+  border-color: var(--ink);
+}
+.positive { color: #0f7a55; }
+.negative { color: #b83a36; }
 .badge-row {
   display: flex;
   flex-wrap: wrap;
@@ -151,6 +259,128 @@ h1 {
 .red { color:#9d2f2c; background:#ffd8d5; }
 .amber { color:#825107; background:#ffedb5; }
 .gray { color:#596274; background:#e8edf4; }
+.blue { color:#24527e; background:#dbeeff; }
+.exposure-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+.exposure-card {
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: #fff;
+  padding: 13px;
+  display: grid;
+  gap: 9px;
+}
+.exposure-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+.exposure-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.exposure-card strong {
+  font-size: 1.45rem;
+}
+.exposure-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.4;
+  font-weight: 700;
+}
+.exposure-bar {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8edf4;
+}
+.exposure-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2f5f8f, #18865d);
+}
+.risk-high { border-color: rgba(184,58,54,.34); background: #fff7f7; }
+.risk-medium { border-color: rgba(165,102,11,.34); background: #fffaf0; }
+.risk-low { border-color: rgba(24,134,93,.26); background: #f5fffa; }
+.overlap-list {
+  display: grid;
+  gap: 10px;
+}
+.overlap-card {
+  border: 1px solid rgba(165,102,11,.28);
+  border-radius: 15px;
+  padding: 13px;
+  background: #fffaf0;
+}
+.overlap-card h3 {
+  margin: 0 0 4px;
+}
+.overlap-card p {
+  margin: 4px 0;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.45;
+}
+.lookthrough-card {
+  display: grid;
+  gap: 10px;
+}
+.lookthrough-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lookthrough-top strong {
+  font-size: 1.2rem;
+}
+.lookthrough-card details {
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+}
+.lookthrough-card summary {
+  cursor: pointer;
+  color: var(--blue);
+  font-weight: 900;
+}
+.lookthrough-detail {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.lookthrough-detail p {
+  margin: 0;
+  line-height: 1.45;
+}
+.tag-editor {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 900;
+}
+.tag-editor input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  color: var(--ink);
+  font-weight: 800;
+}
+.lookthrough-detail button {
+  width: fit-content;
+  border: 1px solid var(--ink);
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  padding: 8px 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
 .empty-box {
   border: 1px dashed var(--line);
   border-radius: 14px;
@@ -165,4 +395,7 @@ h1 {
     align-items: stretch;
   }
   .status-nav { justify-content: flex-start; }
+  .status-actions {
+    justify-content: flex-start;
+  }
 }

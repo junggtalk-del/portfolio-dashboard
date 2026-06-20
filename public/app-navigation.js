@@ -13,7 +13,7 @@
       label: "Portfolio",
       pages: [
         { path: "/portfolio-status", label: "Status" },
-        { path: "/portfolio-holdings", label: "Holdings" },
+        { path: "/portfolio-holdings", label: "Underlying" },
         { path: "/exposure-map", label: "Exposure Map" },
         { path: "/market-risk", label: "Market Risk" }
       ]
@@ -29,7 +29,8 @@
       key: "signals",
       label: "Signals",
       pages: [
-        { path: "/technical-signals", label: "Technical Signals" }
+        { path: "/technical-signals", label: "Technical Signals" },
+        { path: "/thai-stock-scanner", label: "Thai Stock Scanner" }
       ]
     },
     {
@@ -50,6 +51,7 @@
     ".risk-topbar",
     ".ai-topbar",
     ".signal-topbar",
+    ".thai-scan-topbar",
     ".backtest-topbar"
   ];
   const SNAPSHOT_STORAGE_KEY = "portfolio_dashboard_data_snapshot";
