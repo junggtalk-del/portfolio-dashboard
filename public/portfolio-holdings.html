@@ -3,26 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Portfolio Holdings</title>
+    <title>Underlying Holdings</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/portfolio-holdings.css?v=20260617-holdings-simple" />
-      <link rel="stylesheet" href="/app-navigation.css?v=20260617-nav-1" />
+      <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
       <script src="/data-snapshot.js?v=20260617-snapshot-2"></script>
   </head>
   <body>
     <main class="holdings-shell">
       <section class="holdings-topbar">
         <div>
-          <p class="holdings-eyebrow">Portfolio Source of Truth</p>
-          <h1>Portfolio Holdings</h1>
-          <p class="holdings-subtitle">ระบุสินทรัพย์ที่ลงทุนจริง และมูลค่าที่ถืออยู่</p>
+          <p class="holdings-eyebrow">Foreign Stock Look-Through</p>
+          <h1>Underlying Holdings</h1>
+          <p class="holdings-subtitle">รายละเอียดไส้ในของ FOREIGNSTOCK เพื่อใช้วิเคราะห์ Portfolio Status</p>
         </div>
         <nav class="holdings-nav" aria-label="เมนูหลัก">
           <a href="/">กลับ Dashboard พอร์ต</a>
           <a href="/portfolio-status">Portfolio Status</a>
-          <a class="is-active" href="/portfolio-holdings">Holdings</a>
+          <a class="is-active" href="/portfolio-holdings">Underlying</a>
           <a href="/action-center">Action Center</a>
           <a href="/exposure-map">Exposure Map</a>
           <a href="/ai-boom-universe">AI Boom Universe</a>
@@ -32,8 +32,8 @@
       <section class="holdings-panel">
         <div class="panel-heading">
           <div>
-            <h2>Portfolio Holdings</h2>
-            <p>เลือกสินทรัพย์จาก AI Boom Universe แล้วระบุว่าเป็น Holding จริงหรือ Watchlist Only</p>
+            <h2>Underlying Holdings</h2>
+            <p>ใส่รายการหุ้น/ETF ที่เป็นไส้ในของ FOREIGNSTOCK ยอดรวมส่วนนี้จะใช้แทน FOREIGNSTOCK ใน Portfolio Status</p>
           </div>
           <div class="panel-actions">
             <span id="holdingModeText" class="status-pill">Loading</span>
@@ -46,7 +46,7 @@
       <section class="holdings-panel">
         <div class="panel-heading">
           <div>
-            <h2>Holdings Table</h2>
+            <h2>Underlying Holdings Table</h2>
             <p id="holdingsSummary">กำลังโหลด holdings...</p>
           </div>
           <button id="reloadHoldingsButton" class="secondary-button" type="button">Reload</button>
@@ -115,6 +115,6 @@
     <script src="/ai-boom-universe-scoring.js?v=20260617-holdings-simple"></script>
     <script src="/portfolio-core.js?v=20260617-holdings-simple"></script>
     <script src="/portfolio-holdings-page.js?v=20260617-holdings-simple"></script>
-<script src="/app-navigation.js?v=20260617-nav-1"></script>
+<script src="/app-navigation.js?v=20260620-underlying-1"></script>
   </body>
 </html>

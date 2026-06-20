@@ -11,6 +11,10 @@
       "destination": "/technical-signals.html"
     },
     {
+      "source": "/thai-stock-scanner",
+      "destination": "/thai-stock-scanner.html"
+    },
+    {
       "source": "/backtest",
       "destination": "/backtest.html"
     },

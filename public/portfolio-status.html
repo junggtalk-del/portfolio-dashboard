@@ -7,22 +7,22 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/portfolio-status.css?v=20260611-status-1" />
-      <link rel="stylesheet" href="/app-navigation.css?v=20260617-nav-1" />
+    <link rel="stylesheet" href="/portfolio-status.css?v=20260619-lookthrough-1" />
+      <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
       <script src="/data-snapshot.js?v=20260617-snapshot-2"></script>
   </head>
   <body>
     <main class="status-shell">
       <section class="status-topbar">
         <div>
-          <p class="status-eyebrow">Real Portfolio Health</p>
+          <p class="status-eyebrow">Dashboard Portfolio Status</p>
           <h1>Portfolio Status</h1>
-          <p class="status-subtitle">สรุปสถานะพอร์ตจริงจากสินทรัพย์ที่ลงทุนอยู่</p>
+          <p class="status-subtitle">สรุปพอร์ตจากข้อมูลที่บันทึกใน Investment Dashboard โดยตรง</p>
         </div>
         <nav class="status-nav" aria-label="เมนูหลัก">
           <a href="/">กลับ Dashboard พอร์ต</a>
           <a class="is-active" href="/portfolio-status">Portfolio Status</a>
-          <a href="/portfolio-holdings">Holdings</a>
+          <a href="/portfolio-holdings">Underlying</a>
           <a href="/action-center">Action Center</a>
           <a href="/exposure-map">Exposure Map</a>
           <a href="/ai-boom-universe">AI Boom Universe</a>
@@ -32,9 +32,11 @@
       <section class="status-toolbar">
         <div>
           <strong id="statusText">กำลังคำนวณ portfolio status...</strong>
-          <p>ใช้เฉพาะรายการที่ตั้งเป็น Holding เท่านั้น ไม่รวม Watchlist Only</p>
+          <p id="statusSourceText">ใช้ Investment Dashboard เป็นแหล่งข้อมูลหลักเท่านั้น</p>
         </div>
-        <button id="refreshStatusButton" type="button">Refresh status</button>
+        <div class="status-actions">
+          <button id="refreshStatusButton" type="button">Refresh status</button>
+        </div>
       </section>
 
       <section id="healthSummary" class="health-summary">
@@ -47,15 +49,15 @@
 
       <section class="status-panel">
         <div class="panel-heading">
-          <h2>Holdings Signal Table</h2>
-          <p>เรียงตามมูลค่าตลาดจริงในพอร์ต</p>
+          <h2>Asset Breakdown</h2>
+          <p>แสดงรายการ มูลค่า และน้ำหนักพอร์ตจาก Dashboard โดยไม่ map หรือเดาข้อมูลเพิ่ม</p>
         </div>
-        <div id="holdingSignalRows" class="holding-signal-list"></div>
+        <div id="assetBreakdownTable" class="table-scroll"></div>
       </section>
     </main>
-    <script src="/portfolio-core.js?v=20260611-status-1"></script>
+    <script src="/portfolio-core.js?v=20260619-lookthrough-1"></script>
     <script src="/technical-indicators.js?v=20260611-status-1"></script>
-    <script src="/portfolio-status-page.js?v=20260611-status-1"></script>
-<script src="/app-navigation.js?v=20260617-nav-1"></script>
+    <script src="/portfolio-status-page.js?v=20260620-dashboard-only-1"></script>
+<script src="/app-navigation.js?v=20260620-underlying-1"></script>
   </body>
 </html>
