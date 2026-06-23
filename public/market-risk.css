@@ -1,16 +1,16 @@
 :root {
-  --bg: #f4f7fb;
-  --panel: #ffffff;
-  --ink: #172033;
-  --muted: #6c778c;
-  --line: #dfe6f1;
-  --navy: #17324d;
-  --green: #12805c;
-  --amber: #b7791f;
+  --bg: var(--app-bg);
+  --panel: var(--app-card);
+  --ink: var(--app-text);
+  --muted: var(--app-muted);
+  --line: var(--app-border);
+  --navy: var(--app-text);
+  --green: var(--app-up);
+  --amber: var(--app-warn);
   --orange: #c26a1f;
-  --red: #c2413a;
-  --blue: #2563a8;
-  --shadow: 0 18px 44px rgba(23, 50, 77, 0.1);
+  --red: var(--app-down);
+  --blue: var(--app-info);
+  --shadow: var(--app-shadow);
 }
 
 * { box-sizing: border-box; }
@@ -18,9 +18,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(37, 99, 168, 0.13), transparent 34rem),
-    linear-gradient(135deg, #f8fbff 0%, var(--bg) 58%, #eef4f6 100%);
+  background: var(--app-bg);
   color: var(--ink);
   font-family: "Noto Sans Thai", system-ui, sans-serif;
 }
@@ -79,7 +77,7 @@ h1 {
   padding: 9px 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--app-card);
   color: var(--navy);
   cursor: pointer;
   font-weight: 800;
@@ -88,7 +86,7 @@ h1 {
 
 .risk-nav a.is-active,
 #refreshRiskButton {
-  background: var(--navy);
+  background: #17324d;
   color: #fff;
   box-shadow: 0 10px 22px rgba(23, 50, 77, 0.16);
 }
@@ -96,9 +94,9 @@ h1 {
 .risk-toolbar,
 .risk-panel,
 .risk-disclaimer {
-  border: 1px solid rgba(223, 230, 241, 0.9);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--app-card);
   box-shadow: var(--shadow);
 }
 
@@ -133,7 +131,7 @@ h1 {
   padding: 15px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--app-card);
   box-shadow: var(--shadow);
 }
 
@@ -170,7 +168,7 @@ h1 {
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #f7f9fc;
+  background: var(--app-elevated);
   color: var(--navy);
   cursor: help;
   font-size: 0.72rem;
@@ -188,10 +186,10 @@ h1 {
 .market-interpretation {
   margin-top: 14px;
   padding: 14px;
-  border: 1px solid #d6e7f7;
+  border: 1px solid color-mix(in srgb, var(--app-info) 28%, var(--app-border));
   border-radius: 8px;
-  background: #f0f7ff;
-  color: var(--navy);
+  background: color-mix(in srgb, var(--app-info) 10%, var(--app-card));
+  color: var(--app-text);
   font-weight: 800;
   line-height: 1.7;
 }
@@ -208,7 +206,7 @@ h1 {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfdff;
+  background: var(--app-card);
 }
 
 .guide-card h3 {
@@ -252,7 +250,7 @@ h1 {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfdff;
+  background: var(--app-card);
 }
 
 .combined-card strong,
@@ -287,13 +285,13 @@ h1 {
 }
 
 .combined-card.warning.is-active {
-  border-color: #f3d8a5;
-  background: #fff8e8;
+  border-color: color-mix(in srgb, var(--app-warn) 40%, var(--app-border));
+  background: color-mix(in srgb, var(--app-warn) 12%, var(--app-card));
 }
 
 .combined-card.danger.is-active {
-  border-color: #f0b6b1;
-  background: #fff1f0;
+  border-color: color-mix(in srgb, var(--app-down) 40%, var(--app-border));
+  background: color-mix(in srgb, var(--app-down) 12%, var(--app-card));
 }
 
 .risk-panels {
@@ -330,7 +328,7 @@ h1 {
   padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfdff;
+  background: var(--app-elevated);
 }
 
 .metric-row span {
@@ -348,8 +346,8 @@ h1 {
 .interpretation {
   padding: 12px;
   border-radius: 8px;
-  background: #eef6ff;
-  color: var(--navy);
+  background: color-mix(in srgb, var(--app-info) 10%, var(--app-card));
+  color: var(--app-text);
   font-weight: 800;
 }
 
@@ -365,7 +363,7 @@ h1 {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f9fbfe;
+  background: var(--app-elevated);
 }
 
 .risk-flag strong,
@@ -385,10 +383,10 @@ h1 {
   font-weight: 700;
 }
 
-.risk-flag.danger { border-color: #f0b6b1; background: #fff1f0; }
-.risk-flag.warning { border-color: #f3d8a5; background: #fff8e8; }
-.risk-flag.watch { border-color: #d6e7f7; background: #f0f7ff; }
-.risk-flag.muted { background: #f4f6fa; }
+.risk-flag.danger { border-color: color-mix(in srgb, var(--app-down) 40%, var(--app-border)); background: color-mix(in srgb, var(--app-down) 12%, var(--app-card)); }
+.risk-flag.warning { border-color: color-mix(in srgb, var(--app-warn) 40%, var(--app-border)); background: color-mix(in srgb, var(--app-warn) 12%, var(--app-card)); }
+.risk-flag.watch { border-color: color-mix(in srgb, var(--app-info) 28%, var(--app-border)); background: color-mix(in srgb, var(--app-info) 10%, var(--app-card)); }
+.risk-flag.muted { background: var(--app-elevated); }
 
 .action-guide {
   display: grid;
@@ -401,7 +399,7 @@ h1 {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfdff;
+  background: var(--app-elevated);
 }
 
 .action-card.is-active {
@@ -425,7 +423,7 @@ h1 {
   padding: 16px;
   border: 1px dashed var(--line);
   border-radius: 8px;
-  background: #fbfdff;
+  background: var(--app-elevated);
   color: var(--muted);
   font-weight: 800;
 }

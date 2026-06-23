@@ -1,0 +1,90 @@
+/* Watchlist page + Add-to-Watchlist modal — builds on mission-control.css tokens */
+
+/* ---- modal ---- */
+.wl-modal-overlay {
+  position: fixed; inset: 0; z-index: 2147483600;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(2, 6, 23, 0.7); backdrop-filter: blur(4px);
+  font-family: "Inter", "Noto Sans Thai", system-ui, sans-serif;
+}
+.wl-modal-card {
+  width: min(94vw, 440px); max-height: 90vh; overflow: auto;
+  background: var(--mc-card, #0f172a); border: 1px solid var(--mc-border, rgba(148,163,184,0.18));
+  border-radius: 18px; padding: 20px; box-shadow: var(--mc-shadow, 0 20px 50px rgba(0,0,0,0.4));
+  display: flex; flex-direction: column; gap: 10px; color: var(--mc-text, #f1f5f9);
+}
+.wl-modal-head { display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 700; }
+.wl-already { font-size: 11px; color: var(--mc-amber, #fbbf24); font-weight: 600; }
+.wl-modal-card label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--mc-text-2, #cbd5e1); }
+.wl-modal-card input, .wl-modal-card select {
+  background: var(--mc-elevated, #1e293b); border: 1px solid var(--mc-border); border-radius: 10px;
+  padding: 9px 11px; color: var(--mc-text); font-size: 13px; font-family: inherit;
+}
+.wl-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.wl-modal-hint { font-size: 11px; color: var(--mc-muted, #94a3b8); margin: 2px 0; }
+.wl-modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+.wl-btn { border: 1px solid var(--mc-border); background: var(--mc-elevated); color: var(--mc-text); border-radius: 10px; padding: 9px 14px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.wl-btn-primary { border: 0; background: linear-gradient(135deg, var(--mc-cyan, #22d3ee), var(--mc-blue, #38bdf8)); color: #04121a; font-weight: 700; }
+.wl-btn-danger { color: var(--mc-red, #fb7185); border-color: color-mix(in srgb, var(--mc-border), var(--mc-red) 40%); margin-right: auto; }
+
+/* ---- empty-state quick-add suggestions ---- */
+.wl-sugg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 880px) { .wl-sugg-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px) { .wl-sugg-grid { grid-template-columns: 1fr 1fr; } }
+.wl-sugg {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 14px;
+  padding: 13px 14px; cursor: pointer; font-family: inherit; text-align: left; transition: border-color .15s, transform .12s;
+}
+.wl-sugg:hover { border-color: var(--mc-cyan); transform: translateY(-2px); }
+.wl-sugg-sym { font-size: 15px; font-weight: 800; color: var(--mc-text); }
+.wl-sugg-timing { font-size: 22px; font-weight: 800; line-height: 1; }
+.wl-sugg-act { font-size: 11px; color: var(--mc-muted); min-height: 14px; }
+.wl-sugg-add { font-size: 11px; font-weight: 700; color: var(--mc-cyan); margin-top: 2px; }
+
+/* ---- daily watch cards ---- */
+.wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.wl-card { padding: 14px; position: relative; }
+.wl-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.wl-sym { font-size: 16px; font-weight: 800; }
+.wl-name { font-size: 11.5px; color: var(--mc-muted); display: block; margin-top: 2px; }
+.wl-cat { font-size: 10.5px; color: var(--mc-cyan); }
+.wl-src { color: var(--mc-amber, #fbbf24); font-weight: 700; }
+.wl-status-chip { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.wl-st-triggered { color: #04121a; background: var(--mc-cyan); }
+.wl-st-near { color: var(--mc-amber); background: color-mix(in srgb, var(--mc-card), var(--mc-amber) 18%); }
+.wl-st-risk { color: var(--mc-red); background: color-mix(in srgb, var(--mc-card), var(--mc-red) 18%); }
+.wl-st-improving { color: var(--mc-emerald); background: color-mix(in srgb, var(--mc-card), var(--mc-emerald) 16%); }
+.wl-st-none { color: var(--mc-text-2); background: color-mix(in srgb, var(--mc-card), var(--mc-text) 8%); }
+.wl-st-missing { color: var(--mc-muted); background: transparent; border: 1px solid var(--mc-border); }
+.wl-card-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 10px 0; font-size: 12px; }
+.wl-card-metrics span { color: var(--mc-muted); }
+.wl-card-metrics strong { color: var(--mc-text); }
+.wl-card-reason { font-size: 12px; color: var(--mc-text-2); margin: 6px 0; min-height: 16px; }
+.wl-rules { display: flex; flex-wrap: wrap; gap: 5px; }
+.wl-rule { font-size: 10px; padding: 2px 7px; border-radius: 6px; background: color-mix(in srgb, var(--mc-card), var(--mc-cyan) 14%); color: var(--mc-cyan); }
+.wl-rule.near { background: color-mix(in srgb, var(--mc-card), var(--mc-amber) 14%); color: var(--mc-amber); }
+.wl-card-actions { display: flex; gap: 14px; margin-top: 10px; }
+.wl-card-actions a, .wl-card-actions button { font-size: 11.5px; color: var(--mc-cyan); background: transparent; border: 0; cursor: pointer; text-decoration: none; font-family: inherit; padding: 0; }
+.wl-card-actions button:hover, .wl-card-actions a:hover { text-decoration: underline; }
+
+/* ---- table ---- */
+.wl-table { width: 100%; border-collapse: collapse; }
+.wl-table th { text-align: left; font-size: 11px; color: var(--mc-muted); font-weight: 600; padding: 8px 6px; border-bottom: 1px solid var(--mc-border); }
+.wl-table td { font-size: 12.5px; padding: 9px 6px; border-bottom: 1px solid var(--mc-border); }
+.wl-table tr:last-child td { border-bottom: 0; }
+.wl-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.wl-table .wl-act { color: var(--mc-cyan); cursor: pointer; }
+
+/* ---- menu badge (sidebar) ---- */
+.mc-nav-badge { margin-left: auto; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: var(--mc-cyan); color: #04121a; }
+
+/* ---- toast ---- */
+#wl-toast {
+  position: fixed; right: 18px; bottom: 74px; z-index: 2147483500;
+  background: var(--app-card, #0f172a); border: 1px solid var(--app-border-strong, rgba(148,163,184,0.3));
+  color: var(--app-text, #f1f5f9); border-radius: 12px; padding: 12px 16px; font-size: 13px;
+  box-shadow: var(--app-shadow, 0 16px 40px rgba(0,0,0,0.4)); max-width: 320px;
+  animation: wl-toast-in 0.3s ease;
+}
+@keyframes wl-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

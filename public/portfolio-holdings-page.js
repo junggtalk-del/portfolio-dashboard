@@ -178,7 +178,7 @@
       : null;
     return `
       <tr id="holding-${escapeHtml(holding.canonicalSymbol.replace(/[^A-Z0-9]/g, "-"))}">
-        <td><strong>${escapeHtml(holding.displaySymbol)}</strong><small>${escapeHtml(holding.canonicalSymbol)}</small></td>
+        <td><a href="/asset/${encodeURIComponent(holding.providerSymbol || holding.canonicalSymbol || holding.displaySymbol)}" class="asset-link"><strong>${escapeHtml(holding.displaySymbol)}</strong></a><small>${escapeHtml(holding.canonicalSymbol)}</small></td>
         <td>${escapeHtml(holding.assetName)}</td>
         <td><strong>${formatMoney(holding.marketValue)}</strong><small>THB</small></td>
         <td>${formatPercent(weight)}</td>
@@ -457,8 +457,19 @@
     }
     if (!deleteButton) return;
     const symbol = deleteButton.dataset.delete;
-    holdings = holdings.filter((holding) => holding.canonicalSymbol !== symbol);
-    await persistHoldings("Holding deleted successfully");
+    try {
+      const response = await fetch(`/api/portfolio-holdings?symbol=${encodeURIComponent(symbol)}`, {
+        method: "DELETE"
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || `delete failed (${response.status})`);
+      }
+      await load();
+      setFeedback(feedback, "Holding deleted successfully", "is-success");
+    } catch (error) {
+      setFeedback(feedback, error?.message || "ลบ holding ไม่สำเร็จ", "is-error");
+    }
   });
 
   reloadButton.addEventListener("click", load);

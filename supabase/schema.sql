@@ -1,3 +1,12 @@
+-- ARCHITECTURE NOTE (2026-06):
+-- The live app stores ALL portfolio + AI-universe state as JSON documents in
+-- portfolio_dashboard.app_state (id = 'main' / 'ai_boom_universe_main' / 'market_data_cache_v1').
+-- The normalized tables portfolio_quarters / portfolio_assets below are LEGACY from
+-- the old per-user Supabase-auth design and are currently UNUSED by the application.
+-- Access is via the service_role key (which bypasses RLS); there is no anon/public
+-- data path today. Before ever exposing an anon path, tighten the broad
+-- `using (true)` policies (e.g. portfolio_holdings) to service_role-only.
+
 create schema if not exists portfolio_dashboard;
 
 grant usage on schema portfolio_dashboard to anon, authenticated, service_role;

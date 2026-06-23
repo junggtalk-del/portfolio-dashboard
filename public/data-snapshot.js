@@ -23,6 +23,8 @@
       "K USXNDQRMF": "K-USXNDQRMF",
       SET50: "^SET50.BK",
       "SET50.BK": "^SET50.BK",
+      SET100: "^SET100.BK",
+      "SET100.BK": "^SET100.BK",
       SET: "^SET.BK",
       "SET.BK": "^SET.BK",
       SPX: "^GSPC",
@@ -149,6 +151,59 @@
     return ema;
   }
 
+  // Full EMA series (one value per bar; nulls until the period warms up).
+  function emaSeries(values, period) {
+    const nums = (Array.isArray(values) ? values : []).map(Number);
+    const out = new Array(nums.length).fill(null);
+    if (nums.length < period) return out;
+    let ema = nums.slice(0, period).reduce((s, v) => s + v, 0) / period;
+    out[period - 1] = ema;
+    const k = 2 / (period + 1);
+    for (let i = period; i < nums.length; i += 1) {
+      if (!Number.isFinite(nums[i])) return out;
+      ema = (nums[i] - ema) * k + ema;
+      out[i] = ema;
+    }
+    return out;
+  }
+
+  // Bars since the most recent EMA12×EMA26 bullish / bearish cross (null if none found).
+  function crossDays(closes) {
+    const e12 = emaSeries(closes, 12);
+    const e26 = emaSeries(closes, 26);
+    let bull = null, bear = null;
+    for (let i = closes.length - 1; i > 0 && (bull === null || bear === null); i -= 1) {
+      const a = e12[i], b = e26[i], pa = e12[i - 1], pb = e26[i - 1];
+      if (a == null || b == null || pa == null || pb == null) continue;
+      if (bull === null && pa <= pb && a > b) bull = closes.length - 1 - i;
+      if (bear === null && pa >= pb && a < b) bear = closes.length - 1 - i;
+    }
+    return { bull, bear };
+  }
+
+  // Rolling SMA200 series (null until 200 bars), then bars since price reclaimed / broke it.
+  function sma200Series(values) {
+    const nums = (Array.isArray(values) ? values : []).map(Number);
+    const out = new Array(nums.length).fill(null);
+    if (nums.length < 200) return out;
+    let sum = 0;
+    for (let i = 0; i < 200; i += 1) sum += nums[i];
+    out[199] = sum / 200;
+    for (let i = 200; i < nums.length; i += 1) { sum += nums[i] - nums[i - 200]; out[i] = sum / 200; }
+    return out;
+  }
+  function smaReclaimDays(closes) {
+    const s = sma200Series(closes);
+    let reclaim = null, brk = null;
+    for (let i = closes.length - 1; i > 0 && (reclaim === null || brk === null); i -= 1) {
+      const p = closes[i], sp = s[i], pp = closes[i - 1], psp = s[i - 1];
+      if (sp == null || psp == null || !Number.isFinite(p) || !Number.isFinite(pp)) continue;
+      if (reclaim === null && pp <= psp && p > sp) reclaim = closes.length - 1 - i;
+      if (brk === null && pp >= psp && p < sp) brk = closes.length - 1 - i;
+    }
+    return { reclaim, brk };
+  }
+
   function calculateRSI(values, period = 14) {
     const nums = (Array.isArray(values) ? values : []).map(Number);
     if (nums.length < period + 1) return null;
@@ -182,6 +237,18 @@
     const ema26 = calculateEMA(closes, 26);
     const sma200 = calculateSMA(closes, 200);
     const rsi14 = calculateRSI(closes, 14);
+    // Volume ratio = latest volume / average of the previous 5 sessions (for volume confirmation).
+    let volumeRatio = null;
+    const volumes = Array.isArray(history?.volumes) ? history.volumes.map(Number) : [];
+    if (volumes.length >= 6) {
+      const latestVol = volumes[volumes.length - 1];
+      const prior = volumes.slice(-6, -1).filter((v) => Number.isFinite(v) && v > 0);
+      const avg = prior.length ? prior.reduce((s, v) => s + v, 0) / prior.length : null;
+      if (Number.isFinite(latestVol) && latestVol > 0 && avg && avg > 0) volumeRatio = Math.round((latestVol / avg) * 100) / 100;
+    }
+    const numCloses = closes.map(Number);
+    const cross = crossDays(numCloses);
+    const smaCross = smaReclaimDays(numCloses);
     return {
       latestClose: Number.isFinite(latestClose) ? latestClose : null,
       latestDate: history?.dates?.[history.dates.length - 1] || null,
@@ -189,6 +256,11 @@
       ema26,
       sma200,
       rsi14,
+      volumeRatio,
+      daysSinceEmaBullishCross: cross.bull,
+      daysSinceEmaBearishCross: cross.bear,
+      daysSinceSma200Reclaim: smaCross.reclaim,
+      daysSinceSma200Break: smaCross.brk,
       rsiSignal: classifyRsi(rsi14),
       emaStatus: Number.isFinite(ema12) && Number.isFinite(ema26) ? (ema12 > ema26 ? "EMA_BULLISH" : ema12 < ema26 ? "EMA_BEARISH" : "EMA_NEUTRAL") : "EMA_NOT_AVAILABLE",
       sma200Status: Number.isFinite(sma200) && Number.isFinite(latestClose) ? (latestClose > sma200 ? "ABOVE_SMA200" : latestClose < sma200 ? "BELOW_SMA200" : "AT_SMA200") : "SMA200_NOT_AVAILABLE"
@@ -309,6 +381,90 @@
       } catch (error) {
         snapshot.portfolioHoldings = { error: String(error.message || error) };
       }
+      // --- Scoring: Timing Score + Signal Quality Score + Action + Quadrant ---
+      try {
+        snapshot.scoring = { bySymbol: {}, calculatedAt: new Date().toISOString() };
+        if (typeof window !== "undefined" && window.Scoring && typeof window.Scoring.calculateTimingScore === "function") {
+          const riskLevel = snapshot.marketRisk && snapshot.marketRisk.risk && snapshot.marketRisk.risk.level
+            ? (snapshot.marketRisk.risk.level.label || snapshot.marketRisk.risk.level.thai) : null;
+          const calcAt = snapshot.scoring.calculatedAt;
+          // Map holdings -> isHolding so the action is holding-aware.
+          const holdingsByKey = {};
+          const hData = snapshot.portfolioHoldings && snapshot.portfolioHoldings.data;
+          if (Array.isArray(hData)) hData.forEach((h) => { const hk = canonicalSymbol(h.canonicalSymbol || h.ticker || ""); if (hk) holdingsByKey[hk] = h; });
+          Object.keys(snapshot.technicalSignals || {}).forEach((key) => {
+            const sig = snapshot.technicalSignals[key] || {};
+            const holding = holdingsByKey[key];
+            const input = {
+              canonicalSymbol: key,
+              latestPrice: sig.latestClose,
+              latestDate: sig.latestDate,
+              ema12: sig.ema12,
+              ema26: sig.ema26,
+              sma200: sig.sma200,
+              rsi14: sig.rsi14,
+              emaTrendStatus: sig.emaStatus,
+              sma200Status: sig.sma200Status,
+              volumeRatio: sig.volumeRatio,
+              daysSinceEmaBullishCross: sig.daysSinceEmaBullishCross,
+              daysSinceEmaBearishCross: sig.daysSinceEmaBearishCross,
+              daysSinceSma200Reclaim: sig.daysSinceSma200Reclaim,
+              daysSinceSma200Break: sig.daysSinceSma200Break,
+              isNewBullishSignal: sig.daysSinceEmaBullishCross != null && sig.daysSinceEmaBullishCross <= 3,
+              isHolding: holding ? !!holding.isHolding : false,
+              marketRiskLevel: riskLevel
+            };
+            try {
+              const t = window.Scoring.calculateTimingScore(input);
+              const action = window.Scoring.recommendAction(input, t);
+              const g = t.gates || {};
+              const c = t.components || {};
+              const thaiWarnings = (t.warnings || []).map((w) => w.thaiMessage || w.message || "").filter(Boolean);
+              snapshot.scoring.bySymbol[key] = {
+                // --- new gate-driven Signal Score ---
+                signalScore: t.score,
+                signalLabel: t.label,
+                thaiSignalLabel: t.thaiLabel,
+                color: t.color,
+                emaScore: c.ema, sma200Score: c.sma200, volumeScore: c.volume,
+                emaGate: g.ema ? g.ema.status : null,
+                sma200Gate: g.sma200 ? g.sma200.status : null,
+                volumeGate: g.volume ? g.volume.status : null,
+                gates: g,
+                finalAction: action.action,
+                thaiFinalAction: action.thaiAction,
+                actionKey: action.key,
+                actionSection: action.section,
+                actionCategory: action.actionCategory,
+                actionPriority: action.priority,
+                reasons: t.reasons,
+                thaiReasons: t.thaiReasons,
+                warnings: t.warnings,
+                thaiWarnings: thaiWarnings,
+                calculationExplanation: t.calculationExplanation,
+                thaiCalculationExplanation: t.thaiCalculationExplanation,
+                componentDetail: t.componentDetail,
+                isHolding: input.isHolding,
+                // --- backward-compatible aliases (existing consumers) ---
+                timingScore: t.score,
+                thaiTimingLabel: t.thaiLabel,
+                action: action.action,
+                thaiAction: action.thaiAction,
+                signalQualityScore: t.score,
+                signalQualityLabel: t.label,
+                thaiSignalQualityLabel: t.thaiLabel,
+                signalQualityColor: t.color,
+                signalQualityBreakdown: { emaScore: c.ema, sma200Score: c.sma200, volumeScore: c.volume },
+                signalQualityReasons: t.thaiReasons,
+                signalQualityWarnings: thaiWarnings,
+                thaiSignalQualityExplanation: action.thaiExplanation,
+                calculatedAt: calcAt
+              };
+            } catch (_perSymbolError) { /* skip this symbol */ }
+          });
+        }
+      } catch (_scoringError) { /* scoring is best-effort */ }
+
       emitProgress({ step: 6, stepLabel: "Saving snapshot", completedAssets: completed, totalAssets: loadAssets.length, failedAssets: snapshot.errors.length });
       snapshot.status = snapshot.errors.length ? "partial" : "ready";
       return writeSnapshot(snapshot);
@@ -326,6 +482,9 @@
     ageMinutes: snapshotAgeMinutes,
     loadLatestData,
     retryFailed: () => loadLatestData({ retryFailed: true }),
+    canonicalSymbol,
+    normalizeTicker,
+    providerSymbol,
     originalFetch
   };
   } catch (error) {
@@ -336,6 +495,7 @@
       write: (snapshot) => snapshot,
       freshness: () => ({ key: "error", label: "Load failed", thai: "โหลดไม่สำเร็จ" }),
       ageMinutes: () => Infinity,
+      canonicalSymbol: (s) => String(s || "").trim().toUpperCase().replace(/[^A-Z0-9.^-]/g, ""),
       loadLatestData: async () => {
         throw error;
       },

@@ -458,10 +458,11 @@
   }
 
   function renderAssetCard(row, activeGroup) {
-    const detailHref = `/ai-boom-universe?focus=${encodeURIComponent(row.symbol)}`;
+    const symbolValue = row.holding?.providerSymbol || row.holding?.canonicalSymbol || row.symbol || row.displaySymbol;
+    const detailHref = `/asset/${encodeURIComponent(symbolValue)}`;
     const tags = row.tags.map((tag) => `<span class="tag ${isOverlapTag(tag, activeGroup) ? "is-overlap" : ""}">${escapeHtml(tag)}</span>`).join("");
     return `
-      <a class="asset-card" href="${detailHref}" title="เปิดรายละเอียดใน AI Boom Universe">
+      <a class="asset-card asset-link" href="${detailHref}" title="เปิดรายละเอียดสินทรัพย์">
         <div class="asset-top">
           <div>
             <div class="asset-symbol">${escapeHtml(row.displaySymbol)}</div>

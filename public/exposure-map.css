@@ -1,10 +1,10 @@
 :root {
   color-scheme: light;
-  --ink: #1b2d46;
-  --muted: #6f7b91;
-  --line: #dbe4f0;
-  --page: #f3f7fb;
-  --panel: #ffffff;
+  --ink: var(--app-text);
+  --muted: var(--app-muted);
+  --line: var(--app-border);
+  --page: var(--app-bg);
+  --panel: var(--app-card);
   --green: #18865d;
   --green-bg: #ecfdf5;
   --amber: #a5660b;
@@ -27,7 +27,7 @@ body {
   color: var(--ink);
   background:
     radial-gradient(circle at top left, rgba(47, 95, 143, 0.14), transparent 34rem),
-    linear-gradient(180deg, #f8fbff 0%, var(--page) 100%);
+    linear-gradient(180deg, var(--app-bg-soft) 0%, var(--page) 100%);
   min-height: 100vh;
 }
 
@@ -51,10 +51,10 @@ a {
 .warning-panel,
 .risk-summary,
 .exposure-disclaimer {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--app-card);
   border: 1px solid var(--line);
   border-radius: 18px;
-  box-shadow: 0 18px 44px rgba(40, 65, 96, 0.08);
+  box-shadow: var(--app-shadow);
 }
 
 .exposure-topbar {
@@ -67,7 +67,7 @@ a {
 
 .exposure-eyebrow {
   margin: 0 0 6px;
-  color: #31736e;
+  color: var(--app-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -109,7 +109,7 @@ h1 {
   color: var(--ink);
   text-decoration: none;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--app-card);
   border-radius: 12px;
   padding: 10px 13px;
   font-weight: 800;
@@ -150,7 +150,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 16px;
-  background: #fff;
+  background: var(--app-card);
 }
 
 .risk-score-card span {
@@ -188,7 +188,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 12px;
-  background: #fff;
+  background: var(--app-card);
 }
 
 .summary-tile span {
@@ -215,8 +215,8 @@ h1 {
 }
 
 .warning-item {
-  border: 1px solid rgba(183, 93, 27, 0.3);
-  background: var(--orange-bg);
+  border: 1px solid color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 14%);
   border-radius: 14px;
   padding: 12px;
 }
@@ -266,7 +266,7 @@ h1 {
   justify-content: center;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #fff;
+  background: var(--app-card);
   font-weight: 900;
 }
 
@@ -283,7 +283,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 15px;
   padding: 13px;
-  background: #fff;
+  background: var(--app-card);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -317,40 +317,40 @@ h1 {
   padding: 5px 9px;
   font-size: 0.78rem;
   font-weight: 900;
-  color: #24527e;
-  background: #dbeeff;
+  color: var(--app-info);
+  background: color-mix(in srgb, var(--app-card), var(--app-info) 16%);
 }
 
 .tag.is-overlap {
-  color: #825107;
-  background: #ffedb5;
+  color: var(--app-warn);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 16%);
 }
 
 .tone-low {
-  color: #09633f;
-  background: #d8f8e8;
+  color: var(--app-up);
+  background: color-mix(in srgb, var(--app-card), var(--app-up) 16%);
 }
 
 .tone-medium {
-  color: #825107;
-  background: #ffedb5;
+  color: var(--app-warn);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 16%);
 }
 
 .tone-high {
-  color: #9a4714;
-  background: #ffe0c7;
+  color: var(--app-warn);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 18%);
 }
 
 .tone-extreme {
-  color: #9d2f2c;
-  background: #ffd8d5;
+  color: var(--app-down);
+  background: color-mix(in srgb, var(--app-card), var(--app-down) 16%);
 }
 
 .empty-box {
   border: 1px dashed var(--line);
   border-radius: 14px;
   padding: 14px;
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--app-card), var(--app-text) 4%);
   font-weight: 800;
 }
 

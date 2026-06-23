@@ -16,9 +16,11 @@
     smaFilter: "all",
     volumeFilter: "all",
     liquidityFilter: "all",
+    timingFilter: "all",
+    signalQualityFilter: "all",
     requireVolumeConfirmation: false,
     search: "",
-    sortKey: "daysSinceCrossover",
+    sortKey: "finalAction",
     sortDirection: "asc"
   };
 
@@ -210,6 +212,32 @@
       ["missing", "ไม่มีข้อมูลวอลุ่ม"]
     ], state.volumeFilter, "volume");
     renderFilterGroup(els.liquidityFilters, [["all", "All"], ["high", "High liquidity only"], ["available", "Volume available"], ["missing", "Volume not available"]], state.liquidityFilter, "liquidity");
+    if (els.timingFilters) {
+      if (window.Scoring) {
+        renderFilterGroup(els.timingFilters, [["all", "All"], ["80", ">= 80"], ["65", ">= 65"], ["50", ">= 50"], ["lt50", "< 50"]], state.timingFilter, "timing");
+        els.timingFilters.closest(".filter-group").hidden = false;
+      } else {
+        els.timingFilters.innerHTML = "";
+        const group = els.timingFilters.closest(".filter-group");
+        if (group) group.hidden = true;
+      }
+    }
+    if (els.signalQualityFilters) {
+      if (window.SignalQuality) {
+        renderFilterGroup(els.signalQualityFilters, [
+          ["all", "ทั้งหมด"],
+          ["85", "คุณภาพสูงมาก >=85"],
+          ["70", "คุณภาพดี >=70"],
+          ["55", "พอใช้ >=55"],
+          ["lt55", "อ่อน <55"]
+        ], state.signalQualityFilter, "signalquality");
+        els.signalQualityFilters.closest(".filter-group").hidden = false;
+      } else {
+        els.signalQualityFilters.innerHTML = "";
+        const group = els.signalQualityFilters.closest(".filter-group");
+        if (group) group.hidden = true;
+      }
+    }
   }
 
   function isVolumeConfirmed(item, threshold = 1) {
@@ -283,17 +311,55 @@
     if (state.liquidityFilter === "high" && !(Number(item.crossoverVolume || item.volume) >= 1_000_000)) return false;
     if (state.liquidityFilter === "available" && volumeMissing(item)) return false;
     if (state.liquidityFilter === "missing" && !volumeMissing(item)) return false;
+    if (window.Scoring && state.timingFilter !== "all") {
+      const ts = timingScoreOf(item);
+      if (state.timingFilter === "lt50") {
+        if (!(ts != null && ts < 50)) return false;
+      } else if (!(ts != null && ts >= Number(state.timingFilter))) {
+        return false;
+      }
+    }
+    if (window.SignalQuality && state.signalQualityFilter !== "all") {
+      const sq = signalQualityScoreOf(item);
+      if (state.signalQualityFilter === "lt55") {
+        if (!(sq != null && sq < 55)) return false;
+      } else if (!(sq != null && sq >= Number(state.signalQualityFilter))) {
+        return false;
+      }
+    }
     return true;
   }
 
   function sortedResults(items) {
     return [...items].sort((a, b) => {
+      if (state.sortKey === "finalAction") {
+        // Part 15 default: finalAction priority -> signal score -> fresh cross -> volume
+        const pd = (actionPriorityOf(b) ?? -1) - (actionPriorityOf(a) ?? -1);
+        if (pd) return pd;
+        const sd = (timingScoreOf(b) ?? -1) - (timingScoreOf(a) ?? -1);
+        if (sd) return sd;
+        const dd = (Number(a.daysSinceCrossover) || 99) - (Number(b.daysSinceCrossover) || 99);
+        if (dd) return dd;
+        return (Number(b.volumeRatio) || -1) - (Number(a.volumeRatio) || -1);
+      }
       if (state.sortKey === "daysSinceCrossover") {
         const dayDiff = (Number(a.daysSinceCrossover) || 99) - (Number(b.daysSinceCrossover) || 99);
         if (dayDiff) return state.sortDirection === "asc" ? dayDiff : -dayDiff;
+        if (window.SignalQuality) {
+          const sqDiff = (signalQualityScoreOf(b) ?? -1) - (signalQualityScoreOf(a) ?? -1);
+          if (sqDiff) return sqDiff;
+        }
+        if (window.Scoring) {
+          const timingDiff = (timingScoreOf(b) ?? -1) - (timingScoreOf(a) ?? -1);
+          if (timingDiff) return timingDiff;
+        }
         const volumeDiff = (Number(b.volumeRatio) || -1) - (Number(a.volumeRatio) || -1);
         if (volumeDiff) return volumeDiff;
         return (Number(b.emaGapPct) || 0) - (Number(a.emaGapPct) || 0);
+      }
+      if (state.sortKey === "signalQuality") {
+        const diff = (signalQualityScoreOf(b) ?? -1) - (signalQualityScoreOf(a) ?? -1);
+        return state.sortDirection === "asc" ? -diff : diff;
       }
       const key = state.sortKey;
       const av = a[key];
@@ -306,6 +372,78 @@
       const diff = (Number(av) || 0) - (Number(bv) || 0);
       return state.sortDirection === "asc" ? diff : -diff;
     });
+  }
+
+  function timingResultFor(item) {
+    if (!window.Scoring) return null;
+    if (item.__timing !== undefined) return item.__timing;
+    try {
+      item.__timing = window.Scoring.calculateTimingScore(window.Scoring.fromScannerItem(item));
+    } catch (error) {
+      item.__timing = null;
+    }
+    return item.__timing;
+  }
+
+  function timingScoreOf(item) {
+    const timing = timingResultFor(item);
+    return timing && Number.isFinite(Number(timing.score)) ? Number(timing.score) : null;
+  }
+
+  function timingChip(item) {
+    if (!window.Scoring) return "";
+    const timing = timingResultFor(item);
+    return timing ? window.Scoring.renderTimingChip(timing) : "";
+  }
+
+  function signalQualityResultFor(item) {
+    if (!window.SignalQuality) return null;
+    if (item.__sq !== undefined) return item.__sq;
+    try {
+      const input = window.Scoring ? window.Scoring.fromScannerItem(item) : item;
+      item.__sq = window.SignalQuality.calculate(input);
+    } catch (error) {
+      item.__sq = null;
+    }
+    return item.__sq;
+  }
+
+  function signalQualityScoreOf(item) {
+    const sq = signalQualityResultFor(item);
+    return sq && Number.isFinite(Number(sq.score)) ? Number(sq.score) : null;
+  }
+
+  function signalQualityChip(item) {
+    if (!window.SignalQuality) return "";
+    const sq = signalQualityResultFor(item);
+    return sq ? window.SignalQuality.renderChip(sq) : "";
+  }
+
+  // Gate-driven final action for a scanner item (cached on item.__action).
+  function actionFor(item) {
+    if (!window.Scoring || typeof window.Scoring.recommendAction !== "function") return null;
+    if (item.__action !== undefined) return item.__action;
+    try { item.__action = window.Scoring.recommendAction(window.Scoring.fromScannerItem(item), timingResultFor(item)); }
+    catch (e) { item.__action = null; }
+    return item.__action;
+  }
+  function actionPriorityOf(item) { const a = actionFor(item); return a ? (Number(a.priority) || 0) : null; }
+  function actionChip(item) {
+    const a = actionFor(item);
+    if (!a) return "";
+    const tone = a.section === "buy" ? "is-buy" : a.section === "urgent" ? "is-sell" : a.section === "watch" ? "is-watch" : "is-none";
+    return `<span class="scan-action-chip ${tone}">${escapeHtml(a.thaiAction || a.action || "")}</span>`;
+  }
+  function gateChips(item) {
+    const ts = timingResultFor(item);
+    if (!ts || !ts.gates) return "";
+    const g = ts.gates;
+    const cell = (name, gate) => {
+      const st = gate ? gate.status : "MISSING";
+      const tone = (st === "PASS" || st === "STRONG" || st === "CONFIRMED") ? "g-pass" : st === "NEAR" ? "g-near" : st === "FAIL" ? "g-fail" : "g-na";
+      return `<span class="scan-gate ${tone}" title="${escapeHtml(gate ? gate.thaiDetail || "" : "")}">${escapeHtml(name)} ${escapeHtml(gate ? gate.thaiLabel || gate.status : "—")}</span>`;
+    };
+    return `<div class="scan-gates">${cell("EMA", g.ema)}${cell("SMA200", g.sma200)}${cell("Vol", g.volume)}</div>`;
   }
 
   function marketBadge(item) {
@@ -329,13 +467,34 @@
     `;
   }
 
+  function signalQualityBlock(item) {
+    if (!window.SignalQuality) return "";
+    const sq = signalQualityResultFor(item);
+    if (!sq) return "";
+    const cs = sq.componentScores || {};
+    const emaVal = cs.emaScore != null ? `${cs.emaScore}/${sq.max?.emaScore ?? 45}` : "-";
+    const smaVal = cs.sma200Score != null ? `${cs.sma200Score}/${sq.max?.sma200Score ?? 25}` : "-";
+    const volVal = cs.volumeScore != null ? `${cs.volumeScore}/${sq.max?.volumeScore ?? 20}` : "-";
+    return `
+      <div class="sq-block">
+        ${window.SignalQuality.renderCard(sq, { thai: true })}
+        <div class="sq-components">
+          <div class="metric"><span>EMA Score</span><strong>${escapeHtml(emaVal)}</strong></div>
+          <div class="metric"><span>SMA200 Score</span><strong>${escapeHtml(smaVal)}</strong></div>
+          <div class="metric"><span>Volume Score</span><strong>${escapeHtml(volVal)}</strong></div>
+        </div>
+      </div>
+    `;
+  }
+
   function stockCard(item, near = false) {
     return `
       <article class="stock-card ${near ? "is-near" : ""} ${item.market === "mai" ? "is-mai" : ""}">
         <div class="stock-top">
           <div>
-            <div class="symbol-row"><span class="stock-symbol">${escapeHtml(item.displaySymbol)}</span>${marketBadge(item)}</div>
+            <div class="symbol-row"><a class="stock-symbol asset-link" href="/asset/${encodeURIComponent(item.providerSymbol || item.canonicalSymbol || item.symbol || item.displaySymbol)}">${escapeHtml(item.displaySymbol)}</a>${marketBadge(item)}${timingChip(item)}${actionChip(item)}</div>
             <div class="stock-name">${escapeHtml(item.name)}</div>
+            ${gateChips(item)}
           </div>
           <div class="stock-price">
             ${formatNumber(item.close)}
@@ -352,6 +511,7 @@
           <div class="metric"><span>Distance to SMA200</span><strong>${formatPct(item.distanceToSma200Pct)}</strong></div>
           <div class="metric"><span>Source</span><strong>${escapeHtml(item.source || "-")}</strong></div>
         </div>
+        ${signalQualityBlock(item)}
         ${volumeBlock(item, near)}
         ${item.market === "mai" ? `<p class="liquidity-warning">หุ้น mai อาจมีสภาพคล่องต่ำและผันผวนสูง ควรดู volume ประกอบ</p>` : ""}
         <p class="stock-action">${escapeHtml(item.action || "เริ่มมีสัญญาณฟื้นตัว / เฝ้าดูต่อ")}</p>
@@ -361,30 +521,42 @@
 
   function renderTable(items) {
     if (!items.length) {
-      els.tableBody.innerHTML = `<tr><td colspan="17">ยังไม่มีหุ้นที่เข้าเงื่อนไข</td></tr>`;
+      els.tableBody.innerHTML = `<tr><td colspan="21">ยังไม่มีหุ้นที่เข้าเงื่อนไข</td></tr>`;
       return;
     }
-    els.tableBody.innerHTML = sortedResults(items).map((item) => `
-      <tr>
-        <td>${escapeHtml(item.displaySymbol)}</td>
-        <td>${escapeHtml(item.name)}</td>
-        <td>${escapeHtml(item.market || "-")}</td>
-        <td>${formatNumber(item.close)}</td>
-        <td>${escapeHtml(item.latestDate || "-")}</td>
-        <td>${escapeHtml(item.daysSinceCrossover || "-")}</td>
-        <td>${escapeHtml(item.crossoverDate || "-")}</td>
-        <td>${formatNumber(item.ema12)}</td>
-        <td>${formatNumber(item.ema26)}</td>
-        <td>${formatPct(item.emaGapPct)}</td>
-        <td>${formatNumber(item.sma200)}</td>
-        <td>${formatPct(item.distanceToSma200Pct)}</td>
-        <td>${formatCompact(item.crossoverVolume)}</td>
-        <td>${formatCompact(item.averageVolume5D)}</td>
-        <td>${formatRatio(item.volumeRatio)}</td>
-        <td>${escapeHtml(item.volumeConfirmationThai || "ไม่มีข้อมูลวอลุ่ม")}</td>
-        <td>${escapeHtml(item.source || "-")}</td>
-      </tr>
-    `).join("");
+    els.tableBody.innerHTML = sortedResults(items).map((item) => {
+      const sq = signalQualityResultFor(item);
+      const cs = sq ? (sq.componentScores || {}) : {};
+      const sqScore = sq && sq.score != null ? String(Math.round(sq.score)) : "-";
+      const sqEma = cs.emaScore != null ? String(cs.emaScore) : "-";
+      const sqSma = cs.sma200Score != null ? String(cs.sma200Score) : "-";
+      const sqVol = cs.volumeScore != null ? String(cs.volumeScore) : "-";
+      return `
+        <tr>
+          <td>${escapeHtml(item.displaySymbol)}</td>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.market || "-")}</td>
+          <td>${formatNumber(item.close)}</td>
+          <td>${escapeHtml(item.latestDate || "-")}</td>
+          <td>${escapeHtml(item.daysSinceCrossover || "-")}</td>
+          <td>${escapeHtml(item.crossoverDate || "-")}</td>
+          <td>${formatNumber(item.ema12)}</td>
+          <td>${formatNumber(item.ema26)}</td>
+          <td>${formatPct(item.emaGapPct)}</td>
+          <td>${formatNumber(item.sma200)}</td>
+          <td>${formatPct(item.distanceToSma200Pct)}</td>
+          <td>${formatCompact(item.crossoverVolume)}</td>
+          <td>${formatCompact(item.averageVolume5D)}</td>
+          <td>${formatRatio(item.volumeRatio)}</td>
+          <td>${escapeHtml(sqScore)}</td>
+          <td>${escapeHtml(sqEma)}</td>
+          <td>${escapeHtml(sqSma)}</td>
+          <td>${escapeHtml(sqVol)}</td>
+          <td>${escapeHtml(item.volumeConfirmationThai || "ไม่มีข้อมูลวอลุ่ม")}</td>
+          <td>${escapeHtml(item.source || "-")}</td>
+        </tr>
+      `;
+    }).join("");
   }
 
   function renderFailed() {
@@ -542,6 +714,22 @@
       state.liquidityFilter = button.dataset.liquidity;
       render();
     });
+    if (els.timingFilters) {
+      els.timingFilters.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-timing]");
+        if (!button) return;
+        state.timingFilter = button.dataset.timing;
+        render();
+      });
+    }
+    if (els.signalQualityFilters) {
+      els.signalQualityFilters.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-signalquality]");
+        if (!button) return;
+        state.signalQualityFilter = button.dataset.signalquality;
+        render();
+      });
+    }
     els.search.addEventListener("input", () => {
       state.search = els.search.value;
       render();
@@ -570,6 +758,8 @@
     els.smaFilters = $("#smaFilters");
     els.volumeFilters = $("#volumeFilters");
     els.liquidityFilters = $("#liquidityFilters");
+    els.timingFilters = $("#timingFilters");
+    els.signalQualityFilters = $("#signalQualityFilters");
     els.requireVolume = $("#requireVolumeConfirmation");
     els.search = $("#scannerSearch");
     els.scanButton = $("#scanButton");

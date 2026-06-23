@@ -2,6 +2,7 @@
 
 const { getThaiStockUniverse } = require("../lib/config/thaiStockUniverse.js");
 const { fetchMarketHistoryWithServerCache } = require("./price-history").__internals;
+const { yahooChartJson } = require("../lib/http");
 
 function send(res, status, payload) {
   res.statusCode = status;
@@ -24,7 +25,10 @@ function calculateEMA(values, period) {
   output[period - 1] = ema;
   const multiplier = 2 / (period + 1);
   for (let index = period; index < nums.length; index += 1) {
-    if (!Number.isFinite(nums[index])) return output;
+    if (!Number.isFinite(nums[index])) {
+      output[index] = null;
+      continue;
+    }
     ema = (nums[index] - ema) * multiplier + ema;
     output[index] = ema;
   }
@@ -34,13 +38,17 @@ function calculateEMA(values, period) {
 function calculateSMA(values, period) {
   const nums = (Array.isArray(values) ? values : []).map(Number);
   const output = Array(nums.length).fill(null);
-  let rolling = 0;
-  for (let index = 0; index < nums.length; index += 1) {
-    const value = nums[index];
-    if (!Number.isFinite(value)) return output;
-    rolling += value;
-    if (index >= period) rolling -= nums[index - period];
-    if (index >= period - 1) output[index] = rolling / period;
+  for (let index = period - 1; index < nums.length; index += 1) {
+    let sum = 0;
+    let valid = true;
+    for (let offset = index - period + 1; offset <= index; offset += 1) {
+      if (!Number.isFinite(nums[offset])) {
+        valid = false;
+        break;
+      }
+      sum += nums[offset];
+    }
+    if (valid) output[index] = sum / period;
   }
   return output;
 }
@@ -107,30 +115,23 @@ function normalizeRowsFromPayload(payload) {
 }
 
 async function fetchYahooHistoryWithVolume(symbol) {
-  const endpoint = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
-  endpoint.searchParams.set("interval", "1d");
-  endpoint.searchParams.set("range", "2y");
-  endpoint.searchParams.set("includePrePost", "false");
-  const response = await fetch(endpoint, {
-    headers: {
-      accept: "application/json",
-      "user-agent": "portfolio-dashboard/1.0"
-    }
-  });
-  if (!response.ok) throw new Error(`Yahoo history failed (${response.status})`);
-  const payload = await response.json();
+  const payload = await yahooChartJson(
+    `/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2y&includePrePost=false`,
+    { timeoutMs: 6000 }
+  );
   const result = payload.chart?.result?.[0];
   const timestamps = Array.isArray(result?.timestamp) ? result.timestamp : [];
   const quote = result?.indicators?.quote?.[0] || {};
   const closes = Array.isArray(quote.close) ? quote.close : [];
   const volumes = Array.isArray(quote.volume) ? quote.volume : [];
+  const gmtoffset = Number(result?.meta?.gmtoffset) || 0;
   const rows = [];
   for (let index = 0; index < Math.min(timestamps.length, closes.length); index += 1) {
     const close = Number(closes[index]);
     const unix = Number(timestamps[index]);
     if (!Number.isFinite(close) || !Number.isFinite(unix)) continue;
     rows.push({
-      date: new Date(unix * 1000).toISOString().slice(0, 10),
+      date: new Date((unix + gmtoffset) * 1000).toISOString().slice(0, 10),
       close,
       volume: Number(volumes[index])
     });

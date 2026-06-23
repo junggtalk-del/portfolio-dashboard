@@ -2,6 +2,7 @@ const {
   canonicalSymbolFromTicker,
   refreshHistoricalThaiFundNav
 } = require("../../lib/data-providers/thaiMutualFundHistoricalNavProvider");
+const { parseJsonBody } = require("../../lib/request-body");
 
 function send(res, status, payload) {
   res.statusCode = status;
@@ -16,7 +17,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const body = parseJsonBody(req);
     const symbols = Array.isArray(body.symbols) ? body.symbols : [];
     const minPoints = Number(body.minPoints || 220);
     const canonicalSymbols = symbols.map((symbol) => canonicalSymbolFromTicker(symbol)).filter(Boolean);
