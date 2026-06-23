@@ -1,0 +1,4 @@
+# Debug-only endpoints — wired into local server.js only, never called by the
+# frontend. Excluded from Vercel so the deployment stays within the Hobby plan's
+# 12-serverless-function limit. They remain in the repo for local development.
+api/debug/
