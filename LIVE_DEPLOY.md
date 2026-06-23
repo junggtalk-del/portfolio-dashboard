@@ -87,7 +87,7 @@ Project -> Settings -> Environment Variables
 SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
 SUPABASE_SCHEMA=portfolio_dashboard
-APP_PASSWORD=jung12345
+APP_PASSWORD=<YOUR_STRONG_APP_PASSWORD>
 ```
 
 `service_role key` ต้องอยู่ใน Vercel Environment Variables เท่านั้น ห้ามใส่ในไฟล์ frontend
@@ -107,7 +107,7 @@ npm start
 http://localhost:4173
 ```
 
-ในเครื่อง local จะยังใช้ข้อมูลใน browser เป็นหลัก ส่วนบน Vercel จะใช้ password `jung12345` ผ่าน serverless function
+ในเครื่อง local จะยังใช้ข้อมูลใน browser เป็นหลัก ส่วนบน Vercel จะใช้ password `<YOUR_STRONG_APP_PASSWORD>` ผ่าน serverless function
 
 ## Step 6: Deploy ขึ้น live
 
@@ -127,6 +127,13 @@ Publish directory: public
 
 ## หมายเหตุ
 
-ระบบนี้ไม่ใช้ Supabase email login แล้ว ผู้ใช้ต้องกรอก password `jung12345` ก่อนถึงจะเห็นหน้า Dashboard จากนั้น Vercel Function จะอ่าน/เขียนข้อมูลใน Supabase ให้
+ระบบนี้ไม่ใช้ Supabase email login แล้ว ผู้ใช้ต้องกรอก password `<YOUR_STRONG_APP_PASSWORD>` ก่อนถึงจะเห็นหน้า Dashboard จากนั้น Vercel Function จะอ่าน/เขียนข้อมูลใน Supabase ให้
 
 ถ้าต้องการเปลี่ยน password ให้แก้ค่า `APP_PASSWORD` ใน Vercel แล้ว redeploy
+
+## ⚠️ Security checklist (สำคัญ — ทำก่อนใช้งานจริง)
+
+1. **ตั้ง `APP_PASSWORD` เป็นค่าสุ่มที่ยาวและเดายาก** (อย่างน้อย 16 ตัวอักษร) เก็บไว้เฉพาะใน Vercel Environment Variables และไฟล์ `.env` ในเครื่องเท่านั้น — ห้ามใส่ในโค้ด frontend หรือเอกสารใด ๆ
+2. **`SUPABASE_SERVICE_ROLE_KEY` คือกุญแจสิทธิ์เต็มของฐานข้อมูล** — ถ้าเคยหลุด (เช่น เผลอ paste, commit, หรือแชร์) ให้ **rotate ทันที** ที่ Supabase → Settings → API → "Reset/Roll service_role key" แล้วอัปเดตค่าใหม่ทั้งใน Vercel และ `.env`
+3. ทุก endpoint ที่อ่าน/เขียนข้อมูลส่วนตัว (`/api/portfolio`, `/api/ai-universe`, `/api/portfolio-holdings`) **ตรวจรหัสผ่านฝั่งเซิร์ฟเวอร์แล้ว** (ผ่าน `lib/auth.js`) — ไม่มีรหัส = 401
+4. หน้าเว็บไม่ฝังรหัสผ่านอีกต่อไป — ผู้ใช้ต้องล็อกอินผ่าน overlay (`public/api-auth.js`) ซึ่งเก็บรหัสไว้ใน `sessionStorage` ของ session นั้นเท่านั้น

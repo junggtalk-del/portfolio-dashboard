@@ -2,11 +2,14 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { loadLocalEnv } = require("./local-env");
+const { isValidPortfolioData } = require("./lib/portfolio-validation");
+const { fetchWithTimeout, yahooChartJson } = require("./lib/http");
 const marketDataApiHandler = require("./api/price-history");
 const backtestApiHandler = require("./api/backtest");
 const marketRiskApiHandler = require("./api/market-risk");
 const portfolioHoldingsApiHandler = require("./api/portfolio-holdings");
 const thaiStockScannerApiHandler = require("./api/thai-stock-scanner");
+const ohlcApiHandler = require("./api/ohlc");
 const fundNavHistoryApiHandler = require("./api/fund-nav/history");
 const fundNavRefreshApiHandler = require("./api/fund-nav/refresh");
 const debugFundNavApiHandler = require("./api/debug/fund-nav");
@@ -214,12 +217,16 @@ async function fetchThaiFundNavLive(symbol) {
   const config = THAI_FUND_PROVIDER_CONFIG[symbol];
   if (!config) throw new Error(`Unsupported Thai fund symbol: ${symbol}`);
 
-  const response = await fetch(config.url, {
-    headers: {
-      accept: "text/html,application/xhtml+xml",
-      "user-agent": "portfolio-dashboard/1.0"
-    }
-  });
+  const response = await fetchWithTimeout(
+    config.url,
+    {
+      headers: {
+        accept: "text/html,application/xhtml+xml",
+        "user-agent": "portfolio-dashboard/1.0"
+      }
+    },
+    { timeoutMs: 10000, retries: 1 }
+  );
   if (!response.ok) {
     throw new Error(`KAsset request failed (${response.status}) for ${symbol}`);
   }
@@ -461,6 +468,11 @@ async function handleAiUniverse(req, res) {
       return;
     }
 
+    if (!isPortfolioPasswordValid(req)) {
+      sendJson(res, 401, { error: "Unauthorized: missing or incorrect password." });
+      return;
+    }
+
     if (req.method === "GET") {
       const endpoint = `${getSupabaseUrl()}/rest/v1/app_state?id=eq.${AI_UNIVERSE_STATE_ID}&select=data`;
       const response = await fetch(endpoint, { headers: portfolioHeaders() });
@@ -502,6 +514,10 @@ async function handlePortfolio(req, res) {
 
       if (req.method === "PUT") {
         const body = await getRequestBody(req);
+        if (!isValidPortfolioData(body?.data)) {
+          sendJson(res, 400, { error: "Refusing to save: portfolio data is empty or malformed." });
+          return;
+        }
         writeLocalPortfolioData(body?.data ?? null);
         sendJson(res, 200, { ok: true, mode: "local-fallback" });
         return;
@@ -535,6 +551,10 @@ async function handlePortfolio(req, res) {
 
     if (req.method === "PUT") {
       const body = await getRequestBody(req);
+      if (!isValidPortfolioData(body?.data)) {
+        sendJson(res, 400, { error: "Refusing to save: portfolio data is empty or malformed." });
+        return;
+      }
       const endpoint = `${getSupabaseUrl()}/rest/v1/app_state`;
       const response = await fetch(endpoint, {
         method: "POST",
@@ -586,20 +606,10 @@ function emptyQuote(symbol) {
 }
 
 async function fetchQuote(symbol) {
-  const endpoint = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
-  endpoint.searchParams.set("interval", "1m");
-  endpoint.searchParams.set("range", "1d");
-
-  const response = await fetch(endpoint, {
-    headers: {
-      accept: "application/json",
-      "user-agent": "portfolio-dashboard/1.0"
-    }
-  });
-
-  if (!response.ok) return emptyQuote(symbol);
-
-  const payload = await response.json();
+  const payload = await yahooChartJson(
+    `/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1m&range=1d`,
+    { timeoutMs: 6000 }
+  );
   const result = payload.chart?.result?.[0];
   const meta = result?.meta;
   if (!meta) return emptyQuote(symbol);
@@ -659,30 +669,21 @@ function mergeHistoricalRows(existingRows, incomingRows) {
 }
 
 async function fetchDailyHistoryByRange(symbol, range) {
-  const endpoint = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
-  endpoint.searchParams.set("interval", "1d");
-  endpoint.searchParams.set("range", range);
-  endpoint.searchParams.set("includePrePost", "false");
-
-  const response = await fetch(endpoint, {
-    headers: {
-      accept: "application/json",
-      "user-agent": "portfolio-dashboard/1.0"
-    }
-  });
-  if (!response.ok) throw new Error("price history request failed");
-
-  const payload = await response.json();
+  const payload = await yahooChartJson(
+    `/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=${range}&includePrePost=false`,
+    { timeoutMs: 6000 }
+  );
   const result = payload.chart?.result?.[0];
   const timestamps = Array.isArray(result?.timestamp) ? result.timestamp : [];
   const closes = result?.indicators?.quote?.[0]?.close || [];
+  const gmtoffset = Number(result?.meta?.gmtoffset) || 0;
   const rows = [];
   for (let index = 0; index < Math.min(timestamps.length, closes.length); index += 1) {
     const close = closes[index];
     const unix = timestamps[index];
     if (!Number.isFinite(close) || !Number.isFinite(unix)) continue;
     rows.push({
-      date: new Date(unix * 1000).toISOString().slice(0, 10),
+      date: new Date((unix + gmtoffset) * 1000).toISOString().slice(0, 10),
       close: Number(close)
     });
   }
@@ -727,6 +728,10 @@ function shapeMarketRows(symbol, rows, sourceType, sourceText, fetchedAt, extra 
     lastUpdated: fetchedAt || null,
     dates: rows.map((row) => row.date),
     closes: rows.map((row) => row.close),
+    volumes: rows.map((row) => {
+      const v = Number(row && row.volume);
+      return Number.isFinite(v) && v > 0 ? v : null;
+    }),
     historicalSourceLimited: Boolean(extra.historicalSourceLimited),
     latestLiveRows: Number.isFinite(extra.latestLiveRows) ? Number(extra.latestLiveRows) : null,
     sourceRange: extra.sourceRange || null
@@ -796,14 +801,11 @@ async function handleQuotes(req, res) {
     return;
   }
 
-  try {
-    const quotes = await Promise.all(symbols.map(fetchQuote));
-    sendJson(res, 200, { quotes });
-  } catch (error) {
-    sendJson(res, 502, {
-      error: "Unable to fetch market prices. Please check your internet connection."
-    });
-  }
+  const settled = await Promise.allSettled(symbols.map(fetchQuote));
+  const quotes = settled.map((result, index) =>
+    result.status === "fulfilled" ? result.value : emptyQuote(symbols[index])
+  );
+  sendJson(res, 200, { quotes });
 }
 
 async function handlePriceHistory(req, res) {
@@ -938,6 +940,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (requestUrl.pathname === "/api/ohlc") {
+    invokeApiHandler(ohlcApiHandler, req, res, requestUrl);
+    return;
+  }
+
   if (requestUrl.pathname === "/api/portfolio") {
     handlePortfolio(req, res);
     return;
@@ -945,6 +952,13 @@ const server = http.createServer((req, res) => {
 
   if (requestUrl.pathname === "/api/ai-universe") {
     handleAiUniverse(req, res);
+    return;
+  }
+
+  // Asset 360 per-ticker detail page — /asset/:symbol serves a single page
+  // that reads the symbol from the URL on the client.
+  if (requestUrl.pathname.startsWith("/asset/") || requestUrl.pathname === "/asset") {
+    sendFile(res, path.join(PUBLIC_DIR, "asset.html"));
     return;
   }
 

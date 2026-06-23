@@ -1,20 +1,20 @@
 :root {
   color-scheme: light;
-  --ink: #1b2d46;
-  --muted: #6f7b91;
-  --line: #dbe4f0;
-  --page: #f3f7fb;
-  --green: #18865d;
-  --red: #b83a36;
-  --amber: #a5660b;
-  --blue: #2f5f8f;
+  --ink: var(--app-text);
+  --muted: var(--app-muted);
+  --line: var(--app-border);
+  --page: var(--app-bg);
+  --green: var(--app-up);
+  --red: var(--app-down);
+  --amber: var(--app-warn);
+  --blue: var(--app-info);
   font-family: "Noto Sans Thai", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
 body {
   margin: 0;
   color: var(--ink);
-  background: linear-gradient(180deg, #f8fbff 0%, var(--page) 100%);
+  background: linear-gradient(180deg, var(--app-bg-soft) 0%, var(--page) 100%);
   min-height: 100vh;
 }
 button,
@@ -33,10 +33,10 @@ input { font: inherit; }
 .status-panel,
 .health-summary,
 .metric-card {
-  background: rgba(255,255,255,.9);
+  background: var(--app-card);
   border: 1px solid var(--line);
   border-radius: 18px;
-  box-shadow: 0 18px 44px rgba(40,65,96,.08);
+  box-shadow: var(--app-shadow);
 }
 .status-topbar {
   padding: 22px 24px;
@@ -46,7 +46,7 @@ input { font: inherit; }
 }
 .status-eyebrow {
   margin: 0 0 6px;
-  color: #31736e;
+  color: var(--app-accent);
   font-size: .78rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -75,14 +75,14 @@ h1 {
   color: var(--ink);
   text-decoration: none;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--app-elevated);
   border-radius: 12px;
   padding: 10px 13px;
   font-weight: 800;
 }
 .status-nav a.is-active,
 .status-toolbar button {
-  color: #fff;
+  color: var(--app-card);
   background: var(--ink);
   border-color: var(--ink);
 }
@@ -111,7 +111,7 @@ h1 {
   min-width: 170px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: #fff;
+  background: var(--app-elevated);
   color: var(--ink);
   padding: 10px 12px;
   font-weight: 800;
@@ -157,7 +157,7 @@ h1 {
 .holding-card {
   border: 1px solid var(--line);
   border-radius: 15px;
-  background: #fff;
+  background: var(--app-card);
   padding: 13px;
 }
 .holding-card h3 {
@@ -194,16 +194,16 @@ h1 {
   font-weight: 700;
 }
 .status-main-row:hover {
-  background: rgba(47,95,143,.04);
+  background: var(--app-bg-soft);
 }
 .status-detail-row td {
-  background: #f8fbff;
+  background: var(--app-bg-soft);
   padding: 0 9px 12px;
 }
 .table-detail-card {
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: #fff;
+  background: var(--app-card);
   padding: 12px;
   display: grid;
   gap: 8px;
@@ -222,8 +222,8 @@ h1 {
   border-radius: 999px;
   padding: 5px 8px;
   margin: 2px 4px 2px 0;
-  color: #24527e;
-  background: #dbeeff;
+  color: var(--app-info);
+  background: color-mix(in srgb, var(--app-card), var(--app-info) 14%);
   font-size: .76rem;
   font-weight: 900;
   line-height: 1.1;
@@ -231,7 +231,7 @@ h1 {
 .detail-toggle {
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--app-elevated);
   color: var(--ink);
   padding: 7px 9px;
   font-size: .82rem;
@@ -242,8 +242,8 @@ h1 {
 .detail-toggle:hover {
   border-color: var(--ink);
 }
-.positive { color: #0f7a55; }
-.negative { color: #b83a36; }
+.positive { color: var(--app-up); }
+.negative { color: var(--app-down); }
 .badge-row {
   display: flex;
   flex-wrap: wrap;
@@ -255,11 +255,11 @@ h1 {
   font-weight: 900;
   font-size: .78rem;
 }
-.green { color:#09633f; background:#d8f8e8; }
-.red { color:#9d2f2c; background:#ffd8d5; }
-.amber { color:#825107; background:#ffedb5; }
-.gray { color:#596274; background:#e8edf4; }
-.blue { color:#24527e; background:#dbeeff; }
+.green { color: var(--app-up); background: color-mix(in srgb, var(--app-card), var(--app-up) 14%); }
+.red { color: var(--app-down); background: color-mix(in srgb, var(--app-card), var(--app-down) 14%); }
+.amber { color: var(--app-warn); background: color-mix(in srgb, var(--app-card), var(--app-warn) 14%); }
+.gray { color: var(--app-text); background: color-mix(in srgb, var(--app-card), var(--app-text) 8%); }
+.blue { color: var(--app-info); background: color-mix(in srgb, var(--app-card), var(--app-info) 14%); }
 .exposure-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -268,7 +268,7 @@ h1 {
 .exposure-card {
   border: 1px solid var(--line);
   border-radius: 15px;
-  background: #fff;
+  background: var(--app-card);
   padding: 13px;
   display: grid;
   gap: 9px;
@@ -296,7 +296,7 @@ h1 {
   height: 9px;
   overflow: hidden;
   border-radius: 999px;
-  background: #e8edf4;
+  background: var(--app-elevated);
 }
 .exposure-bar span {
   display: block;
@@ -304,18 +304,18 @@ h1 {
   border-radius: inherit;
   background: linear-gradient(90deg, #2f5f8f, #18865d);
 }
-.risk-high { border-color: rgba(184,58,54,.34); background: #fff7f7; }
-.risk-medium { border-color: rgba(165,102,11,.34); background: #fffaf0; }
-.risk-low { border-color: rgba(24,134,93,.26); background: #f5fffa; }
+.risk-high { border-color: color-mix(in srgb, var(--app-border), var(--app-down) 40%); background: color-mix(in srgb, var(--app-card), var(--app-down) 12%); }
+.risk-medium { border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%); background: color-mix(in srgb, var(--app-card), var(--app-warn) 12%); }
+.risk-low { border-color: color-mix(in srgb, var(--app-border), var(--app-up) 40%); background: color-mix(in srgb, var(--app-card), var(--app-up) 12%); }
 .overlap-list {
   display: grid;
   gap: 10px;
 }
 .overlap-card {
-  border: 1px solid rgba(165,102,11,.28);
+  border: 1px solid color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
   border-radius: 15px;
   padding: 13px;
-  background: #fffaf0;
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 12%);
 }
 .overlap-card h3 {
   margin: 0 0 4px;
@@ -376,7 +376,7 @@ h1 {
   border: 1px solid var(--ink);
   border-radius: 12px;
   background: var(--ink);
-  color: #fff;
+  color: var(--app-card);
   padding: 8px 12px;
   font-weight: 900;
   cursor: pointer;

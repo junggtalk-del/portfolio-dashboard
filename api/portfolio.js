@@ -1,5 +1,8 @@
 const SCHEMA = process.env.SUPABASE_SCHEMA || "portfolio_dashboard";
 const STATE_ID = "main";
+const { isPasswordValid } = require("../lib/auth");
+const { isValidPortfolioData } = require("../lib/portfolio-validation");
+const { parseJsonBody } = require("../lib/request-body");
 
 function send(res, status, payload) {
   res.statusCode = status;
@@ -49,6 +52,11 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  if (!isPasswordValid(req)) {
+    send(res, 401, { error: "Unauthorized: missing or incorrect password." });
+    return;
+  }
+
   try {
     if (req.method === "GET") {
       send(res, 200, { data: await readState() });
@@ -56,7 +64,11 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "PUT") {
-      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body;
+      const body = parseJsonBody(req);
+      if (!isValidPortfolioData(body?.data)) {
+        send(res, 400, { error: "Refusing to save: portfolio data is empty or malformed." });
+        return;
+      }
       await writeState(body?.data);
       send(res, 200, { ok: true });
       return;

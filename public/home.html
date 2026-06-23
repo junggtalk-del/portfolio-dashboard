@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Investment · Daily Portfolio Brief</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script src="/theme.js?v=20260623-theme-2"></script>
+    <link rel="stylesheet" href="/theme.css?v=20260623-theme-2" />
+    <link rel="stylesheet" href="/mission-control.css?v=20260623-mc-7" />
+    <script src="/api-auth.js?v=20260620-auth-1"></script>
+  </head>
+  <body class="mc-body">
+    <div class="mc-app">
+      <!-- ===== Sidebar (rebuilt by app-navigation.js from canonical config) ===== -->
+      <aside class="mc-sidebar" id="mcSidebar">
+        <div class="mc-logo">
+          <div class="mc-logo-mark">Λ</div>
+          <div class="mc-logo-text">
+            <strong>AI Investment</strong>
+            <span>Mission Control</span>
+          </div>
+        </div>
+        <nav class="mc-nav">
+          <div class="mc-nav-group-label">Dashboard</div>
+          <a class="mc-nav-item is-active" href="/home"><span class="mc-ic">🛰️</span> Home</a>
+          <a class="mc-nav-item" href="/portfolio-status"><span class="mc-ic">📈</span> Portfolio Status</a>
+          <a class="mc-nav-item" href="/action-center"><span class="mc-ic">🎯</span> Action Center</a>
+          <a class="mc-nav-item" href="/"><span class="mc-ic">🗓️</span> Quarterly Editor</a>
+        </nav>
+      </aside>
+
+      <!-- ===== Main ===== -->
+      <div class="mc-main">
+        <header class="mc-header">
+          <button class="mc-icon-btn mc-menu-toggle" id="mcMenuToggle" type="button">☰</button>
+          <div class="mc-search">
+            <span>🔍</span>
+            <input type="text" placeholder="Search assets, pages, signals, actions..." />
+            <span class="mc-kbd">⌘ K</span>
+          </div>
+          <div class="mc-header-right">
+            <div class="mc-snap">
+              <small>Data Snapshot</small>
+              <span id="mcSnapTime">—</span>
+            </div>
+            <span class="mc-pill mc-pill-stale" id="mcSnapPill">● —</span>
+            <button class="mc-btn mc-btn-primary" id="mcLoadLatest" type="button">Load Latest Data</button>
+            <a class="mc-icon-btn" href="/home" title="Home">🛰️</a>
+          </div>
+        </header>
+
+        <main class="mc-content">
+          <!-- ===== Section 1: Hero — Daily Portfolio Brief ===== -->
+          <section class="mc-hero mc-fade">
+            <div class="mc-hero-left">
+              <h1>Daily Portfolio Brief</h1>
+              <p>สรุปสิ่งที่ต้องดูวันนี้ เพื่อปรับพอร์ตตามแนวโน้มและคุมความเสี่ยง</p>
+            </div>
+            <div class="mc-hero-cards" id="mcHeroCards">
+              <div class="mc-metric mc-glow"><div class="mc-skel mc-skel-box"></div></div>
+              <div class="mc-metric mc-glow"><div class="mc-skel mc-skel-box"></div></div>
+              <div class="mc-metric mc-glow"><div class="mc-skel mc-skel-box"></div></div>
+              <div class="mc-metric mc-glow"><div class="mc-skel mc-skel-box"></div></div>
+            </div>
+          </section>
+
+          <!-- ===== Section 2: Priority Signals (look first) ===== -->
+          <section class="mc-card mc-panel mc-fade mc-fade-2">
+            <div class="mc-panel-head">
+              <div><h2>⚡ ต้องดูก่อนวันนี้</h2><span class="mc-sub">Priority Signals — Urgent Action · New Bullish · New Bearish</span></div>
+            </div>
+            <div class="mc-grid mc-grid-3" id="mcPriority">
+              <div class="mc-card mc-focus-card mc-accent-red"><div class="mc-skel mc-skel-box"></div></div>
+              <div class="mc-card mc-focus-card mc-accent-emerald"><div class="mc-skel mc-skel-box"></div></div>
+              <div class="mc-card mc-focus-card mc-accent-amber"><div class="mc-skel mc-skel-box"></div></div>
+            </div>
+          </section>
+
+          <!-- ===== Section 3: Portfolio Guardrails ===== -->
+          <section class="mc-card mc-panel mc-fade mc-fade-3">
+            <div class="mc-panel-head">
+              <h2>Portfolio Guardrails</h2>
+              <span class="mc-sub">กรอบป้องกันความเสี่ยงพอร์ต</span>
+            </div>
+            <div class="mc-grid mc-grid-4" id="mcGuardrails">
+              <div class="mc-card mc-guard"><div class="mc-skel mc-skel-box"></div></div>
+              <div class="mc-card mc-guard"><div class="mc-skel mc-skel-box"></div></div>
+              <div class="mc-card mc-guard"><div class="mc-skel mc-skel-box"></div></div>
+              <div class="mc-card mc-guard"><div class="mc-skel mc-skel-box"></div></div>
+            </div>
+          </section>
+
+          <!-- ===== Section 4: Market Risk ===== -->
+          <section class="mc-card mc-panel mc-fade mc-fade-4">
+            <div class="mc-panel-head">
+              <div><h2>Market Risk</h2><span class="mc-sub">บรรยากาศตลาดวันนี้</span></div>
+              <a class="mc-link" href="/market-risk">View Market Risk →</a>
+            </div>
+            <div id="mcMarketRisk"><div class="mc-skel mc-skel-box" style="height:80px;"></div></div>
+          </section>
+
+          <!-- ===== Section 5: Recent Activity (compact, bottom) ===== -->
+          <section class="mc-card mc-panel mc-fade mc-fade-5">
+            <div class="mc-panel-head">
+              <h2>Recent Activity</h2>
+              <span class="mc-sub">อัปเดตล่าสุด</span>
+            </div>
+            <div class="mc-activities" id="mcActivity"></div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <script src="/scoring.js?v=20260623-scoring-10"></script>
+    <script src="/watchlist.js?v=20260623-watch-6"></script>
+    <script src="/data-snapshot.js?v=20260623-snapshot-8"></script>
+    <script src="/home-page.js?v=20260623-brief-7"></script>
+    <script src="/app-navigation.js?v=20260621-nav-4"></script>
+  </body>
+</html>

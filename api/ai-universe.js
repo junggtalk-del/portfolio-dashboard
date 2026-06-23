@@ -1,5 +1,7 @@
 const SCHEMA = process.env.SUPABASE_SCHEMA || "portfolio_dashboard";
 const STATE_ID = "ai_boom_universe_main";
+const { isPasswordValid } = require("../lib/auth");
+const { parseJsonBody } = require("../lib/request-body");
 const THAI_MUTUAL_FUND_ALIASES = {
   "K-GTECHRMF": "K-GTECHRMF",
   KGTECHRMF: "K-GTECHRMF",
@@ -118,6 +120,11 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  if (!isPasswordValid(req)) {
+    send(res, 401, { error: "Unauthorized: missing or incorrect password." });
+    return;
+  }
+
   try {
     if (req.method === "GET") {
       send(res, 200, { data: await readState(), mode: "supabase" });
@@ -125,7 +132,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "PUT") {
-      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body;
+      const body = parseJsonBody(req);
       await writeState(body?.data);
       send(res, 200, { ok: true, mode: "supabase" });
       return;

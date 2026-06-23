@@ -222,9 +222,128 @@
     return rows.sort(compareRows);
   }
 
+  const isDev = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+  const ACTION_CODE = {
+    SELL_ALL: { code: "review", thai: "ขายหมด / ออกจากสถานะ" },
+    SELL_FIRST: { code: "review", thai: "ขายไม้แรก / ลดน้ำหนัก" },
+    BUY_MORE: { code: "buy", thai: "ซื้อเพิ่ม / เพิ่มน้ำหนัก" },
+    HOLD_ADD: { code: "buy", thai: "ถือต่อ / เพิ่มได้" },
+    BUY_FIRST_WAIT_VOLUME: { code: "watch", thai: "ซื้อไม้แรก / รอวอลุ่ม" },
+    BUY_FIRST_SMALL: { code: "watch", thai: "ซื้อไม้แรกเล็ก ๆ / เฝ้าดู" },
+    WATCH_CLOSELY: { code: "watch", thai: "เฝ้าดูใกล้ชิด" },
+    WATCH_WAIT: { code: "watch", thai: "เฝ้าดู / รอก่อน" },
+    AVOID_WAIT: { code: "avoid", thai: "รอก่อน" },
+    DATA_WAITING: { code: "hold", thai: "รอข้อมูล" }
+  };
+
+  const SECTION_REASON = {
+    urgent: "เป็นสินทรัพย์ที่ถือจริง และเริ่มมีสัญญาณเสี่ยงต่อพอร์ต",
+    buy: "ผ่านตัวกรอง trend / volume / market risk แล้ว",
+    watch: "สัญญาณยังผสมหรือยังไม่ confirm ควรเฝ้าดูก่อน",
+    none: "ยังไม่มีสัญญาณที่ต้องลงมือชัดเจน"
+  };
+
+  // Single source of truth for the per-asset TimingScoreInput.
+  function scoringInput(row, facts) {
+    facts = facts || {};
+    return {
+      latestPrice: row.latestClose,
+      latestDate: row.latestDate,
+      ema12: firstNumber(row.tech?.ema12),
+      ema26: firstNumber(row.tech?.ema26),
+      sma200: firstNumber(row.tech?.sma200),
+      rsi14: firstNumber(row.rsi?.rsi14, row.tech?.rsi14),
+      emaTrendStatus: facts.emaBull ? "EMA_BULLISH" : facts.emaBear ? "EMA_BEARISH" : undefined,
+      sma200Status: facts.aboveSma ? "ABOVE_SMA200" : facts.belowSma ? "BELOW_SMA200" : undefined,
+      volumeRatio: Number.isFinite(facts.volumeRatio) ? facts.volumeRatio : undefined,
+      daysSinceEmaBullishCross: firstNumber(row.scanner?.daysSinceCrossover),
+      isNewBullishSignal: !!facts.newBullish,
+      isNewBearishSignal: !!facts.newBearish,
+      isBullishWatchlist: !!facts.bullishWatch,
+      isOngoingBullishTrend: !!(facts.emaBull && facts.aboveSma),
+      isOngoingBearishTrend: !!(facts.emaBear && facts.belowSma),
+      marketRiskLevel: facts.marketRiskLabel,
+      isHolding: !!row.portfolio?.isHolding,
+      portfolioWeight: Number(row.portfolio?.weight) || 0,
+      marketValue: Number(row.portfolio?.marketValue) || 0,
+      assetType: row.assetType,
+      displaySymbol: row.displaySymbol,
+      canonicalSymbol: row.symbol
+    };
+  }
+
   function resolveDecision(row, snapshot) {
     const facts = signalFacts(row, snapshot);
+    if (window.Scoring && typeof window.Scoring.calculateTimingScore === "function") {
+      try {
+        return resolveDecisionScored(row, facts);
+      } catch (_error) {
+        /* fall back to legacy logic below */
+      }
+    }
+    return resolveDecisionLegacy(row, facts);
+  }
+
+  // Decision driven PRIMARILY by the signal state (AI Boom taxonomy, shared
+  // engine). The numeric Signal Score is kept only as a secondary supporting
+  // detail — it no longer decides the section/action.
+  function resolveDecisionScored(row, facts) {
+    const input = scoringInput(row, facts);
+    if (input.isHolding === undefined) input.isHolding = !!(row.portfolio && row.portfolio.isHolding);
+    // PRIMARY: which signal state is this asset in right now?
+    const signal = window.Scoring.classifySignal(input);
+    const rec = window.Scoring.actionFromSignal(signal, input);
+    // SECONDARY: the score is still computed, shown as a supporting chip only.
+    const timing = window.Scoring.calculateTimingScore(input);
+    const conflicts = (timing.conflicts || []).map((c) => ({
+      label: c.code,
+      reason: c.thaiMessage || c.message,
+      severity: c.severity
+    }));
+    const meta = ACTION_CODE[rec.key] || { code: "watch", thai: rec.thaiAction || "เฝ้าดู" };
+    const warnings = (rec.warnings || []).map((w) => w.thaiMessage || w.message || "").filter(Boolean);
+    const reason = rec.thaiExplanation || rec.thaiReason || SECTION_REASON[rec.section];
+
+    if (isDev) {
+      console.debug("[action-center]", row.symbol, { signal: signal.groupKey, action: rec.key, section: rec.section, score: timing.score });
+    }
+
+    return {
+      ...row,
+      facts,
+      conflicts,
+      score: timing.score,
+      scoreLabel: scoreQuality(timing.score),
+      timing,
+      gates: timing.gates,
+      signal,
+      recommendation: rec,
+      signalQualityScore: timing.score,
+      decision: {
+        action: meta.code,
+        actionThai: rec.thaiAction || meta.thai,
+        actionKey: rec.key,
+        section: rec.section,
+        signalGroup: signal.groupKey,
+        signalLabel: signal.thaiLabel,
+        signalTone: signal.tone,
+        reason,
+        warnings,
+        keySignals: keySignals(facts).slice(0, 3)
+      }
+    };
+  }
+
+  // Legacy heuristic decision, used only when window.Scoring is unavailable OR
+  // resolveDecisionScored throws. Still attach the signal state when the engine
+  // is present (the throw path) so the chip + conviction filter keep working.
+  function resolveDecisionLegacy(row, facts) {
     const conflicts = detectConflicts(row, facts);
+    let signal = null;
+    if (window.Scoring && typeof window.Scoring.classifySignal === "function") {
+      try { signal = window.Scoring.classifySignal(scoringInput(row, facts)); } catch (_e) { /* ignore */ }
+    }
     let score = scoreDecision(row, facts);
     let action = "avoid";
     let actionThai = "รอก่อน";
@@ -284,21 +403,45 @@
       reason = "มีข้อมูล trend บางส่วน แต่สัญญาณยังไม่ครบพอให้ลงมือ";
     }
 
-    const scoreLabel = scoreQuality(score);
     return {
       ...row,
       facts,
       conflicts,
       score,
-      scoreLabel,
+      scoreLabel: scoreQuality(score),
+      signal,
       decision: {
         action,
         actionThai,
         section,
+        signalGroup: signal ? signal.groupKey : null,
+        signalLabel: signal ? signal.thaiLabel : null,
+        signalTone: signal ? signal.tone : null,
         reason,
         keySignals: keySignals(facts).slice(0, 3)
       }
     };
+  }
+
+  function conflictSeverityRank(row) {
+    return (row.conflicts || []).reduce((max, c) => {
+      const rank = c.severity === "high" ? 3 : c.severity === "medium" ? 2 : c.severity === "low" ? 1 : 0;
+      return Math.max(max, rank);
+    }, 0);
+  }
+
+  function sortRowsForSection(key, rows) {
+    const w = (r) => Number(r.portfolio?.weight) || 0;
+    const hold = (r) => Number(Boolean(r.portfolio?.isHolding));
+    const vol = (r) => (r.facts && r.facts.volumeConfirmed ? 1 : 0);
+    const above = (r) => (r.facts && r.facts.aboveSma ? 1 : 0);
+    const sorters = {
+      urgent: (a, b) => conflictSeverityRank(b) - conflictSeverityRank(a) || w(b) - w(a) || a.score - b.score || (Number(Boolean(b.facts?.newBearish)) - Number(Boolean(a.facts?.newBearish))),
+      buy: (a, b) => b.score - a.score || vol(b) - vol(a) || above(b) - above(a) || hold(b) - hold(a),
+      watch: (a, b) => hold(b) - hold(a) || conflictSeverityRank(b) - conflictSeverityRank(a) || b.score - a.score,
+      none: (a, b) => hold(b) - hold(a) || w(b) - w(a) || b.score - a.score
+    };
+    return rows.slice().sort(sorters[key] || ((a, b) => b.score - a.score));
   }
 
   function signalFacts(row, snapshot) {
@@ -426,12 +569,27 @@
     return [...new Set(signals)];
   }
 
+  // Label for the SECONDARY numeric score (worded as score strength, not
+  // "confidence" — conviction now comes from the signal state, see convictionOf).
   function scoreQuality(score) {
-    if (score >= 80) return { label: "High Conviction", thai: "ความมั่นใจสูง", tone: "score-high" };
-    if (score >= 60) return { label: "Good Setup", thai: "สัญญาณค่อนข้างดี", tone: "score-good" };
-    if (score >= 40) return { label: "Mixed / Watch", thai: "สัญญาณผสม / เฝ้าดู", tone: "score-mixed" };
-    if (score >= 20) return { label: "Weak", thai: "สัญญาณอ่อน", tone: "score-weak" };
-    return { label: "Avoid / No Action", thai: "รอก่อน / ยังไม่ควรทำอะไร", tone: "score-avoid" };
+    if (score >= 80) return { label: "Score Very High", thai: "คะแนนสูงมาก", tone: "score-high" };
+    if (score >= 60) return { label: "Score Good", thai: "คะแนนค่อนข้างดี", tone: "score-good" };
+    if (score >= 40) return { label: "Score Mixed", thai: "คะแนนปานกลาง", tone: "score-mixed" };
+    if (score >= 20) return { label: "Score Weak", thai: "คะแนนอ่อน", tone: "score-weak" };
+    return { label: "Score Low", thai: "คะแนนต่ำ", tone: "score-avoid" };
+  }
+
+  // PRIMARY conviction comes from the signal STATE, not the score (Finding 5):
+  // high  = a fresh crossover that the major trend (SMA200) confirms, no hard conflict
+  // good  = an aligned ongoing trend, or a fresh cross not yet trend-confirmed
+  // mixed = watch / neutral / waiting
+  function convictionOf(row) {
+    const s = row.signal || {};
+    const g = s.groupKey;
+    const highConflict = (row.conflicts || []).some((c) => c.severity === "high");
+    if (!highConflict && ((g === "new_bullish" && s.aboveSma) || (g === "new_bearish" && s.belowSma))) return "high";
+    if (g === "new_bullish" || g === "new_bearish" || g === "ongoing_bullish" || g === "ongoing_bearish") return "good";
+    return "mixed";
   }
 
   function render() {
@@ -472,9 +630,12 @@
       if (state.filters.action === "watch" && row.decision.action !== "watch") return false;
       if (state.filters.action === "review" && row.decision.action !== "review") return false;
       if (state.filters.action === "none" && !["hold", "avoid"].includes(row.decision.action)) return false;
-      if (state.filters.confidence === "high" && row.score < 80) return false;
-      if (state.filters.confidence === "good" && row.score < 60) return false;
-      if (state.filters.confidence === "mixed" && (row.score < 40 || row.score > 59)) return false;
+      if (state.filters.confidence !== "all") {
+        const conv = convictionOf(row);
+        if (state.filters.confidence === "high" && conv !== "high") return false;
+        if (state.filters.confidence === "good" && conv === "mixed") return false;
+        if (state.filters.confidence === "mixed" && conv !== "mixed") return false;
+      }
       if (state.filters.conflict === "only" && !row.conflicts.length) return false;
       if (state.filters.conflict === "hide" && row.conflicts.length) return false;
       if (state.filters.market !== "all" && marketGroup(row) !== state.filters.market) return false;
@@ -502,22 +663,32 @@
       watch: rows.filter((row) => row.decision.section === "watch").length,
       none: rows.filter((row) => row.decision.section === "none").length,
       conflicts: rows.filter((row) => row.conflicts.length).length,
-      high: rows.filter((row) => row.score >= 80).length
+      high: rows.filter((row) => convictionOf(row) === "high").length
     };
-    summaryRoot.innerHTML = SUMMARY_DEFS.map(([key, title, thai]) => `
-      <button class="summary-card decision-summary-${key}" type="button" data-summary="${key}">
+    summaryRoot.innerHTML = SUMMARY_DEFS.map(([key, title, thai]) => {
+      const isFilterCard = key === "conflicts" || key === "high";
+      const active = (key === "conflicts" && state.filters.conflict === "only")
+        || (key === "high" && state.filters.confidence === "high");
+      const hint = isFilterCard
+        ? (active ? "✓ กำลังกรอง · กดเพื่อยกเลิก" : "คลิกเพื่อกรอง")
+        : "คลิกเพื่อดูรายการ";
+      return `
+      <button class="summary-card decision-summary-${key}${active ? " is-active" : ""}" type="button" data-summary="${key}">
         <span>${escapeHtml(title)}</span>
         <strong>${counts[key] || 0}</strong>
         <p>${escapeHtml(thai)}</p>
-        <p>คลิกเพื่อดูรายการ</p>
-      </button>
-    `).join("");
+        <p>${escapeHtml(hint)}</p>
+      </button>`;
+    }).join("");
   }
 
   function renderSections() {
     const rows = filteredRows();
     const grouped = Object.fromEntries(SECTION_DEFS.map((section) => [section.key, []]));
     rows.forEach((row) => grouped[row.decision.section]?.push(row));
+    SECTION_DEFS.forEach((section) => {
+      grouped[section.key] = sortRowsForSection(section.key, grouped[section.key]);
+    });
     sectionsRoot.innerHTML = SECTION_DEFS.map((section) => `
       <section id="decision-${section.key}" class="decision-section ${section.tone}">
         <div class="section-heading">
@@ -534,16 +705,37 @@
     `).join("");
   }
 
+  function timingInputForRow(row) {
+    return scoringInput(row, row.facts || {});
+  }
+
+  function timingChipHtml(row) {
+    if (!window.Scoring) return "";
+    try {
+      const input = timingInputForRow(row);
+      const timing = window.Scoring.calculateTimingScore(input);
+      const action = window.Scoring.recommendAction(input, timing);
+      const chip = window.Scoring.renderTimingChip(timing);
+      const actionLabel = action?.thaiAction
+        ? `<span class="ts-action-chip" title="${escapeHtml(action.action || "")}">${escapeHtml(action.thaiAction)}</span>`
+        : "";
+      return `<div class="ts-chip-row">${chip}${actionLabel}</div>`;
+    } catch (_error) {
+      return "";
+    }
+  }
+
   function renderCard(row) {
     const holding = row.portfolio?.isHolding;
-    const detailHref = `/ai-boom-universe?focus=${encodeURIComponent(row.symbol)}`;
+    const detailHref = `/asset/${encodeURIComponent(row.providerSymbol || row.symbol)}`;
     const scoreTone = row.scoreLabel.tone;
     const signals = row.decision.keySignals.length ? row.decision.keySignals : ["No clear signal"];
     return `
       <article class="decision-card ${decisionTone(row)}">
         <div class="decision-card-top">
           <div>
-            <a class="decision-symbol" href="${detailHref}">${escapeHtml(row.displaySymbol || row.symbol)}</a>
+            <a class="decision-symbol asset-link" href="${detailHref}">${escapeHtml(row.displaySymbol || row.symbol)}</a>
+            ${window.Scoring ? timingChipHtml(row) : ""}
             <p class="card-name">${escapeHtml(row.name || row.symbol)}</p>
           </div>
           <div class="decision-price">
@@ -555,12 +747,13 @@
           <span class="badge ${holding ? "badge-blue" : "badge-gray"}">${holding ? "Holding" : "Watchlist Only"}</span>
           ${holding ? `<span class="badge badge-blue">${escapeHtml(formatHolding(row))}</span>` : '<span class="badge badge-gray">No portfolio impact</span>'}
         </div>
+        ${signalStateChip(row)}
         <div class="decision-action-row">
           <div>
             <span class="action-label">${escapeHtml(actionTitle(row.decision.action))}</span>
             <strong>${escapeHtml(row.decision.actionThai)}</strong>
           </div>
-          <div class="score-pill ${scoreTone}">
+          <div class="score-pill score-pill-secondary ${scoreTone}" title="Signal Score เป็นตัวประกอบ (secondary)">
             <strong>${row.score}</strong>
             <span>/100</span>
           </div>
@@ -683,6 +876,14 @@
     return "badge-gray";
   }
 
+  // PRIMARY headline chip: the AI-Boom-style signal state, rendered by the
+  // shared engine so every page looks identical.
+  function signalStateChip(row) {
+    if (!window.Scoring || !row.signal) return "";
+    const chip = window.Scoring.renderSignalChip(row.signal);
+    return chip ? `<div class="signal-state-row">${chip}</div>` : "";
+  }
+
   function detailItem(label, value) {
     return `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
   }
@@ -736,8 +937,30 @@
     const card = event.target.closest("[data-summary]");
     if (!card) return;
     const key = card.dataset.summary;
-    const target = document.querySelector(key === "conflicts" || key === "high" ? "#decision-watch" : `#decision-${key}`);
-    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // Conflicts / High Confidence are cross-cutting → toggle a filter instead of
+    // scrolling to a section (they are not sections).
+    if (key === "conflicts") {
+      const turningOn = state.filters.conflict !== "only";
+      state.filters.conflict = turningOn ? "only" : "all";
+      renderFilters();
+      renderSummary();
+      renderSections();
+      if (turningOn) sectionsRoot?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (key === "high") {
+      const turningOn = state.filters.confidence !== "high";
+      state.filters.confidence = turningOn ? "high" : "all";
+      renderFilters();
+      renderSummary();
+      renderSections();
+      if (turningOn) sectionsRoot?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    // Section cards (urgent / buy / watch / none) → scroll to that section.
+    document.querySelector(`#decision-${key}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   refreshButton?.addEventListener("click", () => {

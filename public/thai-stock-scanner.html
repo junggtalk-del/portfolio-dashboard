@@ -3,13 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/theme.js?v=20260623-theme-2"></script>
+    <link rel="stylesheet" href="/theme.css?v=20260623-theme-2" />
     <title>Thai Stock Scanner</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/thai-stock-scanner.css?v=20260618-thai-scan-5" />
     <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
-    <script src="/data-snapshot.js?v=20260617-snapshot-2"></script>
+    <script src="/api-auth.js?v=20260620-auth-1"></script>
+    <script src="/data-snapshot.js?v=20260623-snapshot-8"></script>
+    <script src="/scoring.js?v=20260623-scoring-10"></script>
+    <script src="/signal-quality.js?v=20260621-sq-5"></script>
   </head>
   <body>
     <main class="thai-scan-shell">
@@ -82,6 +87,14 @@
           <span>Liquidity</span>
           <div id="liquidityFilters" class="filter-tabs"></div>
         </div>
+        <div class="filter-group">
+          <span>Timing Score</span>
+          <div id="timingFilters" class="filter-tabs"></div>
+        </div>
+        <div class="filter-group">
+          <span>Signal Quality</span>
+          <div id="signalQualityFilters" class="filter-tabs"></div>
+        </div>
         <label class="toggle-filter">
           <input id="requireVolumeConfirmation" type="checkbox" />
           ต้องมีวอลุ่ม confirm
@@ -144,12 +157,16 @@
                 <th data-sort="crossoverVolume">Cross Volume</th>
                 <th data-sort="averageVolume5D">Avg Vol 5D</th>
                 <th data-sort="volumeRatio">Vol Ratio</th>
+                <th data-sort="signalQuality">SQ Score</th>
+                <th>SQ EMA</th>
+                <th>SQ SMA200</th>
+                <th>SQ Vol</th>
                 <th>Volume Confirmation</th>
                 <th>Source</th>
               </tr>
             </thead>
             <tbody id="scannerTableBody">
-              <tr><td colspan="17">ยังไม่มีข้อมูลสแกน</td></tr>
+              <tr><td colspan="21">ยังไม่มีข้อมูลสแกน</td></tr>
             </tbody>
           </table>
         </div>
@@ -169,7 +186,7 @@
       </section>
     </main>
 
-    <script src="/thai-stock-scanner-page.js?v=20260619-thai-scan-cache-1"></script>
-    <script src="/app-navigation.js?v=20260618-nav-2"></script>
+    <script src="/thai-stock-scanner-page.js?v=20260621-sq-2"></script>
+    <script src="/app-navigation.js?v=20260621-nav-4"></script>
   </body>
 </html>

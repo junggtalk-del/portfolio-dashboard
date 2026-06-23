@@ -1,59 +1,10 @@
 (function () {
-  const NAV_GROUPS = [
-    {
-      key: "dashboard",
-      label: "Dashboard",
-      pages: [
-        { path: "/", label: "Dashboard" },
-        { path: "/action-center", label: "Action Center" }
-      ]
-    },
-    {
-      key: "portfolio",
-      label: "Portfolio",
-      pages: [
-        { path: "/portfolio-status", label: "Status" },
-        { path: "/portfolio-holdings", label: "Underlying" },
-        { path: "/exposure-map", label: "Exposure Map" },
-        { path: "/market-risk", label: "Market Risk" }
-      ]
-    },
-    {
-      key: "universe",
-      label: "Universe",
-      pages: [
-        { path: "/ai-boom-universe", label: "AI Boom Universe" }
-      ]
-    },
-    {
-      key: "signals",
-      label: "Signals",
-      pages: [
-        { path: "/technical-signals", label: "Technical Signals" },
-        { path: "/thai-stock-scanner", label: "Thai Stock Scanner" }
-      ]
-    },
-    {
-      key: "tools",
-      label: "Tools",
-      pages: [
-        { path: "/backtest", label: "Backtest Lab" }
-      ]
-    }
-  ];
+  // ============================================================
+  // Shared "Mission Control" AppShell + Data Snapshot system.
+  // The snapshot logic below is unchanged business logic; only the
+  // navigation chrome was rebuilt to match the Home page shell.
+  // ============================================================
 
-  const HEADER_SELECTORS = [
-    ".topbar",
-    ".action-topbar",
-    ".holdings-topbar",
-    ".status-topbar",
-    ".exposure-topbar",
-    ".risk-topbar",
-    ".ai-topbar",
-    ".signal-topbar",
-    ".thai-scan-topbar",
-    ".backtest-topbar"
-  ];
   const SNAPSHOT_STORAGE_KEY = "portfolio_dashboard_data_snapshot";
   const SNAPSHOT_DATA_VERSION = "2026-06-portfolio-dashboard-v1";
   const REQUIRED_SNAPSHOT_SYMBOLS = ["SPY", "QQQM", "XLK", "^GSPC", "^VIX", "^VVIX", "^VIXEQ"];
@@ -61,15 +12,6 @@
   function normalizePath(pathname) {
     const path = String(pathname || "/").replace(/\/+$/, "") || "/";
     return path === "/index.html" ? "/" : path;
-  }
-
-  function findCurrentPage(pathname) {
-    const path = normalizePath(pathname);
-    for (const group of NAV_GROUPS) {
-      const page = group.pages.find((item) => normalizePath(item.path) === path);
-      if (page) return { group, page };
-    }
-    return { group: NAV_GROUPS[0], page: NAV_GROUPS[0].pages[0] };
   }
 
   function escapeHtml(value) {
@@ -98,6 +40,8 @@
       "K USXNDQRMF": "K-USXNDQRMF",
       SET50: "^SET50.BK",
       "SET50.BK": "^SET50.BK",
+      SET100: "^SET100.BK",
+      "SET100.BK": "^SET100.BK",
       SET: "^SET.BK",
       "SET.BK": "^SET.BK",
       SPX: "^GSPC",
@@ -111,6 +55,115 @@
   function providerSymbol(symbol) {
     const canonical = canonicalSymbol(symbol);
     return canonical === "BTCUSD" ? "BTC-USD" : canonical;
+  }
+
+  // ============================================================
+  // AI Boom Universe -> Watchlist sync (the AI Boom Universe is the
+  // user's monitor list). Independent of which snapshot loader is
+  // active: it collects the universe straight from the seed +
+  // /api/ai-universe so symbol keys match snapshot keys exactly.
+  // ============================================================
+  function inferUniverseCurrency(canonical) {
+    const k = String(canonical || "").toUpperCase();
+    if (k.endsWith(".BK") || k.indexOf("^SET") === 0 || k.indexOf("RMF") >= 0 || k.indexOf("SSF") >= 0 || k.indexOf("K-") === 0) return "THB";
+    return "USD";
+  }
+
+  function aiBoomDescriptor(asset, key) {
+    const a = asset || {};
+    return {
+      canonicalSymbol: key,
+      displaySymbol: a.ticker || a.symbol || key,
+      assetName: a.name || a.assetName || "",
+      assetType: a.asset_type || a.assetType || "",
+      market: a.market || "",
+      providerSymbol: a.provider_symbol || a.providerSymbol || providerSymbol(key),
+      currency: a.currency || inferUniverseCurrency(key)
+    };
+  }
+
+  let aiBoomSeedPromise = null;
+  function loadAIBoomSeed() {
+    if (window.AIBoomUniverseSeed && Array.isArray(window.AIBoomUniverseSeed.ai_boom_universe)) return Promise.resolve(true);
+    if (aiBoomSeedPromise) return aiBoomSeedPromise;
+    aiBoomSeedPromise = new Promise((resolve) => {
+      const base = "/ai-boom-universe-data.js";
+      const existing = document.querySelector(`script[src^="${base}"]`);
+      if (existing) {
+        let tries = 0;
+        const iv = window.setInterval(() => {
+          if (window.AIBoomUniverseSeed || tries++ > 50) { window.clearInterval(iv); resolve(!!window.AIBoomUniverseSeed); }
+        }, 40);
+        return;
+      }
+      const s = document.createElement("script");
+      s.src = `${base}?v=20260524-summary-1`;
+      s.onload = () => resolve(!!window.AIBoomUniverseSeed);
+      s.onerror = () => resolve(false);
+      document.head.appendChild(s);
+    });
+    return aiBoomSeedPromise;
+  }
+
+  async function collectAIBoomUniverse() {
+    const seedOk = await loadAIBoomSeed();
+    const seed = (window.AIBoomUniverseSeed && window.AIBoomUniverseSeed.ai_boom_universe) || [];
+    const fetchFn = (window.PortfolioDataSnapshot && window.PortfolioDataSnapshot.originalFetch) || (window.fetch ? window.fetch.bind(window) : null);
+    let userAssets = [];
+    let removedIds = [];
+    let apiOk = false;
+    if (fetchFn) {
+      try {
+        const response = await fetchFn("/api/ai-universe?snapshot=bypass", { cache: "no-store" });
+        if (response.ok) {
+          const payload = await response.json();
+          userAssets = (payload && payload.data && payload.data.userAssets) || [];
+          removedIds = (payload && payload.data && payload.data.removedIds) || [];
+          apiOk = true;
+        }
+      } catch (_error) { /* offline / endpoint down — fall back to seed only */ }
+    }
+    const removed = new Set((removedIds || []).map(String));
+    const merged = seed.filter((a) => a && !removed.has(String(a.id))).concat(userAssets || []);
+    const seen = {};
+    const descriptors = [];
+    merged.forEach((a) => {
+      const key = canonicalSymbol(a && (a.ticker || a.symbol || a.canonicalSymbol));
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      descriptors.push(aiBoomDescriptor(a, key));
+    });
+    return { descriptors, complete: seedOk && apiOk, seedOk, apiOk, seedCount: seed.length };
+  }
+
+  async function syncAIBoomToWatchlist(opts) {
+    opts = opts || {};
+    await new Promise((resolve) => whenWatchlistReady(resolve));
+    if (!window.Watchlist || typeof window.Watchlist.syncFromUniverse !== "function") return null;
+    const collected = await collectAIBoomUniverse();
+    if (!collected.descriptors.length) return { added: 0, updated: 0, archived: 0, total: 0, active: 0, complete: false };
+    // Only archive removed-from-universe items when we trust the full picture.
+    const archiveMissing = collected.complete && opts.archiveMissing !== false;
+    const result = window.Watchlist.syncFromUniverse(collected.descriptors, { archiveMissing });
+    result.complete = collected.complete;
+    return result;
+  }
+
+  window.AIBoomWatchlistSync = { collect: collectAIBoomUniverse, sync: syncAIBoomToWatchlist };
+
+  function whenWatchlistReady(callback, tries) {
+    tries = tries || 0;
+    if (window.Watchlist && typeof window.Watchlist.syncFromUniverse === "function") return callback();
+    if (tries > 60) return;
+    window.setTimeout(() => whenWatchlistReady(callback, tries + 1), 60);
+  }
+
+  let lastAutoSync = 0;
+  function autoSyncAIBoom() {
+    const now = Date.now();
+    if (now - lastAutoSync < 8000) return;
+    lastAutoSync = now;
+    whenWatchlistReady(() => { syncAIBoomToWatchlist({ archiveMissing: true }).catch(() => {}); });
   }
 
   function emitSnapshotProgress(detail) {
@@ -347,6 +400,79 @@
         } catch (error) {
           snapshot.portfolioHoldings = { error: String(error.message || error) };
         }
+        emitSnapshotProgress({ step: 6, stepLabel: "Calculating timing scores", completedAssets: completed, totalAssets: loadAssets.length, failedAssets: snapshot.errors.length });
+        try {
+          if (window.Scoring && typeof window.Scoring.scoreAsset === "function") {
+            const riskLevel = snapshot.marketRisk?.risk?.level?.label || snapshot.marketRisk?.risk?.level?.thai || null;
+            const riskScore = snapshot.marketRisk?.risk?.score ?? null;
+            const holdingsByKey = {};
+            const hData = snapshot.portfolioHoldings?.data;
+            if (Array.isArray(hData)) for (const h of hData) holdingsByKey[canonicalSymbol(h.canonicalSymbol)] = h;
+            const calculatedAt = new Date().toISOString();
+            snapshot.scoring = { bySymbol: {}, calculatedAt };
+            for (const key of Object.keys(snapshot.technicalSignals || {})) {
+              const sig = snapshot.technicalSignals[key] || {};
+              const holding = holdingsByKey[key];
+              const result = window.Scoring.scoreAsset({
+                canonicalSymbol: key,
+                latestPrice: sig.latestClose,
+                latestDate: sig.latestDate,
+                ema12: sig.ema12,
+                ema26: sig.ema26,
+                sma200: sig.sma200,
+                rsi14: sig.rsi14,
+                emaTrendStatus: sig.emaStatus,
+                sma200Status: sig.sma200Status,
+                marketRiskLevel: riskLevel,
+                marketRiskScore: riskScore,
+                isHolding: holding ? !!holding.isHolding : false,
+                portfolioWeight: holding ? holding.targetWeight : null,
+                marketValue: holding ? holding.marketValue : null
+              });
+              snapshot.scoring.bySymbol[key] = {
+                timingScore: result.timing.score,
+                timingGrade: result.timing.grade,
+                timingLabel: result.timing.label,
+                thaiTimingLabel: result.timing.thaiLabel,
+                color: result.timing.color,
+                quadrant: result.quadrant.quadrant,
+                action: result.recommendation.action,
+                thaiAction: result.recommendation.thaiAction,
+                actionCategory: result.recommendation.actionCategory,
+                actionPriority: result.recommendation.priority,
+                reasons: result.timing.reasons,
+                warnings: result.timing.warnings,
+                conflicts: result.timing.conflicts,
+                calculatedAt
+              };
+            }
+          }
+        } catch (_scoringError) {}
+        try {
+          if (window.Watchlist && typeof window.Watchlist.evaluateAll === "function") {
+            const wl = window.Watchlist.evaluateAll(snapshot);
+            snapshot.watchlist = {
+              items: window.Watchlist.read(),
+              evaluationsBySymbol: wl.evaluationsBySymbol,
+              triggeredToday: wl.triggeredToday,
+              evaluatedAt: new Date().toISOString()
+            };
+            const today = new Date().toISOString().slice(0, 10);
+            const seen = new Set((window.Watchlist.readHistory() || [])
+              .filter((h) => String(h.at || "").slice(0, 10) === today)
+              .map((h) => h.canonicalSymbol + "|" + h.alert));
+            const events = [];
+            wl.triggeredToday.forEach((t) => {
+              const alert = (t.ev.triggeredRules[0] || {}).label || "Alert";
+              const k = t.canonicalSymbol + "|" + alert;
+              if (seen.has(k)) return;
+              seen.add(k);
+              events.push({ at: new Date().toISOString(), canonicalSymbol: t.canonicalSymbol, displaySymbol: t.displaySymbol, alert: alert, detail: t.ev.thaiReason, timingScore: t.ev.timingScore, status: "Triggered" });
+            });
+            if (events.length) window.Watchlist.appendHistory(events);
+            if (wl.triggeredToday.length) showWatchlistToast(wl.triggeredToday.length);
+          }
+        } catch (_wlError) {}
         emitSnapshotProgress({ step: 6, stepLabel: "Saving snapshot", completedAssets: completed, totalAssets: loadAssets.length, failedAssets: snapshot.errors.length });
         snapshot.status = snapshot.errors.length ? "partial" : "ready";
         return write(snapshot);
@@ -375,51 +501,10 @@
     return window.PortfolioDataSnapshot;
   }
 
-  function renderPrimary(activeGroup) {
-    return `
-      <nav class="app-primary-nav" aria-label="Primary navigation">
-        ${NAV_GROUPS.map((group) => {
-          const href = group.pages[0]?.path || "/";
-          const active = group.key === activeGroup.key ? " is-active" : "";
-          return `<a class="${active.trim()}" href="${escapeHtml(href)}">${escapeHtml(group.label)}</a>`;
-        }).join("")}
-      </nav>`;
-  }
-
-  function renderSecondary(group, currentPage) {
-    if (!group.pages || group.pages.length <= 1) return "";
-    return `
-      <nav class="app-secondary-nav" aria-label="Secondary navigation">
-        ${group.pages.map((page) => {
-          const active = normalizePath(page.path) === normalizePath(currentPage.path) ? " is-active" : "";
-          return `<a class="${active.trim()}" href="${escapeHtml(page.path)}">${escapeHtml(page.label)}</a>`;
-        }).join("")}
-      </nav>`;
-  }
-
-  function renderDataStatusBar() {
-    return `
-      <section class="app-data-status" aria-label="Data snapshot status">
-        <div>
-          <strong>Data Snapshot</strong>
-          <span id="appDataLoadedAt">ยังไม่มีข้อมูลล่าสุด</span>
-          <span id="appDataCounts">Assets loaded: -</span>
-          <span id="appDataFreshness">Status: -</span>
-        </div>
-        <div class="app-data-actions">
-          <button id="appLoadDataButton" type="button">โหลดข้อมูลล่าสุด</button>
-          <button id="appRetryFailedButton" type="button" hidden>ลองโหลดรายการที่ล้มเหลวอีกครั้ง</button>
-        </div>
-      </section>`;
-  }
-
   function formatDateTime(value) {
     if (!value) return "ยังไม่มีข้อมูลล่าสุด";
     try {
-      return new Intl.DateTimeFormat("th-TH", {
-        dateStyle: "medium",
-        timeStyle: "short"
-      }).format(new Date(value));
+      return new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
     } catch (_error) {
       return String(value);
     }
@@ -433,14 +518,15 @@
     const counts = document.querySelector("#appDataCounts");
     const freshness = document.querySelector("#appDataFreshness");
     const retry = document.querySelector("#appRetryFailedButton");
-    if (loadedAt) loadedAt.textContent = current?.loadedAt ? `โหลดล่าสุด: ${formatDateTime(current.loadedAt)}` : "ยังไม่มีข้อมูลล่าสุด";
+    if (loadedAt) loadedAt.textContent = current?.loadedAt ? formatDateTime(current.loadedAt) : "ยังไม่มีข้อมูลล่าสุด";
     const total = current?.assets?.length || 0;
     const failed = current?.errors?.length || 0;
     const success = Math.max(0, total - failed);
-    if (counts) counts.textContent = total ? `โหลดสำเร็จ: ${success} / ${total} · ล้มเหลว: ${failed}` : "Assets loaded: -";
+    if (counts) counts.textContent = total ? `${success}/${total}${failed ? ` · ล้มเหลว ${failed}` : ""}` : "";
     if (freshness) {
-      freshness.textContent = `สถานะ: ${fresh.thai}`;
+      freshness.textContent = `● ${fresh.thai}`;
       freshness.dataset.freshness = fresh.key;
+      freshness.className = "mc-pill " + (fresh.key === "fresh" ? "mc-pill-fresh" : "mc-pill-stale");
     }
     if (retry) retry.hidden = !failed;
   }
@@ -452,9 +538,12 @@
       const completed = detail.completedAssets ?? 0;
       const total = detail.totalAssets ?? 0;
       const failed = detail.failedAssets ?? 0;
-      counts.textContent = `กำลังโหลด: ${completed} / ${total}${detail.currentSymbol ? ` · ${detail.currentSymbol}` : ""}${failed ? ` · ล้มเหลว ${failed}` : ""}`;
+      counts.textContent = `${completed}/${total}${detail.currentSymbol ? ` · ${detail.currentSymbol}` : ""}${failed ? ` · ล้มเหลว ${failed}` : ""}`;
     }
-    if (freshness) freshness.textContent = `Step ${detail.step || "-"} / 6: ${detail.stepLabel || "Loading data"}`;
+    if (freshness) {
+      freshness.textContent = `● Step ${detail.step || "-"}/6`;
+      freshness.className = "mc-pill mc-pill-stale";
+    }
   }
 
   function wireDataStatus() {
@@ -467,18 +556,18 @@
       const button = mode === "retry" ? retryButton : loadButton;
       if (loadButton) {
         loadButton.disabled = true;
-        loadButton.textContent = "กำลังโหลดข้อมูล...";
+        loadButton.textContent = "Loading...";
       }
       if (retryButton) retryButton.disabled = true;
       try {
         const snapshot = mode === "retry" ? await api.retryFailed() : await api.loadLatestData();
         updateDataStatus(snapshot);
-        if (loadButton) loadButton.textContent = "โหลดข้อมูลแล้ว";
+        if (loadButton) loadButton.textContent = "Loaded ✓";
         window.setTimeout(() => {
-          if (loadButton) loadButton.textContent = "โหลดข้อมูลล่าสุด";
+          if (loadButton) loadButton.textContent = "Load Latest Data";
         }, 1800);
       } catch (error) {
-        if (loadButton) loadButton.textContent = "โหลดไม่สำเร็จ";
+        if (loadButton) loadButton.textContent = "Load failed";
         const freshness = document.querySelector("#appDataFreshness");
         if (freshness) freshness.textContent = error?.message || "Load failed";
       } finally {
@@ -493,28 +582,221 @@
     window.addEventListener("portfolio-data-snapshot-progress", (event) => updateProgress(event.detail));
   }
 
-  function mountNavigation() {
-    const header = HEADER_SELECTORS.map((selector) => document.querySelector(selector)).find(Boolean);
-    if (!header || header.querySelector(".app-premium-nav")) return;
-    const { group, page } = findCurrentPage(window.location.pathname);
-    const nav = document.createElement("div");
-    nav.className = "app-premium-nav";
-    nav.innerHTML = `
-      ${renderPrimary(group)}
-      <div class="app-page-context" aria-label="Page context">
-        <span>${escapeHtml(group.label)}</span><span aria-hidden="true">/</span><span>${escapeHtml(page.label)}</span>
+  // ---------------------------------------------------------------- shell
+  const SIDEBAR = [
+    { label: "Dashboard", items: [
+      { p: "/home", i: "🛰️", t: "Home" },
+      { p: "/portfolio-status", i: "📈", t: "Portfolio Status" },
+      { p: "/action-center", i: "🎯", t: "Action Center" },
+      { p: "/watchlist", i: "👁️", t: "Watchlist" },
+      { p: "/", i: "🗓️", t: "Quarterly Editor" }
+    ] },
+    { label: "Research", items: [
+      { p: "/ai-boom-universe", i: "✨", t: "AI Boom Universe" },
+      { p: "/technical-signals", i: "📡", t: "Technical Signals" },
+      { p: "/thai-stock-scanner", i: "🔎", t: "Thai Stock Scanner" },
+      { p: "/signal-hot", i: "🔥", t: "สัญญาณเด่นวันนี้" }
+    ] },
+    { label: "Portfolio", items: [
+      { p: "/portfolio-holdings", i: "💼", t: "Holdings" },
+      { p: "/exposure-map", i: "🗺️", t: "Exposure Map" },
+      { p: "/market-risk", i: "⚠️", t: "Market Risk" }
+    ] },
+    { label: "Lab", items: [
+      { p: "/backtest", i: "🧪", t: "Backtest Lab" },
+      { p: "#", i: "⚡", t: "Momentum Strategy", soon: true },
+      { p: "#", i: "📐", t: "Signal Rules", soon: true }
+    ] },
+    { label: "System", items: [
+      { p: "#", i: "🗂️", t: "Data Snapshot", soon: true },
+      { p: "#", i: "⚙️", t: "Settings", soon: true }
+    ] }
+  ];
+
+  const PAGE_META = {
+    "/": { category: "Portfolio Command Center", title: "Dashboard การลงทุน", subtitle: "ภาพรวมพอร์ตการลงทุนรายไตรมาส" },
+    "/action-center": { category: "Decision Center", title: "Action Center", subtitle: "ตอบคำถามเดียวให้ชัด: ตอนนี้ควรทำอะไรกับแต่ละสินทรัพย์" },
+    "/portfolio-status": { category: "Portfolio Health", title: "Portfolio Status", subtitle: "วิเคราะห์พอร์ตจริง น้ำหนักสินทรัพย์ ไส้ใน และความเสี่ยงซ้ำซ้อน" },
+    "/portfolio-holdings": { category: "Portfolio", title: "Underlying Holdings", subtitle: "ไส้ในพอร์ตและรายการถือครองทั้งหมด" },
+    "/exposure-map": { category: "Portfolio", title: "Exposure Map", subtitle: "แผนที่การกระจายความเสี่ยงและธีมของพอร์ต" },
+    "/market-risk": { category: "Risk Monitor", title: "Market Risk", subtitle: "VIX / VVIX / VIXEQ และระดับความเสี่ยงของตลาด" },
+    "/ai-boom-universe": { category: "AI Theme Screener", title: "AI Boom Universe", subtitle: "ระบบคัดกรองธีม AI พร้อมสัญญาณเทคนิครายตัว" },
+    "/technical-signals": { category: "Signals", title: "Technical Signals", subtitle: "สัญญาณเทคนิครายตัว RSI / EMA / SMA200" },
+    "/thai-stock-scanner": { category: "Thai Market Scanner", title: "Thai Stock Scanner", subtitle: "สแกน SET100 / mai ด้วย EMA12 × EMA26 crossover พร้อม volume confirmation" },
+    "/signal-hot": { category: "Signals", title: "🔥 สัญญาณเด่นวันนี้", subtitle: "หุ้น SET100 + NASDAQ ที่ EMA ตัดขึ้น เรียงตามแรงวอลุ่ม" },
+    "/backtest": { category: "Strategy Research", title: "Backtest Lab", subtitle: "ทดสอบกลยุทธ์ย้อนหลังด้วยข้อมูลราคาในอดีต" }
+  };
+
+  function buildSidebar(activePath) {
+    const groups = SIDEBAR.map((group) => {
+      const items = group.items.map((it) => {
+        const active = !it.soon && normalizePath(it.p) === normalizePath(activePath) ? " is-active" : "";
+        const soon = it.soon ? " is-soon" : "";
+        const badge = it.p === "/watchlist" ? watchlistBadge() : "";
+        return `<a class="mc-nav-item${active}${soon}" href="${escapeHtml(it.p)}"><span class="mc-ic">${it.i}</span> ${escapeHtml(it.t)}${badge}</a>`;
+      }).join("");
+      return `<div class="mc-nav-group-label">${escapeHtml(group.label)}</div>${items}`;
+    }).join("");
+    return `
+      <div class="mc-logo">
+        <div class="mc-logo-mark">Λ</div>
+        <div class="mc-logo-text"><strong>AI Investment</strong><span>Mission Control</span></div>
       </div>
-      ${renderSecondary(group, page)}
-      ${renderDataStatusBar()}
-    `;
-    header.insertBefore(nav, header.firstChild);
-    document.body.classList.add("has-premium-nav");
+      <nav class="mc-nav">${groups}</nav>
+      <div class="mc-assistant">
+        <div class="mc-assistant-badge">AI</div>
+        <strong>AI Investment Assistant</strong>
+        <p>Your intelligent co-pilot for smarter investment decisions</p>
+        <button type="button" onclick="window.location.href='/action-center'">Ask AI Assistant</button>
+      </div>`;
+  }
+
+  function buildHeader() {
+    return `
+      <button class="mc-icon-btn mc-menu-toggle" id="mcMenuToggle" type="button">☰</button>
+      <div class="mc-search"><span>🔍</span><input type="text" placeholder="Search assets, pages, signals, actions..." /><span class="mc-kbd">⌘ K</span></div>
+      <div class="mc-header-right">
+        <div class="mc-snap"><small>Data Snapshot</small><span id="appDataLoadedAt">—</span></div>
+        <span class="mc-pill mc-pill-stale" id="appDataFreshness">—</span>
+        <span class="mc-snap-counts mc-tnum" id="appDataCounts"></span>
+        <button class="mc-btn mc-btn-primary" id="appLoadDataButton" type="button">Load Latest Data</button>
+        <button class="mc-btn" id="appRetryFailedButton" type="button" hidden>Retry Failed</button>
+        <a class="mc-icon-btn" href="/home" title="Home">🛰️</a>
+      </div>`;
+  }
+
+  function buildHero(activePath) {
+    const meta = PAGE_META[normalizePath(activePath)];
+    if (!meta) return "";
+    return `
+      <section class="mc-page-hero mc-fade">
+        <p class="mc-eyebrow">${escapeHtml(meta.category)}</p>
+        <h1>${escapeHtml(meta.title)}</h1>
+        <p class="mc-hero-sub">${escapeHtml(meta.subtitle)}</p>
+      </section>`;
+  }
+
+  function ensureStylesheet(href) {
+    if (document.querySelector(`link[href^="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
+  function ensureScript(src) {
+    const base = src.split("?")[0];
+    if (document.querySelector(`script[src^="${base}"]`)) return;
+    const s = document.createElement("script");
+    s.src = src;
+    document.head.appendChild(s);
+  }
+
+  function watchlistBadge() {
+    try {
+      const snap = ensureSnapshotApi().read && ensureSnapshotApi().read();
+      const n = snap && snap.watchlist && snap.watchlist.triggeredToday ? snap.watchlist.triggeredToday.length : 0;
+      return n ? `<span class="mc-nav-badge">${n}</span>` : "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function showWatchlistToast(n) {
+    if (!document.body) return;
+    const prev = document.getElementById("wl-toast");
+    if (prev) prev.remove();
+    const t = document.createElement("div");
+    t.id = "wl-toast";
+    t.textContent = `🔔 มี ${n} รายการใน Watchlist เข้าเงื่อนไข`;
+    document.body.appendChild(t);
+    window.setTimeout(function () { if (t && t.parentNode) t.remove(); }, 5000);
+  }
+
+  function mountShell() {
+    if (document.getElementById("mc-shell")) return;
+    ensureStylesheet("/mission-control.css?v=20260623-mc-7");
+    ensureStylesheet("/watchlist.css?v=20260621-watch-2");
+    ensureScript("/scoring.js?v=20260623-scoring-10");
+    ensureScript("/signal-quality.js?v=20260621-sq-5");
+    ensureScript("/watchlist.js?v=20260623-watch-6");
+    // The AI Boom Universe is the monitor list — keep its seed available on every
+    // page so snapshots + Watchlist sync see the full universe consistently.
+    ensureScript("/ai-boom-universe-data.js?v=20260524-summary-1");
+
+    const activePath = window.location.pathname;
+
+    // Some pages (e.g. Home) render their own hardcoded Mission Control shell.
+    // Don't rebuild it — but DO refresh the sidebar from the single canonical
+    // SIDEBAR config so menu items (Watchlist, etc.) never drift / go missing.
+    const existingSidebar = document.getElementById("mcSidebar");
+    if (existingSidebar && document.querySelector(".mc-app")) {
+      existingSidebar.innerHTML = buildSidebar(activePath);
+      // NOTE: a hardcoded-shell page (Home) wires its own #mcMenuToggle — don't
+      // double-bind it here or the two toggles cancel out.
+      window.addEventListener("portfolio-data-snapshot", autoSyncAIBoom);
+      whenWatchlistReady(() => {
+        const hasAiBoom = (window.Watchlist.read() || []).some((i) => i.source === "ai_boom");
+        if (!hasAiBoom) autoSyncAIBoom();
+      });
+      return;
+    }
+
+    const movable = Array.from(document.body.children).filter(
+      (el) => el.tagName !== "SCRIPT" && el.tagName !== "LINK" && el.id !== "app-theme-toggle"
+    );
+
+    const app = document.createElement("div");
+    app.id = "mc-shell";
+    app.className = "mc-app";
+
+    const sidebar = document.createElement("aside");
+    sidebar.className = "mc-sidebar";
+    sidebar.id = "mcSidebar";
+    sidebar.innerHTML = buildSidebar(activePath);
+
+    const mainCol = document.createElement("div");
+    mainCol.className = "mc-main";
+
+    const header = document.createElement("header");
+    header.className = "mc-header";
+    header.innerHTML = buildHeader();
+
+    const content = document.createElement("main");
+    content.className = "mc-content";
+
+    const heroHtml = buildHero(activePath);
+    if (heroHtml) {
+      const hero = document.createElement("div");
+      hero.innerHTML = heroHtml;
+      content.appendChild(hero.firstElementChild);
+    }
+    movable.forEach((el) => content.appendChild(el));
+
+    mainCol.appendChild(header);
+    mainCol.appendChild(content);
+    app.appendChild(sidebar);
+    app.appendChild(mainCol);
+    document.body.appendChild(app);
+    document.body.classList.add("mc-body", "mc-shell-active");
+
+    const toggle = document.getElementById("mcMenuToggle");
+    if (toggle) toggle.addEventListener("click", () => sidebar.classList.toggle("is-open"));
+
     wireDataStatus();
+
+    // Keep the Watchlist mirroring the AI Boom Universe (the monitor list):
+    // re-sync after every data load, and populate it on first run.
+    window.addEventListener("portfolio-data-snapshot", autoSyncAIBoom);
+    whenWatchlistReady(() => {
+      const hasAiBoom = (window.Watchlist.read() || []).some((i) => i.source === "ai_boom");
+      if (!hasAiBoom) autoSyncAIBoom();
+    });
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", mountNavigation);
+    document.addEventListener("DOMContentLoaded", mountShell);
   } else {
-    mountNavigation();
+    mountShell();
   }
 })();

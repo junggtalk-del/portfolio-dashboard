@@ -250,6 +250,7 @@
   const assetCardGrid = document.querySelector("#assetCardGrid");
   const signalFilterTabs = document.querySelector("#signalFilterTabs");
   const refreshMarketDataButton = document.querySelector("#refreshMarketDataButton");
+  const syncWatchlistButton = document.querySelector("#syncWatchlistButton");
   const tickerFeedback = document.querySelector("#tickerFeedback");
   const summaryGrid = document.querySelector("#summaryCards");
   const accumulateCount = document.querySelector("#accumulateCount");
@@ -542,7 +543,14 @@
   function buildEvents(info) {
     const bullish = [];
     const bearish = [];
-    if (info.ema.recentCrossover?.signal === "BUY") {
+    // Only count a cross as a live event if the trend is still on the matching
+    // side NOW — otherwise a whipsaw (e.g. reclaimed SMA200 then fell back below)
+    // would surface a stale bullish badge on a name that has since turned bearish.
+    const emaBull = info.ema.trend === "BULLISH";
+    const emaBear = info.ema.trend === "BEARISH";
+    const aboveSma = info.sma200.status === "ABOVE_SMA200";
+    const belowSma = info.sma200.status === "BELOW_SMA200";
+    if (emaBull && info.ema.recentCrossover?.signal === "BUY") {
       bullish.push({
         kind: "NEW_BULLISH_CROSS",
         date: info.ema.recentCrossover.signalDate,
@@ -550,7 +558,7 @@
         explanation: "EMA12 ตัดขึ้น EMA26"
       });
     }
-    if (info.ema.recentCrossover?.signal === "SELL") {
+    if (emaBear && info.ema.recentCrossover?.signal === "SELL") {
       bearish.push({
         kind: "NEW_BEARISH_CROSS",
         date: info.ema.recentCrossover.signalDate,
@@ -558,7 +566,7 @@
         explanation: "EMA12 ตัดลง EMA26"
       });
     }
-    if (info.sma200.recentCrossover?.signal === "BULLISH_BREAKOUT") {
+    if (aboveSma && info.sma200.recentCrossover?.signal === "BULLISH_BREAKOUT") {
       bullish.push({
         kind: "PRICE_RECLAIM_SMA200",
         date: info.sma200.recentCrossover.signalDate,
@@ -566,7 +574,7 @@
         explanation: "Close ตัดขึ้น SMA200"
       });
     }
-    if (info.sma200.recentCrossover?.signal === "BEARISH_BREAKDOWN") {
+    if (belowSma && info.sma200.recentCrossover?.signal === "BEARISH_BREAKDOWN") {
       bearish.push({
         kind: "PRICE_LOST_SMA200",
         date: info.sma200.recentCrossover.signalDate,
@@ -832,6 +840,25 @@
     const info = marketData.technical;
     const events = buildEvents(info);
     const classification = classifySignal(asset, info, events, marketData);
+    // Single source of truth: defer the group decision to the shared engine
+    // (window.Scoring.classifySignal) so AI Boom + Action Center stay identical.
+    if (window.Scoring && typeof window.Scoring.classifySignal === "function") {
+      try {
+        const cx = info.ema.recentCrossover || {};
+        const sx = info.sma200.recentCrossover || {};
+        const shared = window.Scoring.classifySignal({
+          ema12: info.ema.ema12, ema26: info.ema.ema26, sma200: info.sma200.sma200,
+          latestPrice: info.latestClose, latestDate: info.latestDate,
+          emaTrendStatus: info.ema.trend === "BULLISH" ? "EMA_BULLISH" : info.ema.trend === "BEARISH" ? "EMA_BEARISH" : undefined,
+          sma200Status: info.sma200.status,
+          daysSinceEmaBullishCross: cx.signal === "BUY" ? cx.barsAgo : null,
+          daysSinceEmaBearishCross: cx.signal === "SELL" ? cx.barsAgo : null,
+          daysSinceSma200Reclaim: sx.signal === "BULLISH_BREAKOUT" ? sx.barsAgo : null,
+          daysSinceSma200Break: sx.signal === "BEARISH_BREAKDOWN" ? sx.barsAgo : null
+        });
+        if (shared && shared.groupKey) classification.groupKey = shared.groupKey;
+      } catch (_e) { /* keep local classification */ }
+    }
     return {
       asset,
       source: marketData.source,
@@ -927,10 +954,47 @@
     const sourceLabel = sourceLabelForRow(row);
     const canonical = canonicalSymbolFromTicker(row.asset.ticker);
 
+    const timingChip = window.Scoring
+      ? (function () {
+          try {
+            const emaStatusKey =
+              info.ema.trend === "BULLISH" ? "EMA_BULLISH" : info.ema.trend === "BEARISH" ? "EMA_BEARISH" : undefined;
+            const sma200StatusKey =
+              info.sma200.status === "ABOVE_SMA200" || info.sma200.status === "BELOW_SMA200" || info.sma200.status === "AT_SMA200"
+                ? info.sma200.status
+                : undefined;
+            const timingInput = {
+              latestPrice: safeNumber(info.latestClose),
+              latestDate: info.latestDate || null,
+              ema12: safeNumber(info.ema.ema12),
+              ema26: safeNumber(info.ema.ema26),
+              sma200: safeNumber(info.sma200.sma200),
+              emaTrendStatus: emaStatusKey,
+              sma200Status: sma200StatusKey,
+              isNewBullishSignal: cls.groupKey === "new_bullish",
+              isNewBearishSignal: cls.groupKey === "new_bearish",
+              isBullishWatchlist: cls.groupKey === "bullish_watch",
+              isOngoingBullishTrend: cls.groupKey === "ongoing_bullish",
+              isOngoingBearishTrend: cls.groupKey === "ongoing_bearish",
+              isHolding: Boolean(row.portfolio?.isHolding),
+              portfolioWeight: safeNumber(row.portfolio?.weight),
+              marketValue: safeNumber(row.portfolio?.marketValue),
+              assetType: row.asset.asset_type,
+              displaySymbol: displayTicker,
+              canonicalSymbol: canonical
+            };
+            return window.Scoring.renderTimingChip(window.Scoring.calculateTimingScore(timingInput));
+          } catch (_error) {
+            return "";
+          }
+        })()
+      : "";
+
     return `
       <article class="${groupClass}" data-canonical-symbol="${escapeHtml(canonical)}" data-group-key="${escapeHtml(cls.groupKey)}">
         <div class="signal-card-top-row">
-          <h4>${escapeHtml(displayTicker)}</h4>
+          <h4><a href="/asset/${encodeURIComponent(row.marketSymbol || canonical || row.asset.ticker)}" class="asset-link">${escapeHtml(displayTicker)}</a></h4>
+          ${timingChip}
           <strong>${formatPrice(info.latestClose)}</strong>
         </div>
 
@@ -1383,21 +1447,22 @@
     const allAssets = dedupeAssetsByCanonicalTicker(assets);
     assetCardGrid.innerHTML = '<div class="asset-card-empty">กำลังคำนวณสัญญาณ...</div>';
 
-    const rawAnalyses = await Promise.all(
-      allAssets.map(async (asset) => {
-        const marketData = await getPriceSeries(asset, { forceRefresh });
-        const analysis = analyzeAsset(asset, marketData);
-        if (isDevClient) {
-          console.log("[market-data-debug]", {
-            symbol: analysis.asset.ticker,
-            sourceUsed: analysis.sourceType || "UNKNOWN",
-            lastUpdated: analysis.lastUpdated || null,
-            error: analysis.sourceType === "ERROR" ? analysis.source : ""
-          });
-        }
-        return analysis;
-      })
-    );
+    const analyzeOne = async (asset) => {
+      const marketData = await getPriceSeries(asset, { forceRefresh });
+      const analysis = analyzeAsset(asset, marketData);
+      if (isDevClient) {
+        console.log("[market-data-debug]", {
+          symbol: analysis.asset.ticker,
+          sourceUsed: analysis.sourceType || "UNKNOWN",
+          lastUpdated: analysis.lastUpdated || null,
+          error: analysis.sourceType === "ERROR" ? analysis.source : ""
+        });
+      }
+      return analysis;
+    };
+    const rawAnalyses = window.mapWithConcurrency
+      ? await window.mapWithConcurrency(allAssets, 5, analyzeOne)
+      : await Promise.all(allAssets.map(analyzeOne));
     const totalValue = window.PortfolioCore ? window.PortfolioCore.totalMarketValue(portfolioHoldings) : 0;
     const analyses = window.PortfolioCore
       ? rawAnalyses.map((row) => window.PortfolioCore.enrichWithHolding(row, portfolioHoldings, totalValue))
@@ -1760,5 +1825,29 @@
   signalFilterTabs.addEventListener("click", handleSignalTabClick);
   if (summaryGrid) summaryGrid.addEventListener("click", handleSummaryCardClick);
   if (refreshMarketDataButton) refreshMarketDataButton.addEventListener("click", handleRefreshMarketData);
+  if (syncWatchlistButton) {
+    syncWatchlistButton.addEventListener("click", async () => {
+      if (!window.AIBoomWatchlistSync || typeof window.AIBoomWatchlistSync.sync !== "function") {
+        if (tickerFeedback) tickerFeedback.textContent = "ระบบ Watchlist ยังไม่พร้อม ลองรีเฟรชหน้า";
+        return;
+      }
+      const label = syncWatchlistButton.textContent;
+      syncWatchlistButton.disabled = true;
+      syncWatchlistButton.textContent = "กำลัง sync...";
+      try {
+        const res = await window.AIBoomWatchlistSync.sync({ archiveMissing: true });
+        if (tickerFeedback) {
+          tickerFeedback.textContent = res
+            ? `Sync เข้า Watchlist แล้ว · เพิ่ม ${res.added} · อัปเดต ${res.updated} · เก็บเข้าคลัง ${res.archived} (ดูที่เมนู Watchlist)`
+            : "ไม่พบข้อมูลให้ sync";
+        }
+      } catch (_error) {
+        if (tickerFeedback) tickerFeedback.textContent = "Sync ไม่สำเร็จ";
+      } finally {
+        syncWatchlistButton.disabled = false;
+        syncWatchlistButton.textContent = label;
+      }
+    });
+  }
   initialize();
 })();

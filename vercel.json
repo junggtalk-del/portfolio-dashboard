@@ -39,6 +39,22 @@
       "destination": "/portfolio-status.html"
     },
     {
+      "source": "/home",
+      "destination": "/home.html"
+    },
+    {
+      "source": "/signal-hot",
+      "destination": "/signal-hot.html"
+    },
+    {
+      "source": "/asset/(.*)",
+      "destination": "/asset.html"
+    },
+    {
+      "source": "/watchlist",
+      "destination": "/watchlist.html"
+    },
+    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }

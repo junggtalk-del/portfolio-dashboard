@@ -1,21 +1,21 @@
 :root {
-  --bg: #f4f7fb;
-  --panel: #ffffff;
-  --ink: #172033;
-  --muted: #6c778c;
-  --line: #dfe6f1;
-  --navy: #17324d;
-  --green: #12805c;
-  --green-soft: #eaf7f1;
-  --watch-green: #8a6a12;
-  --watch-green-soft: #fff8df;
-  --orange: #c26a1f;
-  --orange-soft: #fff2e8;
-  --red: #c2413a;
-  --red-soft: #fff0ef;
-  --gray: #697386;
-  --gray-soft: #f7f9fc;
-  --shadow: 0 18px 44px rgba(23, 50, 77, 0.1);
+  --bg: var(--app-bg);
+  --panel: var(--app-card);
+  --ink: var(--app-text);
+  --muted: var(--app-muted);
+  --line: var(--app-border);
+  --navy: var(--app-text);
+  --green: var(--app-up);
+  --green-soft: color-mix(in srgb, var(--app-card), var(--app-up) 14%);
+  --watch-green: var(--app-warn);
+  --watch-green-soft: color-mix(in srgb, var(--app-card), var(--app-warn) 14%);
+  --orange: var(--app-warn);
+  --orange-soft: color-mix(in srgb, var(--app-card), var(--app-warn) 14%);
+  --red: var(--app-down);
+  --red-soft: color-mix(in srgb, var(--app-card), var(--app-down) 14%);
+  --gray: var(--app-muted);
+  --gray-soft: var(--app-elevated);
+  --shadow: var(--app-shadow);
 }
 
 * { box-sizing: border-box; }
@@ -23,9 +23,10 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background-color: var(--app-bg);
   background:
     radial-gradient(circle at top left, rgba(18, 128, 92, 0.12), transparent 34rem),
-    linear-gradient(135deg, #f8fbff 0%, var(--bg) 58%, #eef4f6 100%);
+    linear-gradient(135deg, var(--app-bg-soft) 0%, var(--app-bg) 58%, var(--app-bg) 100%);
   color: var(--ink);
   font-family: "Noto Sans Thai", system-ui, sans-serif;
 }
@@ -48,7 +49,7 @@ button { font: inherit; }
 
 .signal-eyebrow {
   margin: 0 0 6px;
-  color: #0d6f55;
+  color: var(--app-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -89,7 +90,7 @@ h1 {
   padding: 9px 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--app-card);
   color: var(--navy);
   cursor: pointer;
   font-weight: 800;
@@ -99,8 +100,8 @@ h1 {
 .signal-nav a.is-active,
 .rsi-filter-tab.is-active {
   background: var(--navy);
-  color: #ffffff;
-  box-shadow: 0 10px 22px rgba(23, 50, 77, 0.16);
+  color: var(--app-card);
+  box-shadow: var(--app-shadow);
 }
 
 .rsi-summary-grid {
@@ -115,7 +116,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 16px;
-  background: #ffffff;
+  background: var(--app-card);
   box-shadow: var(--shadow);
   color: var(--ink);
   cursor: pointer;
@@ -162,9 +163,9 @@ h1 {
   gap: 12px;
   margin-bottom: 18px;
   padding: 12px;
-  border: 1px solid rgba(223, 230, 241, 0.9);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--app-card);
 }
 
 .rsi-toolbar-groups {
@@ -183,7 +184,7 @@ h1 {
   padding: 5px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f4f6f9;
+  background: var(--app-elevated);
 }
 
 .rsi-scope-tabs button {
@@ -197,7 +198,7 @@ h1 {
 }
 
 .rsi-scope-tabs button.is-active {
-  color: #fff;
+  color: var(--app-card);
   background: var(--navy);
 }
 
@@ -221,7 +222,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--app-card);
   box-shadow: var(--shadow);
   scroll-margin-top: 18px;
 }
@@ -273,7 +274,7 @@ h1 {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--app-card);
   overflow: hidden;
 }
 
@@ -328,9 +329,9 @@ h1 {
   justify-content: space-between;
   gap: 10px;
   padding: 10px;
-  border: 1px solid rgba(223, 230, 241, 0.85);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--app-card);
 }
 
 .rsi-main-signal span {
@@ -376,9 +377,9 @@ h1 {
 .rsi-detail-grid span {
   min-width: 0;
   padding: 8px;
-  border: 1px solid rgba(223, 230, 241, 0.9);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: rgba(248, 251, 255, 0.82);
+  background: var(--app-elevated);
   color: var(--muted);
   font-size: 0.78rem;
   line-height: 1.25;
@@ -404,7 +405,7 @@ h1 {
   padding: 18px;
   border: 1px dashed var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--app-card);
   color: var(--muted);
   font-weight: 800;
 }
@@ -423,9 +424,9 @@ h1 {
 .rsi-disclaimer {
   margin-top: 20px;
   padding: 14px 16px;
-  border: 1px solid rgba(223, 230, 241, 0.95);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--app-card);
   color: var(--muted);
   line-height: 1.5;
 }
@@ -439,22 +440,22 @@ h1 {
 }
 
 .tone-buy {
-  border-color: rgba(18, 128, 92, 0.38);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-up) 40%);
   background: var(--green-soft);
 }
 
 .tone-watch-buy {
-  border-color: rgba(200, 144, 45, 0.38);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
   background: var(--watch-green-soft);
 }
 
 .tone-watch-sell {
-  border-color: rgba(194, 106, 31, 0.38);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
   background: var(--orange-soft);
 }
 
 .tone-sell {
-  border-color: rgba(194, 65, 58, 0.38);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-down) 40%);
   background: var(--red-soft);
 }
 
@@ -465,12 +466,12 @@ h1 {
 
 .tone-insufficient {
   border-color: rgba(108, 119, 140, 0.22);
-  background: #ffffff;
+  background: var(--app-card);
 }
 
 .tone-starred {
-  border-color: rgba(23, 50, 77, 0.28);
-  background: #eef4fb;
+  border-color: color-mix(in srgb, var(--app-border), var(--app-info) 40%);
+  background: color-mix(in srgb, var(--app-card), var(--app-info) 14%);
 }
 
 .rsi-badge.tone-buy { background: rgba(18, 128, 92, 0.14); color: var(--green); }

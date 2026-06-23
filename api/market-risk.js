@@ -57,13 +57,15 @@ function scoreRisk(metrics, flags) {
     else if (spread > 15) score += 25;
     else if (spread > 10) score += 15;
   }
-  if (metrics.vix < 15 && metrics.vvix > 90) score += 20;
-  if (metrics.vvix > 100) score += 25;
-  if (metrics.vvixFiveDayChangePct > 10) score += 15;
-  if (metrics.vixeq > metrics.vix) score += 15;
-  if (metrics.vixeqSpreadTrend > 0) score += 15;
-  if (metrics.vix > 30) score += 35;
-  else if (metrics.vix > 20) score += 20;
+  if (Number.isFinite(metrics.vix) && Number.isFinite(metrics.vvix) && metrics.vix < 15 && metrics.vvix > 90) score += 20;
+  if (Number.isFinite(metrics.vvix) && metrics.vvix > 100) score += 25;
+  if (Number.isFinite(metrics.vvixFiveDayChangePct) && metrics.vvixFiveDayChangePct > 10) score += 15;
+  if (Number.isFinite(metrics.vixeq) && Number.isFinite(metrics.vix) && metrics.vixeq > metrics.vix) score += 15;
+  if (Number.isFinite(metrics.vixeqSpreadTrend) && metrics.vixeqSpreadTrend > 0) score += 15;
+  if (Number.isFinite(metrics.vix)) {
+    if (metrics.vix > 30) score += 35;
+    else if (metrics.vix > 20) score += 20;
+  }
 
   const capped = Math.min(100, Math.max(0, score));
   let level = { label: "Normal", thai: "ปกติ", tone: "normal" };
@@ -149,9 +151,9 @@ function calculateRisk(series) {
   if (metrics.vvix > 100) addFlag(flags, "vvix-high", "High volatility hedge demand", "ความต้องการ hedge สูง", "danger", `VVIX = ${metrics.vvix}`);
   else if (metrics.vvix > 90) addFlag(flags, "vvix-rising", "Volatility hedge demand rising", "เริ่มมีการซื้อประกันความเสี่ยง", "warning", `VVIX = ${metrics.vvix}`);
   if (metrics.vvixFiveDayChangePct > 10) addFlag(flags, "vvix-fast", "VVIX rising fast", "VVIX เร่งขึ้นเร็ว", "warning", `5D = ${metrics.vvixFiveDayChangePct}%`);
-  if (metrics.vix < 18 && metrics.vvix > 90) addFlag(flags, "hidden-hedge", "Calm VIX, rising hedge demand", "VIX ยังนิ่ง แต่เริ่มมีการ hedge", "warning", `VIX ${metrics.vix}, VVIX ${metrics.vvix}`);
-  if (metrics.vixeq > metrics.vix) addFlag(flags, "single-stock-vol", "Single-stock volatility above index volatility", "ความผันผวนรายตัวสูงกว่าตลาดรวม", "watch", `VIXEQ - VIX = ${metrics.vixeqSpread}`);
-  if (metrics.vixeqSpreadTrend > 0) addFlag(flags, "vixeq-widening", "VIXEQ spread widening", "spread VIXEQ-VIX กว้างขึ้น", "watch", `5D trend = ${metrics.vixeqSpreadTrend}`);
+  if (Number.isFinite(metrics.vix) && Number.isFinite(metrics.vvix) && metrics.vix < 18 && metrics.vvix > 90) addFlag(flags, "hidden-hedge", "Calm VIX, rising hedge demand", "VIX ยังนิ่ง แต่เริ่มมีการ hedge", "warning", `VIX ${metrics.vix}, VVIX ${metrics.vvix}`);
+  if (Number.isFinite(metrics.vixeq) && Number.isFinite(metrics.vix) && metrics.vixeq > metrics.vix) addFlag(flags, "single-stock-vol", "Single-stock volatility above index volatility", "ความผันผวนรายตัวสูงกว่าตลาดรวม", "watch", `VIXEQ - VIX = ${metrics.vixeqSpread}`);
+  if (Number.isFinite(metrics.vixeqSpreadTrend) && metrics.vixeqSpreadTrend > 0) addFlag(flags, "vixeq-widening", "VIXEQ spread widening", "spread VIXEQ-VIX กว้างขึ้น", "watch", `5D trend = ${metrics.vixeqSpreadTrend}`);
   if (!series.vixeq?.ok) addFlag(flags, "vixeq-missing", "VIXEQ data source not available", "ยังไม่มีแหล่งข้อมูล VIXEQ", "muted", series.vixeq?.error || "");
 
   return {

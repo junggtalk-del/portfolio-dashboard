@@ -585,16 +585,42 @@
     return row.marketData.source || "Market data";
   }
 
+  function timingChipFor(row) {
+    if (!window.Scoring) return "";
+    try {
+      const cls = row.classification;
+      const input = {
+        latestPrice: row.marketData?.latestClose,
+        latestDate: row.marketData?.latestDate,
+        rsi14: Number.isFinite(row.rsi?.rsi) ? row.rsi.rsi : null,
+        isNewBullishSignal: cls.groupKey === "buy_signal",
+        isNewBearishSignal: cls.groupKey === "sell_signal",
+        isBullishWatchlist: cls.groupKey === "watch_buy",
+        isHolding: Boolean(row.portfolio?.isHolding),
+        portfolioWeight: row.portfolio?.weight,
+        marketValue: row.portfolio?.marketValue,
+        assetType: row.asset?.asset_type,
+        displaySymbol: row.displaySymbol,
+        canonicalSymbol: canonicalSymbolFromTicker(row.asset?.ticker)
+      };
+      const result = window.Scoring.calculateTimingScore(input);
+      return window.Scoring.renderTimingChip(result);
+    } catch (_error) {
+      return "";
+    }
+  }
+
   function renderCard(row) {
     const cls = row.classification;
     const group = GROUPS.find((item) => item.key === cls.groupKey) || GROUPS[GROUPS.length - 1];
     const star = row.starred ? `<span class="rsi-star" title="สินทรัพย์ที่เหมาะกับการติดตามสัญญาณ RSI เป็นพิเศษ">*</span>` : "";
+    const timingChip = timingChipFor(row);
     const dataType = row.marketData.assetType === "Thai Mutual Fund" ? "NAV" : "Price";
     return `
       <article class="rsi-card ${group.tone}" data-symbol="${escapeHtml(canonicalSymbolFromTicker(row.asset.ticker))}" data-starred="${row.starred ? "true" : "false"}">
         <div class="rsi-card-top">
           <div>
-            <h3>${escapeHtml(row.displaySymbol)} ${star}</h3>
+            <h3><a href="/asset/${encodeURIComponent(row.marketData?.marketSymbol || canonicalSymbolFromTicker(row.asset.ticker) || row.displaySymbol)}" class="asset-link">${escapeHtml(row.displaySymbol)}</a> ${star} ${timingChip}</h3>
             <p>${escapeHtml(row.displayName)}</p>
           </div>
           <div class="rsi-price-block">
@@ -675,7 +701,7 @@
     const myVersion = ++renderVersion;
     sectionsRoot.innerHTML = `<div class="rsi-empty">กำลังคำนวณ RSI14...</div>`;
 
-    const rawAnalyses = await Promise.all(assets.map(async (asset) => {
+    const analyzeOne = async (asset) => {
       try {
         const marketData = await fetchPriceHistory(asset, { forceRefresh });
         const row = analyzeAsset(asset, marketData);
@@ -702,7 +728,10 @@
         };
         return analyzeAsset(asset, empty);
       }
-    }));
+    };
+    const rawAnalyses = window.mapWithConcurrency
+      ? await window.mapWithConcurrency(assets, 5, analyzeOne)
+      : await Promise.all(assets.map(analyzeOne));
     if (myVersion !== renderVersion) return;
     const totalValue = window.PortfolioCore ? window.PortfolioCore.totalMarketValue(portfolioHoldings) : 0;
     const analyses = window.PortfolioCore

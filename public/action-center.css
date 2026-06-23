@@ -1,23 +1,23 @@
 :root {
-  color-scheme: light;
-  --ink: #1b2d46;
-  --muted: #6f7b91;
-  --line: #dbe4f0;
-  --panel: #ffffff;
-  --page: #f3f7fb;
-  --green: #18865d;
-  --green-bg: #ecfdf5;
-  --teal: #0f766e;
-  --red: #b83a36;
-  --red-bg: #fff1f1;
-  --amber: #a5660b;
-  --amber-bg: #fff8df;
-  --orange: #b75d1b;
-  --orange-bg: #fff4ea;
-  --blue: #2f5f8f;
-  --blue-bg: #edf6ff;
-  --gray: #697386;
-  --gray-bg: #f4f6f9;
+  color-scheme: light dark;
+  --ink: var(--app-text);
+  --muted: var(--app-muted);
+  --line: var(--app-border);
+  --panel: var(--app-card);
+  --page: var(--app-bg);
+  --green: var(--app-up);
+  --green-bg: color-mix(in srgb, var(--app-card), var(--app-up) 14%);
+  --teal: var(--app-accent);
+  --red: var(--app-down);
+  --red-bg: color-mix(in srgb, var(--app-card), var(--app-down) 14%);
+  --amber: var(--app-warn);
+  --amber-bg: color-mix(in srgb, var(--app-card), var(--app-warn) 14%);
+  --orange: var(--app-warn);
+  --orange-bg: color-mix(in srgb, var(--app-card), var(--app-warn) 16%);
+  --blue: var(--app-info);
+  --blue-bg: color-mix(in srgb, var(--app-card), var(--app-info) 14%);
+  --gray: var(--app-muted);
+  --gray-bg: color-mix(in srgb, var(--app-card), var(--app-text) 4%);
   font-family: "Noto Sans Thai", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -28,10 +28,14 @@
 body {
   margin: 0;
   color: var(--ink);
+  background: var(--app-bg);
+  min-height: 100vh;
+}
+
+html[data-theme="light"] body {
   background:
     radial-gradient(circle at top left, rgba(33, 117, 109, 0.12), transparent 34rem),
     linear-gradient(180deg, #f7fbff 0%, var(--page) 100%);
-  min-height: 100vh;
 }
 
 button,
@@ -52,10 +56,10 @@ a {
 .action-toolbar,
 .action-panel,
 .action-disclaimer {
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--app-card);
   border: 1px solid var(--line);
   border-radius: 18px;
-  box-shadow: 0 18px 44px rgba(40, 65, 96, 0.08);
+  box-shadow: var(--app-shadow);
 }
 
 .action-topbar {
@@ -68,7 +72,7 @@ a {
 
 .action-eyebrow {
   margin: 0 0 6px;
-  color: #31736e;
+  color: var(--app-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -111,7 +115,7 @@ h1 {
   color: var(--ink);
   text-decoration: none;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--app-card);
   border-radius: 12px;
   padding: 10px 13px;
   font-weight: 800;
@@ -121,8 +125,14 @@ h1 {
 .action-nav a.is-active,
 .action-toolbar button {
   color: #fff;
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+}
+
+html[data-theme="light"] .action-nav a.is-active,
+html[data-theme="light"] .action-toolbar button {
+  background: #1b2d46;
+  border-color: #1b2d46;
 }
 
 .action-toolbar {
@@ -170,7 +180,11 @@ h1 {
 
 .scope-tabs button.is-active {
   color: #fff;
-  background: var(--ink);
+  background: var(--app-accent);
+}
+
+html[data-theme="light"] .scope-tabs button.is-active {
+  background: #1b2d46;
 }
 
 .action-toolbar button {
@@ -184,11 +198,11 @@ h1 {
 }
 
 .conflict-panel {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--app-card);
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 16px;
-  box-shadow: 0 18px 44px rgba(40, 65, 96, 0.08);
+  box-shadow: var(--app-shadow);
 }
 
 .conflict-heading {
@@ -217,10 +231,10 @@ h1 {
 .conflict-card {
   color: inherit;
   text-decoration: none;
-  border: 1px solid rgba(165, 102, 11, 0.32);
+  border: 1px solid color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
   border-radius: 15px;
   padding: 13px;
-  background: linear-gradient(180deg, #fffaf0 0%, #ffffff 100%);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 12%);
   display: flex;
   flex-direction: column;
   gap: 9px;
@@ -246,7 +260,7 @@ h1 {
 
 .summary-card {
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--app-card);
   border-radius: 16px;
   padding: 14px;
   text-align: left;
@@ -255,7 +269,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  box-shadow: 0 14px 30px rgba(42, 62, 90, 0.07);
+  box-shadow: var(--app-shadow);
 }
 
 .summary-card strong {
@@ -272,6 +286,15 @@ h1 {
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.35;
+}
+
+.summary-card.is-active {
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 1px var(--app-accent), var(--app-shadow);
+}
+.summary-card.is-active p:last-child {
+  color: var(--app-accent);
+  font-weight: 700;
 }
 
 .action-sections {
@@ -310,7 +333,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 999px;
   font-weight: 900;
-  background: #fff;
+  background: var(--app-card);
 }
 
 .action-card-grid {
@@ -324,7 +347,7 @@ h1 {
   color: inherit;
   text-decoration: none;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--app-card);
   border-radius: 16px;
   padding: 14px;
   display: flex;
@@ -335,7 +358,7 @@ h1 {
 
 .action-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 18px 38px rgba(42, 62, 90, 0.1);
+  box-shadow: var(--app-shadow);
 }
 
 .card-top,
@@ -379,7 +402,7 @@ h1 {
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(244, 246, 249, 0.72);
+  background: var(--app-elevated);
 }
 
 .signal-layer {
@@ -414,10 +437,10 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  border: 1px solid rgba(123, 139, 161, 0.2);
+  border: 1px solid var(--app-border);
   border-radius: 12px;
   padding: 9px;
-  background: rgba(255, 255, 255, 0.62);
+  background: var(--app-card);
 }
 
 .metric-value {
@@ -429,10 +452,10 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border: 1px solid rgba(123, 139, 161, 0.22);
+  border: 1px solid var(--app-border);
   border-radius: 12px;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--app-card);
 }
 
 .asset-360-row {
@@ -459,7 +482,7 @@ h1 {
 .reason-box {
   border-radius: 12px;
   padding: 10px 11px;
-  background: rgba(27, 45, 70, 0.05);
+  background: var(--app-elevated);
 }
 
 .reason-box strong {
@@ -474,10 +497,10 @@ h1 {
 }
 
 .portfolio-mini {
-  border: 1px solid rgba(47, 95, 143, 0.2);
+  border: 1px solid color-mix(in srgb, var(--app-border), var(--app-info) 40%);
   border-radius: 12px;
   padding: 9px 10px;
-  background: rgba(237, 246, 255, 0.74);
+  background: color-mix(in srgb, var(--app-card), var(--app-info) 12%);
   display: grid;
   gap: 4px;
   font-size: 0.9rem;
@@ -509,38 +532,38 @@ h1 {
   border: 1px dashed var(--line);
   border-radius: 14px;
   padding: 14px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--app-card);
   color: var(--muted);
   font-weight: 800;
 }
 
 .tone-buy,
 .summary-buy {
-  border-color: rgba(24, 134, 93, 0.38);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-up) 40%);
   background: var(--green-bg);
 }
 
 .tone-watch-buy,
 .summary-watch-buy {
-  border-color: rgba(165, 102, 11, 0.38);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
   background: var(--amber-bg);
 }
 
 .tone-hold,
 .summary-hold {
-  border-color: rgba(15, 118, 110, 0.34);
-  background: #effcf9;
+  border-color: color-mix(in srgb, var(--app-border), var(--app-accent) 40%);
+  background: color-mix(in srgb, var(--app-card), var(--app-accent) 12%);
 }
 
 .tone-watch-sell,
 .summary-watch-sell {
-  border-color: rgba(183, 93, 27, 0.38);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
   background: var(--orange-bg);
 }
 
 .tone-sell,
 .summary-sell {
-  border-color: rgba(184, 58, 54, 0.42);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-down) 40%);
   background: var(--red-bg);
 }
 
@@ -548,52 +571,52 @@ h1 {
 .summary-neutral,
 .tone-insufficient,
 .summary-insufficient {
-  border-color: rgba(105, 115, 134, 0.28);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-text) 16%);
   background: var(--gray-bg);
 }
 
 .badge-buy,
 .badge-bull,
 .badge-green {
-  color: #09633f;
-  background: #d8f8e8;
+  color: var(--app-up);
+  background: color-mix(in srgb, var(--app-card), var(--app-up) 18%);
 }
 
 .badge-watch-buy,
 .badge-amber {
-  color: #825107;
-  background: #ffedb5;
+  color: var(--app-warn);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 18%);
 }
 
 .badge-hold,
 .badge-teal {
-  color: #0f5f59;
-  background: #d9f7f3;
+  color: var(--app-accent);
+  background: color-mix(in srgb, var(--app-card), var(--app-accent) 18%);
 }
 
 .badge-watch-sell,
 .badge-orange {
-  color: #9a4714;
-  background: #ffe0c7;
+  color: var(--app-warn);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 18%);
 }
 
 .badge-sell,
 .badge-bear,
 .badge-red {
-  color: #9d2f2c;
-  background: #ffd8d5;
+  color: var(--app-down);
+  background: color-mix(in srgb, var(--app-card), var(--app-down) 18%);
 }
 
 .badge-gray,
 .badge-neutral,
 .badge-insufficient {
-  color: #596274;
-  background: #e8edf4;
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--app-card), var(--app-text) 10%);
 }
 
 .badge-blue {
-  color: #24527e;
-  background: #dbeeff;
+  color: var(--app-info);
+  background: color-mix(in srgb, var(--app-card), var(--app-info) 18%);
 }
 
 .action-disclaimer {
@@ -606,11 +629,11 @@ h1 {
 }
 
 .action-filter-panel {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--app-card);
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 16px;
-  box-shadow: 0 18px 44px rgba(40, 65, 96, 0.08);
+  box-shadow: var(--app-shadow);
 }
 
 .filter-heading {
@@ -648,7 +671,7 @@ h1 {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: #fff;
+  background: var(--app-elevated);
   color: var(--ink);
   padding: 10px 11px;
   font: inherit;
@@ -660,8 +683,8 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 18px 44px rgba(40, 65, 96, 0.08);
+  background: var(--app-card);
+  box-shadow: var(--app-shadow);
 }
 
 .decision-card-grid {
@@ -676,7 +699,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 14px;
-  background: #fff;
+  background: var(--app-card);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -716,10 +739,10 @@ h1 {
 }
 
 .decision-action-row {
-  border: 1px solid rgba(123, 139, 161, 0.22);
+  border: 1px solid var(--app-border);
   border-radius: 14px;
   padding: 11px;
-  background: rgba(255, 255, 255, 0.66);
+  background: var(--app-card);
 }
 
 .decision-action-row > div:first-child {
@@ -761,6 +784,19 @@ h1 {
   font-weight: 900;
 }
 
+/* Secondary score: smaller + dimmer, since the signal state is now primary. */
+.score-pill-secondary {
+  min-width: 58px;
+  padding: 5px 8px;
+  opacity: 0.82;
+  align-self: center;
+}
+.score-pill-secondary strong { font-size: 1.05rem; }
+.score-pill-secondary span { font-size: 0.72rem; }
+
+/* .signal-state-chip lives in theme.css (shared across all pages). */
+.signal-state-row { margin: 2px 0; }
+
 .quality-line {
   color: var(--muted);
   font-size: 0.88rem;
@@ -781,14 +817,14 @@ h1 {
 .conflict-warning {
   border-radius: 12px;
   padding: 9px 10px;
-  color: #8a4512;
-  background: #fff1dc;
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 16%);
   font-size: 0.9rem;
   line-height: 1.42;
 }
 
 .decision-details {
-  border-top: 1px solid rgba(123, 139, 161, 0.2);
+  border-top: 1px solid var(--app-border);
   padding-top: 9px;
 }
 
@@ -807,10 +843,10 @@ h1 {
 
 .details-grid div {
   min-width: 0;
-  border: 1px solid rgba(123, 139, 161, 0.2);
+  border: 1px solid var(--app-border);
   border-radius: 12px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--app-card);
 }
 
 .details-grid span {
@@ -829,80 +865,80 @@ h1 {
 }
 
 .decision-urgent {
-  border-color: rgba(184, 58, 54, 0.28);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-down) 40%);
 }
 
 .decision-buy {
-  border-color: rgba(24, 134, 93, 0.26);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-up) 40%);
 }
 
 .decision-watch {
-  border-color: rgba(165, 102, 11, 0.26);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
 }
 
 .decision-none {
-  border-color: rgba(105, 115, 134, 0.22);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-text) 16%);
 }
 
 .tone-review {
-  border-color: rgba(184, 58, 54, 0.42);
-  background: linear-gradient(180deg, #fff3f2 0%, #fff 100%);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-down) 40%);
+  background: color-mix(in srgb, var(--app-card), var(--app-down) 12%);
 }
 
 .tone-watch {
-  border-color: rgba(165, 102, 11, 0.36);
-  background: linear-gradient(180deg, #fff9e8 0%, #fff 100%);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 12%);
 }
 
 .score-high {
-  color: #064e3b;
-  background: #c8f7df;
+  color: var(--app-up);
+  background: color-mix(in srgb, var(--app-card), var(--app-up) 18%);
 }
 
 .score-good {
-  color: #0f5f59;
-  background: #d9f7f3;
+  color: var(--app-accent);
+  background: color-mix(in srgb, var(--app-card), var(--app-accent) 18%);
 }
 
 .score-mixed {
-  color: #805000;
-  background: #ffedb5;
+  color: var(--app-warn);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 18%);
 }
 
 .score-weak {
-  color: #9a4714;
-  background: #ffe0c7;
+  color: var(--app-warn);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 18%);
 }
 
 .score-avoid {
-  color: #596274;
-  background: #e8edf4;
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--app-card), var(--app-text) 10%);
 }
 
 .decision-summary-urgent {
-  border-color: rgba(184, 58, 54, 0.42);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-down) 40%);
   background: var(--red-bg);
 }
 
 .decision-summary-buy {
-  border-color: rgba(24, 134, 93, 0.36);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-up) 40%);
   background: var(--green-bg);
 }
 
 .decision-summary-watch,
 .decision-summary-conflicts {
-  border-color: rgba(165, 102, 11, 0.34);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
   background: var(--amber-bg);
 }
 
 .decision-summary-none {
-  border-color: rgba(105, 115, 134, 0.24);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-text) 16%);
   background: var(--gray-bg);
 }
 
 .decision-summary-high {
-  border-color: rgba(15, 118, 110, 0.34);
-  background: #effcf9;
+  border-color: color-mix(in srgb, var(--app-border), var(--app-accent) 40%);
+  background: color-mix(in srgb, var(--app-card), var(--app-accent) 12%);
 }
 
 @media (max-width: 900px) {

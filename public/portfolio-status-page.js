@@ -12,10 +12,8 @@
   };
 
   async function readInvestmentDashboard() {
-    const password = sessionStorage.getItem("portfolioPassword") || "open-dashboard";
     const response = await fetch("/api/portfolio", {
-      cache: "no-store",
-      headers: { "x-portfolio-password": password }
+      cache: "no-store"
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || "Unable to load Investment Dashboard");
@@ -115,6 +113,84 @@
     summaryRoot.textContent = `พอร์ตปัจจุบันมีมูลค่ารวม ${formatMoney(result.total)} จากข้อมูลที่บันทึกใน Investment Dashboard โดยตรง จำนวน ${result.rows.length} รายการ รายการที่ใหญ่ที่สุดคือ ${result.largest?.assetName || "-"} คิดเป็น ${result.largest ? result.largest.portfolioWeight.toFixed(1) : "0.0"}% ของพอร์ต`;
   }
 
+  function canonicalSymbolFor(row) {
+    const raw = String(row?.assetName || row?.dashboardType || "");
+    // Use the shared alias map (SPX->^GSPC, BTC->BTCUSD, K-GTECHRMF, SET50, ...)
+    // so holdings named by a ticker alias still match the snapshot's keys.
+    const snap = (typeof window !== "undefined" && window.PortfolioDataSnapshot) || null;
+    if (snap && typeof snap.canonicalSymbol === "function") return snap.canonicalSymbol(raw);
+    return raw.trim().toUpperCase().replace(/[^A-Z0-9.^-]/g, "");
+  }
+
+  function timingInputForRow(row, total) {
+    const canonical = canonicalSymbolFor(row);
+    const snapshot = (typeof window !== "undefined" && window.PortfolioDataSnapshot && window.PortfolioDataSnapshot.read)
+      ? window.PortfolioDataSnapshot.read()
+      : null;
+    const precomputed = snapshot?.scoring?.bySymbol?.[canonical] || null;
+    // Raw technicals (ema/price/sma/volume) live in technicalSignals, NOT in
+    // historicalData (which only carries dates/closes/volumes). Reading the wrong
+    // source made every Signal Score compute on empty input and render 0.
+    const technicals = snapshot?.technicalSignals?.[canonical] || {};
+    return {
+      isHolding: true,
+      marketValue: Number.isFinite(row.marketValue) ? row.marketValue : null,
+      portfolioWeight: total > 0 && Number.isFinite(row.marketValue) ? (row.marketValue / total) * 100 : row.portfolioWeight,
+      displaySymbol: row.assetName,
+      canonicalSymbol: canonical,
+      assetType: row.dashboardType || undefined,
+      latestPrice: technicals.latestClose ?? technicals.latestPrice,
+      latestDate: technicals.latestDate,
+      ema12: technicals.ema12,
+      ema26: technicals.ema26,
+      sma200: technicals.sma200,
+      rsi14: technicals.rsi14,
+      volumeRatio: technicals.volumeRatio,
+      daysSinceEmaBullishCross: technicals.daysSinceEmaBullishCross,
+      daysSinceEmaBearishCross: technicals.daysSinceEmaBearishCross,
+      daysSinceSma200Reclaim: technicals.daysSinceSma200Reclaim,
+      daysSinceSma200Break: technicals.daysSinceSma200Break,
+      emaTrendStatus: technicals.emaStatus || technicals.emaTrendStatus,
+      sma200Status: technicals.sma200Status,
+      _precomputed: precomputed
+    };
+  }
+
+  // Both the signal chip and the score chip must show/hide TOGETHER, so they
+  // share one guard based on the presence of raw technicals (not _precomputed,
+  // which only holds derived scores and would let one column render while the
+  // other shows "—").
+  function hasRawTechnicals(input) {
+    return Number.isFinite(Number(input.ema12)) || Number.isFinite(Number(input.ema26)) || Number.isFinite(Number(input.latestPrice));
+  }
+
+  function timingChipFor(row, total) {
+    if (!window.Scoring) return "";
+    try {
+      const input = timingInputForRow(row, total);
+      if (!hasRawTechnicals(input)) return "&mdash;";
+      // Compute LIVE via the shared engine so it matches Asset 360 / Action Center.
+      const result = window.Scoring.calculateTimingScore(input);
+      return window.Scoring.renderTimingChip(result) || "&mdash;";
+    } catch (_error) {
+      return "&mdash;";
+    }
+  }
+
+  // PRIMARY: the signal-state chip (AI Boom taxonomy), computed live so it
+  // matches every other page. Manual buckets with no raw technicals show "—".
+  function signalChipFor(row, total) {
+    if (!window.Scoring || typeof window.Scoring.classifySignal !== "function") return "&mdash;";
+    try {
+      const input = timingInputForRow(row, total);
+      if (!hasRawTechnicals(input)) return "&mdash;";
+      const signal = window.Scoring.classifySignal(input);
+      return window.Scoring.renderSignalChip(signal, { size: "sm" }) || "&mdash;";
+    } catch (_error) {
+      return "&mdash;";
+    }
+  }
+
   function renderTable(result) {
     if (!result.rows.length) {
       tableRoot.innerHTML = '<div class="empty-box">ยังไม่มีรายการจาก Dashboard</div>';
@@ -125,6 +201,8 @@
         <thead>
           <tr>
             <th>ชื่อสินทรัพย์</th>
+            <th>สัญญาณ</th>
+            <th>Signal Score (ตัวประกอบ)</th>
             <th>มูลค่าปัจจุบัน</th>
             <th>น้ำหนักในพอร์ต</th>
             <th>สัดส่วนลงทุนจริง</th>
@@ -132,15 +210,19 @@
           </tr>
         </thead>
         <tbody>
-          ${result.rows.map(renderTableRow).join("")}
+          ${result.rows.map((row) => renderTableRow(row, result.total)).join("")}
         </tbody>
       </table>`;
   }
 
-  function renderTableRow(row) {
+  function renderTableRow(row, total) {
+    const signalChip = window.Scoring ? signalChipFor(row, total) : "";
+    const timingChip = window.Scoring ? timingChipFor(row, total) : "";
     return `
       <tr class="status-main-row">
         <td><strong>${escapeHtml(row.assetName)}</strong></td>
+        <td>${signalChip || "-"}</td>
+        <td>${timingChip || "-"}</td>
         <td>${formatMoney(row.marketValue)}</td>
         <td><strong>${row.portfolioWeight.toFixed(1)}%</strong></td>
         <td>${formatPercent(row.investedPercent)}</td>

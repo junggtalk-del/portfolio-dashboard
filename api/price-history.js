@@ -4,6 +4,7 @@ const {
   canonicalSymbolFromTicker: canonicalThaiFundSymbol,
   getHistoricalThaiFundNav
 } = require("../lib/data-providers/thaiMutualFundHistoricalNavProvider");
+const { yahooChartJson } = require("../lib/http");
 const THAI_STOCK_ALIASES = {
   "GULF.BK": "GULF.BK",
   GULFBK: "GULF.BK",
@@ -148,6 +149,10 @@ function shapeMarketRows(symbol, rows, sourceType, sourceText, fetchedAt, extra 
     lastUpdated: fetchedAt || null,
     dates: rows.map((row) => row.date),
     closes: rows.map((row) => row.close),
+    volumes: rows.map((row) => {
+      const v = Number(row && row.volume);
+      return Number.isFinite(v) && v > 0 ? v : null;
+    }),
     historicalSourceLimited: Boolean(extra.historicalSourceLimited),
     latestLiveRows: Number.isFinite(extra.latestLiveRows) ? Number(extra.latestLiveRows) : null,
     sourceRange: extra.sourceRange || null
@@ -161,7 +166,8 @@ function sortAndNormalizeRows(rows) {
     const date = String(row?.date || "");
     const close = Number(row?.close);
     if (!date || !Number.isFinite(close)) continue;
-    map.set(date, { date, close });
+    const vol = Number(row?.volume);
+    map.set(date, { date, close, volume: Number.isFinite(vol) && vol > 0 ? vol : null });
   }
   return [...map.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
@@ -178,32 +184,26 @@ function mergeHistoricalRows(existingRows, incomingRows) {
 }
 
 async function fetchDailyHistoryByRange(symbol, range) {
-  const endpoint = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
-  endpoint.searchParams.set("interval", "1d");
-  endpoint.searchParams.set("range", range);
-  endpoint.searchParams.set("includePrePost", "false");
-
-  const response = await fetch(endpoint, {
-    headers: {
-      accept: "application/json",
-      "user-agent": "portfolio-dashboard/1.0"
-    }
-  });
-  if (!response.ok) throw new Error("price history request failed");
-
-  const payload = await response.json();
+  const payload = await yahooChartJson(
+    `/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=${range}&includePrePost=false`,
+    { timeoutMs: 6000 }
+  );
   const result = payload.chart?.result?.[0];
   const timestamps = Array.isArray(result?.timestamp) ? result.timestamp : [];
   const closes = result?.indicators?.quote?.[0]?.close || [];
+  const volumes = result?.indicators?.quote?.[0]?.volume || [];
+  const gmtoffset = Number(result?.meta?.gmtoffset) || 0;
   const rows = [];
 
   for (let index = 0; index < Math.min(timestamps.length, closes.length); index += 1) {
     const close = closes[index];
     const unix = timestamps[index];
     if (!Number.isFinite(close) || !Number.isFinite(unix)) continue;
+    const vol = Number(volumes[index]);
     rows.push({
-      date: new Date(unix * 1000).toISOString().slice(0, 10),
-      close: Number(close)
+      date: new Date((unix + gmtoffset) * 1000).toISOString().slice(0, 10),
+      close: Number(close),
+      volume: Number.isFinite(vol) && vol > 0 ? vol : null
     });
   }
 

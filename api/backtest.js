@@ -4,6 +4,7 @@ const { getHistoricalBars, normalizeBacktestSymbol, displaySymbolForProvider } =
 const { runBacktestForPeriods } = require("../lib/backtest/engine");
 const { STRATEGIES } = require("../lib/backtest/strategies");
 const { rankResults } = require("../lib/backtest/ranking");
+const { parseJsonBody } = require("../lib/request-body");
 
 const DEFAULT_SYMBOLS = ["SPY", "QQQ", "AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "TSLA", "AVGO", "AMD"];
 const DEFAULT_PERIODS = [
@@ -20,7 +21,13 @@ function send(res, status, payload) {
 }
 
 function getBody(req) {
-  if (req.body && typeof req.body === "object") return Promise.resolve(req.body);
+  if (req.body != null) {
+    try {
+      return Promise.resolve(parseJsonBody(req));
+    } catch (_error) {
+      return Promise.reject(new Error("Invalid JSON body."));
+    }
+  }
   return new Promise((resolve, reject) => {
     let raw = "";
     req.on("data", (chunk) => {

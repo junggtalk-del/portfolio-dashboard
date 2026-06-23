@@ -1,17 +1,17 @@
 :root {
-  --bg: #f4f7fb;
-  --panel: #ffffff;
-  --ink: #172033;
-  --muted: #6c778c;
-  --line: #dfe6f1;
-  --navy: #17324d;
-  --green: #12805c;
-  --green-soft: #eaf7f1;
-  --amber: #9a6a0a;
-  --amber-soft: #fff7dd;
-  --red: #b83a36;
-  --red-soft: #fff0ef;
-  --shadow: 0 18px 44px rgba(23, 50, 77, 0.09);
+  --bg: var(--app-bg);
+  --panel: var(--app-card);
+  --ink: var(--app-text);
+  --muted: var(--app-muted);
+  --line: var(--app-border);
+  --navy: var(--app-text);
+  --green: var(--app-up);
+  --green-soft: color-mix(in srgb, var(--app-card), var(--app-up) 14%);
+  --amber: var(--app-warn);
+  --amber-soft: color-mix(in srgb, var(--app-card), var(--app-warn) 14%);
+  --red: var(--app-down);
+  --red-soft: color-mix(in srgb, var(--app-card), var(--app-down) 14%);
+  --shadow: var(--app-shadow);
 }
 
 * { box-sizing: border-box; }
@@ -21,7 +21,7 @@ body {
   min-height: 100vh;
   background:
     radial-gradient(circle at top left, rgba(18, 128, 92, 0.12), transparent 34rem),
-    linear-gradient(135deg, #f8fbff 0%, var(--bg) 58%, #eef4f6 100%);
+    var(--app-bg);
   color: var(--ink);
   font-family: "Noto Sans Thai", system-ui, sans-serif;
 }
@@ -48,7 +48,7 @@ textarea { font: inherit; }
 .thai-scan-eyebrow,
 .section-kicker {
   margin: 0 0 6px;
-  color: #0d6f55;
+  color: var(--app-accent);
   font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -92,7 +92,7 @@ h2 {
   padding: 9px 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--app-card);
   color: var(--navy);
   cursor: pointer;
   font-weight: 900;
@@ -102,9 +102,9 @@ h2 {
 .signal-nav a.is-active,
 .scan-actions button,
 .filter-tabs button.is-active {
-  background: var(--navy);
+  background: var(--app-accent);
   color: #ffffff;
-  box-shadow: 0 10px 22px rgba(23, 50, 77, 0.16);
+  box-shadow: var(--app-shadow);
 }
 
 .scan-control-panel,
@@ -113,7 +113,7 @@ h2 {
 .scan-progress {
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--app-card);
   box-shadow: var(--shadow);
 }
 
@@ -134,7 +134,7 @@ h2 {
   width: fit-content;
   border-radius: 999px;
   padding: 6px 10px;
-  background: #eef3f8;
+  background: var(--app-elevated);
   color: var(--navy);
   font-size: 0.78rem;
   font-weight: 900;
@@ -170,7 +170,7 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 8px 11px;
-  background: #fff;
+  background: var(--app-elevated);
   color: var(--ink);
   font-weight: 800;
 }
@@ -213,7 +213,7 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 15px;
-  background: #fff;
+  background: var(--app-card);
   box-shadow: var(--shadow);
 }
 
@@ -268,7 +268,7 @@ h2 {
   min-height: 36px;
   padding: 7px 10px;
   color: var(--muted);
-  background: #f4f7fb;
+  background: var(--app-elevated);
 }
 
 .toggle-filter {
@@ -280,7 +280,7 @@ h2 {
   border-radius: 10px;
   padding: 8px 11px;
   color: var(--navy);
-  background: #fff;
+  background: var(--app-card);
   font-size: 0.84rem;
   font-weight: 900;
 }
@@ -306,7 +306,7 @@ h2 {
 
 .stock-card {
   min-width: 0;
-  border: 1px solid rgba(18, 128, 92, 0.28);
+  border: 1px solid color-mix(in srgb, var(--app-border), var(--app-up) 40%);
   border-radius: 14px;
   padding: 14px;
   background: var(--green-soft);
@@ -316,7 +316,7 @@ h2 {
 }
 
 .stock-card.is-near {
-  border-color: rgba(154, 106, 10, 0.34);
+  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
   background: var(--amber-soft);
 }
 
@@ -347,13 +347,13 @@ h2 {
 }
 
 .market-badge.is-set {
-  color: #17324d;
-  background: #e6edf7;
+  color: var(--app-info);
+  background: color-mix(in srgb, var(--app-card), var(--app-info) 16%);
 }
 
 .market-badge.is-mai {
-  color: #8a4b0f;
-  background: #ffe7c8;
+  color: var(--app-warn);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 16%);
 }
 
 .stock-name {
@@ -374,7 +374,7 @@ h2 {
 }
 
 .status-badge.signal {
-  background: #d9f2e8;
+  background: color-mix(in srgb, var(--app-card), var(--app-up) 16%);
   color: var(--green);
 }
 
@@ -389,27 +389,27 @@ h2 {
 
 .volume-badge.volume_confirmed {
   color: var(--green);
-  background: #d9f2e8;
+  background: color-mix(in srgb, var(--app-card), var(--app-up) 16%);
 }
 
 .volume-badge.strong_volume_confirmed,
 .volume-badge.very_strong_volume {
-  color: #0f6a4e;
-  background: #c4eedf;
+  color: var(--app-up);
+  background: color-mix(in srgb, var(--app-card), var(--app-up) 22%);
 }
 
 .volume-badge.volume_not_confirmed {
   color: var(--amber);
-  background: #f7e7b7;
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 18%);
 }
 
 .volume-badge.volume_data_not_available {
   color: var(--muted);
-  background: #e8edf4;
+  background: color-mix(in srgb, var(--app-card), var(--app-info) 12%);
 }
 
 .stock-card.is-near .status-badge.signal {
-  background: #f6e7b5;
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 20%);
   color: var(--amber);
 }
 
@@ -420,10 +420,10 @@ h2 {
 }
 
 .metric {
-  border: 1px solid rgba(223, 230, 241, 0.9);
+  border: 1px solid color-mix(in srgb, var(--app-border), transparent 10%);
   border-radius: 10px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--app-card), var(--app-text) 4%);
 }
 
 .metric span {
@@ -446,10 +446,10 @@ h2 {
 .volume-box {
   display: grid;
   gap: 5px;
-  border: 1px solid rgba(223, 230, 241, 0.9);
+  border: 1px solid color-mix(in srgb, var(--app-border), transparent 10%);
   border-radius: 12px;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.76);
+  background: color-mix(in srgb, var(--app-card), var(--app-text) 4%);
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 800;
@@ -463,8 +463,8 @@ h2 {
   margin: 0;
   border-radius: 10px;
   padding: 9px 10px;
-  color: #8a4b0f;
-  background: #fff0db;
+  color: var(--app-warn);
+  background: color-mix(in srgb, var(--app-card), var(--app-warn) 16%);
   font-size: 0.84rem;
   font-weight: 900;
 }
@@ -509,7 +509,7 @@ td {
   border: 1px dashed var(--line);
   border-radius: 12px;
   padding: 12px;
-  background: #f8fafc;
+  background: var(--app-elevated);
   color: var(--muted);
   font-weight: 800;
 }
