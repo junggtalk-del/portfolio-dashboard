@@ -326,6 +326,16 @@ html, body {
 .mc-accent-violet { border-top: 2px solid var(--mc-violet); }
 .mc-accent-amber { border-top: 2px solid var(--mc-amber); }
 
+/* Clickable Hero metric -> jumps to its detail card in Priority Signals */
+.mc-metric.mc-clickable { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+.mc-metric.mc-clickable:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(8, 18, 33, 0.18); }
+.mc-flash { animation: mc-flash-pulse 1.5s ease; }
+@keyframes mc-flash-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+  18% { box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.6); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+}
+
 /* Market Risk summary strip (Daily Brief) */
 .mc-mr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; }
 .mc-mr-grid > div { display: flex; flex-direction: column; gap: 3px; }

@@ -2,7 +2,7 @@
   try {
   const STORAGE_KEY = "portfolio_dashboard_data_snapshot";
   const DATA_VERSION = "2026-06-portfolio-dashboard-v1";
-  const REQUIRED_SYMBOLS = ["SPY", "QQQM", "XLK", "^GSPC", "^VIX", "^VVIX", "^VIXEQ"];
+  const REQUIRED_SYMBOLS = ["SPY", "QQQM", "XLK", "^GSPC", "^VIX", "^VVIX", "^VIXEQ", "BTC-USD", "^IXIC", "DX-Y.NYB", "^TNX", "GLD"];
   const originalFetch = window.fetch ? window.fetch.bind(window) : null;
   let memorySnapshot = null;
   let isLoading = false;
@@ -381,6 +381,14 @@
       } catch (error) {
         snapshot.portfolioHoldings = { error: String(error.message || error) };
       }
+      // Quarterly Editor portfolio ({ data: { currentQuarter, quarters } }) — powers the home
+      // Portfolio Alignment section (shows the user's actual quarterly holdings).
+      try {
+        const portfolioResponse = await originalFetch("/api/portfolio", { cache: "no-store" });
+        snapshot.portfolioStatus = portfolioResponse.ok ? await portfolioResponse.json() : { error: await portfolioResponse.text() };
+      } catch (error) {
+        snapshot.portfolioStatus = { error: String(error.message || error) };
+      }
       // --- Scoring: Timing Score + Signal Quality Score + Action + Quadrant ---
       try {
         snapshot.scoring = { bySymbol: {}, calculatedAt: new Date().toISOString() };
@@ -464,6 +472,16 @@
           });
         }
       } catch (_scoringError) { /* scoring is best-effort */ }
+
+      // Bitcoin Intelligence (Phase 1) — runs ONLY here during Load Latest Data,
+      // reads existing indicators + its own cached historical BTC database, and
+      // EXTENDS the snapshot with one new object. Best-effort; never blocks a load.
+      try {
+        if (window.BitcoinIntelligence && typeof window.BitcoinIntelligence.run === "function") {
+          emitProgress({ step: 6, stepLabel: "Running Bitcoin Intelligence", completedAssets: completed, totalAssets: loadAssets.length, failedAssets: snapshot.errors.length });
+          snapshot.bitcoinIntelligence = await window.BitcoinIntelligence.run(snapshot, { fetch: originalFetch });
+        }
+      } catch (_biError) { /* intelligence is best-effort — snapshot still saves */ }
 
       emitProgress({ step: 6, stepLabel: "Saving snapshot", completedAssets: completed, totalAssets: loadAssets.length, failedAssets: snapshot.errors.length });
       snapshot.status = snapshot.errors.length ? "partial" : "ready";

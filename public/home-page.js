@@ -326,28 +326,46 @@
         <div class="mc-value" style="font-size:22px;color:${regimeColor};">${esc(regimeLabel)}</div>
         <div class="mc-delta" style="color:var(--mc-muted)">${esc(regimeThai)}${b && b.riskScore != null ? ` · Risk ${Math.round(b.riskScore)}` : ""}</div>
       </div>
-      <div class="mc-metric mc-glow">
-        <div class="mc-label"><span>Urgent Actions</span></div>
+      <div class="mc-metric mc-glow mc-clickable" id="mcHeroUrgent" title="คลิกเพื่อดูรายการ">
+        <div class="mc-label"><span>Urgent Actions</span><span style="margin-left:auto;color:var(--mc-muted);font-size:12px;">↓</span></div>
         <div class="mc-value mc-tnum" style="color:${urgent ? "var(--mc-red)" : "var(--mc-text)"};">${urgent == null ? "—" : urgent}</div>
-        <div class="mc-delta" style="color:var(--mc-muted)">ต้องดูในพอร์ตวันนี้</div>
+        <div class="mc-delta" style="color:var(--mc-muted)">ต้องดูในพอร์ตวันนี้ · คลิกดูรายการ</div>
       </div>
-      <div class="mc-metric mc-glow">
-        <div class="mc-label"><span>New Signals (1-3 วัน)</span></div>
+      <div class="mc-metric mc-glow mc-clickable" id="mcHeroSignals" title="คลิกเพื่อดูรายการ">
+        <div class="mc-label"><span>New Signals (1-3 วัน)</span><span style="margin-left:auto;color:var(--mc-muted);font-size:12px;">↓</span></div>
         <div class="mc-value mc-tnum">${bull == null && bear == null ? "—" : (bull + bear)}</div>
-        <div class="mc-delta"><span style="color:var(--mc-emerald)">▲ ${bull == null ? "—" : bull}</span> · <span style="color:var(--mc-red)">▼ ${bear == null ? "—" : bear}</span></div>
+        <div class="mc-delta"><span style="color:var(--mc-emerald)">▲ ${bull == null ? "—" : bull}</span> · <span style="color:var(--mc-red)">▼ ${bear == null ? "—" : bear}</span> · คลิกดูรายการ</div>
       </div>`;
 
     applyPvVisibility(b ? b.total : null);
     const btn = $("mcPvToggle");
     if (btn) btn.addEventListener("click", () => { valueHidden = !valueHidden; applyPvVisibility(b ? b.total : null); });
+    const hu = $("mcHeroUrgent");
+    if (hu) hu.addEventListener("click", () => flashCards("mcCardUrgent"));
+    const hs = $("mcHeroSignals");
+    if (hs) hs.addEventListener("click", () => flashCards(["mcCardBullish", "mcCardBearish"]));
   }
 
-  function focusCard(cls, title, count, countCls, rowsHtml, link) {
-    return `<div class="mc-card mc-focus-card ${cls}">
+  function focusCard(cls, title, count, countCls, rowsHtml, link, id) {
+    return `<div class="mc-card mc-focus-card ${cls}"${id ? ` id="${id}"` : ""}>
       <div class="mc-focus-title"><span>${title}</span>${count != null ? `<span class="mc-count ${countCls}">${count}</span>` : ""}</div>
       ${rowsHtml || '<div class="mc-empty"><strong>ยังไม่มีรายการ</strong></div>'}
       ${link ? `<a class="mc-link" style="display:inline-block;margin-top:10px;" href="${link.href}">${link.text} →</a>` : ""}
     </div>`;
+  }
+
+  // Smooth-scroll + flash one or more target cards (from a Hero metric click).
+  function flashCards(ids) {
+    const list = Array.isArray(ids) ? ids : [ids];
+    const first = document.getElementById(list[0]);
+    if (first) first.scrollIntoView({ behavior: "smooth", block: "center" });
+    list.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove("mc-flash");
+      void el.offsetWidth; // restart the animation
+      el.classList.add("mc-flash");
+    });
   }
 
   // One row for a fresh-cross signal (used by New Bullish / New Bearish).
@@ -400,9 +418,9 @@
       : `<div class="mc-empty"><strong>ยังไม่มีสัญญาณตัดลงใหม่</strong>ไม่มี EMA12/26 หรือ SMA200 ตัดลงใน 1-3 วัน</div>`;
 
     root.innerHTML =
-      focusCard("mc-accent-red", "🚨 Urgent Action", b.urgentCount, "mc-chip-bear", urgentRows, { href: "/action-center", text: "ดู Action Center" }) +
-      focusCard("mc-accent-emerald", "🟢 New Bullish Signals", b.bullCount, "mc-chip-bull", bullRows, { href: "/ai-boom-universe", text: "ดู AI Boom Universe" }) +
-      focusCard("mc-accent-amber", "🔴 New Bearish Signals", b.bearCount, "mc-chip-bear", bearRows, { href: "/ai-boom-universe", text: "ดู AI Boom Universe" });
+      focusCard("mc-accent-red", "🚨 Urgent Action", b.urgentCount, "mc-chip-bear", urgentRows, { href: "/action-center", text: "ดู Action Center" }, "mcCardUrgent") +
+      focusCard("mc-accent-emerald", "🟢 New Bullish Signals", b.bullCount, "mc-chip-bull", bullRows, { href: "/ai-boom-universe", text: "ดู AI Boom Universe" }, "mcCardBullish") +
+      focusCard("mc-accent-amber", "🔴 New Bearish Signals", b.bearCount, "mc-chip-bear", bearRows, { href: "/ai-boom-universe", text: "ดู AI Boom Universe" }, "mcCardBearish");
   }
 
   function renderMarketRisk(b) {

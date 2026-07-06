@@ -1,0 +1,150 @@
+/* Bitcoin Monitor — builds on mission-control.css tokens (dark premium) */
+.btc-page { display: block; }
+
+/* ---- chart ---- */
+.btc-range { display: inline-flex; gap: 4px; background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 10px; padding: 3px; flex-wrap: wrap; }
+.btc-range button { border: 0; background: transparent; color: var(--mc-muted); font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 8px; cursor: pointer; font-family: inherit; }
+.btc-range button.is-active { background: linear-gradient(135deg, #f7931a, #f59e0b); color: #1a0f00; }
+.btc-chart-wrap { margin-top: 14px; }
+.btc-chart-inner { position: relative; height: 380px; padding: 0 56px 22px 0; }
+.btc-chart-inner svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.btc-yl { position: absolute; right: 0; transform: translateY(-50%); font-size: 10.5px; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
+.btc-xl { position: absolute; bottom: 0; transform: translateX(-50%); font-size: 10px; color: var(--mc-faint, #64748b); white-space: nowrap; }
+.btc-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 11.5px; color: var(--mc-text-2); }
+.btc-legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+
+/* ---- buy zone ---- */
+.btc-acc-bull { border-top: 2px solid var(--mc-emerald); }
+.btc-acc-bear { border-top: 2px solid var(--mc-red); }
+.btc-acc-warn { border-top: 2px solid var(--mc-amber); }
+.btc-acc-neutral { border-top: 2px solid var(--mc-blue); }
+.btc-bz { display: flex; gap: 26px; align-items: center; flex-wrap: wrap; }
+.btc-bz-gauge { text-align: center; min-width: 160px; }
+.btc-bz-label { font-size: 15px; font-weight: 800; margin-top: 2px; }
+.btc-bz-sub { font-size: 11.5px; color: var(--mc-muted); }
+.btc-bz-comps { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 10px; }
+.btc-comp-head { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+.btc-comp-head span { color: var(--mc-text-2); }
+.btc-comp-head strong { color: var(--mc-text); }
+.btc-comp-bar { height: 8px; border-radius: 999px; background: rgba(148, 163, 184, 0.16); overflow: hidden; }
+.btc-comp-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #f7931a, #f59e0b); }
+.btc-note { font-size: 11.5px; color: var(--mc-text-2); background: color-mix(in srgb, var(--mc-card), var(--mc-amber) 8%); border: 1px solid var(--mc-border); border-radius: 10px; padding: 9px 12px; margin: 14px 0 0; line-height: 1.5; }
+.btc-reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+.btc-reasons h4 { font-size: 12px; margin: 0 0 6px; color: var(--mc-text-2); }
+.btc-ul { margin: 0; padding-left: 18px; font-size: 12px; color: var(--mc-text-2); line-height: 1.6; }
+.btc-ul.btc-warn { color: var(--mc-amber); }
+@media (max-width: 720px) { .btc-reasons { grid-template-columns: 1fr; } }
+
+/* ---- indicator cards ---- */
+.btc-ind-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btc-ind-card { padding: 13px 14px; }
+.btc-ind-top { display: flex; justify-content: space-between; align-items: center; }
+.btc-ind-title { font-size: 12px; font-weight: 700; color: var(--mc-text-2); }
+.btc-zone { font-size: 10px; font-weight: 800; padding: 1px 8px; border-radius: 999px; border: 1px solid; }
+.btc-ind-val { font-size: 22px; font-weight: 800; margin: 6px 0 4px; letter-spacing: -0.01em; }
+.btc-ind-interp { font-size: 11px; color: var(--mc-muted); line-height: 1.45; min-height: 28px; }
+
+/* ---- technical / stress rows ---- */
+.btc-tech-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px dashed var(--mc-border); font-size: 13px; gap: 10px; }
+.btc-tech-row:last-child { border-bottom: 0; }
+.btc-tech-row > span { color: var(--mc-muted); }
+.btc-tech-row em { font-style: normal; font-size: 11px; color: var(--mc-muted); }
+.btc-gate { font-size: 11px; font-weight: 800; padding: 2px 10px; border-radius: 999px; }
+.btc-gate-bull { color: var(--mc-emerald); background: color-mix(in srgb, var(--mc-card), var(--mc-emerald) 16%); }
+.btc-gate-warn { color: var(--mc-amber); background: color-mix(in srgb, var(--mc-card), var(--mc-amber) 16%); }
+.btc-gate-bear { color: var(--mc-red); background: color-mix(in srgb, var(--mc-card), var(--mc-red) 16%); }
+.btc-gate-muted { color: var(--mc-muted); background: rgba(148, 163, 184, 0.12); }
+
+/* ---- explanation ---- */
+.btc-explain > summary { cursor: pointer; list-style: none; }
+.btc-explain > summary::-webkit-details-marker { display: none; }
+.btc-explain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-top: 14px; }
+.btc-explain-item h4 { font-size: 12.5px; margin: 0 0 3px; color: var(--mc-cyan); }
+.btc-explain-item p { font-size: 11.5px; color: var(--mc-text-2); margin: 0; line-height: 1.5; }
+@media (max-width: 720px) { .btc-explain-grid, .btc-ind-grid { grid-template-columns: 1fr; } }
+
+/* ---- import ---- */
+.btc-last { font-size: 11.5px; color: var(--mc-muted); }
+.btc-imp-csv { display: flex; align-items: center; gap: 12px; margin: 12px 0 4px; flex-wrap: wrap; }
+.btc-imp-group { margin-top: 14px; }
+.btc-imp-group h4 { font-size: 12.5px; margin: 0 0 8px; color: var(--mc-text-2); }
+.btc-imp-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.btc-imp-field { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--mc-muted); }
+.btc-imp-field input { background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 10px; padding: 8px 11px; color: var(--mc-text); font-size: 13px; font-family: inherit; }
+.btc-imp-actions { display: flex; gap: 10px; margin-top: 16px; }
+.btc-imp-field input::placeholder { color: var(--mc-muted); opacity: 0.6; }
+.btc-note code, .btc-note b { font-weight: 700; }
+.btc-note code { background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 6px; padding: 1px 6px; font-size: 11px; color: var(--mc-cyan); }
+
+/* ---- data-source mode bar ---- */
+.btc-modebar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.btc-mode { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btc-mode-badge { font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 999px; border: 1px solid; letter-spacing: 0.01em; }
+.btc-mode-full { color: var(--mc-emerald); background: color-mix(in srgb, var(--mc-card), var(--mc-emerald) 14%); border-color: color-mix(in srgb, var(--mc-emerald) 40%, transparent); }
+.btc-mode-tech { color: var(--mc-amber); background: color-mix(in srgb, var(--mc-card), var(--mc-amber) 12%); border-color: color-mix(in srgb, var(--mc-amber) 36%, transparent); }
+.btc-provs { display: flex; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; justify-content: center; }
+.btc-prov { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--mc-border); background: var(--mc-elevated); color: var(--mc-muted); white-space: nowrap; }
+.btc-prov b { color: var(--mc-text-2); font-weight: 700; margin-right: 3px; }
+.btc-prov-ok { border-color: color-mix(in srgb, var(--mc-emerald) 40%, transparent); color: var(--mc-emerald); }
+.btc-prov-ok b { color: var(--mc-emerald); }
+.btc-prov-warn { border-color: color-mix(in srgb, var(--mc-amber) 36%, transparent); color: var(--mc-amber); }
+.btc-prov-warn b { color: var(--mc-amber); }
+.btc-prov-err { border-color: color-mix(in srgb, var(--mc-red) 40%, transparent); color: var(--mc-red); }
+.btc-prov-err b { color: var(--mc-red); }
+.btc-fetch { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.btc-fetch .mc-sub { font-size: 11.5px; }
+
+/* ---- zone bar (น่าซื้อ / ปกติ / น่าขาย position) ---- */
+.btc-zonebar { margin-top: 11px; }
+.btc-ztrack { position: relative; display: flex; height: 7px; border-radius: 4px; background: rgba(148, 163, 184, 0.12); overflow: visible; }
+.btc-zseg { height: 100%; display: block; opacity: 0.82; }
+.btc-zseg:first-child { border-radius: 4px 0 0 4px; }
+.btc-zseg:last-child { border-radius: 0 4px 4px 0; }
+.btc-zmarker { position: absolute; top: -11px; transform: translateX(-50%); font-size: 13px; line-height: 1; pointer-events: none; text-shadow: 0 0 4px rgba(0, 0, 0, 0.5); }
+.btc-zlabels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; color: var(--mc-muted); }
+.btc-znow { margin-top: 3px; font-size: 10.5px; }
+.btc-znow b { font-weight: 800; }
+
+/* ---- proxy tag + paid-metrics note ---- */
+.btc-proxy-tag { display: inline-block; font-size: 9.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; color: var(--mc-violet, #a855f7); border: 1px solid color-mix(in srgb, var(--mc-violet, #a855f7) 45%, transparent); background: color-mix(in srgb, var(--mc-card), var(--mc-violet, #a855f7) 12%); vertical-align: middle; }
+.btc-paidnote { border-left: 3px solid var(--mc-amber); }
+.btc-paidnote p { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--mc-text-2); }
+.btc-paidnote .mc-sub { display: block; margin-top: 4px; font-size: 11px; }
+
+/* ---- per-metric source footer ---- */
+.btc-ind-src { font-size: 10.5px; color: var(--mc-muted); margin-top: 8px; padding-top: 7px; border-top: 1px dashed var(--mc-border); line-height: 1.4; }
+.btc-ind-src b { color: var(--mc-text-2); font-weight: 700; }
+.btc-ind-na { color: var(--mc-amber); }
+.btc-ind-empty { opacity: 0.82; }
+.btc-ind-empty .btc-ind-val { color: var(--mc-muted); }
+.btc-row-src { font-style: normal; font-size: 10.5px; color: var(--mc-muted); margin-left: 8px; }
+.btc-ind-val-na { color: var(--mc-muted); font-size: 18px; }
+.btc-ind-src em { font-style: normal; color: var(--mc-cyan); }
+
+/* ---- freshness badge ---- */
+.btc-fresh { display: inline-block; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 999px; border: 1px solid; vertical-align: middle; }
+.btc-fresh-ok { color: var(--mc-emerald); border-color: color-mix(in srgb, var(--mc-emerald) 45%, transparent); background: color-mix(in srgb, var(--mc-card), var(--mc-emerald) 12%); }
+.btc-fresh-warn { color: var(--mc-amber); border-color: color-mix(in srgb, var(--mc-amber) 42%, transparent); background: color-mix(in srgb, var(--mc-card), var(--mc-amber) 12%); }
+.btc-fresh-muted { color: var(--mc-muted); border-color: var(--mc-border); }
+
+/* ---- reference-link buttons ---- */
+.btc-refs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.btc-refs-row { margin-top: 12px; }
+.btc-ref-btn { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 600; padding: 3px 9px; border-radius: 8px; border: 1px solid var(--mc-border); background: var(--mc-elevated); color: var(--mc-cyan); text-decoration: none; white-space: nowrap; }
+.btc-ref-btn:hover { border-color: var(--mc-cyan); background: color-mix(in srgb, var(--mc-elevated), var(--mc-cyan) 10%); }
+
+/* ---- buy-zone coverage chip ---- */
+.btc-cov-chip { font-size: 11.5px; font-weight: 700; color: var(--mc-cyan); padding: 4px 11px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--mc-cyan) 35%, transparent); background: color-mix(in srgb, var(--mc-card), var(--mc-cyan) 8%); white-space: nowrap; }
+
+/* ---- data coverage panel ---- */
+.btc-cov-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.btc-cov-item { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--mc-border); background: var(--mc-elevated); }
+.btc-cov-top { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.btc-cov-meta { font-size: 11px; color: var(--mc-muted); margin-top: 6px; line-height: 1.5; }
+.btc-cov-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.btc-cov-on { border-color: color-mix(in srgb, var(--mc-emerald) 38%, transparent); }
+.btc-cov-on .btc-cov-dot { background: var(--mc-emerald); box-shadow: 0 0 8px var(--mc-emerald); }
+.btc-cov-off { opacity: 0.78; }
+.btc-cov-off .btc-cov-dot { background: var(--mc-muted); }
+
+@media (max-width: 720px) { .btc-modebar { flex-direction: column; align-items: stretch; } .btc-provs { justify-content: flex-start; } }
