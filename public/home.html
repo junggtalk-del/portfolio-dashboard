@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Investment · Daily Portfolio Brief</title>
+    <title>AI Investment · Mission Control</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <script src="/theme.js?v=20260623-theme-2"></script>
     <link rel="stylesheet" href="/theme.css?v=20260623-theme-2" />
-    <link rel="stylesheet" href="/mission-control.css?v=20260623-mc-7" />
+    <link rel="stylesheet" href="/mission-control.css?v=20260623-mc-8" />
+    <link rel="stylesheet" href="/mission-control-v2.css?v=20260705-mcx-3" />
     <script src="/api-auth.js?v=20260620-auth-1"></script>
   </head>
   <body class="mc-body">
@@ -24,11 +25,8 @@
           </div>
         </div>
         <nav class="mc-nav">
-          <div class="mc-nav-group-label">Dashboard</div>
+          <div class="mc-nav-group-label">Mission Control</div>
           <a class="mc-nav-item is-active" href="/home"><span class="mc-ic">🛰️</span> Home</a>
-          <a class="mc-nav-item" href="/portfolio-status"><span class="mc-ic">📈</span> Portfolio Status</a>
-          <a class="mc-nav-item" href="/action-center"><span class="mc-ic">🎯</span> Action Center</a>
-          <a class="mc-nav-item" href="/"><span class="mc-ic">🗓️</span> Quarterly Editor</a>
         </nav>
       </aside>
 
@@ -42,6 +40,7 @@
             <span class="mc-kbd">⌘ K</span>
           </div>
           <div class="mc-header-right">
+            <span id="appRegimeChip"></span>
             <div class="mc-snap">
               <small>Data Snapshot</small>
               <span id="mcSnapTime">—</span>
@@ -52,71 +51,21 @@
           </div>
         </header>
 
-        <main class="mc-content">
-          <!-- ===== Section 1: Hero — Daily Portfolio Brief ===== -->
-          <section class="mc-hero mc-fade">
-            <div class="mc-hero-left">
-              <h1>Daily Portfolio Brief</h1>
-              <p>สรุปสิ่งที่ต้องดูวันนี้ เพื่อปรับพอร์ตตามแนวโน้มและคุมความเสี่ยง</p>
-            </div>
-            <div class="mc-hero-cards" id="mcHeroCards">
-              <div class="mc-metric mc-glow"><div class="mc-skel mc-skel-box"></div></div>
-              <div class="mc-metric mc-glow"><div class="mc-skel mc-skel-box"></div></div>
-              <div class="mc-metric mc-glow"><div class="mc-skel mc-skel-box"></div></div>
-              <div class="mc-metric mc-glow"><div class="mc-skel mc-skel-box"></div></div>
-            </div>
-          </section>
-
-          <!-- ===== Section 2: Priority Signals (look first) ===== -->
-          <section class="mc-card mc-panel mc-fade mc-fade-2">
-            <div class="mc-panel-head">
-              <div><h2>⚡ ต้องดูก่อนวันนี้</h2><span class="mc-sub">Priority Signals — Urgent Action · New Bullish · New Bearish</span></div>
-            </div>
-            <div class="mc-grid mc-grid-3" id="mcPriority">
-              <div class="mc-card mc-focus-card mc-accent-red"><div class="mc-skel mc-skel-box"></div></div>
-              <div class="mc-card mc-focus-card mc-accent-emerald"><div class="mc-skel mc-skel-box"></div></div>
-              <div class="mc-card mc-focus-card mc-accent-amber"><div class="mc-skel mc-skel-box"></div></div>
-            </div>
-          </section>
-
-          <!-- ===== Section 3: Portfolio Guardrails ===== -->
-          <section class="mc-card mc-panel mc-fade mc-fade-3">
-            <div class="mc-panel-head">
-              <h2>Portfolio Guardrails</h2>
-              <span class="mc-sub">กรอบป้องกันความเสี่ยงพอร์ต</span>
-            </div>
-            <div class="mc-grid mc-grid-4" id="mcGuardrails">
-              <div class="mc-card mc-guard"><div class="mc-skel mc-skel-box"></div></div>
-              <div class="mc-card mc-guard"><div class="mc-skel mc-skel-box"></div></div>
-              <div class="mc-card mc-guard"><div class="mc-skel mc-skel-box"></div></div>
-              <div class="mc-card mc-guard"><div class="mc-skel mc-skel-box"></div></div>
-            </div>
-          </section>
-
-          <!-- ===== Section 4: Market Risk ===== -->
-          <section class="mc-card mc-panel mc-fade mc-fade-4">
-            <div class="mc-panel-head">
-              <div><h2>Market Risk</h2><span class="mc-sub">บรรยากาศตลาดวันนี้</span></div>
-              <a class="mc-link" href="/market-risk">View Market Risk →</a>
-            </div>
-            <div id="mcMarketRisk"><div class="mc-skel mc-skel-box" style="height:80px;"></div></div>
-          </section>
-
-          <!-- ===== Section 5: Recent Activity (compact, bottom) ===== -->
-          <section class="mc-card mc-panel mc-fade mc-fade-5">
-            <div class="mc-panel-head">
-              <h2>Recent Activity</h2>
-              <span class="mc-sub">อัปเดตล่าสุด</span>
-            </div>
-            <div class="mc-activities" id="mcActivity"></div>
-          </section>
+        <main class="mc-content" id="mcRoot">
+          <section class="mcx-hero mc-fade"><div class="mcx-hero-body" style="width:100%;text-align:center;">
+            <div style="font-size:42px">🛰️</div>
+            <h1 class="mcx-hero-title">Mission Control</h1>
+            <p class="mcx-hero-sub">กำลังประเมิน Global Market Regime…</p>
+          </div></section>
         </main>
       </div>
     </div>
-    <script src="/scoring.js?v=20260623-scoring-10"></script>
+    <script src="/scoring.js?v=20260623-scoring-11"></script>
     <script src="/watchlist.js?v=20260623-watch-6"></script>
-    <script src="/data-snapshot.js?v=20260623-snapshot-8"></script>
-    <script src="/home-page.js?v=20260623-brief-7"></script>
-    <script src="/app-navigation.js?v=20260621-nav-4"></script>
+    <script src="/data-snapshot.js?v=20260704-snapshot-11"></script>
+    <script src="/market-regime.js?v=20260630-regime-1"></script>
+    <script src="/bitcoin-intelligence.js?v=20260704-btcintel-12"></script>
+    <script src="/mission-control-page.js?v=20260630-mc2-4"></script>
+    <script src="/app-navigation.js?v=20260704-nav-6"></script>
   </body>
 </html>

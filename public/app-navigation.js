@@ -7,7 +7,7 @@
 
   const SNAPSHOT_STORAGE_KEY = "portfolio_dashboard_data_snapshot";
   const SNAPSHOT_DATA_VERSION = "2026-06-portfolio-dashboard-v1";
-  const REQUIRED_SNAPSHOT_SYMBOLS = ["SPY", "QQQM", "XLK", "^GSPC", "^VIX", "^VVIX", "^VIXEQ"];
+  const REQUIRED_SNAPSHOT_SYMBOLS = ["SPY", "QQQM", "XLK", "^GSPC", "^VIX", "^VVIX", "^VIXEQ", "BTC-USD", "^IXIC", "DX-Y.NYB", "^TNX", "GLD"];
 
   function normalizePath(pathname) {
     const path = String(pathname || "/").replace(/\/+$/, "") || "/";
@@ -473,6 +473,13 @@
             if (wl.triggeredToday.length) showWatchlistToast(wl.triggeredToday.length);
           }
         } catch (_wlError) {}
+        // Bitcoin Intelligence (Phase 1) — extend the snapshot with one new object,
+        // computed only during Load Latest Data. Best-effort; never blocks a load.
+        try {
+          if (window.BitcoinIntelligence && typeof window.BitcoinIntelligence.run === "function") {
+            snapshot.bitcoinIntelligence = await window.BitcoinIntelligence.run(snapshot, { fetch: originalFetch });
+          }
+        } catch (_biError) { /* intelligence is best-effort */ }
         emitSnapshotProgress({ step: 6, stepLabel: "Saving snapshot", completedAssets: completed, totalAssets: loadAssets.length, failedAssets: snapshot.errors.length });
         snapshot.status = snapshot.errors.length ? "partial" : "ready";
         return write(snapshot);
@@ -584,28 +591,31 @@
 
   // ---------------------------------------------------------------- shell
   const SIDEBAR = [
-    { label: "Dashboard", items: [
+    { label: "Mission Control", items: [
       { p: "/home", i: "🛰️", t: "Home" },
+      { p: "/market-risk", i: "🌐", t: "Macro Dashboard" }
+    ] },
+    { label: "Portfolio", items: [
       { p: "/portfolio-status", i: "📈", t: "Portfolio Status" },
+      { p: "/portfolio-holdings", i: "💼", t: "Holdings" },
+      { p: "/exposure-map", i: "🗺️", t: "Exposure Map" },
+      { p: "/", i: "🗓️", t: "Quarterly Editor" }
+    ] },
+    { label: "Signals", items: [
       { p: "/action-center", i: "🎯", t: "Action Center" },
       { p: "/watchlist", i: "👁️", t: "Watchlist" },
-      { p: "/", i: "🗓️", t: "Quarterly Editor" }
+      { p: "/technical-signals", i: "📡", t: "Technical Signals" },
+      { p: "/signal-hot", i: "🔥", t: "สัญญาณเด่นวันนี้" }
     ] },
     { label: "Research", items: [
       { p: "/ai-boom-universe", i: "✨", t: "AI Boom Universe" },
-      { p: "/technical-signals", i: "📡", t: "Technical Signals" },
       { p: "/thai-stock-scanner", i: "🔎", t: "Thai Stock Scanner" },
-      { p: "/signal-hot", i: "🔥", t: "สัญญาณเด่นวันนี้" }
-    ] },
-    { label: "Portfolio", items: [
-      { p: "/portfolio-holdings", i: "💼", t: "Holdings" },
-      { p: "/exposure-map", i: "🗺️", t: "Exposure Map" },
-      { p: "/market-risk", i: "⚠️", t: "Market Risk" }
+      { p: "/bitcoin-monitor", i: "₿", t: "Bitcoin Monitor" },
+      { p: "#", i: "⚖️", t: "Compare", soon: true }
     ] },
     { label: "Lab", items: [
       { p: "/backtest", i: "🧪", t: "Backtest Lab" },
-      { p: "#", i: "⚡", t: "Momentum Strategy", soon: true },
-      { p: "#", i: "📐", t: "Signal Rules", soon: true }
+      { p: "#", i: "🪄", t: "Magic Formula", soon: true }
     ] },
     { label: "System", items: [
       { p: "#", i: "🗂️", t: "Data Snapshot", soon: true },
@@ -656,6 +666,7 @@
       <button class="mc-icon-btn mc-menu-toggle" id="mcMenuToggle" type="button">☰</button>
       <div class="mc-search"><span>🔍</span><input type="text" placeholder="Search assets, pages, signals, actions..." /><span class="mc-kbd">⌘ K</span></div>
       <div class="mc-header-right">
+        <span id="appRegimeChip"></span>
         <div class="mc-snap"><small>Data Snapshot</small><span id="appDataLoadedAt">—</span></div>
         <span class="mc-pill mc-pill-stale" id="appDataFreshness">—</span>
         <span class="mc-snap-counts mc-tnum" id="appDataCounts"></span>
@@ -702,6 +713,25 @@
     }
   }
 
+  // Every page consumes the Global Market Regime via a compact header chip.
+  function renderRegimeChip() {
+    const el = document.getElementById("appRegimeChip");
+    if (!el || !window.MarketRegime || typeof window.MarketRegime.compute !== "function") return;
+    let R = null;
+    try { R = window.MarketRegime.compute(); } catch (_e) { return; }
+    if (!R || R.snapshotMissing) { el.innerHTML = ""; return; }
+    el.innerHTML = `<a class="mcx-regime-chip" href="/home" title="Global Market Regime — ${escapeHtml(R.regime.label)} (confidence ${escapeHtml(R.confidence.label)})">
+      <span class="mcx-regime-dot" style="background:${R.color};color:${R.color}"></span>
+      <span>Regime <b style="color:${R.color}">${R.score}</b> · ${escapeHtml(R.regime.label)}</span></a>`;
+  }
+
+  function wireRegimeChip() {
+    let tries = 0;
+    const tick = () => { if (window.MarketRegime && window.MarketRegime.compute) { renderRegimeChip(); return; } if (tries++ < 40) window.setTimeout(tick, 60); };
+    tick();
+    window.addEventListener("portfolio-data-snapshot", renderRegimeChip);
+  }
+
   function showWatchlistToast(n) {
     if (!document.body) return;
     const prev = document.getElementById("wl-toast");
@@ -723,6 +753,12 @@
     // The AI Boom Universe is the monitor list — keep its seed available on every
     // page so snapshots + Watchlist sync see the full universe consistently.
     ensureScript("/ai-boom-universe-data.js?v=20260524-summary-1");
+    // Global Market Regime engine + chip styles available on EVERY page.
+    ensureStylesheet("/mission-control-v2.css?v=20260630-mcx-1");
+    ensureScript("/market-regime.js?v=20260630-regime-1");
+    // Bitcoin Intelligence engine — available wherever Load Latest Data can run, so
+    // the snapshot loader can extend snapshot.bitcoinIntelligence. Runs only on load.
+    ensureScript("/bitcoin-intelligence.js?v=20260704-btcintel-12");
 
     const activePath = window.location.pathname;
 
@@ -734,6 +770,7 @@
       existingSidebar.innerHTML = buildSidebar(activePath);
       // NOTE: a hardcoded-shell page (Home) wires its own #mcMenuToggle — don't
       // double-bind it here or the two toggles cancel out.
+      wireRegimeChip();
       window.addEventListener("portfolio-data-snapshot", autoSyncAIBoom);
       whenWatchlistReady(() => {
         const hasAiBoom = (window.Watchlist.read() || []).some((i) => i.source === "ai_boom");
@@ -784,6 +821,7 @@
     if (toggle) toggle.addEventListener("click", () => sidebar.classList.toggle("is-open"));
 
     wireDataStatus();
+    wireRegimeChip();
 
     // Keep the Watchlist mirroring the AI Boom Universe (the monitor list):
     // re-sync after every data load, and populate it on first run.

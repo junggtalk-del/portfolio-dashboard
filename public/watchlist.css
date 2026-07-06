@@ -76,6 +76,77 @@
 .wl-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .wl-table .wl-act { color: var(--mc-cyan); cursor: pointer; }
 
+/* ============================================================
+   Redesigned Watchlist — fresh-signal sections + cards
+   fresh = cyan/teal · near = amber · risk = red · none = slate
+   ============================================================ */
+.wl-section { margin-bottom: 18px; }
+.wl-section .wl-sec-count { font-size: 12px; font-weight: 800; color: var(--mc-muted); background: color-mix(in srgb, var(--mc-card), var(--mc-text) 8%); padding: 2px 10px; border-radius: 999px; }
+.wl-acc-fresh { border-left: 3px solid var(--mc-cyan); }
+.wl-acc-near { border-left: 3px solid var(--mc-amber); }
+.wl-acc-risk { border-left: 3px solid var(--mc-red); }
+.wl-acc-none { border-left: 3px solid var(--mc-border-strong, rgba(148, 163, 184, 0.3)); }
+
+.wl-none-summary { display: flex; justify-content: space-between; align-items: center; cursor: pointer; list-style: none; gap: 10px; }
+.wl-none-summary::-webkit-details-marker { display: none; }
+.wl-none-summary strong { font-size: 15px; }
+
+.wl-card2 { padding: 14px; display: flex; flex-direction: column; gap: 8px; border-top: 2px solid transparent; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.15s ease; }
+.wl-card2:hover { transform: translateY(-2px); box-shadow: var(--mc-shadow, 0 12px 30px rgba(8, 18, 33, 0.2)); }
+.wl-card2 .wl-why-body { cursor: default; }
+.wl-acc-fresh.wl-card2 { border-top-color: var(--mc-cyan); }
+.wl-acc-near.wl-card2 { border-top-color: var(--mc-amber); }
+.wl-acc-risk.wl-card2 { border-top-color: var(--mc-red); }
+.wl-acc-none.wl-card2 { border-top-color: var(--mc-border); }
+.wl-card2 .wl-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.wl-card-id { min-width: 0; }
+.wl-card2 .wl-sym { font-size: 16px; font-weight: 800; }
+.wl-hold-tag { font-size: 9.5px; font-weight: 800; color: var(--mc-cyan); background: color-mix(in srgb, var(--mc-card), var(--mc-cyan) 16%); padding: 1px 6px; border-radius: 6px; vertical-align: middle; }
+.wl-card2 .wl-name { display: block; font-size: 11.5px; color: var(--mc-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+.wl-price { font-size: 15px; font-weight: 800; white-space: nowrap; }
+.wl-fresh { font-size: 12.5px; font-weight: 700; color: var(--mc-text); }
+.wl-gates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 10px; }
+.wl-gates > div { display: flex; flex-direction: column; gap: 1px; }
+.wl-gates span { font-size: 10px; color: var(--mc-muted); }
+.wl-gates strong { font-size: 12px; }
+.wl-action { font-size: 13px; font-weight: 800; color: var(--mc-text); }
+.wl-card2 .wl-card-reason { font-size: 11.5px; color: var(--mc-text-2); margin: 0; line-height: 1.45; }
+.wl-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.wl-chip { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 7px; }
+.wl-chip-bull { color: var(--mc-cyan); background: color-mix(in srgb, var(--mc-card), var(--mc-cyan) 16%); }
+.wl-chip-near { color: var(--mc-amber); background: color-mix(in srgb, var(--mc-card), var(--mc-amber) 16%); }
+.wl-chip-bear { color: var(--mc-red); background: color-mix(in srgb, var(--mc-card), var(--mc-red) 16%); }
+
+/* ---- "why?" explanation expander on each card ---- */
+.wl-why { margin-top: 2px; }
+.wl-why > summary { cursor: pointer; font-size: 11.5px; font-weight: 700; color: var(--mc-cyan); list-style: none; user-select: none; }
+.wl-why > summary::-webkit-details-marker { display: none; }
+.wl-why > summary:hover { text-decoration: underline; }
+.wl-why[open] > summary { margin-bottom: 8px; }
+.wl-why-body { padding: 10px 12px; background: color-mix(in srgb, var(--mc-card), var(--mc-text) 4%); border: 1px solid var(--mc-border); border-radius: 10px; display: flex; flex-direction: column; gap: 7px; font-size: 11.5px; line-height: 1.5; }
+.wl-why-top { margin: 0; color: var(--mc-text); font-weight: 600; }
+.wl-why-gates { display: flex; flex-direction: column; gap: 3px; }
+.wl-why-gates > div { color: var(--mc-text-2); }
+.wl-why-gates span { display: inline-block; min-width: 70px; color: var(--mc-muted); }
+.wl-why-gates b { color: var(--mc-text); }
+.wl-why-calc-head { color: var(--mc-text-2); font-weight: 600; margin-top: 2px; }
+.wl-why-calc { color: var(--mc-muted); padding-left: 4px; }
+.wl-why-rsi { color: var(--mc-muted); }
+.wl-why-rsi em { font-style: normal; opacity: 0.7; }
+.wl-why-action { color: var(--mc-text); border-top: 1px dashed var(--mc-border); padding-top: 6px; }
+
+/* ---- clickable stat cards (Hero + Summary) -> jump to section ---- */
+.wl-jump { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+.wl-jump:hover { transform: translateY(-2px); box-shadow: var(--mc-shadow, 0 10px 26px rgba(8, 18, 33, 0.18)); }
+
+/* ---- filter bar + add bar ---- */
+.wl-filterbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.wl-filter { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--mc-muted); }
+.wl-filter select, .wl-filter input { background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 10px; padding: 8px 11px; color: var(--mc-text); font-size: 12.5px; font-family: inherit; min-width: 150px; }
+.wl-filter-search { flex: 1; min-width: 180px; }
+.wl-filter-search input { width: 100%; }
+.wl-addbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+
 /* ---- menu badge (sidebar) ---- */
 .mc-nav-badge { margin-left: auto; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: var(--mc-cyan); color: #04121a; }
 

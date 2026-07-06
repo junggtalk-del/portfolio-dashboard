@@ -26,6 +26,7 @@ const elements = {
   newQuarterYearInput: document.querySelector("#newQuarterYearInput"),
   newQuarterNumberInput: document.querySelector("#newQuarterNumberInput"),
   newQuarterButton: document.querySelector("#newQuarterButton"),
+  copyPrevQuarterButton: document.querySelector("#copyPrevQuarterButton"),
   saveSnapshotButton: document.querySelector("#saveSnapshotButton"),
   quarterStatus: document.querySelector("#quarterStatus"),
   form: document.querySelector("#assetForm"),
@@ -243,6 +244,10 @@ function renderSummary() {
   elements.allocationCash.style.width = `${cashPercent}%`;
   elements.quarterStatus.textContent = quarter.savedAt ? `บันทึก ${quarter.key} ล่าสุด ${new Date(quarter.savedAt).toLocaleString("th-TH")}` : `${quarter.key} ยังไม่เคยบันทึก snapshot`;
   elements.lastUpdated.textContent = state.lastUpdated ? `อัปเดตล่าสุด ${state.lastUpdated.toLocaleTimeString("th-TH")}` : `ข้อมูล ${state.data.currentQuarter}`;
+  if (elements.copyPrevQuarterButton) {
+    elements.copyPrevQuarterButton.disabled = !previousQuarter;
+    elements.copyPrevQuarterButton.title = previousQuarter ? `คัดลอกรายการสินทรัพย์จาก ${previousQuarter.key} มา ${state.data.currentQuarter}` : "ยังไม่มีไตรมาสก่อนหน้าให้คัดลอก";
+  }
 }
 
 function renderRows() {
@@ -453,6 +458,48 @@ function addQuarterFromInputs() {
   resetForm(); render(); saveData();
 }
 
+function copyFromPreviousQuarter() {
+  const previous = getPreviousSavedQuarter(state.data.currentQuarter);
+  if (!previous) {
+    elements.quarterStatus.textContent = "ยังไม่มีไตรมาสก่อนหน้าให้คัดลอก";
+    return;
+  }
+  const sourceAssets = previous.assets || [];
+  if (!sourceAssets.length) {
+    elements.quarterStatus.textContent = `${previous.key} ไม่มีรายการให้คัดลอก`;
+    return;
+  }
+  const target = currentQuarter();
+  const existingKeys = new Set(target.assets.map((asset) => assetKey(asset)));
+  const toCopy = sourceAssets.filter((asset) => !existingKeys.has(assetKey(asset)));
+  const skipped = sourceAssets.length - toCopy.length;
+  if (!toCopy.length) {
+    elements.quarterStatus.textContent = `รายการทั้งหมดจาก ${previous.key} มีอยู่ใน ${target.key} แล้ว (ซ้ำ ${skipped} รายการ)`;
+    return;
+  }
+  const confirmMessage = `คัดลอก ${toCopy.length} รายการจาก ${previous.key} มา ${target.key}?${skipped ? ` (ข้าม ${skipped} รายการที่มีอยู่แล้ว)` : ""}`;
+  if (!window.confirm(confirmMessage)) return;
+  const now = new Date().toISOString();
+  for (const asset of toCopy) {
+    const manualValue = Number(asset.manualValue) || 0;
+    target.assets.push({
+      id: crypto.randomUUID(),
+      type: asset.type,
+      name: asset.name || "",
+      manualValue,
+      investedPercent: asset.type === "cash" ? 0 : clamp(Number(asset.investedPercent) || 0, 0, 100),
+      snapshotValue: manualValue,
+      createdAt: now,
+      updatedAt: null,
+      copiedFrom: previous.key
+    });
+  }
+  resetForm();
+  render();
+  saveData();
+  elements.quarterStatus.textContent = `คัดลอก ${toCopy.length} รายการจาก ${previous.key} มา ${target.key} แล้ว${skipped ? ` (ข้าม ${skipped} รายการซ้ำ)` : ""} — ปรับมูลค่าแล้วกด “บันทึกไตรมาสนี้”`;
+}
+
 function deleteQuarter(key) {
   if (Object.keys(state.data.quarters).length <= 1) return;
   if (!window.confirm(`ลบข้อมูล ${key} ทั้งหมดใช่ไหม?`)) return;
@@ -486,6 +533,7 @@ elements.cancelEditButton.addEventListener("click", resetForm);
 elements.refreshButton.addEventListener("click", refreshQuotes);
 elements.saveSnapshotButton.addEventListener("click", saveSnapshot);
 elements.newQuarterButton.addEventListener("click", addQuarterFromInputs);
+if (elements.copyPrevQuarterButton) elements.copyPrevQuarterButton.addEventListener("click", copyFromPreviousQuarter);
 elements.quarterInput.addEventListener("change", createOrSwitchQuarter);
 elements.tabButtons.forEach((button) => button.addEventListener("click", () => setActiveView(button.dataset.view)));
 elements.rows.addEventListener("click", (event) => {

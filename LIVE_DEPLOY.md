@@ -92,6 +92,23 @@ APP_PASSWORD=<YOUR_STRONG_APP_PASSWORD>
 
 `service_role key` ต้องอยู่ใน Vercel Environment Variables เท่านั้น ห้ามใส่ในไฟล์ frontend
 
+### Bitcoin Monitor — ข้อมูลฟรีทั้งหมด (ไม่ต้องใช้ API key)
+
+หน้า **Bitcoin Monitor** (`/bitcoin-monitor`) ใช้ **แหล่งข้อมูลฟรีล้วน ๆ ไม่ต้องตั้ง API key ใด ๆ**:
+
+- **Binance spot** → ราคา + EMA12/26 + SMA200 + RSI14 + Volume Ratio 5D (near real-time)
+- **Binance Futures** → Funding Rate, Open Interest, Taker Buy/Sell, Long/Short Ratio
+- **Coin Metrics Community** → MVRV Ratio + MVRV Z-Score + NUPL + **Realized Price Proxy** (รายวัน D-1/D-2)
+- **Blockchain.com** → Hashrate, Difficulty, **Miner Revenue Multiple Proxy**
+- **DefiLlama** → มูลค่า stablecoin รวม → **SSR Proxy**
+- **Alternative.me** → ดัชนี Fear & Greed (sentiment)
+
+ข้อมูล **STH/LTH/SOPR แบบ exact** ต้องใช้ผู้ให้บริการ on-chain แบบเสียเงิน — หน้านี้จึงใช้ **proxy จากข้อมูลฟรี** แทน (ป้ายกำกับ "proxy" ชัดเจนทุกการ์ด) ไม่มีการ์ดว่าง
+
+ทุกการ์ดแสดง **แหล่งข้อมูล + ความสด (near real-time / D-0 / D-1 / D-2) + exact vs proxy** และคะแนน Buy Zone (Technical 35 · Cycle 30 · Holder/Sentiment 20 · Free Stress 15) คิดจาก % ข้อมูลที่เชื่อมต่อ (renormalised ไม่กดคะแนนเพราะข้อมูลขาด)
+
+> **(ตัวเลือกขั้นสูง)** ถ้าตั้ง `GLASSNODE_API_KEY` / `CRYPTOQUANT_API_KEY` ฝั่งเซิร์ฟเวอร์ หน้าเพจจะใช้ค่า STH/LTH/SOPR exact แทน proxy โดยอัตโนมัติ — แต่ **ไม่จำเป็น** และไม่ใช่ค่าเริ่มต้น · key อ่านจาก `process.env` เท่านั้น ไม่เคยส่งกลับ frontend · serverless functions ยังอยู่ที่ 12/12 (provider ใหม่ทั้งหมดเป็น lib ไม่ใช่ฟังก์ชัน)
+
 ## Step 5: ทดสอบในเครื่อง
 
 เปิดเว็บ:

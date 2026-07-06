@@ -55,6 +55,10 @@
       "destination": "/watchlist.html"
     },
     {
+      "source": "/bitcoin-monitor",
+      "destination": "/bitcoin-monitor.html"
+    },
+    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }

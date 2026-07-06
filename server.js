@@ -10,6 +10,7 @@ const marketRiskApiHandler = require("./api/market-risk");
 const portfolioHoldingsApiHandler = require("./api/portfolio-holdings");
 const thaiStockScannerApiHandler = require("./api/thai-stock-scanner");
 const ohlcApiHandler = require("./api/ohlc");
+const bitcoinApiHandler = require("./api/bitcoin");
 const fundNavHistoryApiHandler = require("./api/fund-nav/history");
 const fundNavRefreshApiHandler = require("./api/fund-nav/refresh");
 const debugFundNavApiHandler = require("./api/debug/fund-nav");
@@ -942,6 +943,11 @@ const server = http.createServer((req, res) => {
 
   if (requestUrl.pathname === "/api/ohlc") {
     invokeApiHandler(ohlcApiHandler, req, res, requestUrl);
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/bitcoin") {
+    invokeApiHandler(bitcoinApiHandler, req, res, requestUrl);
     return;
   }
 

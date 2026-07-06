@@ -60,8 +60,8 @@
     const daysBear = fin(input.daysSinceEmaBearishCross);
     const daysSmaReclaim = fin(input.daysSinceSma200Reclaim);
     const daysSmaBreak = fin(input.daysSinceSma200Break);
-    const newBull = emaBull && (!!input.isNewBullishSignal || (daysBull != null && daysBull >= 1 && daysBull <= 3));
-    const newBear = emaBear && (!!input.isNewBearishSignal || (daysBear != null && daysBear >= 1 && daysBear <= 3));
+    const newBull = emaBull && (!!input.isNewBullishSignal || (daysBull != null && daysBull >= 0 && daysBull <= 3));
+    const newBear = emaBear && (!!input.isNewBearishSignal || (daysBear != null && daysBear >= 0 && daysBear <= 3));
     const recentReclaim = aboveSma && daysSmaReclaim != null && daysSmaReclaim <= 3;
     const recentBreak = belowSma && daysSmaBreak != null && daysSmaBreak <= 3;
     const lvl = lc(input.marketRiskLevel);
@@ -138,11 +138,12 @@
     } else if (d.emaBull) {
       ema = 35;
       let bonus = 0;
-      if (d.daysBull === 1) bonus = 15; else if (d.daysBull === 2) bonus = 10; else if (d.daysBull === 3) bonus = 5;
+      if (d.daysBull === 0 || d.daysBull === 1) bonus = 15; else if (d.daysBull === 2) bonus = 10; else if (d.daysBull === 3) bonus = 5;
       ema += bonus;
       r("EMA12 is above EMA26", "EMA12 อยู่เหนือ EMA26");
+      const dayWord = d.daysBull === 0 ? "วันนี้" : `${d.daysBull} วัน`;
       detail.ema = bonus > 0
-        ? `EMA12 เหนือ EMA26 (+35) และเพิ่งตัดขึ้น ${d.daysBull} วัน (+${bonus}) → ${ema}/50`
+        ? `EMA12 เหนือ EMA26 (+35) และเพิ่งตัดขึ้น ${dayWord} (+${bonus}) → ${ema}/50`
         : `EMA12 เหนือ EMA26 (gap ${gapStr}) +35${d.daysBull != null ? ` · ตัดขึ้นมา ${d.daysBull} วัน (เกิน 3 วัน ไม่มีโบนัส)` : ""} → ${ema}/50`;
     } else {
       if (d.emaNear) { ema = 10; r("EMA12 is near crossing above EMA26", "EMA12 ใกล้ตัดขึ้น EMA26"); detail.ema = `EMA12 ใกล้ตัดขึ้น EMA26 (gap ${gapStr}) → 10/50`; }

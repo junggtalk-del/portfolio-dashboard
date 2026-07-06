@@ -19,10 +19,19 @@ module.exports = async function handler(req, res) {
     send(res, 400, { error: "Please provide symbol.", bars: [] });
     return;
   }
-  const daysRaw = Number((req.query && req.query.days) || 1500);
-  const days = Math.min(2600, Math.max(60, Number.isFinite(daysRaw) ? daysRaw : 1500));
   const end = new Date().toISOString().slice(0, 10);
-  const start = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  // Optional explicit start date (YYYY-MM-DD) for long-history consumers (e.g. the
+  // Bitcoin Intelligence historical database). Backwards-compatible: when absent, the
+  // original days-window behaviour (cap 2600) is used unchanged.
+  const qStart = String((req.query && req.query.start) || new URL(req.url, "http://local").searchParams.get("start") || "").trim();
+  let start;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(qStart) && qStart >= "2010-01-01" && qStart <= end) {
+    start = qStart;
+  } else {
+    const daysRaw = Number((req.query && req.query.days) || 1500);
+    const days = Math.min(2600, Math.max(60, Number.isFinite(daysRaw) ? daysRaw : 1500));
+    start = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  }
 
   try {
     const data = await getHistoricalBars(symbol, start, end, { includeError: true });
