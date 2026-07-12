@@ -483,6 +483,16 @@
         }
       } catch (_biError) { /* intelligence is best-effort — snapshot still saves */ }
 
+      // Wave 3 Setup — Early Wave 3 detection. Runs ONLY here during Load Latest Data.
+      // Reuses snapshot indicators for Portfolio + AI Boom, and fetches Thailand + Crypto
+      // via /api/ohlc (cached once/day). EXTENDS the snapshot with one new object. Best-effort.
+      try {
+        if (window.Wave3Engine && typeof window.Wave3Engine.run === "function") {
+          emitProgress({ step: 6, stepLabel: "Scanning Wave 3 setups", completedAssets: completed, totalAssets: loadAssets.length, failedAssets: snapshot.errors.length });
+          snapshot.wave3 = await window.Wave3Engine.run(snapshot, { fetch: originalFetch, now: new Date().toISOString() });
+        }
+      } catch (_w3Error) { /* wave3 is best-effort — snapshot still saves */ }
+
       emitProgress({ step: 6, stepLabel: "Saving snapshot", completedAssets: completed, totalAssets: loadAssets.length, failedAssets: snapshot.errors.length });
       snapshot.status = snapshot.errors.length ? "partial" : "ready";
       return writeSnapshot(snapshot);

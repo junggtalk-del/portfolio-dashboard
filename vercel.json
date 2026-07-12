@@ -59,6 +59,10 @@
       "destination": "/bitcoin-monitor.html"
     },
     {
+      "source": "/wave3",
+      "destination": "/wave3.html"
+    },
+    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }

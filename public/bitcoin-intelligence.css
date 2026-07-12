@@ -434,7 +434,57 @@
 .bi-fc-cl-h b { font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; }
 .bi-fc-cl-h span { display: block; font-size: 10px; color: var(--mc-muted); }
 @media (max-width: 720px) { .bi-fc-cls { grid-template-columns: 1fr; } }
+/* ---- Verdict box ---- */
+.bi-vd { border-left: 5px solid var(--mc-border); }
+.bi-vd.bi-decision-bull { border-left-color: var(--mc-emerald); } .bi-vd.bi-decision-bear { border-left-color: var(--mc-red); } .bi-vd.bi-decision-warn { border-left-color: var(--mc-amber); }
+.bi-vd-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; margin-bottom: 12px; }
+.bi-vd-head .mc-eyebrow { width: 100%; margin: 0; }
+.bi-vd-word { font-size: 30px; font-weight: 900; letter-spacing: -.5px; }
+.bi-vd-pb { font-size: 12.5px; color: var(--mc-muted); align-self: center; border: 1px solid var(--mc-border); border-radius: 8px; padding: 3px 10px; }
+.bi-vd-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.bi-vd-chip { border: 1px solid var(--mc-border); border-radius: 11px; padding: 9px 12px; }
+.bi-vd-chip small { display: block; font-size: 10.5px; color: var(--mc-muted); }
+.bi-vd-chip b { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.bi-vd-chip span { display: block; font-size: 11px; color: var(--mc-muted); }
+.bi-vd-why { list-style: none; margin: 0 0 8px; padding: 0; } .bi-vd-why li { font-size: 12.5px; line-height: 1.55; color: var(--mc-text-2); }
+.bi-vd-disc { margin: 0; font-size: 11px; color: var(--mc-muted); font-style: italic; }
+@media (max-width: 720px) { .bi-vd-chips { grid-template-columns: 1fr; } }
+/* ---- 6-signal board ---- */
+.bi-sg-head { font-size: 12px; color: var(--mc-muted); margin-bottom: 10px; } .bi-sg-head b { font-weight: 900; font-size: 15px; }
+.bi-sg-rows { display: grid; gap: 6px; }
+.bi-sg-row { display: grid; grid-template-columns: 22px 1.3fr 1.5fr 1.3fr auto; align-items: center; gap: 10px; padding: 8px 11px; border: 1px solid var(--mc-border); border-left-width: 4px; border-radius: 10px; font-size: 13px; }
+.bi-sg-row.is-bull { border-left-color: var(--mc-emerald); } .bi-sg-row.is-bear { border-left-color: var(--mc-red); } .bi-sg-row.is-muted { border-left-color: var(--mc-muted); }
+.bi-sg-icon { font-size: 13px; text-align: center; } .is-bull .bi-sg-icon { color: var(--mc-emerald); } .is-bear .bi-sg-icon { color: var(--mc-red); } .is-muted .bi-sg-icon { color: var(--mc-muted); }
+.bi-sg-name { font-weight: 800; } .bi-sg-state { font-weight: 700; } .is-bull .bi-sg-state { color: var(--mc-emerald); } .is-bear .bi-sg-state { color: var(--mc-red); }
+.bi-sg-days { font-size: 11.5px; color: var(--mc-muted); }
+.bi-sg-hint { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px; white-space: nowrap; justify-self: end; }
+.bi-sg-up { color: var(--mc-emerald); background: rgba(16,185,129,.12); } .bi-sg-dn { color: var(--mc-red); background: rgba(239,68,68,.12); } .bi-sg-flat { color: var(--mc-muted); background: rgba(148,163,184,.12); }
+@media (max-width: 720px) { .bi-sg-row { grid-template-columns: 20px 1fr auto; row-gap: 3px; } .bi-sg-days, .bi-sg-hint { grid-column: 2 / -1; justify-self: start; } }
+/* ---- Cycle strip ---- */
+.bi-cystrip-scen { font-size: 13px; margin: 4px 0 8px; } .bi-cystrip-scen b { font-weight: 800; }
+.bi-cystrip-foot { font-size: 11px; color: var(--mc-muted); }
+/* ---- Forecast: outcome chips + reconcile + match strip + toggle ---- */
+.bi-fc-ocs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.bi-fc-oc2 { border: 1px solid var(--mc-border); border-radius: 11px; padding: 9px 12px; text-align: center; }
+.bi-fc-oc2 small { display: block; font-size: 10.5px; color: var(--mc-muted); }
+.bi-fc-oc2 b { font-size: 19px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.bi-fc-oc2 span { display: block; font-size: 10.5px; color: var(--mc-muted); }
+.bi-fc-toggle { font-size: 11.5px; font-weight: 700; border: 1px solid var(--mc-border); background: none; color: var(--mc-text-2); border-radius: 999px; padding: 3px 12px; cursor: pointer; }
+.bi-fc-toggle.is-on { border-color: var(--mc-cyan); color: var(--mc-cyan); }
+.bi-fc-reconcile { font-size: 13px; font-weight: 700; padding: 9px 13px; border-radius: 10px; margin-bottom: 12px; }
+.bi-fc-agree { color: var(--mc-emerald); background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.3); }
+.bi-fc-conflict { color: var(--mc-amber); background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.32); }
+.bi-fc-mrows { display: grid; gap: 4px; margin-bottom: 12px; }
+.bi-fc-mhead, .bi-fc-mrow { display: grid; grid-template-columns: 1.4fr .7fr .8fr .8fr .8fr; align-items: center; gap: 8px; font-size: 12.5px; }
+.bi-fc-mhead { font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: var(--mc-muted); padding: 0 4px 4px; border-bottom: 1px solid var(--mc-border); }
+.bi-fc-mrow { padding: 5px 4px; border-bottom: 1px solid var(--mc-border); }
+.bi-fc-mrow b { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.bi-fc-mdate { font-weight: 700; } .bi-fc-msim { font-weight: 800; color: var(--mc-cyan); }
 .bi-fc-sub2 { font-size: 13px; font-weight: 800; margin: 4px 0 10px; }
+/* ---- shared compact 6-signal strip (used on Monitor tab too) ---- */
+.bi-sgstrip { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.bi-sgstrip-hd { font-size: 12px; font-weight: 800; color: var(--mc-text-2); margin-right: 4px; }
+.bi-sgstrip-b { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--mc-border); white-space: nowrap; }
 .bi-fc-matches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 8px; }
 .bi-fc-m { border: 1px solid var(--mc-border); border-radius: 10px; padding: 10px 11px; }
 .bi-fc-m-top { display: flex; justify-content: space-between; align-items: baseline; }

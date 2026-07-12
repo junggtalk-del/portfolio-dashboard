@@ -148,3 +148,16 @@
 .btc-cov-off .btc-cov-dot { background: var(--mc-muted); }
 
 @media (max-width: 720px) { .btc-modebar { flex-direction: column; align-items: stretch; } .btc-provs { justify-content: flex-start; } }
+
+/* ---- role split + decision-first layout ---- */
+.btc-hero-halving { margin-top: 2px !important; font-size: 12.5px; }
+.btc-hero-halving b { color: var(--mc-text); font-weight: 800; }
+.btc-slimbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 16px; }
+.btc-sigwrap .bi-sgstrip { margin-top: 2px; }
+.btc-datasrc { padding: 0; }
+.btc-datasrc > summary { list-style: none; cursor: pointer; padding: 14px 18px; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.btc-datasrc > summary::-webkit-details-marker { display: none; }
+.btc-datasrc > summary::before { content: "▸"; color: var(--mc-muted); font-size: 13px; }
+.btc-datasrc[open] > summary::before { content: "▾"; }
+.btc-datasrc-body { padding: 0 4px 8px; display: flex; flex-direction: column; gap: 16px; }
+.btc-datasrc-body > section, .btc-datasrc-body > .mc-card { margin: 0; }
