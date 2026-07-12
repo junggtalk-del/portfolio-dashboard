@@ -10,7 +10,7 @@
   // ============================================================
 
   const HORIZONS = [7, 30, 60, 90, 180, 365];
-  const S = { horizon: 90, timelineH: 90, filters: {}, sel: null, overlayWin: 90, libHorizon: 90, libSearch: "", replay: null, research: false }; // ui state
+  const S = { horizon: 90, timelineH: 90, filters: {}, sel: null, overlayWin: 90, libHorizon: 90, libSearch: "", replay: null, research: false, fcShowCond: false }; // ui state
   let biLoading = false, biStatus = "", biError = null, biDone = 0, biListenersWired = false;
 
   function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c])); }
@@ -610,22 +610,26 @@
     return b.join("");
   }
   function analogForecastSection(bi) {
-    const f = bi.analogForecast, cf = f && f.conditionForecast;
-    if (!cf || !cf.current) return "";
-    const biasTone = cf.bias === "bullish" ? "bull" : cf.bias === "bearish" ? "bear" : "neutral";
-    const biasTh = cf.bias === "bullish" ? "เอนไปทางขึ้น" : cf.bias === "bearish" ? "เอนไปทางลง" : "ก้ำกึ่ง";
-    const lines = cf.lines || [], L = cf.windowDays, cur = cf.current.path, PH = cf.projHorizon;
-    const head = `<div class="mc-panel-head"><div><h2>🔮 Pattern Forecast</h2><span class="mc-sub">ฉายผล 30/60/90 วัน จาก "เงื่อนไขที่พบตอนนี้" แต่ละอัน — Divergence · ตัด SMA50/200 (D/W) · EMA12×26 · RSI (&lt;30 ซื้อสะสม · &gt;70 ระวัง) · เงื่อนไขที่ไม่พบจะไม่มีเส้น · อ้างอิงสถิติ ไม่รับประกันผล</span></div>
-      <span class="bi-cyc-badge bi-decision-${biasTone}">${biasTh}</span></div>`;
-    if (!lines.length) return `<section class="mc-card mc-panel mc-fade bi-sec bi-fc" id="bi-forecast">${head}<div class="mc-empty"><strong>ไม่พบเงื่อนไขที่ติดตามในปัจจุบัน</strong>ยังไม่มีเส้นคาดการณ์ — รอสัญญาณ (Divergence / ตัดเส้นค่าเฉลี่ย / EMA cross / RSI เข้าโซน)</div></section>`;
-    // --- chart: current 45d actual (x −44..0) + one median line per PRESENT condition (x 0..90) ---
+    const af = bi.analogForecast;
+    if (!af || !af.projection || !af.current || !af.outcome) return "";
+    const L = af.windowDays, PH = af.projHorizon, cur = af.current.path, proj = af.projection.points;
+    const biasTone = af.bias === "bullish" ? "bull" : af.bias === "bearish" ? "bear" : "neutral";
+    const biasTh = af.bias === "bullish" ? "เอนไปทางขึ้น" : af.bias === "bearish" ? "เอนไปทางลง" : "ก้ำกึ่ง";
+    const cf = af.conditionForecast, cfLines = (cf && cf.lines) || [], showCond = S.fcShowCond && cfLines.length;
+    // --- chart geometry: current 45d actual (x −44..0) + shape-analog cone (x 0..90) ---
     const W2 = 1000, H2 = 340, x0 = 8;
-    const ys = cur.slice(); lines.forEach((ln) => ln.path.forEach((p) => ys.push(p.median)));
+    const ys = cur.slice(); proj.forEach((p) => ys.push(p.p25, p.p75, p.median)); (af.topPaths || []).forEach((tp) => tp.path.forEach((v) => ys.push(v)));
+    if (showCond) cfLines.forEach((ln) => ln.path.forEach((p) => ys.push(p.median)));
     let minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys); const pad = (maxY - minY) * 0.06 || 5; minY -= pad; maxY += pad;
     const X = (day) => x0 + (day + L) / (L + PH) * (W2 - x0 - 10);
     const Y = (v) => 10 + (1 - (v - minY) / (maxY - minY)) * (H2 - 34);
     const curPathD = "M" + cur.map((v, j) => X(j - (L - 1)).toFixed(1) + " " + Y(v).toFixed(1)).join(" L");
-    const linePaths = lines.map((ln) => `<path d="M${ln.path.map((p) => X(p.k).toFixed(1) + " " + Y(p.median).toFixed(1)).join(" L")}" fill="none" stroke="${ln.color}" stroke-width="2.2" opacity=".92"/>`).join("");
+    const up = proj.map((p) => X(p.k).toFixed(1) + " " + Y(p.p75).toFixed(1));
+    const dn = proj.slice().reverse().map((p) => X(p.k).toFixed(1) + " " + Y(p.p25).toFixed(1));
+    const band = "M" + up.join(" L") + " L" + dn.join(" L") + " Z";
+    const medD = "M" + proj.map((p) => X(p.k).toFixed(1) + " " + Y(p.median).toFixed(1)).join(" L");
+    const analogPaths = (af.topPaths || []).map((tp) => `<path d="M${tp.path.map((v, ix) => X(ix * 3).toFixed(1) + " " + Y(v).toFixed(1)).join(" L")}" fill="none" stroke="var(--mc-muted)" stroke-width="1" opacity=".4" stroke-dasharray="4 3"/>`).join("");
+    const condPaths = showCond ? cfLines.map((ln) => `<path d="M${ln.path.map((p) => X(p.k).toFixed(1) + " " + Y(p.median).toFixed(1)).join(" L")}" fill="none" stroke="${ln.color}" stroke-width="1.6" opacity=".55"/>`).join("") : "";
     const zx = X(0), y100 = Y(100);
     const axis = [{ d: -(L - 1), t: "−" + (L - 1) + "d" }, { d: 0, t: "วันนี้" }, { d: 30, t: "+30" }, { d: 60, t: "+60" }, { d: 90, t: "+90" }]
       .map((a) => `<text x="${X(a.d).toFixed(1)}" y="${H2 - 4}" fill="var(--mc-muted)" font-size="11" text-anchor="middle">${a.t}</text>`).join("");
@@ -636,27 +640,48 @@
     const money = (v) => "$" + Math.round(v).toLocaleString();
     const pts = [];
     cur.forEach((v, j) => { const day = j - (L - 1), price = curCloses ? curCloses[j] : null; pts.push({ x: +X(day).toFixed(1), y: +Y(v).toFixed(1), t: "ราคาจริง · " + (day === 0 ? "วันนี้" : day + "d"), s: (price != null ? money(price) + " · " : "") + (v - 100 >= 0 ? "+" : "") + (v - 100).toFixed(1) + "% เทียบวันนี้" }); });
-    lines.forEach((ln) => ln.path.forEach((p) => { if (p.k % 2 && p.k !== PH) return; const mp = todayClose ? todayClose * p.median / 100 : null; pts.push({ x: +X(p.k).toFixed(1), y: +Y(p.median).toFixed(1), t: esc(ln.label) + " · +" + p.k + "d", s: (mp != null ? money(mp) + " · " : "") + "median " + (p.median >= 100 ? "+" : "") + (p.median - 100).toFixed(1) + "%" }); }));
+    proj.forEach((p) => { if (p.k % 3 && p.k !== PH) return; const mp = todayClose ? todayClose * p.median / 100 : null; pts.push({ x: +X(p.k).toFixed(1), y: +Y(p.median).toFixed(1), t: "คาดการณ์ · +" + p.k + "d", s: (mp != null ? money(mp) + " · " : "") + "median " + (p.median >= 100 ? "+" : "") + (p.median - 100).toFixed(1) + "% · ช่วง " + (p.p25 - 100 >= 0 ? "+" : "") + (p.p25 - 100).toFixed(1) + "~" + (p.p75 - 100 >= 0 ? "+" : "") + (p.p75 - 100).toFixed(1) + "%" }); });
     const ptsAttr = JSON.stringify(pts).replace(/'/g, "&#39;").replace(/</g, "&lt;");
     const chart = `<svg viewBox="0 0 ${W2} ${H2}" class="bi-fc-svg bi-hoverchart" data-cw="${W2}" data-ch="${H2}" data-pts='${ptsAttr}' preserveAspectRatio="none">
       <line x1="${x0}" y1="${y100.toFixed(1)}" x2="${W2}" y2="${y100.toFixed(1)}" stroke="var(--mc-border)" stroke-dasharray="3 3"/>
-      ${linePaths}
+      <path d="${band}" fill="rgba(6,182,212,.14)" stroke="none"/>
+      ${analogPaths}
+      ${condPaths}
+      <path d="${medD}" fill="none" stroke="var(--mc-cyan)" stroke-width="2.8"/>
       <path d="${curPathD}" fill="none" stroke="var(--mc-text)" stroke-width="2.8"/>
       <line x1="${zx.toFixed(1)}" y1="0" x2="${zx.toFixed(1)}" y2="${H2 - 18}" stroke="var(--mc-muted)" stroke-width="1.4"/>
       <line class="bi-cross" x1="0" y1="6" x2="0" y2="${H2 - 18}" stroke="var(--mc-cyan)" stroke-width="1" stroke-dasharray="2 3" style="display:none"/>
       <circle class="bi-crossdot" r="4.5" fill="var(--mc-cyan)" stroke="#0b1220" stroke-width="1.5" style="display:none"/>
       ${axis}</svg>`;
-    const legend = `<span class="bi-fc-leg"><i style="background:var(--mc-text)"></i>ราคาจริง 45 วันล่าสุด</span>` + lines.map((ln) => `<span class="bi-fc-leg"><i style="background:${ln.color}"></i>${esc(ln.label)}</span>`).join("");
-    // per-condition outcome cards
-    const cards = lines.map((ln) => `<div class="bi-fc-cl" style="border-left-color:${ln.color}">
-      <div class="bi-fc-cl-name"><span class="bi-fc-cl-dot" style="background:${ln.color}"></span>${esc(ln.label)} <small>${ln.occurrences} ครั้งในอดีต</small></div>
-      <div class="bi-fc-cl-rows">${[30, 60, 90].map((H) => { const o = ln.outcome[H]; return `<div class="bi-fc-cl-h"><small>${H}D</small><b class="${pctCls(o.median)}">${o.median > 0 ? "+" : ""}${o.median}%</b><span>บวก ${o.positivePct}%</span></div>`; }).join("")}</div></div>`).join("");
+    // 30/60/90 outcome chips
+    const ocChips = [30, 60, 90].map((H) => { const o = af.outcome[H]; return `<div class="bi-fc-oc2"><small>+${H} วัน</small><b class="${pctCls(o.median)}">median ${o.median > 0 ? "+" : ""}${o.median}%</b><span>บวก ${o.positivePct}% · ช่วง ${o.p25}~${o.p75}%</span></div>`; }).join("");
+    // top-5 matches strip
+    const matchRows = (af.matches || []).slice(0, 5).map((mm) => `<div class="bi-fc-mrow"><span class="bi-fc-mdate">${esc(mm.endDate)}</span><span class="bi-fc-msim">${mm.similarity}%</span>${[30, 60, 90].map((H) => `<b class="${pctCls(mm.fwd[H])}">${mm.fwd[H] > 0 ? "+" : ""}${mm.fwd[H]}%</b>`).join("")}</div>`).join("");
+    // reconciliation: shape-analog bias vs condition bias (only when real condition signals exist —
+    // an empty conditionForecast is "no signal", not a disagreement)
+    const cfBias = (cf && cfLines.length) ? cf.bias : null;
+    const reconcile = cfBias ? (cfBias === af.bias
+      ? `<div class="bi-fc-reconcile bi-fc-agree">✓ สัญญาณเงื่อนไข + รูปแบบราคา 45 วัน ชี้ทางเดียวกัน (${biasTh})</div>`
+      : `<div class="bi-fc-reconcile bi-fc-conflict">⚠ เงื่อนไขชี้ ${cfBias === "bullish" ? "ทางขึ้น" : cfBias === "bearish" ? "ทางลง" : "ก้ำกึ่ง"} แต่รูปแบบราคา 45 วันชี้ ${biasTh} — ยังไม่ชัด ควรรอความชัดเจน</div>`) : "";
+    // condition-line block (toggled)
+    const condCards = showCond ? `<div class="bi-fc-cls">${cfLines.map((ln) => `<div class="bi-fc-cl" style="border-left-color:${ln.color}"><div class="bi-fc-cl-name"><span class="bi-fc-cl-dot" style="background:${ln.color}"></span>${esc(ln.label)} <small>${ln.occurrences} ครั้ง</small></div><div class="bi-fc-cl-rows">${[30, 60, 90].map((H) => { const o = ln.outcome[H]; return `<div class="bi-fc-cl-h"><small>${H}D</small><b class="${pctCls(o.median)}">${o.median > 0 ? "+" : ""}${o.median}%</b><span>บวก ${o.positivePct}%</span></div>`; }).join("")}</div></div>`).join("")}</div>` : "";
     return `<section class="mc-card mc-panel mc-fade bi-sec bi-fc" id="bi-forecast">
-      ${head}
+      <div class="mc-panel-head"><div><h2>🔮 Pattern Forecast</h2><span class="mc-sub">รูปแบบราคา 45 วันล่าสุด เทียบกับอดีต → คาดการณ์ 30/60/90 วัน (เส้น median + ช่วงที่พบบ่อย p25–75) · สถิติจากอดีต ไม่รับประกันอนาคต</span></div>
+        <span class="bi-cyc-badge bi-decision-${biasTone}">${biasTh} · conf ${af.confidence}%</span></div>
+      <div class="bi-fc-ocs">${ocChips}</div>
       <div class="bi-fc-chart-wrap">${chart}</div>
-      <div class="bi-fc-legend">${legend}</div>
-      <div class="bi-fc-cls">${cards}</div>
-      <div class="bi-cyc-summary">${(cf.summary || []).map((l) => `<p>${esc(l)}</p>`).join("")}</div>
+      <div class="bi-fc-legend">
+        <span class="bi-fc-leg"><i style="background:var(--mc-text)"></i>ราคาจริง 45 วันล่าสุด</span>
+        <span class="bi-fc-leg"><i style="background:var(--mc-cyan)"></i>เส้นคาดการณ์ (median อดีต)</span>
+        <span class="bi-fc-leg"><i class="bi-fc-leg-band"></i>ช่วงที่พบบ่อย (p25–75)</span>
+        <span class="bi-fc-leg"><i class="bi-fc-leg-dash"></i>3 รูปแบบที่คล้ายที่สุด</span>
+        ${cfLines.length ? `<button type="button" class="bi-fc-toggle${S.fcShowCond ? " is-on" : ""}" data-fc-cond="1">${S.fcShowCond ? "ซ่อน" : "แสดง"}เส้นตามเงื่อนไข</button>` : ""}
+      </div>
+      ${reconcile}
+      <div class="bi-fc-sub2">🏛️ 5 รูปแบบในอดีตที่คล้ายที่สุด (จาก ${(af.poolSize || 0).toLocaleString()} ช่วง · ใกล้เคียง ≥55%: ${af.strongPool})</div>
+      <div class="bi-fc-mrows"><div class="bi-fc-mhead"><span>วันที่คล้าย</span><span>คล้าย</span><span>+30D</span><span>+60D</span><span>+90D</span></div>${matchRows}</div>
+      ${condCards}
+      <div class="bi-cyc-summary">${(af.summary || []).map((l) => `<p>${esc(l)}</p>`).join("")}</div>
     </section>`;
   }
 
@@ -935,28 +960,102 @@
   // Research accordion — raw statistics moved out of the main decision flow (collapsed by default)
   function researchAccordion(bi) {
     const open = S.research;
-    const inner = open ? (filterSection(bi) + probabilitySection(bi) + matrixSection(bi) + distributionSection(bi) + timelineSection(bi) + rankingSection(bi) + heatmapSection(bi) + mtfSection(bi) + evolutionSection(bi) + similaritySection(bi) + dataQualitySection(bi)) : "";
+    const inner = open ? (interpretationSection(bi) + cycleSection(bi) + outcomeSection(bi) + overlaySection(bi) + playbookSection(bi) + patternCombinationSection(bi) + filterSection(bi) + probabilitySection(bi) + matrixSection(bi) + distributionSection(bi) + timelineSection(bi) + rankingSection(bi) + heatmapSection(bi) + mtfSection(bi) + evolutionSection(bi) + similaritySection(bi) + dataQualitySection(bi)) : "";
     return `<section class="mc-card mc-panel mc-fade bi-research" id="bi-research">
-      <button type="button" class="bi-research-toggle" data-research="1"><span>🔬 Research &amp; Raw Statistics</span><span class="bi-research-chev">${open ? "▲" : "▼"}</span></button>
-      <div class="bi-research-caption">Ranking · Probability Matrix · Distribution · Timeline · Heatmap · Multi-Timeframe · Pattern Evolution — เชิงลึก (ซ่อนไว้โดยค่าเริ่มต้น)</div>
+      <button type="button" class="bi-research-toggle" data-research="1"><span>🔬 Research &amp; รายละเอียดเชิงลึก</span><span class="bi-research-chev">${open ? "▲" : "▼"}</span></button>
+      <div class="bi-research-caption">Interpretation · Cycle เต็ม · Historical Outcome · Price Overlay · Playbook · Pattern Combination · สถิติดิบ (Ranking/Matrix/Distribution/Timeline/Heatmap/MTF) — ซ่อนไว้โดยค่าเริ่มต้น</div>
       ${open ? `<div class="bi-research-body">${inner}</div>` : ""}</section>`;
+  }
+
+  // ---- canonical 6-signal model (single source of truth for both tabs) ----
+  // Sources: analogForecast.current.conditions (met + days, RSI zone with 30/70 thresholds) +
+  // patternStatistics edge-vs-baseline (historical hint). No engine change.
+  function signalData(bi) {
+    const conds = (bi.analogForecast && bi.analogForecast.current && bi.analogForecast.current.conditions) || [];
+    const byKey = {}; conds.forEach((c) => (byKey[c.key] = c));
+    const lib = bi.patternStatistics || {};
+    const base = lib._baseline && lib._baseline.byHorizon && lib._baseline.byHorizon[90];
+    const baseWin = base && base.positivePct != null ? base.positivePct : 55;
+    const hint = (pk) => { const p = pk && lib[pk]; if (!p || p.occurrences < 15) return null; const bh = p.byHorizon[90] || {}; if (bh.positivePct == null) return null; const edge = Math.round(bh.positivePct - baseWin); return { edge, win: bh.positivePct, avg: bh.avgReturn, verdict: edge >= 8 ? "ได้เปรียบ" : edge <= -8 ? "เสียเปรียบ" : "~ปกติ" }; };
+    const rows = [];
+    const ema = byKey.ema || {};
+    rows.push({ key: "ema", label: "EMA12 × EMA26", dir: ema.met ? 1 : -1, tag: ema.met ? "EMA12 > EMA26" : "EMA12 < EMA26", days: ema.days, hint: hint(ema.met ? "EMA12_BULL_CROSS" : "EMA12_BEAR_CROSS") });
+    const s50 = byKey.sma50 || {};
+    rows.push({ key: "sma50", label: "ราคา vs SMA50", dir: s50.met ? 1 : -1, tag: s50.met ? "เหนือ SMA50" : "ใต้ SMA50", days: s50.days, hint: null });
+    const s200 = byKey.sma200 || {};
+    rows.push({ key: "sma200", label: "ราคา vs SMA200", dir: s200.met ? 1 : -1, tag: s200.met ? "เหนือ SMA200" : "ใต้ SMA200", days: s200.days, hint: hint(s200.met ? "PRICE_ABOVE_SMA200" : "PRICE_BELOW_SMA200") });
+    const rsi = byKey.rsi || {}, zone = rsi.zone || "", buy = /ซื้อสะสม/.test(zone), caution = /ระวัง/.test(zone);
+    rows.push({ key: "rsi", label: "RSI (30/70)", dir: buy ? 1 : caution ? -1 : 0, tag: "RSI " + (rsi.value != null ? rsi.value : "—") + " · " + (zone || "—"), days: rsi.days, hint: hint(buy ? "RSI_BELOW_30" : caution ? "RSI_ABOVE_70" : null) });
+    const db = byKey.divBull || {};
+    rows.push({ key: "divBull", label: "Bullish Divergence", dir: db.met ? 1 : 0, tag: db.met ? "พบ" : "ไม่พบใน 20 วัน", days: db.met ? db.days : null, ago: true, hint: db.met ? hint("BULLISH_RSI_DIVERGENCE") : null });
+    const dbr = byKey.divBear || {};
+    rows.push({ key: "divBear", label: "Bearish Divergence", dir: dbr.met ? -1 : 0, tag: dbr.met ? "พบ" : "ไม่พบใน 20 วัน", days: dbr.met ? dbr.days : null, ago: true, hint: dbr.met ? hint("BEARISH_RSI_DIVERGENCE") : null });
+    return { rows, bull: rows.filter((r) => r.dir > 0).length, bear: rows.filter((r) => r.dir < 0).length, total: 6 };
+  }
+
+  // 🎯 Verdict — one "today's action" box (6 signals + analog forecast + cycle), decision-first
+  function verdictSection(bi) {
+    const d = bi.decision.decision;
+    const map = { "Accumulation": { th: "ทยอยสะสม", tone: "bull" }, "Neutral": { th: "อดทนรอ", tone: "neutral" }, "Wait": { th: "อดทนรอ", tone: "warn" }, "Reduce Risk": { th: "ลดความเสี่ยง", tone: "bear" }, "Distribution": { th: "ลดความเสี่ยง", tone: "bear" } };
+    const m = map[d.label] || { th: d.label, tone: "neutral" };
+    const sd = signalData(bi);
+    const af = bi.analogForecast, o90 = af && af.outcome ? af.outcome[90] : null;
+    const cy = bi.cycle, h = cy && cy.halving;
+    const pb = bi.playbook && bi.playbook.suggestedBehaviour && bi.playbook.suggestedBehaviour[0];
+    const chips = [];
+    chips.push(`<div class="bi-vd-chip"><small>สัญญาณ 6 ตัว</small><b class="${sd.bull > sd.bear ? "bi-pos" : sd.bear > sd.bull ? "bi-neg" : ""}">▲ ${sd.bull} · ▼ ${sd.bear}</b><span>ทางขึ้น ${sd.bull}/6</span></div>`);
+    if (o90) chips.push(`<div class="bi-vd-chip"><small>คาดการณ์ 90 วัน (รูปแบบราคา)</small><b class="${pctCls(o90.median)}">median ${o90.median > 0 ? "+" : ""}${o90.median}%</b><span>เป็นบวก ${o90.positivePct}% ของกรณี</span></div>`);
+    if (cy && cy.current) chips.push(`<div class="bi-vd-chip"><small>วัฏจักร 4 ปี</small><b>${esc(cy.current.state)}</b><span>${h && h.daysSince != null ? h.daysSince + " วันหลัง halving" : ""}</span></div>`);
+    const rationale = (d.rationale || []).slice(0, 3);
+    return `<section class="mc-card mc-panel mc-fade bi-sec bi-vd bi-decision-${m.tone}" id="bi-verdict">
+      <div class="bi-vd-head"><p class="mc-eyebrow">วันนี้ทำอะไร · สรุปจากหลักฐานอดีต</p><div class="bi-vd-word">${esc(m.th)}</div>${pb ? `<div class="bi-vd-pb">Playbook: ${esc(pb.action)}${pb.th ? " · " + esc(pb.th) : ""}</div>` : ""}</div>
+      <div class="bi-vd-chips">${chips.join("")}</div>
+      ${rationale.length ? `<ul class="bi-vd-why">${rationale.map((x) => `<li>• ${esc(x)}</li>`).join("")}</ul>` : ""}
+      <p class="bi-vd-disc">รวมสัญญาณเทคนิค + รูปแบบราคาอดีต + วัฏจักร — เป็นสถิติจากอดีต ไม่รับประกันอนาคต</p>
+    </section>`;
+  }
+
+  // 📡 Six Signals board (replaces DNA badges + Condition Monitor). Fixes RSI <30/>70 tone
+  // and divergence freshness (active 20 days, shown "X วันก่อน"). Each row carries an action hint.
+  function signalsSection(bi) {
+    const sd = signalData(bi), cp = bi.currentPattern, ps = bi.patternScore;
+    const scoreColor = ps.total >= 66 ? "var(--mc-emerald)" : ps.total >= 40 ? "var(--mc-amber)" : "var(--mc-red)";
+    const rows = sd.rows.map((r) => {
+      const toneCls = r.dir > 0 ? "is-bull" : r.dir < 0 ? "is-bear" : "is-muted";
+      const icon = r.dir > 0 ? "▲" : r.dir < 0 ? "▼" : "•";
+      const days = r.days == null ? "" : (r.ago ? "เกิดเมื่อ " + r.days + " วันก่อน" : "ต่อเนื่อง " + r.days + " วัน");
+      const hint = r.hint ? `<span class="bi-sg-hint bi-sg-${r.hint.edge >= 8 ? "up" : r.hint.edge <= -8 ? "dn" : "flat"}">→ ${esc(r.hint.verdict)} · 90D ชนะ ${r.hint.win}%</span>` : "";
+      return `<div class="bi-sg-row ${toneCls}"><span class="bi-sg-icon">${icon}</span><span class="bi-sg-name">${esc(r.label)}</span><span class="bi-sg-state">${esc(r.tag)}</span><span class="bi-sg-days">${esc(days)}</span>${hint}</div>`;
+    }).join("");
+    return section("bi-signals", "📡 6 สัญญาณวันนี้", `EMA12×26 · SMA50 · SMA200 · RSI(30/70) · Bull/Bear Divergence — ▲ ทางขึ้น ${sd.bull}/6 · ▼ ทางลง ${sd.bear}/6`,
+      `<div class="bi-sg-head">Pattern Score <b style="color:${scoreColor}">${ps.total}</b>/100 · ณ ${esc(cp.date)} · ${cp.close ? "$" + Math.round(cp.close).toLocaleString() : "-"}</div>
+       <div class="bi-sg-rows">${rows}</div>`);
+  }
+
+  // ⛏️ Cycle position strip (compact) — surfaces the 4-year halving position incl. daysTo/nextHalving
+  function cycleStripSection(bi) {
+    const cy = bi.cycle; if (!cy || !cy.current) return "";
+    const col = cyclePhaseColor(cy.current.state), h = cy.halving || {}, p0 = cy.paths && cy.paths[0];
+    const halving = `⛏️ ${esc(h.bucket || "")}${h.daysSince != null ? ` · ${h.daysSince} วันหลัง halving ${esc(h.lastHalving || "")}` : ""}${h.daysTo != null ? ` · อีก ${h.daysTo} วันถึง halving ถัดไป` : ""}`;
+    const scen = p0 ? `เส้นทางในอดีตที่ใกล้สุด: <b>${esc(p0.scenario)}</b> (โอกาส ${p0.probability}%) → 90D <b class="${pctCls(p0.avgForward90)}">${pctStr(p0.avgForward90, true)}</b> · 180D <b class="${pctCls(p0.avgForward180)}">${pctStr(p0.avgForward180, true)}</b>` : "";
+    return `<section class="mc-card mc-panel mc-fade bi-sec bi-cystrip" id="bi-cyclestrip">
+      <div class="mc-panel-head"><div><h2>⛏️ ตำแหน่งวัฏจักร 4 ปี</h2><span class="mc-sub">${halving}</span></div>
+        <span class="bi-cyc-badge" style="color:${col};border-color:${col}">${esc(cy.current.state)} · ${cy.current.confidence}%</span></div>
+      ${scen ? `<div class="bi-cystrip-scen">${scen}</div>` : ""}
+      <div class="bi-cystrip-foot">ดูวัฏจักรแบบเต็ม (timeline · similarity · distribution) ได้ใน 🔬 Research ด้านล่าง · สถิติจากอดีต ไม่รับประกันอนาคต</div>
+    </section>`;
   }
 
   function body(bi) {
     return refreshBar(bi) +
-      dnaSection(bi) +               // 1 · Current Market DNA
-      conditionMonitorSection(bi) +  // ✓/✗ conditions + days-in-condition (no weighted score)
-      analogForecastSection(bi) +    // ★ Pattern Forecast (analog projection 30/60/90d)
-      interpretationSection(bi) +    // 9 · Interpretation (decision-first)
-      similarCasesSection(bi) +      // 3 · Most Similar Historical Cases
-      overlaySection(bi) +           // 4 · Price Overlay
-      outcomeSection(bi) +           // 5 · Historical Outcome
-      playbookSection(bi) +          // Phase 4 · signature handbook
-      cycleSection(bi) +             // Phase 3 · cycle context
-      patternLibrarySection(bi) +    // 6 · Pattern Library
-      patternCombinationSection(bi) +// 7 · Pattern Combination
-      researchAccordion(bi) +        // research (collapsed)
-      replayModal(bi);               // 8 · Historical Replay (modal)
+      verdictSection(bi) +           // 1 · 🎯 วันนี้ทำอะไร (verdict)
+      signalsSection(bi) +          // 2 · 📡 6 สัญญาณวันนี้ (RSI/divergence fixed)
+      analogForecastSection(bi) +   // 3 · 🔮 Pattern Forecast (shape-analog cone + condition toggle)
+      cycleStripSection(bi) +       // 4 · ⛏️ ตำแหน่งวัฏจักร 4 ปี
+      similarCasesSection(bi) +     // 5 · 🏛️ Most Similar Historical Cases
+      patternLibrarySection(bi) +   // 6 · 📚 Pattern Library (grades the 6 signals)
+      researchAccordion(bi) +       // 7 · 🔬 Research (playbook/cycle-full/overlay/outcome/combination/raw)
+      replayModal(bi);              // Historical Replay (modal)
   }
 
   function rerender() {
@@ -995,6 +1094,19 @@
     const dot = svg.querySelector(".bi-crossdot"); if (dot && best.y != null) { dot.setAttribute("cx", best.x); dot.setAttribute("cy", best.y); dot.style.display = ""; }
   }
 
+  // Compact 6-signal strip (shared with the Monitor tab so both tabs read the same conditions)
+  function signalStripHtml(bi) {
+    if (!bi || !bi.analogForecast || !bi.analogForecast.current) return "";
+    const sd = signalData(bi);
+    const shortLbl = { ema: "EMA12×26", sma50: "SMA50", sma200: "SMA200", rsi: "RSI", divBull: "Bull Div", divBear: "Bear Div" };
+    const badges = sd.rows.map((r) => {
+      const tone = r.dir > 0 ? "bull" : r.dir < 0 ? "bear" : "muted", ic = r.dir > 0 ? "▲" : r.dir < 0 ? "▼" : "•";
+      const st = r.key === "rsi" ? String(r.tag).replace(/^RSI /, "") : (r.key === "divBull" || r.key === "divBear") ? r.tag : String(r.tag).replace(/^(EMA12 |ราคา|)/, "");
+      return `<span class="bi-sgstrip-b bi-dna-${tone}" title="${esc(r.label)}">${ic} ${esc(shortLbl[r.key] || r.key)}: ${esc(st)}</span>`;
+    }).join("");
+    return `<div class="bi-sgstrip"><span class="bi-sgstrip-hd">6 สัญญาณ · ▲ ${sd.bull} · ▼ ${sd.bear}</span>${badges}</div>`;
+  }
+
   window.BitcoinIntelligenceUI = {
     html(snap) {
       const bi = BI(snap);
@@ -1002,6 +1114,7 @@
       if (!bi.available || !bi.decision) return notReady(bi);
       return body(bi);
     },
+    signalStrip(snap) { try { return signalStripHtml(BI(snap)); } catch (e) { return ""; } },
     wire(bodyEl) {
       wireLoadListeners();
       if (!bodyEl || bodyEl._biWired) return;
@@ -1019,6 +1132,8 @@
         if (lh) { S.libHorizon = Number(lh.dataset.libHorizon); rerender(); return; }
         const rt = e.target.closest("[data-research]");
         if (rt) { S.research = !S.research; rerender(); return; }
+        const fcc = e.target.closest("[data-fc-cond]");
+        if (fcc) { S.fcShowCond = !S.fcShowCond; rerender(); return; }
         const hb = e.target.closest("[data-horizon]");
         if (hb) { S.horizon = Number(hb.dataset.horizon); rerender(); return; }
         const fb = e.target.closest("[data-filter]");

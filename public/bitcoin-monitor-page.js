@@ -386,11 +386,11 @@
       return `<div class="mc-empty"><strong>ยังไม่มีข้อมูลราคา BTC</strong>กด Load Latest Data ที่หัวมุมขวาบนเพื่อดึงราคา Bitcoin</div>`;
     }
     const fullCloses = allBars.map((b) => b.close);
-    const e12f = emaSeries(fullCloses, 12), e26f = emaSeries(fullCloses, 26), s200f = smaSeries(fullCloses, 200);
+    const e12f = emaSeries(fullCloses, 12), e26f = emaSeries(fullCloses, 26), s50f = smaSeries(fullCloses, 50), s200f = smaSeries(fullCloses, 200);
     const start = Math.max(0, allBars.length - rangeBars(range));
     const bars = allBars.slice(start);
     const d = bars.map((b) => b.date);
-    const a12 = e12f.slice(start), a26 = e26f.slice(start), a200 = s200f.slice(start);
+    const a12 = e12f.slice(start), a26 = e26f.slice(start), a50 = s50f.slice(start), a200 = s200f.slice(start);
     const n = bars.length;
     if (n < 2) return `<div class="mc-empty"><strong>ข้อมูลย้อนหลังไม่พอ</strong></div>`;
 
@@ -402,7 +402,7 @@
 
     const vals = [];
     bars.forEach((b) => { if (Number.isFinite(b.high)) vals.push(b.high); if (Number.isFinite(b.low)) vals.push(b.low); });
-    [a12, a26, a200].forEach((arr) => arr.forEach((v) => { if (Number.isFinite(Number(v))) vals.push(Number(v)); }));
+    [a12, a26, a50, a200].forEach((arr) => arr.forEach((v) => { if (dn(v)) vals.push(v); })); // dn() rejects the leading nulls that Number()==0 would leak as price 0
     if (dn(ind.sthRealizedPrice)) vals.push(ind.sthRealizedPrice);
     if (dn(ind.lthRealizedPrice)) vals.push(ind.lthRealizedPrice);
     if (dn(ind.realizedPriceProxy)) vals.push(ind.realizedPriceProxy);
@@ -450,10 +450,10 @@
     });
     // EMA/SMA overlays
     const lineOf = (arr, color, dash) => {
-      const pts = arr.map((v, i) => (Number.isFinite(Number(v)) ? `${xAt(i).toFixed(1)},${pY(Number(v)).toFixed(1)}` : null)).filter(Boolean).join(" ");
+      const pts = arr.map((v, i) => (dn(v) ? `${xAt(i).toFixed(1)},${pY(v).toFixed(1)}` : null)).filter(Boolean).join(" ");
       return pts ? `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5"${dash ? ` stroke-dasharray="${dash}"` : ""}/>` : "";
     };
-    svg += lineOf(a200, "#64748b", "6 4") + lineOf(a26, "#a855f7") + lineOf(a12, "#f59e0b");
+    svg += lineOf(a200, "#64748b", "6 4") + lineOf(a50, "#2dd4bf", "3 3") + lineOf(a26, "#a855f7") + lineOf(a12, "#f59e0b");
     // x labels
     const xl = [];
     const ticks = Math.min(6, n);
@@ -498,11 +498,28 @@
         ${(p.cryptoquant && p.cryptoquant.configured) ? providerChip("CryptoQuant", cq[0], cq[1]) : ""}
         ${csvAt ? providerChip("CSV", fmtWhen(csvAt), "ok") : ""}
       </div>
-      <div class="btc-fetch">
-        <span class="mc-sub">${apiState === "loading" ? "กำลังดึงข้อมูล…" : apiState === "error" ? ("ดึงไม่สำเร็จ: " + esc(apiError || "")) : "อัปเดตล่าสุด: " + esc(fetched)}</span>
-        <button class="mc-btn mc-btn-primary" id="btcRefresh" type="button"${apiState === "loading" ? " disabled" : ""}>↻ ดึงข้อมูลล่าสุด</button>
-      </div>
     </section>`;
+  }
+  // slim top bar: freshness + refresh (moved out of modeBar so provider status doesn't block the top)
+  function slimBar(ind) {
+    const fetched = apiData && apiData.fetchedAt ? fmtWhen(apiData.fetchedAt) : ((readSnapshot() && readSnapshot().loadedAt) ? fmtWhen(readSnapshot().loadedAt) : "—");
+    return `<section class="mc-card mc-panel mc-fade btc-slimbar">
+      <span class="mc-sub">${apiState === "loading" ? "กำลังดึงข้อมูล…" : apiState === "error" ? ("ดึงไม่สำเร็จ: " + esc(apiError || "")) : "Free data · อัปเดตล่าสุด " + esc(fetched)}</span>
+      <button class="mc-btn mc-btn-primary" id="btcRefresh" type="button"${apiState === "loading" ? " disabled" : ""}>↻ ดึงข้อมูลล่าสุด</button>
+    </section>`;
+  }
+  // 6-signal strip (shared with the Intelligence tab; falls back to a hint when Intelligence not built yet)
+  function signalStripSection(snap) {
+    const strip = (window.BitcoinIntelligenceUI && window.BitcoinIntelligenceUI.signalStrip) ? window.BitcoinIntelligenceUI.signalStrip(snap) : "";
+    if (!strip) return "";
+    return `<section class="mc-card mc-panel mc-fade btc-sigwrap"><div class="mc-panel-head"><div><h2>📡 6 สัญญาณเทคนิค</h2><span class="mc-sub">EMA12×26 · SMA50 · SMA200 · RSI(30/70) · Bull/Bear Divergence — ดูรายละเอียด+คาดการณ์ที่แท็บ 🧠 Intelligence</span></div></div>${strip}</section>`;
+  }
+  // Data & Sources — provider status + coverage + paid note + CSV import folded into one accordion
+  function dataSourcesAccordion(ind, bz) {
+    return `<details class="mc-card mc-panel mc-fade btc-datasrc">
+      <summary><h2 style="display:inline">🔌 ข้อมูล & แหล่งที่มา (Data & Sources)</h2><span class="mc-sub"> · สถานะ provider · Data Coverage · นำเข้า CSV</span></summary>
+      <div class="btc-datasrc-body">${modeBar(ind)}${coveragePanel(ind, bz)}${paidNote()}${importSection()}</div>
+    </details>`;
   }
 
   function coveragePanel(ind, bz) {
@@ -541,10 +558,11 @@
 
   function tabBar() {
     return `<div class="btc-tabs" id="btcTabs">
-      <button type="button" class="btc-tab${activeTab === "monitor" ? " is-active" : ""}" data-tab="monitor">₿ Monitor</button>
-      <button type="button" class="btc-tab${activeTab === "intelligence" ? " is-active" : ""}" data-tab="intelligence">🧠 Bitcoin Intelligence</button>
+      <button type="button" class="btc-tab${activeTab === "monitor" ? " is-active" : ""}" data-tab="monitor">₿ Monitor · ถูกหรือแพง?</button>
+      <button type="button" class="btc-tab${activeTab === "intelligence" ? " is-active" : ""}" data-tab="intelligence">🧠 Intelligence · 6 สัญญาณ + คาดการณ์</button>
     </div>`;
   }
+  function biCycle(snap) { return (snap && snap.bitcoinIntelligence && snap.bitcoinIntelligence.cycle) || null; }
 
   function render() {
     const snap = readSnapshot();
@@ -568,15 +586,14 @@
 
     root.innerHTML = tabBar() + `<div id="btcTabBody">` +
       hero(ind, bz) +
-      modeBar(ind) +
-      chartSection(hist, ind) +
+      signalStripSection(snap) +
+      slimBar(ind) +
       buyZoneSection(bz) +
-      coveragePanel(ind, bz) +
       `<div class="mc-grid mc-grid-2">${cyclePanel(ind, bz)}${holderSentimentPanel(ind)}</div>` +
+      chartSection(hist, ind) +
       `<div class="mc-grid mc-grid-2">${technicalPanel(ind, bz)}${freeStressPanel(ind)}</div>` +
-      paidNote() +
       explainSection() +
-      importSection() +
+      dataSourcesAccordion(ind, bz) +
       `</div>`;
     wire();
   }
@@ -593,20 +610,23 @@
     const act = bz ? bz.action : null;
     const zone = bz ? bz.cycleZone : null;
     const risk = bz ? bz.riskLevel : null;
+    const cy = biCycle(snap), hv = cy && cy.halving;
+    const halvingLine = hv ? `<p class="mc-hero-sub btc-hero-halving">⛏️ วัฏจักร 4 ปี: <b>${cy.current ? esc(cy.current.state) : ""}</b>${hv.daysSince != null ? ` · ${hv.daysSince} วันหลัง halving` : ""}${hv.daysTo != null ? ` · อีก ${hv.daysTo} วันถึงครั้งถัดไป` : ""}${hv.bucket ? ` · ${esc(hv.bucket)}` : ""}</p>` : "";
     const m = (label, thai, value, valueColor, sub) => `<div class="mc-card mc-metric mc-glow"><div class="mc-label"><span>${esc(label)}</span></div>
       <div class="mc-value" style="font-size:${String(value).length > 12 ? "20px" : "26px"};color:${valueColor || "var(--mc-text)"}">${value}</div>
       <div class="mc-delta" style="color:var(--mc-muted)">${esc(sub || thai)}</div></div>`;
     return `<section class="mc-page-hero mc-fade">
       <div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:flex-start;">
         <div style="position:relative;z-index:1;">
-          <p class="mc-eyebrow">Bitcoin Monitor</p>
+          <p class="mc-eyebrow">Bitcoin Monitor · ถูกหรือแพง?</p>
           <h1>₿ มอนิเตอร์ Bitcoin</h1>
-          <p class="mc-hero-sub">ติดตามราคา BTC, on-chain indicators, holder behavior และจังหวะสะสม/ลดความเสี่ยง</p>
+          <p class="mc-hero-sub">โซนมูลค่า on-chain (MVRV/NUPL) + Buy Zone Score สำหรับจังหวะสะสมระยะยาว — สัญญาณเทคนิค + คาดการณ์ราคาดูที่แท็บ 🧠 Intelligence</p>
+          ${halvingLine}
         </div>
         <div class="a360-hero-cards" style="position:relative;z-index:1;min-width:min(640px,100%);display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
           ${m("BTC Price", "ราคา Bitcoin", price, "var(--mc-text)", change == null ? "ราคา Bitcoin" : `${change >= 0 ? "▲" : "▼"} ${signedPct(change)} วันนี้`)}
           ${m("BTC Action", "คำแนะนำ", act ? esc(act.thaiAction) : "—", toneColor(act && act.tone), act ? esc(act.action) : "ยังไม่มีข้อมูล")}
-          ${m("Cycle Zone", "โซนวัฏจักร", zone ? esc(zone.thaiLabel) : "—", toneColor(zone && zone.tone), zone ? esc(zone.label) : "")}
+          ${m("Valuation Zone", "โซนมูลค่า", zone ? esc(zone.thaiLabel) : "—", toneColor(zone && zone.tone), zone ? esc(zone.label) : "")}
           ${m("BTC Risk", "ความเสี่ยง", risk ? esc(risk.thaiLabel) : "—", risk && risk.key === "high" ? "var(--mc-red)" : risk && risk.key === "low" ? "var(--mc-emerald)" : "var(--mc-amber)", risk ? esc(risk.label) : "")}
         </div>
       </div>
@@ -617,7 +637,7 @@
     const ranges = ["1M", "3M", "6M", "1Y", "3Y", "5Y", "MAX"];
     return `<section class="mc-card mc-panel mc-fade">
       <div class="mc-panel-head">
-        <div><h2>BTC Price Chart</h2><span class="mc-sub">ราคา + EMA12 / EMA26 / SMA200${dn(ind.realizedPriceProxy) || dn(ind.sthRealizedPrice) || dn(ind.lthRealizedPrice) ? " + Realized Price" : ""}</span></div>
+        <div><h2>BTC Price Chart</h2><span class="mc-sub">ราคา + EMA12 / EMA26 / SMA50 / SMA200${dn(ind.realizedPriceProxy) || dn(ind.sthRealizedPrice) || dn(ind.lthRealizedPrice) ? " + Realized Price" : ""}</span></div>
         <div class="btc-range" id="btcRange">${ranges.map((r) => `<button type="button" class="${r === range ? "is-active" : ""}" data-range="${r}">${r}</button>`).join("")}</div>
       </div>
       <div class="btc-chart-wrap" id="btcChart">${drawChart(hist, ind)}</div>
@@ -626,6 +646,7 @@
         <span><i style="background:#f43f5e"></i>แท่งลง</span>
         <span><i style="background:#f59e0b"></i>EMA12</span>
         <span><i style="background:#a855f7"></i>EMA26</span>
+        <span><i style="background:#2dd4bf"></i>SMA50</span>
         <span><i style="background:#64748b"></i>SMA200</span>
         ${dn(ind.realizedPriceProxy) ? '<span><i style="background:#38bdf8"></i>Realized Price Proxy</span>' : ""}
         ${dn(ind.sthRealizedPrice) ? '<span><i style="background:#22d3ee"></i>STH Realized</span>' : ""}
@@ -685,6 +706,7 @@
     nupl: { lo: -0.25, hi: 1, segs: [[0, "buy"], [0.5, "normal"], [0.75, "high"], [1, "sell"]] },
     puellMultiple: { lo: 0, hi: 5, segs: [[0.5, "buy"], [1.5, "normal"], [4, "high"], [5, "sell"]] },
     fearGreed: { lo: 0, hi: 100, segs: [[25, "buy"], [55, "normal"], [75, "high"], [100, "sell"]] },
+    rsi14: { lo: 0, hi: 100, segs: [[30, "buy"], [70, "normal"], [100, "sell"]] },
     ssrProxy: { lo: 0, hi: 10, segs: [[4, "buy"], [7, "normal"], [10, "high"]] },
     minerRevenueMultipleProxy: { lo: 0, hi: 5, segs: [[0.6, "buy"], [1.5, "normal"], [4, "high"], [5, "sell"]] },
     fundingRate: { lo: -0.02, hi: 0.08, segs: [[0, "buy"], [0.01, "normal"], [0.05, "high"], [0.08, "sell"]] }
@@ -782,11 +804,17 @@
       try { gates = window.Scoring.calculateTimingScore({ latestPrice: ind.price, latestDate: ind.date, ema12: ind.ema12, ema26: ind.ema26, sma200: ind.sma200, rsi14: ind.rsi14, volumeRatio: ind.volumeRatio5D, emaTrendStatus: ind.emaStatus, sma200Status: ind.sma200Status }).gates; } catch (e) {}
     }
     const row = (label, val, extra) => `<div class="btc-tech-row"><span>${esc(label)}</span><div>${val}${extra ? ` <em>${esc(extra)}</em>` : ""}</div></div>`;
+    // price vs SMA50 (client-side, from the same closes the chart uses)
+    const hist50 = chartHist(readSnapshot()); const closes50 = (hist50 && Array.isArray(hist50.closes)) ? hist50.closes.map(Number) : [];
+    let sma50 = null; if (closes50.length >= 50) { let s = 0; for (let i = closes50.length - 50; i < closes50.length; i++) s += closes50[i]; sma50 = s / 50; }
+    const above50 = dn(ind.price) && dn(sma50) ? ind.price >= sma50 : null;
     return `<section class="mc-card mc-panel mc-fade">
-      <div class="mc-panel-head"><div><h2>Technical Timing</h2><span class="mc-sub">EMA12/26 = ด่านแรก · SMA200 = เทรนด์ใหญ่ · Volume = ยืนยัน</span></div></div>
+      <div class="mc-panel-head"><div><h2>Technical Timing</h2><span class="mc-sub">EMA12/26 · SMA50/200 · RSI(30/70) · Volume — สัญญาณครบ 6 ตัวดูที่ Intelligence</span></div></div>
       ${row("EMA Gate", gateChip(gates && gates.ema ? gates.ema.status : (bz.emaBull ? "PASS" : "FAIL")), bz.emaBull ? "EMA12 > EMA26" : "EMA12 < EMA26")}
+      ${row("SMA50 Gate", gateChip(above50 == null ? "MISSING" : above50 ? "PASS" : "FAIL"), above50 == null ? "" : above50 ? "ราคาเหนือ SMA50" : "ราคาใต้ SMA50")}
       ${row("SMA200 Gate", gateChip(gates && gates.sma200 ? gates.sma200.status : (bz.aboveSma ? "PASS" : "FAIL")), bz.aboveSma ? "ราคาเหนือ SMA200" : "ราคาใต้ SMA200")}
-      ${row("RSI14", `<strong>${num(ind.rsi14, 1)}</strong>`, dn(ind.rsi14) ? (ind.rsi14 > 70 ? "overbought" : ind.rsi14 < 30 ? "oversold" : "") : "")}
+      ${row("RSI14 (30/70)", `<strong>${num(ind.rsi14, 1)}</strong>`, dn(ind.rsi14) ? (ind.rsi14 > 70 ? "ระวัง/ทยอยขาย (>70)" : ind.rsi14 < 30 ? "ซื้อสะสม (<30)" : "ปกติ") : "")}
+      ${dn(ind.rsi14) ? zoneBar("rsi14", ind.rsi14) : ""}
       ${row("Volume Ratio 5D", `<strong>${dn(ind.volumeRatio5D) ? ind.volumeRatio5D.toFixed(2) + "x" : "—"}</strong>`, gates && gates.volume ? gates.volume.thaiLabel : "")}
       ${row("Buy Zone Score", `<strong style="color:${bz.color}">${bz.buyZoneScore}/100</strong>`, bz.thaiLabel)}
       ${row("Final BTC Action", `<strong style="color:${toneColor(bz.action.tone)}">${esc(bz.action.thaiAction)}</strong>`, bz.action.action)}

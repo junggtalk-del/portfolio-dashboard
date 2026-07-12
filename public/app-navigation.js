@@ -480,6 +480,13 @@
             snapshot.bitcoinIntelligence = await window.BitcoinIntelligence.run(snapshot, { fetch: originalFetch });
           }
         } catch (_biError) { /* intelligence is best-effort */ }
+        // Wave 3 Setup — Early Wave 3 detection; extend the snapshot with one new object,
+        // computed only during Load Latest Data. Best-effort; never blocks a load.
+        try {
+          if (window.Wave3Engine && typeof window.Wave3Engine.run === "function") {
+            snapshot.wave3 = await window.Wave3Engine.run(snapshot, { fetch: originalFetch, now: new Date().toISOString() });
+          }
+        } catch (_w3Error) { /* wave3 is best-effort */ }
         emitSnapshotProgress({ step: 6, stepLabel: "Saving snapshot", completedAssets: completed, totalAssets: loadAssets.length, failedAssets: snapshot.errors.length });
         snapshot.status = snapshot.errors.length ? "partial" : "ready";
         return write(snapshot);
@@ -595,6 +602,9 @@
       { p: "/home", i: "🛰️", t: "Home" },
       { p: "/market-risk", i: "🌐", t: "Macro Dashboard" }
     ] },
+    { label: "Wave 3 Radar", items: [
+      { p: "/wave3", i: "🌊", t: "Wave 3 Setup" }
+    ] },
     { label: "Portfolio", items: [
       { p: "/portfolio-status", i: "📈", t: "Portfolio Status" },
       { p: "/portfolio-holdings", i: "💼", t: "Holdings" },
@@ -633,6 +643,7 @@
     "/ai-boom-universe": { category: "AI Theme Screener", title: "AI Boom Universe", subtitle: "ระบบคัดกรองธีม AI พร้อมสัญญาณเทคนิครายตัว" },
     "/technical-signals": { category: "Signals", title: "Technical Signals", subtitle: "สัญญาณเทคนิครายตัว RSI / EMA / SMA200" },
     "/thai-stock-scanner": { category: "Thai Market Scanner", title: "Thai Stock Scanner", subtitle: "สแกน SET100 / mai ด้วย EMA12 × EMA26 crossover พร้อม volume confirmation" },
+    "/wave3": { category: "Opportunity Radar", title: "🌊 Wave 3 Setup", subtitle: "สินทรัพย์ที่ใกล้เข้าสู่ Major Wave 3 — Portfolio · AI Boom · ไทย · Crypto (Readiness / Quality / Confidence)" },
     "/signal-hot": { category: "Signals", title: "🔥 สัญญาณเด่นวันนี้", subtitle: "หุ้น SET100 + NASDAQ ที่ EMA ตัดขึ้น เรียงตามแรงวอลุ่ม" },
     "/backtest": { category: "Strategy Research", title: "Backtest Lab", subtitle: "ทดสอบกลยุทธ์ย้อนหลังด้วยข้อมูลราคาในอดีต" }
   };
@@ -759,6 +770,9 @@
     // Bitcoin Intelligence engine — available wherever Load Latest Data can run, so
     // the snapshot loader can extend snapshot.bitcoinIntelligence. Runs only on load.
     ensureScript("/bitcoin-intelligence.js?v=20260704-btcintel-12");
+    // Wave 3 Setup engine — available wherever Load Latest Data can run, so the snapshot
+    // loader can extend snapshot.wave3. Reuses BitcoinIntelligence.Indicators; load after it.
+    ensureScript("/wave3-engine.js?v=20260711-w3-1");
 
     const activePath = window.location.pathname;
 
