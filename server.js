@@ -968,6 +968,27 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Legacy portfolio pages were consolidated into /portfolio (Portfolio Position).
+  // Old bookmarks and hardcoded in-page links keep working via redirect.
+  if (["/portfolio-status", "/portfolio-holdings", "/exposure-map"].includes(requestUrl.pathname)) {
+    res.writeHead(302, { Location: "/portfolio" });
+    res.end();
+    return;
+  }
+
+  // AI Boom Universe + Watchlist merged into the Action Center (one focus list);
+  // Technical Signals + สัญญาณเด่นวันนี้ + Thai Stock Scanner merged into /scanner.
+  if (["/ai-boom-universe", "/watchlist"].includes(requestUrl.pathname)) {
+    res.writeHead(302, { Location: "/action-center" });
+    res.end();
+    return;
+  }
+  if (["/technical-signals", "/signal-hot", "/thai-stock-scanner"].includes(requestUrl.pathname)) {
+    res.writeHead(302, { Location: "/scanner" });
+    res.end();
+    return;
+  }
+
   const safePath = decodeURIComponent(requestUrl.pathname)
     .replace(/^\/+/, "")
     .replace(/\.\.(\/|\\)/g, "");

@@ -57,114 +57,9 @@
     return canonical === "BTCUSD" ? "BTC-USD" : canonical;
   }
 
-  // ============================================================
-  // AI Boom Universe -> Watchlist sync (the AI Boom Universe is the
-  // user's monitor list). Independent of which snapshot loader is
-  // active: it collects the universe straight from the seed +
-  // /api/ai-universe so symbol keys match snapshot keys exactly.
-  // ============================================================
-  function inferUniverseCurrency(canonical) {
-    const k = String(canonical || "").toUpperCase();
-    if (k.endsWith(".BK") || k.indexOf("^SET") === 0 || k.indexOf("RMF") >= 0 || k.indexOf("SSF") >= 0 || k.indexOf("K-") === 0) return "THB";
-    return "USD";
-  }
-
-  function aiBoomDescriptor(asset, key) {
-    const a = asset || {};
-    return {
-      canonicalSymbol: key,
-      displaySymbol: a.ticker || a.symbol || key,
-      assetName: a.name || a.assetName || "",
-      assetType: a.asset_type || a.assetType || "",
-      market: a.market || "",
-      providerSymbol: a.provider_symbol || a.providerSymbol || providerSymbol(key),
-      currency: a.currency || inferUniverseCurrency(key)
-    };
-  }
-
-  let aiBoomSeedPromise = null;
-  function loadAIBoomSeed() {
-    if (window.AIBoomUniverseSeed && Array.isArray(window.AIBoomUniverseSeed.ai_boom_universe)) return Promise.resolve(true);
-    if (aiBoomSeedPromise) return aiBoomSeedPromise;
-    aiBoomSeedPromise = new Promise((resolve) => {
-      const base = "/ai-boom-universe-data.js";
-      const existing = document.querySelector(`script[src^="${base}"]`);
-      if (existing) {
-        let tries = 0;
-        const iv = window.setInterval(() => {
-          if (window.AIBoomUniverseSeed || tries++ > 50) { window.clearInterval(iv); resolve(!!window.AIBoomUniverseSeed); }
-        }, 40);
-        return;
-      }
-      const s = document.createElement("script");
-      s.src = `${base}?v=20260524-summary-1`;
-      s.onload = () => resolve(!!window.AIBoomUniverseSeed);
-      s.onerror = () => resolve(false);
-      document.head.appendChild(s);
-    });
-    return aiBoomSeedPromise;
-  }
-
-  async function collectAIBoomUniverse() {
-    const seedOk = await loadAIBoomSeed();
-    const seed = (window.AIBoomUniverseSeed && window.AIBoomUniverseSeed.ai_boom_universe) || [];
-    const fetchFn = (window.PortfolioDataSnapshot && window.PortfolioDataSnapshot.originalFetch) || (window.fetch ? window.fetch.bind(window) : null);
-    let userAssets = [];
-    let removedIds = [];
-    let apiOk = false;
-    if (fetchFn) {
-      try {
-        const response = await fetchFn("/api/ai-universe?snapshot=bypass", { cache: "no-store" });
-        if (response.ok) {
-          const payload = await response.json();
-          userAssets = (payload && payload.data && payload.data.userAssets) || [];
-          removedIds = (payload && payload.data && payload.data.removedIds) || [];
-          apiOk = true;
-        }
-      } catch (_error) { /* offline / endpoint down — fall back to seed only */ }
-    }
-    const removed = new Set((removedIds || []).map(String));
-    const merged = seed.filter((a) => a && !removed.has(String(a.id))).concat(userAssets || []);
-    const seen = {};
-    const descriptors = [];
-    merged.forEach((a) => {
-      const key = canonicalSymbol(a && (a.ticker || a.symbol || a.canonicalSymbol));
-      if (!key || seen[key]) return;
-      seen[key] = true;
-      descriptors.push(aiBoomDescriptor(a, key));
-    });
-    return { descriptors, complete: seedOk && apiOk, seedOk, apiOk, seedCount: seed.length };
-  }
-
-  async function syncAIBoomToWatchlist(opts) {
-    opts = opts || {};
-    await new Promise((resolve) => whenWatchlistReady(resolve));
-    if (!window.Watchlist || typeof window.Watchlist.syncFromUniverse !== "function") return null;
-    const collected = await collectAIBoomUniverse();
-    if (!collected.descriptors.length) return { added: 0, updated: 0, archived: 0, total: 0, active: 0, complete: false };
-    // Only archive removed-from-universe items when we trust the full picture.
-    const archiveMissing = collected.complete && opts.archiveMissing !== false;
-    const result = window.Watchlist.syncFromUniverse(collected.descriptors, { archiveMissing });
-    result.complete = collected.complete;
-    return result;
-  }
-
-  window.AIBoomWatchlistSync = { collect: collectAIBoomUniverse, sync: syncAIBoomToWatchlist };
-
-  function whenWatchlistReady(callback, tries) {
-    tries = tries || 0;
-    if (window.Watchlist && typeof window.Watchlist.syncFromUniverse === "function") return callback();
-    if (tries > 60) return;
-    window.setTimeout(() => whenWatchlistReady(callback, tries + 1), 60);
-  }
-
-  let lastAutoSync = 0;
-  function autoSyncAIBoom() {
-    const now = Date.now();
-    if (now - lastAutoSync < 8000) return;
-    lastAutoSync = now;
-    whenWatchlistReady(() => { syncAIBoomToWatchlist({ archiveMissing: true }).catch(() => {}); });
-  }
+  // NOTE: the old AI Boom Universe → Watchlist sync engine was removed when the
+  // Watchlist merged into the Action Center (one unified focus list, no more
+  // separate store to keep in sync).
 
   function emitSnapshotProgress(detail) {
     window.dispatchEvent(new CustomEvent("portfolio-data-snapshot-progress", { detail }));
@@ -448,31 +343,6 @@
             }
           }
         } catch (_scoringError) {}
-        try {
-          if (window.Watchlist && typeof window.Watchlist.evaluateAll === "function") {
-            const wl = window.Watchlist.evaluateAll(snapshot);
-            snapshot.watchlist = {
-              items: window.Watchlist.read(),
-              evaluationsBySymbol: wl.evaluationsBySymbol,
-              triggeredToday: wl.triggeredToday,
-              evaluatedAt: new Date().toISOString()
-            };
-            const today = new Date().toISOString().slice(0, 10);
-            const seen = new Set((window.Watchlist.readHistory() || [])
-              .filter((h) => String(h.at || "").slice(0, 10) === today)
-              .map((h) => h.canonicalSymbol + "|" + h.alert));
-            const events = [];
-            wl.triggeredToday.forEach((t) => {
-              const alert = (t.ev.triggeredRules[0] || {}).label || "Alert";
-              const k = t.canonicalSymbol + "|" + alert;
-              if (seen.has(k)) return;
-              seen.add(k);
-              events.push({ at: new Date().toISOString(), canonicalSymbol: t.canonicalSymbol, displaySymbol: t.displaySymbol, alert: alert, detail: t.ev.thaiReason, timingScore: t.ev.timingScore, status: "Triggered" });
-            });
-            if (events.length) window.Watchlist.appendHistory(events);
-            if (wl.triggeredToday.length) showWatchlistToast(wl.triggeredToday.length);
-          }
-        } catch (_wlError) {}
         // Bitcoin Intelligence (Phase 1) — extend the snapshot with one new object,
         // computed only during Load Latest Data. Best-effort; never blocks a load.
         try {
@@ -606,20 +476,14 @@
       { p: "/wave3", i: "🌊", t: "Wave 3 Setup" }
     ] },
     { label: "Portfolio", items: [
-      { p: "/portfolio-status", i: "📈", t: "Portfolio Status" },
-      { p: "/portfolio-holdings", i: "💼", t: "Holdings" },
-      { p: "/exposure-map", i: "🗺️", t: "Exposure Map" },
+      { p: "/portfolio", i: "📊", t: "Portfolio Position" },
       { p: "/", i: "🗓️", t: "Quarterly Editor" }
     ] },
     { label: "Signals", items: [
       { p: "/action-center", i: "🎯", t: "Action Center" },
-      { p: "/watchlist", i: "👁️", t: "Watchlist" },
-      { p: "/technical-signals", i: "📡", t: "Technical Signals" },
-      { p: "/signal-hot", i: "🔥", t: "สัญญาณเด่นวันนี้" }
+      { p: "/scanner", i: "🔎", t: "Market Scanner" }
     ] },
     { label: "Research", items: [
-      { p: "/ai-boom-universe", i: "✨", t: "AI Boom Universe" },
-      { p: "/thai-stock-scanner", i: "🔎", t: "Thai Stock Scanner" },
       { p: "/bitcoin-monitor", i: "₿", t: "Bitcoin Monitor" },
       { p: "#", i: "⚖️", t: "Compare", soon: true }
     ] },
@@ -635,16 +499,11 @@
 
   const PAGE_META = {
     "/": { category: "Portfolio Command Center", title: "Dashboard การลงทุน", subtitle: "ภาพรวมพอร์ตการลงทุนรายไตรมาส" },
-    "/action-center": { category: "Decision Center", title: "Action Center", subtitle: "ตอบคำถามเดียวให้ชัด: ตอนนี้ควรทำอะไรกับแต่ละสินทรัพย์" },
-    "/portfolio-status": { category: "Portfolio Health", title: "Portfolio Status", subtitle: "วิเคราะห์พอร์ตจริง น้ำหนักสินทรัพย์ ไส้ใน และความเสี่ยงซ้ำซ้อน" },
-    "/portfolio-holdings": { category: "Portfolio", title: "Underlying Holdings", subtitle: "ไส้ในพอร์ตและรายการถือครองทั้งหมด" },
-    "/exposure-map": { category: "Portfolio", title: "Exposure Map", subtitle: "แผนที่การกระจายความเสี่ยงและธีมของพอร์ต" },
+    "/action-center": { category: "Decision Center", title: "Action Center", subtitle: "list สินทรัพย์ที่ติดตาม + ควรทำอะไรกับแต่ละตัวตามสัญญาณของระบบ" },
+    "/scanner": { category: "Signals", title: "🔎 Market Scanner", subtitle: "สแกนสัญญาณซื้อ (EMA ตัดขึ้น + วอลุ่ม) — หุ้นไทย SET100+mai · หุ้นนอกที่มี DR ไทย · Crypto Top 10" },
+    "/portfolio": { category: "Portfolio", title: "📊 Portfolio Position", subtitle: "ภาพจริงของพอร์ต: สัดส่วน มูลค่า ไส้ใน และสภาวะสัญญาณของแต่ละสินทรัพย์" },
     "/market-risk": { category: "Risk Monitor", title: "Market Risk", subtitle: "VIX / VVIX / VIXEQ และระดับความเสี่ยงของตลาด" },
-    "/ai-boom-universe": { category: "AI Theme Screener", title: "AI Boom Universe", subtitle: "ระบบคัดกรองธีม AI พร้อมสัญญาณเทคนิครายตัว" },
-    "/technical-signals": { category: "Signals", title: "Technical Signals", subtitle: "สัญญาณเทคนิครายตัว RSI / EMA / SMA200" },
-    "/thai-stock-scanner": { category: "Thai Market Scanner", title: "Thai Stock Scanner", subtitle: "สแกน SET100 / mai ด้วย EMA12 × EMA26 crossover พร้อม volume confirmation" },
     "/wave3": { category: "Opportunity Radar", title: "🌊 Wave 3 Setup", subtitle: "สินทรัพย์ที่ใกล้เข้าสู่ Major Wave 3 — Portfolio · AI Boom · ไทย · Crypto (Readiness / Quality / Confidence)" },
-    "/signal-hot": { category: "Signals", title: "🔥 สัญญาณเด่นวันนี้", subtitle: "หุ้น SET100 + NASDAQ ที่ EMA ตัดขึ้น เรียงตามแรงวอลุ่ม" },
     "/backtest": { category: "Strategy Research", title: "Backtest Lab", subtitle: "ทดสอบกลยุทธ์ย้อนหลังด้วยข้อมูลราคาในอดีต" }
   };
 
@@ -653,8 +512,7 @@
       const items = group.items.map((it) => {
         const active = !it.soon && normalizePath(it.p) === normalizePath(activePath) ? " is-active" : "";
         const soon = it.soon ? " is-soon" : "";
-        const badge = it.p === "/watchlist" ? watchlistBadge() : "";
-        return `<a class="mc-nav-item${active}${soon}" href="${escapeHtml(it.p)}"><span class="mc-ic">${it.i}</span> ${escapeHtml(it.t)}${badge}</a>`;
+        return `<a class="mc-nav-item${active}${soon}" href="${escapeHtml(it.p)}"><span class="mc-ic">${it.i}</span> ${escapeHtml(it.t)}</a>`;
       }).join("");
       return `<div class="mc-nav-group-label">${escapeHtml(group.label)}</div>${items}`;
     }).join("");
@@ -714,16 +572,6 @@
     document.head.appendChild(s);
   }
 
-  function watchlistBadge() {
-    try {
-      const snap = ensureSnapshotApi().read && ensureSnapshotApi().read();
-      const n = snap && snap.watchlist && snap.watchlist.triggeredToday ? snap.watchlist.triggeredToday.length : 0;
-      return n ? `<span class="mc-nav-badge">${n}</span>` : "";
-    } catch (e) {
-      return "";
-    }
-  }
-
   // Every page consumes the Global Market Regime via a compact header chip.
   function renderRegimeChip() {
     const el = document.getElementById("appRegimeChip");
@@ -743,26 +591,13 @@
     window.addEventListener("portfolio-data-snapshot", renderRegimeChip);
   }
 
-  function showWatchlistToast(n) {
-    if (!document.body) return;
-    const prev = document.getElementById("wl-toast");
-    if (prev) prev.remove();
-    const t = document.createElement("div");
-    t.id = "wl-toast";
-    t.textContent = `🔔 มี ${n} รายการใน Watchlist เข้าเงื่อนไข`;
-    document.body.appendChild(t);
-    window.setTimeout(function () { if (t && t.parentNode) t.remove(); }, 5000);
-  }
-
   function mountShell() {
     if (document.getElementById("mc-shell")) return;
     ensureStylesheet("/mission-control.css?v=20260623-mc-7");
-    ensureStylesheet("/watchlist.css?v=20260621-watch-2");
     ensureScript("/scoring.js?v=20260623-scoring-10");
     ensureScript("/signal-quality.js?v=20260621-sq-5");
-    ensureScript("/watchlist.js?v=20260623-watch-6");
     // The AI Boom Universe is the monitor list — keep its seed available on every
-    // page so snapshots + Watchlist sync see the full universe consistently.
+    // page so snapshot loads see the full universe consistently.
     ensureScript("/ai-boom-universe-data.js?v=20260524-summary-1");
     // Global Market Regime engine + chip styles available on EVERY page.
     ensureStylesheet("/mission-control-v2.css?v=20260630-mcx-1");
@@ -778,18 +613,13 @@
 
     // Some pages (e.g. Home) render their own hardcoded Mission Control shell.
     // Don't rebuild it — but DO refresh the sidebar from the single canonical
-    // SIDEBAR config so menu items (Watchlist, etc.) never drift / go missing.
+    // SIDEBAR config so menu items never drift / go missing.
     const existingSidebar = document.getElementById("mcSidebar");
     if (existingSidebar && document.querySelector(".mc-app")) {
       existingSidebar.innerHTML = buildSidebar(activePath);
       // NOTE: a hardcoded-shell page (Home) wires its own #mcMenuToggle — don't
       // double-bind it here or the two toggles cancel out.
       wireRegimeChip();
-      window.addEventListener("portfolio-data-snapshot", autoSyncAIBoom);
-      whenWatchlistReady(() => {
-        const hasAiBoom = (window.Watchlist.read() || []).some((i) => i.source === "ai_boom");
-        if (!hasAiBoom) autoSyncAIBoom();
-      });
       return;
     }
 
@@ -836,14 +666,6 @@
 
     wireDataStatus();
     wireRegimeChip();
-
-    // Keep the Watchlist mirroring the AI Boom Universe (the monitor list):
-    // re-sync after every data load, and populate it on first run.
-    window.addEventListener("portfolio-data-snapshot", autoSyncAIBoom);
-    whenWatchlistReady(() => {
-      const hasAiBoom = (window.Watchlist.read() || []).some((i) => i.source === "ai_boom");
-      if (!hasAiBoom) autoSyncAIBoom();
-    });
   }
 
   if (document.readyState === "loading") {
