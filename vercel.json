@@ -1,19 +1,49 @@
 {
   "version": 2,
   "outputDirectory": "public",
-  "rewrites": [
+  "redirects": [
+    {
+      "source": "/portfolio-status",
+      "destination": "/portfolio",
+      "permanent": false
+    },
+    {
+      "source": "/portfolio-holdings",
+      "destination": "/portfolio",
+      "permanent": false
+    },
+    {
+      "source": "/exposure-map",
+      "destination": "/portfolio",
+      "permanent": false
+    },
     {
       "source": "/ai-boom-universe",
-      "destination": "/ai-boom-universe.html"
+      "destination": "/action-center",
+      "permanent": false
+    },
+    {
+      "source": "/watchlist",
+      "destination": "/action-center",
+      "permanent": false
     },
     {
       "source": "/technical-signals",
-      "destination": "/technical-signals.html"
+      "destination": "/scanner",
+      "permanent": false
+    },
+    {
+      "source": "/signal-hot",
+      "destination": "/scanner",
+      "permanent": false
     },
     {
       "source": "/thai-stock-scanner",
-      "destination": "/thai-stock-scanner.html"
-    },
+      "destination": "/scanner",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
     {
       "source": "/backtest",
       "destination": "/backtest.html"
@@ -27,32 +57,20 @@
       "destination": "/action-center.html"
     },
     {
-      "source": "/exposure-map",
-      "destination": "/exposure-map.html"
-    },
-    {
-      "source": "/portfolio-holdings",
-      "destination": "/portfolio-holdings.html"
-    },
-    {
-      "source": "/portfolio-status",
-      "destination": "/portfolio-status.html"
+      "source": "/portfolio",
+      "destination": "/portfolio.html"
     },
     {
       "source": "/home",
       "destination": "/home.html"
     },
     {
-      "source": "/signal-hot",
-      "destination": "/signal-hot.html"
+      "source": "/scanner",
+      "destination": "/scanner.html"
     },
     {
       "source": "/asset/(.*)",
       "destination": "/asset.html"
-    },
-    {
-      "source": "/watchlist",
-      "destination": "/watchlist.html"
     },
     {
       "source": "/bitcoin-monitor",

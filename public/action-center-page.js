@@ -104,6 +104,161 @@
     return String(raw || "").trim().toUpperCase().replace(/[^A-Z0-9.^-]/g, "");
   }
 
+  // ============================================================
+  // Universe list management (merged in from AI Boom Universe page).
+  // The Action Center now OWNS the focus list: add/remove persists to
+  // /api/ai-universe (+ localStorage cache, same keys as before so existing
+  // data carries over). Load Latest Data picks new assets up automatically.
+  // ============================================================
+  const STORAGE_KEY = "aiBoomUniverseUserAssets";
+  const REMOVED_KEY = "aiBoomUniverseRemovedAssetIds";
+  const WATCHLIST_STORE_KEY = "portfolio_dashboard_watchlist";
+  const WATCHLIST_MIGRATED_KEY = "watchlistMigratedToUniverse_v1";
+
+  let persistedState = { userAssets: [], removedIds: [] };
+  let universeStorageMode = "loading";
+
+  function readJsonArrayLocal(key) {
+    try { const v = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(v) ? v : []; } catch (_e) { return []; }
+  }
+  function sanitizeUniverseState(raw) {
+    const safe = raw && typeof raw === "object" ? raw : {};
+    const seenTickers = new Set();
+    const userAssets = (Array.isArray(safe.userAssets) ? safe.userAssets : []).filter((a) => {
+      const t = canonical(a && a.ticker);
+      if (!t || seenTickers.has(t)) return false;
+      seenTickers.add(t);
+      return true;
+    });
+    return { userAssets, removedIds: Array.isArray(safe.removedIds) ? safe.removedIds : [] };
+  }
+  async function loadUniverseState() {
+    try {
+      const response = await fetch("/api/ai-universe", { cache: "no-store" });
+      if (!response.ok) throw new Error("state request failed");
+      const payload = await response.json();
+      persistedState = sanitizeUniverseState(payload?.data);
+      universeStorageMode = payload?.mode || "supabase";
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedState.userAssets));
+        localStorage.setItem(REMOVED_KEY, JSON.stringify(persistedState.removedIds));
+      } catch (_e) { /* cache best-effort */ }
+    } catch (_error) {
+      persistedState = sanitizeUniverseState({ userAssets: readJsonArrayLocal(STORAGE_KEY), removedIds: readJsonArrayLocal(REMOVED_KEY) });
+      universeStorageMode = "local-cache";
+    }
+  }
+  async function saveUniverseState() {
+    persistedState = sanitizeUniverseState(persistedState);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedState.userAssets));
+      localStorage.setItem(REMOVED_KEY, JSON.stringify(persistedState.removedIds));
+    } catch (_e) { /* cache best-effort */ }
+    try {
+      const response = await fetch("/api/ai-universe", {
+        method: "PUT",
+        headers: { "content-type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ data: persistedState })
+      });
+      if (!response.ok) throw new Error("save state failed");
+      universeStorageMode = "supabase";
+    } catch (_error) {
+      universeStorageMode = "local-cache";
+    }
+  }
+
+  function makeUserAssetLite(ticker, name) {
+    const t = canonical(ticker);
+    const assetType = core.detectAssetType ? core.detectAssetType(t) : "stock";
+    const enrich = window.AIBoomScoring && typeof window.AIBoomScoring.enrichAsset === "function"
+      ? window.AIBoomScoring.enrichAsset.bind(window.AIBoomScoring)
+      : (a) => a;
+    return enrich({
+      id: `user-${t}-${Date.now()}`,
+      ticker: t,
+      name: (name || "").trim() || t,
+      asset_type: assetType,
+      provider_symbol: t,
+      layer: "growth_optional",
+      sub_theme: "User added via Action Center",
+      is_user_added: true
+    });
+  }
+
+  function removedTickerSet() {
+    const removedIds = new Set(persistedState.removedIds || []);
+    const tickers = new Set();
+    (seed.ai_boom_universe || []).forEach((asset) => {
+      if (asset && removedIds.has(asset.id)) {
+        const key = canonical(asset.ticker);
+        if (key) tickers.add(key);
+      }
+    });
+    return tickers;
+  }
+
+  function userAssetByTicker(ticker) {
+    const key = canonical(ticker);
+    return (persistedState.userAssets || []).find((a) => canonical(a.ticker) === key) || null;
+  }
+
+  async function addUserAsset(ticker, name) {
+    const key = canonical(ticker);
+    if (!key) return { ok: false, message: "กรุณาใส่ ticker" };
+    const inSeed = (seed.ai_boom_universe || []).some((a) => canonical(a?.ticker) === key);
+    if (userAssetByTicker(key) || (inSeed && !removedTickerSet().has(key))) return { ok: false, message: key + " อยู่ใน list แล้ว" };
+    // re-adding a removed seed asset → just un-remove it
+    if (inSeed) {
+      const seedAsset = (seed.ai_boom_universe || []).find((a) => canonical(a?.ticker) === key);
+      persistedState.removedIds = (persistedState.removedIds || []).filter((id) => id !== seedAsset.id);
+    } else {
+      persistedState.userAssets = (persistedState.userAssets || []).concat([makeUserAssetLite(key, name)]);
+    }
+    await saveUniverseState();
+    return { ok: true, message: "เพิ่ม " + key + " แล้ว — กด Load Latest Data เพื่อดึงสัญญาณ" };
+  }
+
+  async function removeAssetFromList(symbol) {
+    const key = canonical(symbol);
+    const userAsset = userAssetByTicker(key);
+    if (userAsset) {
+      persistedState.userAssets = (persistedState.userAssets || []).filter((a) => canonical(a.ticker) !== key);
+    } else {
+      const seedAsset = (seed.ai_boom_universe || []).find((a) => canonical(a?.ticker) === key);
+      if (!seedAsset) return false;
+      const ids = new Set(persistedState.removedIds || []);
+      ids.add(seedAsset.id);
+      persistedState.removedIds = [...ids];
+    }
+    await saveUniverseState();
+    return true;
+  }
+
+  // One-time migration: manually-added Watchlist items (the old separate store)
+  // move into the unified universe list, then the old store is left untouched
+  // (read-only) so nothing is destroyed. Runs once per browser.
+  async function migrateWatchlistOnce() {
+    try {
+      if (localStorage.getItem(WATCHLIST_MIGRATED_KEY)) return 0;
+      const items = readJsonArrayLocal(WATCHLIST_STORE_KEY);
+      const manual = items.filter((it) => it && it.source !== "ai_boom" && it.isActive !== false);
+      let added = 0;
+      manual.forEach((it) => {
+        const key = canonical(it.canonicalSymbol || it.displaySymbol || it.symbol);
+        if (!key || userAssetByTicker(key)) return;
+        const inSeed = (seed.ai_boom_universe || []).some((a) => canonical(a?.ticker) === key);
+        if (inSeed) return;
+        persistedState.userAssets.push(makeUserAssetLite(key, it.assetName || it.name || key));
+        added += 1;
+      });
+      localStorage.setItem(WATCHLIST_MIGRATED_KEY, new Date().toISOString());
+      if (added > 0) await saveUniverseState();
+      return added;
+    } catch (_e) {
+      return 0;
+    }
+  }
+
   function readSnapshot() {
     const snap = snapshotApi.read?.();
     if (snap) return snap;
@@ -162,6 +317,11 @@
         currency: "THB"
       });
     }
+    // User-added assets appear immediately (even before the next Load fills
+    // in their technicals); assets the user removed disappear unless held.
+    (persistedState.userAssets || []).forEach((asset) => addAsset(asset));
+    const holdingKeys = new Set(holdingsFromSnapshot(snapshot).map((h) => canonical(h.canonicalSymbol)));
+    removedTickerSet().forEach((key) => { if (!holdingKeys.has(key)) map.delete(key); });
     return map;
   }
 
@@ -774,6 +934,7 @@
             ${detailItem("Market Risk", row.facts.marketRiskThai ? `${row.facts.marketRiskLabel} (${row.facts.marketRiskThai})` : row.facts.marketRiskLabel)}
             ${detailItem("Source", row.source || "Data Snapshot")}
           </div>
+          ${holding ? "" : `<button class="asset-remove-btn" data-remove="${escapeHtml(row.symbol)}" type="button">🗑 เอา ${escapeHtml(row.displaySymbol || row.symbol)} ออกจาก list</button>`}
         </details>
       </article>
     `;
@@ -968,7 +1129,64 @@
     render();
   });
 
+  // ---- list management wiring (remove buttons live inside section cards) ----
+  sectionsRoot?.addEventListener("click", async (event) => {
+    const btn = event.target.closest?.("[data-remove]");
+    if (!btn) return;
+    const symbol = btn.getAttribute("data-remove");
+    if (!window.confirm("เอา " + symbol + " ออกจาก list ที่ติดตาม?")) return;
+    btn.disabled = true;
+    await removeAssetFromList(symbol);
+    render();
+  });
+
+  function openAddAssetModal() {
+    const prev = document.getElementById("acAddModal");
+    if (prev) prev.remove();
+    const back = document.createElement("div");
+    back.id = "acAddModal";
+    back.className = "ac-modal-back";
+    back.innerHTML = `
+      <div class="ac-modal" role="dialog" aria-modal="true">
+        <h3>เพิ่มสินทรัพย์เข้า list</h3>
+        <label>Ticker <input id="acAddTicker" type="text" placeholder="เช่น PLTR, GULF.BK, ETH-USD" autocomplete="off" /></label>
+        <label>ชื่อ (ไม่บังคับ) <input id="acAddName" type="text" placeholder="ชื่อที่อยากให้แสดง" /></label>
+        <p class="ac-modal-note">เพิ่มแล้วรายการจะเข้า list ทันที และถูกดึงสัญญาณเมื่อกด Load Latest Data ครั้งถัดไป</p>
+        <div class="ac-modal-actions">
+          <button type="button" id="acAddCancel">ยกเลิก</button>
+          <button type="button" id="acAddSave" class="ac-primary">เพิ่ม</button>
+        </div>
+        <p class="ac-modal-msg" id="acAddMsg"></p>
+      </div>`;
+    document.body.appendChild(back);
+    const close = () => back.remove();
+    back.addEventListener("click", (e) => { if (e.target === back) close(); });
+    back.querySelector("#acAddCancel").addEventListener("click", close);
+    const tickerInput = back.querySelector("#acAddTicker");
+    tickerInput.focus();
+    const save = async () => {
+      const msg = back.querySelector("#acAddMsg");
+      const result = await addUserAsset(tickerInput.value, back.querySelector("#acAddName").value);
+      msg.textContent = result.message;
+      msg.className = "ac-modal-msg " + (result.ok ? "ok" : "err");
+      if (result.ok) { window.setTimeout(close, 900); render(); }
+    };
+    back.querySelector("#acAddSave").addEventListener("click", save);
+    tickerInput.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
+  }
+  document.querySelector("#addAssetButton")?.addEventListener("click", openAddAssetModal);
+
   window.addEventListener("portfolio-data-snapshot", render);
   window.addEventListener("portfolio-holdings-updated", render);
-  document.addEventListener("DOMContentLoaded", render);
+
+  async function boot() {
+    await loadUniverseState();
+    const migrated = await migrateWatchlistOnce();
+    render();
+    if (migrated > 0 && actionStatus) {
+      actionStatus.textContent = "ย้ายรายการจาก Watchlist เดิมเข้า list แล้ว " + migrated + " รายการ";
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => { boot(); });
+  else boot();
 })();
