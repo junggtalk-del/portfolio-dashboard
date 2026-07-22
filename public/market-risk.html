@@ -9,18 +9,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/market-risk.css?v=20260609-risk-2" />
+    <link rel="stylesheet" href="/market-risk.css?v=20260723-mr-11" />
       <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
       <script src="/api-auth.js?v=20260620-auth-1"></script>
-      <script src="/data-snapshot.js?v=20260711-snapshot-12"></script>
+      <script src="/data-snapshot.js?v=20260715-snapshot-13"></script>
   </head>
   <body>
     <main class="risk-shell">
       <section class="risk-topbar">
         <div>
-          <p class="risk-eyebrow">Market Fragility Monitor</p>
-          <h1>Market Risk Monitor</h1>
-          <p class="risk-subtitle">ติดตามความเสี่ยงตลาดจากหุ้นเทค, VIX, VVIX และ VIXEQ</p>
+          <p class="risk-eyebrow">Global Macro Monitor</p>
+          <h1>Macro Dashboard</h1>
+          <p class="risk-subtitle">ดอกเบี้ย · Yield Curve · ดอลลาร์ · เครดิต · VIX — ตัวเฝ้าระวังหลักของโลกในหน้าเดียว</p>
         </div>
         <nav class="risk-nav" aria-label="เมนูหลัก">
           <a href="/">กลับ Dashboard พอร์ต</a>
@@ -40,84 +40,65 @@
         <button id="refreshRiskButton" type="button">Refresh risk data</button>
       </section>
 
-      <section id="riskSummaryCards" class="risk-summary-grid" aria-label="สรุปความเสี่ยง">
-        <div class="risk-empty">กำลังคำนวณ Market Risk...</div>
+      <section id="mrVerdict" aria-label="สรุประดับความระวัง">
+        <div class="risk-empty">กำลังประเมินสภาพแวดล้อมมหภาค…</div>
       </section>
 
-      <section class="risk-panel interpretation-panel">
-        <div class="panel-heading">
-          <h2>สรุปภาวะตลาดตอนนี้</h2>
-          <p>Dashboard interpretation summary</p>
+      <section class="mr-block" id="mrRiskAsset" aria-label="Macro → ระดับการลงทุนสินทรัพย์เสี่ยง">
+        <div class="mr-block-head">
+          <h2>🧭 Macro บอกให้ถือสินทรัพย์เสี่ยงแค่ไหน</h2>
+          <p>สรุปทุกมาตรวัดในหน้านี้เป็นคะแนนเดียว แล้วแปลงเป็นระดับการถือ Bitcoin · Nasdaq · S&amp;P 500 — เห็นชัดว่าตอนนี้ควรอยู่โซนไหน ระหว่าง "ขายออก" จนถึง "ลงเงินเต็มส่วน"</p>
         </div>
-        <div id="marketInterpretation" class="market-interpretation">
-          กำลังรอสัญญาณจาก SPX, XLK, VIX, VVIX และ VIXEQ
+        <div id="mrRiskAssetBody">
+          <div class="risk-empty">กำลังประเมินภาพรวม macro…</div>
         </div>
       </section>
 
-      <section class="risk-panel guide-panel">
-        <div class="panel-heading">
-          <h2>คำอธิบายตัวชี้วัด</h2>
-          <p>Indicator Guide</p>
+      <section class="mr-block" id="mrRateMonitor" aria-label="Interest Rate Risk Monitor">
+        <div class="mr-block-head">
+          <h2>🏦 Interest Rate Risk Monitor</h2>
+          <p>เฝ้าระวัง US Treasury yields (10Y · 30Y) — ต้นทุนเงินอ้างอิงที่กดดัน valuation ของหุ้น growth / AI / Nasdaq และสินทรัพย์ duration ยาว · ระบบเตือนล่วงหน้า</p>
         </div>
-        <div id="indicatorGuide" class="indicator-guide"></div>
+        <div id="mrRateBody">
+          <div class="risk-empty">กำลังโหลดข้อมูล Treasury yield…</div>
+        </div>
       </section>
 
-      <section class="risk-panel combined-panel">
-        <div class="panel-heading">
-          <h2>สัญญาณที่ต้องระวังเป็นพิเศษ</h2>
-          <p>Important Combined Risk Signals</p>
+      <section class="mr-block" aria-label="ตัวเฝ้าระวังมหภาคโลก">
+        <div class="mr-block-head">
+          <h2>🌍 ตัวเฝ้าระวังมหภาคโลก</h2>
+          <p>ดอกเบี้ย · Yield Curve · ดอลลาร์ · เครดิต · ความผันผวนพันธบัตร — ตัวที่มักเตือนก่อนตลาดหุ้นรู้ตัว</p>
         </div>
-        <div id="combinedSignals" class="combined-signal-grid"></div>
+        <div id="mrMacroCards" class="mr-grid">
+          <div class="risk-empty">กำลังโหลดข้อมูล macro…</div>
+        </div>
       </section>
 
-      <section class="risk-panels">
-        <article class="risk-panel">
-          <div class="panel-heading">
-            <h2>Market Leadership</h2>
-            <p>ดูว่าตลาดขึ้นกว้าง หรือหุ้นเทคกำลังแบกตลาดมากเกินไป</p>
-          </div>
-          <div id="leadershipPanel" class="metric-list"></div>
-        </article>
+      <section class="mr-block" aria-label="ความเสี่ยงตลาดหุ้น">
+        <div class="mr-block-head">
+          <h2>📈 ความเสี่ยงตลาดหุ้น (VIX Complex)</h2>
+          <p>สรุปย่อจากระบบเดิม — score เดียว + ความกลัว + แรงซื้อประกัน</p>
+        </div>
+        <div id="mrEquityCards" class="mr-grid mr-grid-3">
+          <div class="risk-empty">กำลังโหลด…</div>
+        </div>
+        <div id="mrEquityRef"></div>
+      </section>
 
-        <article class="risk-panel">
-          <div class="panel-heading">
-            <h2>Volatility Regime</h2>
-            <p>อ่านระดับ VIX, VVIX และการเร่งขึ้นของความต้องการ hedge</p>
-          </div>
-          <div id="volatilityPanel" class="metric-list"></div>
-        </article>
-
-        <article class="risk-panel">
-          <div class="panel-heading">
-            <h2>Hidden Risk / Hedging Signal</h2>
-            <p>จับสัญญาณ VIX ยังนิ่ง แต่ตลาดเริ่มซื้อ protection หรือ risk รายตัวสูงขึ้น</p>
-          </div>
-          <div id="hiddenRiskPanel" class="metric-list"></div>
-        </article>
-
-        <article class="risk-panel">
-          <div class="panel-heading">
-            <h2>Risk Flags</h2>
-            <p>รายการ warning ที่ active อยู่ตอนนี้</p>
-          </div>
-          <div id="riskFlags" class="flag-list"></div>
-        </article>
-
-        <article class="risk-panel">
-          <div class="panel-heading">
-            <h2>Action Guide</h2>
-            <p>แนวทางใช้งานตามระดับ risk score</p>
-          </div>
-          <div id="actionGuide" class="action-guide"></div>
-        </article>
+      <section class="mr-block" aria-label="จุดที่ควรระวัง">
+        <div class="mr-block-head">
+          <h2>⚠️ จุดที่ควรระวังตอนนี้</h2>
+          <p>รวมทุกสัญญาณเตือนที่ active — เรียงจากรุนแรงมากไปน้อย</p>
+        </div>
+        <div id="mrWarnings"></div>
       </section>
 
       <footer class="risk-disclaimer">
-        <p>อินดิเคเตอร์เหล่านี้ใช้เพื่อเฝ้าระวังความเสี่ยง ไม่ใช่คำแนะนำการลงทุน ควรใช้ร่วมกับการจัดพอร์ต แนวโน้มหลัก และการบริหารความเสี่ยง</p>
-        <p>These indicators are risk-monitoring tools, not investment advice. Use together with portfolio allocation, trend signals, and risk management.</p>
+        <p>เกณฑ์ที่ใช้ (ตรวจสอบซ้ำได้): ดอกเบี้ย 10Y ขึ้น ≥25/50bps ต่อเดือน · curve 10Y−3M ติดลบ = inverted, ชันขึ้นพร้อมดอกยาวขึ้น = bear steepener · 30Y ≥5.0/5.25% · DXY แข็ง ≥2.5/4% ต่อเดือน · HYG ใต้ MA50 หรือร่วง ≥2% ต่อเดือน · MOVE ≥100/120 · ข้อมูล Yahoo ผ่าน cache รายวัน</p>
+        <p>อินดิเคเตอร์เหล่านี้ใช้เพื่อเฝ้าระวังความเสี่ยง ไม่ใช่คำแนะนำการลงทุน</p>
       </footer>
     </main>
-    <script src="/market-risk-page.js?v=20260609-risk-2"></script>
-<script src="/app-navigation.js?v=20260714-nav-9"></script>
+    <script src="/market-risk-page.js?v=20260723-mr-11"></script>
+<script src="/app-navigation.js?v=20260723-nav-13"></script>
   </body>
 </html>
