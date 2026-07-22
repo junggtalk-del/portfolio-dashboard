@@ -77,8 +77,16 @@
       "destination": "/bitcoin-monitor.html"
     },
     {
+      "source": "/smart-dca",
+      "destination": "/smart-dca.html"
+    },
+    {
       "source": "/wave3",
       "destination": "/wave3.html"
+    },
+    {
+      "source": "/ai-cycle",
+      "destination": "/ai-cycle.html"
     },
     {
       "source": "/((?!api/.*).*)",
