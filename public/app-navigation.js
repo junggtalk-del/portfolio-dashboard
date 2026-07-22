@@ -7,7 +7,7 @@
 
   const SNAPSHOT_STORAGE_KEY = "portfolio_dashboard_data_snapshot";
   const SNAPSHOT_DATA_VERSION = "2026-06-portfolio-dashboard-v1";
-  const REQUIRED_SNAPSHOT_SYMBOLS = ["SPY", "QQQM", "XLK", "^GSPC", "^VIX", "^VVIX", "^VIXEQ", "BTC-USD", "^IXIC", "DX-Y.NYB", "^TNX", "GLD"];
+  const REQUIRED_SNAPSHOT_SYMBOLS = ["SPY", "QQQM", "XLK", "^GSPC", "^VIX", "^VVIX", "^VIXEQ", "BTC-USD", "^IXIC", "DX-Y.NYB", "^TNX", "GLD", "HYG", "^MOVE"];
 
   function normalizePath(pathname) {
     const path = String(pathname || "/").replace(/\/+$/, "") || "/";
@@ -472,8 +472,8 @@
       { p: "/home", i: "🛰️", t: "Home" },
       { p: "/market-risk", i: "🌐", t: "Macro Dashboard" }
     ] },
-    { label: "Wave 3 Radar", items: [
-      { p: "/wave3", i: "🌊", t: "Wave 3 Setup" }
+    { label: "Strategic Intelligence", items: [
+      { p: "/ai-cycle", i: "🧭", t: "AI Cycle Intelligence" }
     ] },
     { label: "Portfolio", items: [
       { p: "/portfolio", i: "📊", t: "Portfolio Position" },
@@ -483,8 +483,11 @@
       { p: "/action-center", i: "🎯", t: "Action Center" },
       { p: "/scanner", i: "🔎", t: "Market Scanner" }
     ] },
-    { label: "Research", items: [
+    { label: "Bitcoin", items: [
       { p: "/bitcoin-monitor", i: "₿", t: "Bitcoin Monitor" },
+      { p: "/smart-dca", i: "🪙", t: "Smart DCA" }
+    ] },
+    { label: "Research", items: [
       { p: "#", i: "⚖️", t: "Compare", soon: true }
     ] },
     { label: "Lab", items: [
@@ -504,7 +507,9 @@
     "/portfolio": { category: "Portfolio", title: "📊 Portfolio Position", subtitle: "ภาพจริงของพอร์ต: สัดส่วน มูลค่า ไส้ใน และสภาวะสัญญาณของแต่ละสินทรัพย์" },
     "/market-risk": { category: "Risk Monitor", title: "Market Risk", subtitle: "VIX / VVIX / VIXEQ และระดับความเสี่ยงของตลาด" },
     "/wave3": { category: "Opportunity Radar", title: "🌊 Wave 3 Setup", subtitle: "สินทรัพย์ที่ใกล้เข้าสู่ Major Wave 3 — Portfolio · AI Boom · ไทย · Crypto (Readiness / Quality / Confidence)" },
-    "/backtest": { category: "Strategy Research", title: "Backtest Lab", subtitle: "ทดสอบกลยุทธ์ย้อนหลังด้วยข้อมูลราคาในอดีต" }
+    "/ai-cycle": { category: "Strategic Intelligence", title: "🧭 AI Cycle Intelligence", subtitle: "วัฏจักร AI อยู่ตรงไหน · เงินหมุนเข้ากลุ่มไหน · พอร์ตวางตัวสอดคล้องแค่ไหน · ควรปรับกลยุทธ์อย่างไร" },
+    "/backtest": { category: "Strategy Research", title: "Backtest Lab", subtitle: "ทดสอบกลยุทธ์ย้อนหลังด้วยข้อมูลราคาในอดีต" },
+    "/smart-dca": { category: "Bitcoin", title: "🪙 Smart DCA", subtitle: "DCA บิทคอยน์ตามโซน MVRV — ซื้อมากตอนถูก ซื้อน้อยตอนแพง พร้อม backtest เทียบ DCA ปกติ" }
   };
 
   function buildSidebar(activePath) {
@@ -601,7 +606,7 @@
     ensureScript("/ai-boom-universe-data.js?v=20260524-summary-1");
     // Global Market Regime engine + chip styles available on EVERY page.
     ensureStylesheet("/mission-control-v2.css?v=20260630-mcx-1");
-    ensureScript("/market-regime.js?v=20260630-regime-1");
+    ensureScript("/market-regime.js?v=20260715-regime-2");
     // Bitcoin Intelligence engine — available wherever Load Latest Data can run, so
     // the snapshot loader can extend snapshot.bitcoinIntelligence. Runs only on load.
     ensureScript("/bitcoin-intelligence.js?v=20260704-btcintel-12");
