@@ -162,6 +162,37 @@
     ONCHAIN_KEYS.forEach((k) => resolve(k, fin(ocv[k]), "CSV / Manual"));
     resolve("stablecoinReserve", fin(ocv.stablecoinReserve), "CSV / Manual");
 
+    // --- BGeometrics exact overlay (browser-fetched, day-cached, free 10 req/hr) ---
+    // Upgrades derived/proxy values to EXACT ones. Rule: exact wins unless the
+    // existing source is strictly FRESHER (per the user's "ใช้ source ในรูปถ้า
+    // realtime กว่า"); MVRV-Z always prefers exact because our derived Z is a
+    // compressed proxy, not comparable in quality.
+    const bgeo = (window.BtcOnchainLive && window.BtcOnchainLive.get().metrics) || {};
+    const freshKeyOf = (dateStr) => {
+      if (!dateStr) return "daily";
+      const t = Date.parse(String(dateStr).slice(0, 10) + "T00:00:00Z");
+      if (!Number.isFinite(t)) return "daily";
+      const o = Math.round((Date.now() - t) / 86400000);
+      return o <= 0 ? "D0" : o === 1 ? "D1" : o === 2 ? "D2" : "stale";
+    };
+    function bgeoOverlay(key, bgKey, always) {
+      const b = bgeo[bgKey];
+      if (!b || fin(b.value) == null) return;
+      const cur = meta[key];
+      if (!always && cur && cur.value != null && cur.date && b.date && String(cur.date).slice(0, 10) > String(b.date).slice(0, 10)) return;
+      ind[key] = fin(b.value);
+      meta[key] = { source: "BGeometrics (bitcoin-data.com)", date: b.date || null, freshness: freshKeyOf(b.date), referenceLinks: (cur && cur.referenceLinks) || [], value: ind[key], derived: false, proxy: false };
+    }
+    bgeoOverlay("mvrvZScore", "mvrvZScore", true);
+    bgeoOverlay("nupl", "nupl", false);
+    bgeoOverlay("realizedPriceProxy", "realizedPrice", false);
+    bgeoOverlay("ssrProxy", "ssr", false);
+    // new metrics that had no free source before
+    bgeoOverlay("sopr", "sopr", true);
+    bgeoOverlay("lthSupply", "lthSupply", true);
+    if (!("sopr" in ind)) { ind.sopr = null; meta.sopr = { source: null, date: null, freshness: "missing", referenceLinks: [], value: null }; }
+    if (!("lthSupply" in ind)) { ind.lthSupply = null; meta.lthSupply = { source: null, date: null, freshness: "missing", referenceLinks: [], value: null }; }
+
     ind._meta = meta;
     ind._hasOnchain = ["mvrvZScore", "mvrvRatio", "nupl", "realizedPriceProxy", "puellMultiple", "sthRealizedPrice", "lthRealizedPrice", "sthSopr", "lthSopr", "fearGreed", "fundingRate", "openInterest", "takerBuySellRatio", "longShortRatio", "ssrProxy", "minerRevenueMultipleProxy", "exchangeNetflow", "estimatedLeverageRatio", "ssr", "stablecoinReserve"].some((k) => ind[k] != null);
     ind._techSrc = meta.price.source; ind._techAt = fromApi ? aAt : (snap && snap.loadedAt) || null;
@@ -326,6 +357,10 @@
     if (zone.key === "overheated" || finalScore < 35 || warnings.length >= 3) { riskKey = "high"; riskLabel = "High"; riskThai = "สูง"; }
     else if (finalScore >= 65) { riskKey = "low"; riskLabel = "Low"; riskThai = "ต่ำ"; }
     else { riskKey = "medium"; riskLabel = "Medium"; riskThai = "ปานกลาง"; }
+
+    // Cache the canonical BTC Buy Zone Score so other pages (e.g. Portfolio
+    // Position's Bitcoin bucket) show the SAME number instead of a separate calc.
+    try { window.localStorage.setItem("portfolio_dashboard_btc_buyzone", JSON.stringify({ score: finalScore, zone: zone.key, mode: modeLabel, coverage: coveragePct, at: new Date().toISOString() })); } catch (e) {}
 
     return {
       buyZoneScore: finalScore, label: b.label, thaiLabel: b.thaiLabel, color: b.color, tone: b.tone,
@@ -589,6 +624,7 @@
       signalStripSection(snap) +
       slimBar(ind) +
       buyZoneSection(bz) +
+      onchainDeepDive(ind) +
       `<div class="mc-grid mc-grid-2">${cyclePanel(ind, bz)}${holderSentimentPanel(ind)}</div>` +
       chartSection(hist, ind) +
       `<div class="mc-grid mc-grid-2">${technicalPanel(ind, bz)}${freeStressPanel(ind)}</div>` +
@@ -753,43 +789,157 @@
       ${footer}
     </div>`;
   }
+  // ---------------------------------------------------------------- on-chain deep dive
+  // 6 exact on-chain cards (BGeometrics free API) with full Thai explanations:
+  // คืออะไร / อ่านยังไง / วันนี้ / ข้อจำกัด + gauge bar + link to the full chart.
+  const DD_COL = { green: "var(--mc-emerald)", gray: "#64748b", amber: "var(--mc-amber)", red: "var(--mc-red)", blue: "var(--mc-blue)" };
+  function ddFmtM(v) { return dn(v) ? Number((v / 1e6).toFixed(2)) + "M" : "—"; }
+  const DD_CARDS = [
+    {
+      key: "mvrvZScore", group: "ราคาถูกหรือแพง", title: "MVRV Z-Score",
+      fmt: (v) => num(v, 2),
+      gauge: { lo: -1, hi: 8, ticks: [-1, 0, 2, 5, 8], segs: [[2, "green"], [5, "gray"], [8, "red"]] },
+      tag: (v) => v < 0 ? ["ถูกสุดขั้ว", "green"] : v < 2 ? ["ต่ำ", "green"] : v < 5 ? ["กลาง", "gray"] : v < 7 ? ["สูง", "amber"] : ["ยอดดอย", "red"],
+      what: "MVRV ที่หารด้วยความผันผวนของมูลค่าตลาด ทำให้เอาคนละยุคมาเทียบกันได้ตรงๆ",
+      how: "ต่ำกว่า 0 คือถูกสุดขั้ว 0–2 สะสม เกิน 7 คือโซนยอดดอยในอดีต",
+      today: (v) => num(v, 2) + " = " + (v < 0 ? "ถูกสุดขั้ว — โซนสะสมประวัติศาสตร์" : v < 2 ? "ยังอยู่ครึ่งล่างของวัฏจักร" : v < 5 ? "กลางวัฏจักร" : v < 7 ? "ครึ่งบนของวัฏจักร เริ่มร้อน" : "โซนยอดดอยในอดีต"),
+      chart: "https://charts.bgeometrics.com/mvrv_zscore.html"
+    },
+    {
+      key: "realizedPriceProxy", group: "ราคาถูกหรือแพง", title: "Realized Price",
+      fmt: (v) => money(v),
+      tag: () => ["เส้นฐาน", "blue"],
+      what: "ต้นทุนเฉลี่ยของทั้งตลาด คิดจากราคาตอนที่แต่ละเหรียญขยับครั้งล่าสุด",
+      how: "ไม่ใช่โซน แต่เป็นเส้นฐาน ถ้าราคาหลุดใต้เส้นนี้แปลว่าตลาดโดยรวมอยู่ใต้ต้นทุน",
+      today: (v, ind2) => "เป็นตัวหารของ MVRV" + (dn(ind2.price) && v > 0 ? " · ราคาปัจจุบัน" + (ind2.price >= v ? "สูงกว่าเส้นฐาน " : "ต่ำกว่าเส้นฐาน ") + Math.abs((ind2.price - v) / v * 100).toFixed(0) + "%" : ""),
+      limit: "เหรียญที่หายไปตลอดกาลก็ถูกนับด้วยที่ราคาสมัยที่ขยับครั้งสุดท้าย เส้นนี้จึงต่ำกว่าต้นทุนจริงของคนที่ยังถืออยู่",
+      chart: "https://charts.bgeometrics.com/realized_price.html"
+    },
+    {
+      key: "nupl", group: "อารมณ์ตลาด", title: "NUPL",
+      fmt: (v) => num(v, 2),
+      gauge: { lo: 0, hi: 1, ticks: [0, 0.25, 0.5, 0.75, 1], segs: [[0.25, "green"], [0.5, "gray"], [0.75, "amber"], [1, "red"]] },
+      tag: (v) => v < 0 ? ["ยอมแพ้", "green"] : v < 0.25 ? ["ความหวัง", "green"] : v < 0.5 ? ["ลังเล", "gray"] : v < 0.75 ? ["เชื่อมั่น", "amber"] : ["ยูโฟเรีย", "red"],
+      what: "สัดส่วนกำไรบนกระดาษของทั้งตลาดเทียบกับมูลค่าตลาด ใช้วัดว่าตลาดร้อนแค่ไหน",
+      how: "ต่ำกว่า 0 ยอมแพ้ · 0–0.25 ความหวัง · 0.25–0.5 ลังเล · 0.5–0.75 เชื่อมั่น · เกิน 0.75 ยูโฟเรีย",
+      today: (v) => num(v, 2) + " = " + (v < 0 ? "ตลาดขาดทุน (capitulation)" : v < 0.25 ? "ตลาดยังไม่ร้อน" : v < 0.5 ? "กำไรปานกลาง" : v < 0.75 ? "ตลาดเชื่อมั่น เริ่มร้อน" : "ยูโฟเรีย — เสี่ยงสูง"),
+      chart: "https://charts.bgeometrics.com/nupl.html"
+    },
+    {
+      key: "sopr", group: "อารมณ์ตลาด", title: "SOPR",
+      fmt: (v) => num(v, 2),
+      gauge: { lo: 0.9, hi: 1.1, ticks: [0.9, 1, 1.1], segs: [[1, "green"], [1.1, "gray"]] },
+      tag: (v) => v < 0.98 ? ["ยอมขายขาดทุน", "green"] : v < 1 ? ["ขายขาดทุนเล็กน้อย", "green"] : v <= 1.03 ? ["ขายมีกำไร", "gray"] : ["กำไรหนา ระวัง", "amber"],
+      what: "เหรียญที่ขยับวันนี้ ขายที่ราคากำไรหรือขาดทุนเทียบกับตอนที่ได้มา",
+      how: "เกิน 1 คือคนขายมีกำไร ต่ำกว่า 1 คือคนยอมขายขาดทุน ซึ่งมักเกิดตอนตลาดหมดแรง",
+      today: (v) => num(v, 2) + " = " + (v >= 1 ? "คนที่ขายวันนี้มีกำไรเฉลี่ย" : "คนขายยอมขายขาดทุน (มักใกล้จุดหมดแรงขาย)"),
+      chart: "https://charts.bgeometrics.com/sopr.html"
+    },
+    {
+      key: "ssrProxy", group: "แรงซื้อในตลาด", title: "SSR",
+      fmt: (v) => num(v, 2),
+      gauge: { lo: 0, hi: 55, ticks: [0, 10, 25, 40, 55], segs: [[10, "green"], [25, "gray"], [40, "amber"], [55, "red"]] },
+      tag: (v) => v < 10 ? ["แรงซื้อเยอะ", "green"] : v < 25 ? ["ปกติ", "gray"] : v < 40 ? ["เริ่มตึง", "amber"] : ["แรงซื้อหมด", "red"],
+      what: "Stablecoin Supply Ratio — มูลค่าตลาด Bitcoin หารด้วยมูลค่า Stablecoin ทั้งหมด วัดว่ามีเงินรอซื้อ (stablecoin) มากแค่ไหนเทียบกับ Bitcoin",
+      how: "ยิ่งต่ำ = มี stablecoin เยอะเทียบ Bitcoin = แรงซื้อรอเข้าเยอะ · ยิ่งสูง = เงินรอซื้อน้อย แรงหมดแล้ว",
+      today: (v) => num(v, 2) + " = " + (v < 10 ? "ต่ำ มีเงิน stablecoin รอซื้อเยอะเทียบ Bitcoin" : v < 25 ? "กลางๆ เงินรอซื้อพอมี" : "สูง เงินรอซื้อเริ่มน้อย"),
+      limit: "ค่านี้ค่อยๆ ต่ำลงตามเวลาเพราะ Stablecoin โตเร็วกว่า Bitcoin เทียบข้ามยุคตรงๆ ไม่ได้ ให้ดูเทียบช่วงใกล้ๆ",
+      chart: "https://charts.bgeometrics.com/ssr.html"
+    },
+    {
+      key: "lthSupply", group: "พฤติกรรมนักลงทุน", title: "LTH Supply",
+      fmt: (v) => ddFmtM(v),
+      gauge: { lo: 12e6, hi: 20e6, ticks: [12e6, 15e6, 20e6], tickFmt: ddFmtM, segs: [[15e6, "gray"], [20e6, "green"]] },
+      tag: (v) => v >= 15e6 ? ["ถูกล็อกเยอะ", "green"] : ["ระดับกลาง", "gray"],
+      what: "จำนวน Bitcoin ที่อยู่ในมือคนถือเกิน 155 วัน เทียบกับ ~19.9 ล้านเหรียญที่ขุดออกมาแล้วทั้งหมด",
+      how: "ยิ่งสูงแปลว่าเหรียญยิ่งถูกล็อกไว้กับสายยาว เหลือหมุนในตลาดน้อย ดูทิศทางว่าเพิ่มหรือลดสำคัญกว่าตัวเลขนิ่งๆ",
+      today: (v) => (v / 1e6).toFixed(2) + " ล้าน BTC อยู่ในมือสายถือยาว",
+      chart: "https://charts.bgeometrics.com/supply_lth_sth.html"
+    }
+  ];
+
+  function ddGauge(g, v) {
+    if (!g || !dn(v)) return "";
+    const range = g.hi - g.lo || 1;
+    let prev = g.lo, segsHtml = "";
+    g.segs.forEach(([to, col]) => {
+      const w = Math.max(0, (Math.min(to, g.hi) - prev) / range * 100);
+      segsHtml += `<span style="width:${w.toFixed(2)}%;background:${DD_COL[col]}"></span>`;
+      prev = to;
+    });
+    const pos = Math.max(0, Math.min(100, (v - g.lo) / range * 100));
+    const ticks = (g.ticks || []).map((t) => {
+      const x = ((t - g.lo) / range * 100);
+      return `<i style="left:${x.toFixed(1)}%">${esc(g.tickFmt ? g.tickFmt(t) : String(t))}</i>`;
+    }).join("");
+    return `<div class="btc-dd-gauge"><div class="btc-dd-track">${segsHtml}<b style="left:${pos.toFixed(1)}%"></b></div><div class="btc-dd-ticks">${ticks}</div></div>`;
+  }
+
+  function ddCard(cfg, ind) {
+    const M = (ind._meta || {})[cfg.key] || {};
+    const v = ind[cfg.key];
+    const has = dn(v);
+    const tag = has ? cfg.tag(v) : null;
+    const rows = [];
+    rows.push(["คืออะไร", cfg.what]);
+    rows.push(["อ่านยังไง", cfg.how]);
+    if (has) rows.push(["วันนี้", cfg.today(v, ind)]);
+    const rowsHtml = rows.map(([l, t]) => `<div class="btc-dd-row"><span>${esc(l)}</span><p>${esc(t)}</p></div>`).join("") +
+      (cfg.limit ? `<div class="btc-dd-row btc-dd-limit"><span>ข้อจำกัด</span><p>${esc(cfg.limit)}</p></div>` : "");
+    const src = has && M.source
+      ? `ที่มา: <b>${esc(M.source)}</b> ${freshBadge(M.freshness)}${M.date ? ` · ${esc(fmtDate(M.date))}` : ""}${M.proxy ? ' · <em>proxy</em>' : ""}`
+      : `${freshBadge("missing")} · ยังไม่มีข้อมูลอัตโนมัติ — ดูกราฟที่ BGeometrics`;
+    return `<div class="mc-card btc-dd-card${has ? "" : " btc-ind-empty"}">
+      <div class="btc-dd-kicker">${esc(cfg.group)}</div>
+      <div class="btc-dd-top"><span class="btc-dd-title">${esc(cfg.title)}</span>
+        <span class="btc-dd-right"><b class="btc-dd-value">${has ? cfg.fmt(v) : "—"}</b>${tag ? `<span class="btc-dd-tag" style="color:${DD_COL[tag[1]]};border-color:${DD_COL[tag[1]]}">${esc(tag[0])}</span>` : ""}</span></div>
+      ${has ? ddGauge(cfg.gauge, v) : ""}
+      <div class="btc-dd-rows">${rowsHtml}</div>
+      <div class="btc-dd-foot"><a href="${esc(cfg.chart)}" target="_blank" rel="noopener noreferrer">ดูกราฟย้อนหลังเต็มที่ BGeometrics ↗</a><span class="btc-dd-src">${src}</span></div>
+    </div>`;
+  }
+
+  function onchainDeepDive(ind) {
+    // one continuous grid (3 cols on wide screens) — the group name renders as a
+    // kicker chip on each card instead of separate half-empty group rows
+    const body = `<div class="btc-dd-grid">${DD_CARDS.map((c) => ddCard(c, ind)).join("")}</div>`;
+    return `<section class="mc-card mc-panel mc-fade">
+      <div class="mc-panel-head"><div><h2>🧬 On-chain Deep Dive</h2><span class="mc-sub">ค่า exact จาก BGeometrics (bitcoin-data.com · ฟรี · อัปเดตรายวัน D-1/D-2) — MVRV-Z · Realized Price · NUPL · SOPR · SSR · LTH Supply</span></div></div>
+      ${body}
+    </section>`;
+  }
+
   function cyclePanel(ind, bz) {
-    const mz = ind.mvrvZScore, mr = ind.mvrvRatio, nu = ind.nupl, pu = ind.puellMultiple;
+    // MVRV Z-Score + NUPL moved to the On-chain Deep Dive section (exact values,
+    // full explanations) — kept here: the metrics the deep dive does NOT cover.
+    const mr = ind.mvrvRatio, pu = ind.puellMultiple;
     const M = ind._meta || {};
     const cards = [
-      metricCard("MVRV Z-Score", dn(mz) ? num(mz, 2) : "—",
-        !dn(mz) ? "na" : mz < 0 ? "under" : mz < 2 ? "fair" : mz < 5 ? "expensive" : "over",
-        !dn(mz) ? "ยังไม่มีข้อมูล" : mz < 0 ? "< 0 → zone ถูก ซื้อสะสมได้ (ต่ำกว่ามูลค่ามาก)" : mz < 5 ? "อยู่ในกรอบปกติ–แพง" : "ร้อนเกินไป ระวังยอดดอย", M.mvrvZScore, "mvrvZScore"),
       metricCard("MVRV Ratio", dn(mr) ? num(mr, 2) : "—",
         !dn(mr) ? "na" : mr < 1 ? "under" : mr < 2 ? "fair" : mr < 3.5 ? "expensive" : "over",
         !dn(mr) ? "ยังไม่มีข้อมูล" : mr < 1 ? "< 1 → zone ถูก ซื้อสะสมได้ (นักลงทุนเฉลี่ยขาดทุน)" : mr < 2 ? "ปกติ" : "เริ่มแพงขึ้น", M.mvrvRatio, "mvrvRatio"),
-      metricCard("NUPL", dn(nu) ? num(nu, 2) : "—",
-        !dn(nu) ? "na" : nu < 0 ? "under" : nu < 0.5 ? "fair" : nu < 0.75 ? "expensive" : "over",
-        !dn(nu) ? "ยังไม่มีข้อมูล" : nu < 0 ? "ตลาดขาดทุน (capitulation)" : nu > 0.75 ? "euphoria ระวัง" : "ปกติ", M.nupl, "nupl"),
       metricCard("Puell Multiple", dn(pu) ? num(pu, 2) : "—",
         !dn(pu) ? "na" : pu < 0.5 ? "under" : pu < 1.5 ? "fair" : pu < 4 ? "expensive" : "over",
         !dn(pu) ? "ยังไม่มีข้อมูล" : pu < 0.5 ? "รายได้นักขุดต่ำ มัก = bottom" : "ปกติ–สูง", M.puellMultiple, "puellMultiple")
     ];
     return `<section class="mc-card mc-panel mc-fade">
-      <div class="mc-panel-head"><div><h2>Cycle Valuation</h2><span class="mc-sub">มูลค่าตามวัฏจักร on-chain</span></div></div>
+      <div class="mc-panel-head"><div><h2>Cycle Valuation</h2><span class="mc-sub">มูลค่าตามวัฏจักร on-chain — MVRV-Z / NUPL ดูที่ 🧬 Deep Dive</span></div></div>
       <div class="btc-ind-grid">${cards.join("")}</div>
     </section>`;
   }
   function holderSentimentPanel(ind) {
+    // Realized Price + NUPL moved to the On-chain Deep Dive section (exact values).
     const M = ind._meta || {};
-    const rp = ind.realizedPriceProxy, nu = ind.nupl, fg = ind.fearGreed;
-    const rpInterp = !dn(rp) ? "ยังไม่มีข้อมูล" : (dn(ind.price) ? (ind.price < rp ? "ราคาต่ำกว่าต้นทุนเฉลี่ยทั้งตลาด (สะสม)" : ind.price < rp * 1.3 ? "ราคาใกล้ต้นทุนเฉลี่ย" : "ราคาสูงกว่าต้นทุนเฉลี่ยพอควร") : "ต้นทุนเฉลี่ยทั้งตลาด (proxy)");
+    const fg = ind.fearGreed;
     const fgInterp = !dn(fg) ? "ยังไม่มีข้อมูล" : fg < 25 ? "Extreme Fear — โซนซื้อสวนตลาด" : fg < 45 ? "Fear — ตลาดยังกังวล" : fg < 55 ? "Neutral" : fg < 75 ? "Greed — เริ่มร้อน" : "Extreme Greed — ระวัง";
     const cards = [
-      metricCard("Realized Price Proxy", dn(rp) ? money(rp) : "—", !dn(rp) ? "na" : (dn(ind.price) && ind.price < rp ? "under" : "fair"), rpInterp, M.realizedPriceProxy),
-      metricCard("NUPL Proxy", dn(nu) ? num(nu, 3) : "—", !dn(nu) ? "na" : nu < 0 ? "under" : nu < 0.5 ? "fair" : nu < 0.75 ? "expensive" : "over", !dn(nu) ? "ยังไม่มีข้อมูล" : nu < 0 ? "ตลาดขาดทุน (capitulation)" : nu > 0.75 ? "euphoria ระวัง" : "กำไรปานกลาง", M.nupl, "nupl"),
       metricCard("Fear & Greed", dn(fg) ? String(Math.round(fg)) : "—", !dn(fg) ? "na" : fg < 45 ? "under" : fg < 55 ? "fair" : fg < 75 ? "expensive" : "over", fgInterp, M.fearGreed, "fearGreed"),
       metricCard("STH Realized Price", dn(ind.sthRealizedPrice) ? money(ind.sthRealizedPrice) : "—", !dn(ind.sthRealizedPrice) ? "na" : (dn(ind.price) && ind.price > ind.sthRealizedPrice ? "under" : "expensive"), dn(ind.sthRealizedPrice) ? "ทุนเฉลี่ยผู้ถือสั้น (exact)" : "exact ต้องใช้ Glassnode (เสียเงิน)", M.sthRealizedPrice),
       metricCard("LTH Realized Price", dn(ind.lthRealizedPrice) ? money(ind.lthRealizedPrice) : "—", !dn(ind.lthRealizedPrice) ? "na" : "fair", dn(ind.lthRealizedPrice) ? "ทุนเฉลี่ยผู้ถือยาว (exact)" : "exact ต้องใช้ Glassnode (เสียเงิน)", M.lthRealizedPrice),
       metricCard("STH-SOPR", dn(ind.sthSopr) ? num(ind.sthSopr, 3) : "—", !dn(ind.sthSopr) ? "na" : ind.sthSopr >= 1 ? "under" : "expensive", dn(ind.sthSopr) ? (ind.sthSopr >= 1 ? "≥1 ขายมีกำไร" : "<1 ขายขาดทุน (สะสม)") : "exact ต้องใช้ Glassnode/CryptoQuant", M.sthSopr)
     ];
     return `<section class="mc-card mc-panel mc-fade">
-      <div class="mc-panel-head"><div><h2>พฤติกรรมผู้ถือ / Cycle Proxy</h2><span class="mc-sub">proxy จากข้อมูลฟรี (Coin Metrics + Alternative.me) · STH/LTH/SOPR แบบ exact ต้องใช้ผู้ให้บริการเสียเงิน</span></div></div>
+      <div class="mc-panel-head"><div><h2>พฤติกรรมผู้ถือ / Sentiment</h2><span class="mc-sub">Fear & Greed (ฟรี) · Realized Price / NUPL / SOPR รวมดูที่ 🧬 Deep Dive · STH/LTH exact ต้องใช้ผู้ให้บริการเสียเงิน</span></div></div>
       <div class="btc-ind-grid">${cards.join("")}</div>
     </section>`;
   }
@@ -823,19 +973,18 @@
   function freeStressPanel(ind) {
     const M = ind._meta || {};
     const f = ind.fundingRate, oi = ind.openInterest, tk = ind.takerBuySellRatio, ls = ind.longShortRatio;
-    const ssr = ind.ssrProxy, mm = ind.minerRevenueMultipleProxy, hr = ind.hashRate, df = ind.difficulty;
+    const mm = ind.minerRevenueMultipleProxy, hr = ind.hashRate, df = ind.difficulty; // SSR moved to 🧬 Deep Dive
     const cards = [
       metricCard("Funding Rate (8h)", dn(f) ? f.toFixed(4) + "%" : "—", !dn(f) ? "na" : f <= 0 ? "under" : f < 0.01 ? "fair" : f < 0.05 ? "expensive" : "over", !dn(f) ? "ยังไม่มีข้อมูล" : f <= 0 ? "ติดลบ/เป็นกลาง (ดี — ไม่มี long แออัด)" : f < 0.05 ? "ปกติ" : "สูง ระวัง long squeeze", M.fundingRate, "fundingRate"),
       metricCard("Open Interest", dn(oi) ? moneyShort(oi) : "—", !dn(oi) ? "na" : "fair", dn(oi) ? "มูลค่าสัญญา futures คงค้างรวม" : "ยังไม่มีข้อมูล", M.openInterest),
       metricCard("Taker Buy/Sell", dn(tk) ? tk.toFixed(3) : "—", !dn(tk) ? "na" : tk >= 1 ? "under" : "fair", !dn(tk) ? "ยังไม่มีข้อมูล" : tk >= 1 ? "ผู้ซื้อ market เด่น" : "ผู้ขาย market เด่น", M.takerBuySellRatio),
       metricCard("Long/Short Ratio", dn(ls) ? ls.toFixed(2) : "—", !dn(ls) ? "na" : "fair", !dn(ls) ? "ยังไม่มีข้อมูล" : ls > 2 ? "บัญชี long มากกว่า short" : "ค่อนข้างสมดุล", M.longShortRatio),
-      metricCard("SSR Proxy", dn(ssr) ? ssr.toFixed(2) : "—", !dn(ssr) ? "na" : ssr < 4 ? "under" : ssr < 7 ? "fair" : "expensive", !dn(ssr) ? "ยังไม่มีข้อมูล" : ssr < 4 ? "ต่ำ — stablecoin dry powder เยอะ" : "สูง — stablecoin น้อยเทียบ BTC", M.ssrProxy, "ssrProxy"),
       metricCard("Miner Rev Multiple Proxy", dn(mm) ? mm.toFixed(2) : "—", !dn(mm) ? "na" : mm < 0.6 ? "under" : mm < 1.5 ? "fair" : mm < 4 ? "expensive" : "over", !dn(mm) ? "ยังไม่มีข้อมูล" : mm < 0.6 ? "ต่ำ — miner รายได้ต่ำ (มัก bottom)" : mm < 4 ? "ปกติ–สูง" : "สูงมาก (top zone)", M.minerRevenueMultipleProxy, "minerRevenueMultipleProxy"),
       metricCard("Hashrate (TH/s)", dn(hr) ? compact(hr) : "—", !dn(hr) ? "na" : "fair", dn(hr) ? "ความปลอดภัยเครือข่าย" : "ยังไม่มีข้อมูล", M.hashRate),
       metricCard("Difficulty", dn(df) ? compact(df) : "—", !dn(df) ? "na" : "fair", dn(df) ? "ความยากในการขุด" : "ยังไม่มีข้อมูล", M.difficulty)
     ];
     return `<section class="mc-card mc-panel mc-fade">
-      <div class="mc-panel-head"><div><h2>ความเสี่ยงตลาดจากข้อมูลฟรี</h2><span class="mc-sub">Binance Futures · DefiLlama · Blockchain.com — funding · OI · taker · SSR proxy · miner proxy · network</span></div></div>
+      <div class="mc-panel-head"><div><h2>ความเสี่ยงตลาดจากข้อมูลฟรี</h2><span class="mc-sub">Binance Futures · Blockchain.com — funding · OI · taker · miner proxy · network (SSR ดูที่ 🧬 Deep Dive)</span></div></div>
       <div class="btc-ind-grid">${cards.join("")}</div>
     </section>`;
   }
@@ -976,10 +1125,13 @@
   }
 
   window.addEventListener("portfolio-data-snapshot", render);
+  window.addEventListener("btc-onchain-live", render);
   function init() {
     apiData = readApiCache();
     render();
     fetchApi();
+    // BGeometrics exact on-chain metrics (browser-side, day-cached, 10 req/hr free tier)
+    if (window.BtcOnchainLive) window.BtcOnchainLive.load(false);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
