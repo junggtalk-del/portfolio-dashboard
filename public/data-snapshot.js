@@ -2,7 +2,7 @@
   try {
   const STORAGE_KEY = "portfolio_dashboard_data_snapshot";
   const DATA_VERSION = "2026-06-portfolio-dashboard-v1";
-  const REQUIRED_SYMBOLS = ["SPY", "QQQM", "XLK", "^GSPC", "^VIX", "^VVIX", "^VIXEQ", "BTC-USD", "^IXIC", "DX-Y.NYB", "^TNX", "GLD"];
+  const REQUIRED_SYMBOLS = ["SPY", "QQQM", "XLK", "^GSPC", "^VIX", "^VVIX", "^VIXEQ", "BTC-USD", "^IXIC", "DX-Y.NYB", "^TNX", "GLD", "HYG", "^MOVE"];
   const originalFetch = window.fetch ? window.fetch.bind(window) : null;
   let memorySnapshot = null;
   let isLoading = false;
