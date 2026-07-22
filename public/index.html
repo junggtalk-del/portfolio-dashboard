@@ -9,10 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=20260723-qe-1" />
       <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
       <script src="/api-auth.js?v=20260620-auth-1"></script>
-      <script src="/data-snapshot.js?v=20260711-snapshot-12"></script>
+      <script src="/data-snapshot.js?v=20260715-snapshot-13"></script>
   </head>
   <body class="is-unlocked">
     <main class="app-shell">
@@ -141,6 +141,21 @@
         <section class="portfolio-panel">
           <div class="panel-header">
             <div>
+              <h2>📈 กราฟการเติบโตรายไตรมาส</h2>
+              <p>เส้นพอร์ตรวม + ทุกสินทรัพย์ (มูลค่า snapshot ของแต่ละไตรมาส)</p>
+            </div>
+            <div class="growth-mode" id="growthChartMode">
+              <button type="button" class="growth-mode-btn is-active" data-gmode="value">มูลค่า ฿</button>
+              <button type="button" class="growth-mode-btn" data-gmode="index">ดัชนีเติบโต (เริ่ม 100)</button>
+            </div>
+          </div>
+          <div id="growthChart" class="growth-chart"></div>
+          <div id="growthChartLegend" class="growth-legend"></div>
+        </section>
+
+        <section class="portfolio-panel">
+          <div class="panel-header">
+            <div>
               <h2>การเติบโตของแต่ละสินทรัพย์</h2>
               <p>เทียบจากไตรมาสก่อนหน้า และดูแนวโน้มในแต่ละไตรมาส</p>
             </div>
@@ -243,7 +258,7 @@
         </section>
       </section>
     </main>
-    <script src="/app.js?v=20260630-app-2"></script>
-<script src="/app-navigation.js?v=20260714-nav-9"></script>
+    <script src="/app.js?v=20260723-app-3"></script>
+<script src="/app-navigation.js?v=20260723-nav-13"></script>
   </body>
 </html>
