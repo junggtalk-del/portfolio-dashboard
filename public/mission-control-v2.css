@@ -233,11 +233,14 @@
 .mcx-pf-splitbar i { display: block; height: 100%; background: var(--mc-cyan); border-radius: 6px; transition: width .8s cubic-bezier(.22,1,.36,1); }
 .mcx-pf-subhead { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--mc-muted); margin: 6px 0 8px; }
 .mcx-pf-types { display: grid; gap: 8px; margin-bottom: 6px; }
-.mcx-pf-row { display: grid; grid-template-columns: 14px 1.3fr 2fr auto auto; align-items: center; gap: 10px; font-size: 13px; }
+.mcx-pf-row { display: grid; grid-template-columns: 14px 1.3fr 2fr auto auto auto; align-items: center; gap: 10px; font-size: 13px; }
 .mcx-pf-dot { width: 11px; height: 11px; border-radius: 50%; }
 .mcx-pf-name { font-weight: 700; }
-.mcx-pf-bar { height: 9px; border-radius: 5px; background: rgba(148,163,184,.14); overflow: hidden; }
-.mcx-pf-bar i { display: block; height: 100%; border-radius: 5px; transition: width .8s cubic-bezier(.22,1,.36,1); }
+.mcx-pf-bar { height: 9px; border-radius: 5px; background: rgba(148,163,184,.14); overflow: hidden; display: flex; }
+.mcx-pf-bar i { display: block; height: 100%; transition: width .8s cubic-bezier(.22,1,.36,1); }
+.mcx-pf-bar i:first-child { border-radius: 5px 0 0 5px; }
+.mcx-pf-cashseg { background: rgba(148,163,184,.45); border-radius: 0 5px 5px 0; }
+.mcx-pf-inv { font-size: 11px; font-weight: 700; color: var(--mc-muted); font-variant-numeric: tabular-nums; white-space: nowrap; width: 76px; text-align: right; }
 .mcx-pf-pct { font-weight: 800; font-variant-numeric: tabular-nums; width: 48px; text-align: right; }
 .mcx-pf-val { color: var(--mc-muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 .mcx-pf-assets { display: grid; gap: 5px; }
@@ -246,7 +249,7 @@
 .mcx-pf-aname { font-weight: 600; } .mcx-pf-aname small { color: var(--mc-muted); font-weight: 500; margin-left: 8px; }
 .mcx-pf-aval { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .mcx-pf-apct { color: var(--mc-cyan); font-weight: 800; font-variant-numeric: tabular-nums; width: 50px; text-align: right; }
-@media (max-width: 640px) { .mcx-pf-row { grid-template-columns: 14px 1fr auto auto; } .mcx-pf-bar { display: none; } }
+@media (max-width: 640px) { .mcx-pf-row { grid-template-columns: 14px 1fr auto auto auto; } .mcx-pf-bar { display: none; } .mcx-pf-inv { width: auto; } }
 
 /* 3. Market Regime breakdown */
 .mcx-regime { display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; }
