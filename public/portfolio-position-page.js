@@ -12,6 +12,16 @@
   var ROOT_ID = "ppRoot";
   var core = window.PortfolioCore;
   var expanded = {};          // bucket accordion state (per session)
+
+  // Manual per-bucket placements (Portfolio-Position overlay, localStorage). Lets the
+  // SAME ticker sit in several buckets as separate line items — not possible in the
+  // shared holdings store (DB keys on canonical_symbol). Signal uses the base ticker.
+  var MANUAL_KEY = "pp_bucket_items_v1";
+  var manualBucket = null;    // bucket key while the modal edits a manual overlay item
+  var editingItemId = null;   // overlay item id being edited (null = adding)
+  function readBucketItems() { try { return JSON.parse(window.localStorage.getItem(MANUAL_KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function writeBucketItems(o) { try { window.localStorage.setItem(MANUAL_KEY, JSON.stringify(o || {})); } catch (e) {} }
+  function newItemId() { return "m" + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4); }
   var editingSymbol = "";
   var assetOptions = [];
   var psCache = null, psTried = false;   // pre-Load /api/portfolio fallback
@@ -22,6 +32,11 @@
     ["bitcoin", "Bitcoin"], ["foreign-stock", "หุ้นต่างประเทศ"], ["thai-stock", "หุ้นไทย"],
     ["provident-fund", "เงินสำรองเลี้ยงชีพ"], ["rmf-jang", "RMF-จัง"], ["rmf-tum", "RMF-ตุ๋ม"],
     ["cash", "เงินสด"], ["custom", "อื่นๆ"]
+  ];
+  // 4-asset composition menu for the per-bucket "+ เพิ่ม" flow (mirrors engine ASSET_MODEL)
+  var ASSET_MENU = [
+    ["bitcoin", "Bitcoin (BTC)"], ["qqqm", "QQQM · Nasdaq 100"],
+    ["set50", "SET50 · หุ้นไทย"], ["cash", "เงินสด (Cash)"]
   ];
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
@@ -42,11 +57,13 @@
     return core.readLocalHoldings();
   }
 
-  // pseudo-snapshot so the page works before Load Latest Data
+  // pseudo-snapshot so the page works before Load Latest Data.
+  // IMPORTANT: /api/portfolio (what the Quarterly Editor saves) is the SOURCE OF
+  // TRUTH for bucket money — snapshot.portfolioStatus is only a copy captured at
+  // the last Load Latest Data. A fresh fetch must therefore OVERRIDE the snapshot
+  // copy, otherwise edits in the Quarterly Editor never show up on this page.
   function effectiveSnapshot() {
     var snap = readSnapshot();
-    var hasQ = snap && snap.portfolioStatus && (snap.portfolioStatus.data || snap.portfolioStatus.quarters);
-    if (hasQ) return snap;
     if (psCache) {
       var pseudo = Object.assign({}, snap || {});
       pseudo.portfolioStatus = psCache;
@@ -58,14 +75,23 @@
     return snap;
   }
 
-  function ensurePortfolioFetched() {
-    if (psTried) return; psTried = true;
+  var psFetchedAt = 0;
+  function ensurePortfolioFetched(force) {
+    if (psTried && !force) return;
+    psTried = true;
     try {
       window.fetch("/api/portfolio", { cache: "no-store" })
         .then(function (r) { return r && r.ok ? r.json() : null; })
-        .then(function (j) { if (j) { psCache = j; render(); } })
+        .then(function (j) {
+          if (j && (j.data || j.quarters)) { psCache = j; psFetchedAt = Date.now(); render(); }
+        })
         .catch(function () {});
     } catch (e) {}
+  }
+  // came back to this tab after editing the Quarterly Editor elsewhere → refetch
+  function refreshQuarterlyOnFocus() {
+    if (document.hidden) return;
+    if (Date.now() - psFetchedAt > 30000) ensurePortfolioFetched(true);
   }
   function ensureHoldingsFetched() {
     if (holdingsTried) return; holdingsTried = true;
@@ -77,7 +103,7 @@
     var root = document.getElementById(ROOT_ID);
     if (!root) return;
     var snap = effectiveSnapshot();
-    var R = (window.PortfolioPosition && window.PortfolioPosition.compute(snap, {})) || { available: false, reason: "no-engine" };
+    var R = (window.PortfolioPosition && window.PortfolioPosition.compute(snap, { bucketItems: readBucketItems() })) || { available: false, reason: "no-engine" };
 
     if (!R.available) {
       if (R.reason === "no-quarterly" || R.reason === "no-snapshot") { ensurePortfolioFetched(); ensureHoldingsFetched(); }
@@ -189,11 +215,11 @@
     }
     out += '<div class="pp-drill-lbl">ไส้ใน (Holdings) ' + (b.tickers.length ? b.tickers.length + " ตัว" : "") + "</div>";
     if (!b.tickers.length) {
-      out += '<div class="pp-muted">ยังไม่ระบุไส้ในของก้อนนี้ — เพิ่ม ticker เพื่อเห็นสภาวะสัญญาณจริงรายตัว</div>';
+      out += '<div class="pp-muted">ยังไม่ระบุไส้ในของก้อนนี้ — เพิ่มสินทรัพย์ (Bitcoin / QQQM / SET50 / Cash) เป็น % เพื่อคำนวณภาพรวมของก้อน</div>';
     } else {
       out += b.tickers.map(tickerRow).join("");
     }
-    out += '<button class="pp-add-btn" data-add-bucket="' + esc(b.type) + '">+ เพิ่ม ticker ในก้อนนี้</button>';
+    out += '<button class="pp-add-btn" data-add-bucket="' + esc(b.type) + '">+ เพิ่มสินทรัพย์ในก้อนนี้ (BTC / QQQM / SET50 / Cash · %)</button>';
     out += "</div>";
     return out;
   }
@@ -207,11 +233,19 @@
     var warn = sc && sc.warnings && sc.warnings.length ? '<span class="pp-t-warn" title="' + esc(sc.warnings.join(" · ")) + '">⚠ ' + esc(sc.warnings[0]) + "</span>" : "";
     var w3 = t.wave3 ? '<span class="pp-t-w3 pp-w3-' + esc(String(t.wave3.status || "").toLowerCase()) + '" title="Wave 3 Readiness">🌊 ' + esc(t.wave3.status) + " " + (t.wave3.readiness != null ? t.wave3.readiness : "") + "</span>" : "";
     var notes = t.notes ? '<div class="pp-t-notes">📝 ' + esc(t.notes) + "</div>" : "";
-    return '<div class="pp-trow" data-symbol="' + esc(t.symbol) + '">' +
-      '<div class="pp-t-id"><b>' + esc(t.displaySymbol) + '</b><span class="pp-t-name">' + esc(t.name) + "</span></div>" +
-      '<div class="pp-t-val">' + thb(t.marketValue) + (t.weightInBucket != null ? '<span class="pp-t-w">' + pct(t.weightInBucket) + " ของก้อน</span>" : "") + "</div>" +
+    var actions = t.manual
+      ? '<button class="pp-mini" data-edit-item="' + esc(t.itemId) + '" data-item-bucket="' + esc(t.bucket) + '">แก้ไข</button><button class="pp-mini pp-mini-danger" data-delete-item="' + esc(t.itemId) + '" data-item-bucket="' + esc(t.bucket) + '">ลบ</button>'
+      : '<button class="pp-mini" data-edit="' + esc(t.symbol) + '">แก้ไข</button><button class="pp-mini pp-mini-danger" data-delete="' + esc(t.symbol) + '">ลบ</button>';
+    var manualTag = t.manual ? '<span class="pp-t-manual" title="เพิ่มเข้าก้อนนี้เอง (แยกต่อก้อน)">เพิ่มเอง</span>' : "";
+    // composition items show % held (+ normalised share of the bucket when it differs); regular holdings show THB
+    var valCell = t.percent != null
+      ? pct(t.percent) + " ที่ถือ" + (t.weightInBucket != null && Math.abs(t.weightInBucket - t.percent) > 0.1 ? '<span class="pp-t-w">' + pct(t.weightInBucket) + " ของก้อน</span>" : "")
+      : thb(t.marketValue) + (t.weightInBucket != null ? '<span class="pp-t-w">' + pct(t.weightInBucket) + " ของก้อน</span>" : "");
+    return '<div class="pp-trow' + (t.manual ? " pp-trow-manual" : "") + '" data-symbol="' + esc(t.symbol) + '">' +
+      '<div class="pp-t-id"><b>' + esc(t.displaySymbol) + '</b>' + manualTag + '<span class="pp-t-name">' + esc(t.name) + "</span></div>" +
+      '<div class="pp-t-val">' + valCell + "</div>" +
       '<div class="pp-t-sig">' + state + warn + w3 + "</div>" +
-      '<div class="pp-t-actions"><button class="pp-mini" data-edit="' + esc(t.symbol) + '">แก้ไข</button><button class="pp-mini pp-mini-danger" data-delete="' + esc(t.symbol) + '">ลบ</button></div>' +
+      '<div class="pp-t-actions">' + actions + "</div>" +
       notes +
     "</div>";
   }
@@ -248,6 +282,7 @@
   // ============================================================ modal (CRUD)
   function modalHtml() {
     var bucketOpts = BUCKET_OPTIONS.map(function (o) { return '<option value="' + o[0] + '">' + esc(o[1]) + "</option>"; }).join("");
+    var assetOpts = ASSET_MENU.map(function (o) { return '<option value="' + o[0] + '">' + esc(o[1]) + "</option>"; }).join("");
     return '<div class="pp-modal-back" id="ppModal" aria-hidden="true">' +
       '<div class="pp-modal" role="dialog" aria-modal="true">' +
         '<div class="pp-modal-head"><div><div class="pp-modal-kicker" id="ppModalKicker">เพิ่มรายการ</div><h3 id="ppModalTitle">เพิ่ม ticker เข้าไส้ในพอร์ต</h3></div>' +
@@ -255,15 +290,25 @@
         '<form id="ppForm">' +
           '<input type="hidden" id="ppMode" value="add" />' +
           '<input type="hidden" id="ppSymbol" /><input type="hidden" id="ppName" /><input type="hidden" id="ppAssetType" />' +
-          '<label class="pp-f-label" for="ppSearch">Symbol <span class="pp-f-hint" id="ppAssetHelp">เลือกจาก AI Boom Universe หรือพิมพ์เองได้ (เช่น NVDA, GULF.BK, BTCUSD)</span></label>' +
-          '<input class="pp-input" id="ppSearch" list="ppAssetOptions" autocomplete="off" placeholder="พิมพ์ symbol..." />' +
-          '<datalist id="ppAssetOptions"></datalist>' +
-          '<div class="pp-f-row">' +
-            '<div><label class="pp-f-label" for="ppMarketValue">มูลค่าปัจจุบัน (THB)</label><input class="pp-input" id="ppMarketValue" type="number" min="0" step="any" placeholder="เช่น 250000" /></div>' +
-            '<div><label class="pp-f-label" for="ppBucket">Bucket (ตามประเภทใน Quarterly Editor)</label><select class="pp-input" id="ppBucket">' + bucketOpts + "</select></div>" +
+          // ---- 4-asset composition fields (per-bucket add) ----
+          '<div id="ppManualFields" style="display:none">' +
+            '<div class="pp-f-row">' +
+              '<div><label class="pp-f-label" for="ppAsset">สินทรัพย์</label><select class="pp-input" id="ppAsset">' + assetOpts + "</select></div>" +
+              '<div><label class="pp-f-label" for="ppPercent">สัดส่วนที่ถือ (%) <span class="pp-f-hint">ใส่อิสระ ระบบ normalize ให้</span></label><input class="pp-input" id="ppPercent" type="number" min="0" max="100" step="any" placeholder="เช่น 40" /></div>' +
+            '</div>' +
+          '</div>' +
+          // ---- free-ticker fields (edit existing holdings) ----
+          '<div id="ppRegularFields">' +
+            '<label class="pp-f-label" for="ppSearch">Symbol <span class="pp-f-hint" id="ppAssetHelp">เลือกจาก AI Boom Universe หรือพิมพ์เองได้ (เช่น NVDA, GULF.BK, BTCUSD)</span></label>' +
+            '<input class="pp-input" id="ppSearch" list="ppAssetOptions" autocomplete="off" placeholder="พิมพ์ symbol..." />' +
+            '<datalist id="ppAssetOptions"></datalist>' +
+            '<div class="pp-f-row">' +
+              '<div><label class="pp-f-label" for="ppMarketValue">มูลค่าปัจจุบัน (THB)</label><input class="pp-input" id="ppMarketValue" type="number" min="0" step="any" placeholder="เช่น 250000" /></div>' +
+              '<div><label class="pp-f-label" for="ppStatus">สถานะ</label><select class="pp-input" id="ppStatus"><option value="holding">ถืออยู่ (Holding)</option><option value="watchlist">แค่ติดตาม (Watchlist)</option></select></div>' +
+            '</div>' +
           '</div>' +
           '<div class="pp-f-row">' +
-            '<div><label class="pp-f-label" for="ppStatus">สถานะ</label><select class="pp-input" id="ppStatus"><option value="holding">ถืออยู่ (Holding)</option><option value="watchlist">แค่ติดตาม (Watchlist)</option></select></div>' +
+            '<div><label class="pp-f-label" for="ppBucket">ก้อน (ตามประเภทใน Quarterly Editor)</label><select class="pp-input" id="ppBucket">' + bucketOpts + "</select></div>" +
             '<div><label class="pp-f-label" for="ppNotes">Notes</label><input class="pp-input" id="ppNotes" placeholder="บันทึกสั้น ๆ เช่น DCA รายเดือน" /></div>' +
           '</div>' +
           '<div class="pp-modal-feedback" id="ppFeedback"></div>' +
@@ -334,8 +379,16 @@
   }
 
   // ---- open/close + save/delete/assign ----
+  function setFieldMode(manual) {
+    var mf = input("ppManualFields"), rf = input("ppRegularFields");
+    if (mf) mf.style.display = manual ? "" : "none";
+    if (rf) rf.style.display = manual ? "none" : "";
+  }
+
   function openModal(mode, holding, presetBucket) {
     var back = input("ppModal"); if (!back) return;
+    manualBucket = null; editingItemId = null; setFieldMode(false);
+    var bsel0 = input("ppBucket"); if (bsel0) bsel0.disabled = false;
     editingSymbol = mode === "edit" && holding ? holding.canonicalSymbol : "";
     input("ppMode").value = mode;
     input("ppModalKicker").textContent = mode === "edit" ? "แก้ไขรายการ" : "เพิ่มรายการ";
@@ -364,10 +417,65 @@
     var back = input("ppModal"); if (!back) return;
     back.classList.remove("is-open");
     back.setAttribute("aria-hidden", "true");
-    editingSymbol = "";
+    editingSymbol = ""; manualBucket = null; editingItemId = null;
+    var bsel = input("ppBucket"); if (bsel) bsel.disabled = false;
+  }
+
+  // ---- 4-asset composition per bucket: open / save / edit / delete ----
+  function assetLabel(key) { for (var i = 0; i < ASSET_MENU.length; i++) if (ASSET_MENU[i][0] === key) return ASSET_MENU[i][1]; return key; }
+  function openManualModal(bucket, item) {
+    var back = input("ppModal"); if (!back) return;
+    manualBucket = bucket; editingItemId = item ? item.id : null;
+    input("ppMode").value = "add";
+    setFeedback("");
+    input("ppForm").reset();
+    setFieldMode(true);
+    var lbl = (window.PortfolioPosition.Q_TYPES[bucket] || {}).label || bucket;
+    input("ppModalKicker").textContent = (item ? "แก้ไขในก้อน · " : "เพิ่มเข้าก้อน · ") + lbl;
+    input("ppModalTitle").textContent = item ? "แก้ไขสัดส่วนในก้อน " + lbl : "เพิ่มสินทรัพย์เข้าก้อน " + lbl + " (เลือกจาก 4 ก้อน · ใส่ % ที่ถือ)";
+    input("ppBucket").value = bucket;
+    input("ppBucket").disabled = true;
+    if (item) {
+      input("ppAsset").value = item.asset || "bitcoin";
+      input("ppPercent").value = Number.isFinite(item.percent) ? item.percent : "";
+      input("ppNotes").value = item.notes || "";
+    } else {
+      input("ppAsset").value = "bitcoin";
+      window.setTimeout(function () { input("ppPercent").focus(); }, 50);
+    }
+    back.classList.add("is-open"); back.setAttribute("aria-hidden", "false");
+  }
+  function saveManualItem() {
+    var asset = input("ppAsset").value;
+    if (ASSET_MENU.every(function (o) { return o[0] !== asset; })) { setFeedback("กรุณาเลือกสินทรัพย์", "is-error"); return; }
+    var p = Number(input("ppPercent").value);
+    if (!Number.isFinite(p) || p < 0) { setFeedback("กรุณาใส่สัดส่วน % ที่ถือ (0 ขึ้นไป)", "is-error"); return; }
+    var items = readBucketItems();
+    var list = items[manualBucket] || (items[manualBucket] = []);
+    // one line per asset per bucket — same asset can still sit in OTHER buckets
+    if (list.some(function (x) { return x.asset === asset && x.id !== editingItemId; })) {
+      setFeedback(assetLabel(asset) + " มีอยู่ในก้อนนี้แล้ว — แก้ไขรายการเดิม", "is-error"); return;
+    }
+    var payload = { asset: asset, percent: p, notes: input("ppNotes").value || "" };
+    if (editingItemId) {
+      var idx = list.findIndex(function (x) { return x.id === editingItemId; });
+      if (idx >= 0) list[idx] = Object.assign({ id: editingItemId }, list[idx], payload); else { payload.id = newItemId(); list.push(payload); }
+    } else { payload.id = newItemId(); list.push(payload); }
+    writeBucketItems(items); closeModal(); render();
+  }
+  function deleteBucketItem(bucket, id) {
+    if (!window.confirm("ลบรายการนี้ออกจากก้อน?")) return;
+    var items = readBucketItems();
+    if (items[bucket]) { items[bucket] = items[bucket].filter(function (x) { return x.id !== id; }); if (!items[bucket].length) delete items[bucket]; }
+    writeBucketItems(items); render();
+  }
+  function editBucketItem(bucket, id) {
+    var item = (readBucketItems()[bucket] || []).find(function (x) { return x.id === id; });
+    if (item) openManualModal(bucket, item);
   }
 
   async function saveFromForm() {
+    if (manualBucket) { saveManualItem(); return; }   // per-bucket overlay item (may duplicate a ticker across buckets)
     var mode = input("ppMode").value === "edit" ? "edit" : "add";
     var holdings = getHoldingsArray();
     var symbol = mode === "edit" ? editingSymbol : (input("ppSymbol").value ? core.canonicalSymbolFromTicker(input("ppSymbol").value) : core.canonicalSymbolFromTicker(String(input("ppSearch").value || "").split(" - ")[0]));
@@ -432,7 +540,13 @@
     var wt = root.querySelector("[data-toggle-watchlist]");
     if (wt) wt.addEventListener("click", function () { expanded.__watchlist = !expanded.__watchlist; render(); });
     root.querySelectorAll("[data-add-bucket]").forEach(function (el) {
-      el.addEventListener("click", function (e) { e.stopPropagation(); openModal("add", null, el.getAttribute("data-add-bucket")); });
+      el.addEventListener("click", function (e) { e.stopPropagation(); openManualModal(el.getAttribute("data-add-bucket")); });
+    });
+    root.querySelectorAll("[data-edit-item]").forEach(function (el) {
+      el.addEventListener("click", function (e) { e.stopPropagation(); editBucketItem(el.getAttribute("data-item-bucket"), el.getAttribute("data-edit-item")); });
+    });
+    root.querySelectorAll("[data-delete-item]").forEach(function (el) {
+      el.addEventListener("click", function (e) { e.stopPropagation(); deleteBucketItem(el.getAttribute("data-item-bucket"), el.getAttribute("data-delete-item")); });
     });
     root.querySelectorAll("[data-edit]").forEach(function (el) {
       el.addEventListener("click", function (e) {
@@ -465,8 +579,13 @@
   function init() {
     buildAssetOptions();
     render();
-    window.addEventListener("portfolio-data-snapshot", render);
+    ensurePortfolioFetched();          // always pull fresh Quarterly data (source of truth)
+    // Load Latest Data just refreshed snapshot.portfolioStatus from the server —
+    // drop our earlier fetch so the (equally fresh) snapshot copy takes over.
+    window.addEventListener("portfolio-data-snapshot", function () { psCache = null; psFetchedAt = Date.now(); render(); });
     window.addEventListener("portfolio-holdings-updated", render);
+    window.addEventListener("focus", refreshQuarterlyOnFocus);
+    document.addEventListener("visibilitychange", refreshQuarterlyOnFocus);
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
