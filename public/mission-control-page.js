@@ -34,22 +34,24 @@
     cash: { label: "เงินสด", color: "#94a3b8" },
     custom: { label: "อื่นๆ", color: "#64748b" }
   };
-  let qpCache = null, qpTried = false; // one-time direct /api/portfolio fetch if the snapshot lacks it
+  let qpCache = null, qpTried = false; // fresh /api/portfolio fetch (source of truth)
   function ensureQuarterly() {
+    // ALWAYS fetch fresh once per page load — snapshot.portfolioStatus is only a
+    // copy from the last Load Latest Data; edits in the Quarterly Editor would
+    // otherwise never show up here until the next full Load.
     if (qpTried) return;
-    const snap = snapshot(), ps = snap && snap.portfolioStatus;
-    if (ps && (ps.data || ps.quarters)) return; // snapshot already carries it
     qpTried = true;
     try {
       (window.fetch)("/api/portfolio", { cache: "no-store" })
         .then((r) => (r && r.ok ? r.json() : null))
-        .then((j) => { if (j) { qpCache = j; render(); } })
+        .then((j) => { if (j && (j.data || j.quarters)) { qpCache = j; render(); } })
         .catch(() => {});
     } catch (e) {}
   }
   // Current-quarter holdings from the Quarterly Editor (grouped by type + per-asset).
+  // Fresh fetch (qpCache) wins over the snapshot's possibly-stale copy.
   function quarterlyPortfolio() {
-    const snap = snapshot(), ps = (snap && snap.portfolioStatus) || qpCache;
+    const snap = snapshot(), ps = qpCache || (snap && snap.portfolioStatus);
     const data = ps && (ps.data || (ps.quarters ? ps : null));
     if (!data || !data.quarters || typeof data.quarters !== "object") return null;
     const keys = Object.keys(data.quarters);
@@ -68,8 +70,16 @@
     rows.forEach((r) => { r.pct = r.gross / total * 100; });
     rows.sort((a, b) => b.gross - a.gross);
     const bt = {};
-    rows.forEach((r) => { const g = bt[r.type] || (bt[r.type] = { type: r.type, label: r.typeLabel, color: r.color, gross: 0 }); g.gross += r.gross; });
-    const byType = Object.values(bt).map((g) => ({ type: g.type, label: g.label, color: g.color, gross: g.gross, pct: g.gross / total * 100 })).sort((a, b) => b.gross - a.gross);
+    rows.forEach((r) => {
+      const g = bt[r.type] || (bt[r.type] = { type: r.type, label: r.typeLabel, color: r.color, gross: 0, invested: 0 });
+      g.gross += r.gross;
+      g.invested += r.type === "cash" ? 0 : r.gross * r.invested / 100;
+    });
+    const byType = Object.values(bt).map((g) => ({
+      type: g.type, label: g.label, color: g.color, gross: g.gross, pct: g.gross / total * 100,
+      invested: g.invested, cash: g.gross - g.invested,
+      investedPct: g.gross > 0 ? g.invested / g.gross * 100 : 0
+    })).sort((a, b) => b.gross - a.gross);
     let cashSum = 0, investedSum = 0;
     rows.forEach((r) => { if (r.type === "cash") cashSum += r.gross; else { investedSum += r.gross * r.invested / 100; cashSum += r.gross * (1 - r.invested / 100); } });
     return { key, rows, byType, total, count: rows.length, cashSum, investedSum };
@@ -158,7 +168,7 @@
       ${R.warnings.length ? `<div><h4>ข้อควรระวัง</h4><ul class="mcx-ul mcx-ul-warn">${R.warnings.map((x) => `<li>⚠ ${esc(x)}</li>`).join("")}</ul></div>` : ""}
       <div><h4>ส่วนเสริม</h4><ul class="mcx-ul">
         <li>Gold (safe haven): ${gold.available ? esc(gold.displayValue) + " · 3M " + (gold.trend3m === "up" ? "▲" : gold.trend3m === "down" ? "▼" : "→") : "ยังไม่เชื่อมข้อมูล"}</li>
-        <li>Data coverage: ${R.coverage}% · GLI & Fed Net Liquidity ยังเป็น plug-in (renormalised)</li>
+        <li>Data coverage: ${R.coverage}% · สภาพคล่องใช้ตัวแทนตลาดฟรี: เครดิต HYG · บอนด์ MOVE · VIX</li>
       </ul></div>
     </div>`;
     return `<section class="mc-card mc-panel mc-fade">
@@ -184,7 +194,7 @@
     const toneTh = { bull: "หนุน", bear: "กดดัน", neutral: "กลาง" };
     const trendTh = (t) => t === "up" ? "ขึ้น" : t === "down" ? "ลง" : "ทรงตัว";
     const nodes = [
-      { t: "Liquidity", tone: toneOf(liqUp), src: "Regime score รวม (GLI/Fed liquidity ยังเป็น plug-in)", now: R ? `score ${R.score}/100${yld ? " · 10Y " + esc(yld.displayValue || "") : ""}` : "—" },
+      { t: "Liquidity", tone: toneOf(liqUp), src: "Regime score รวม (เครดิต HYG + บอนด์ MOVE + VIX + DXY + 10Y)", now: R ? `score ${R.score}/100${yld ? " · 10Y " + esc(yld.displayValue || "") : ""}` : "—" },
       { t: "Dollar", tone: toneOf(dollarWeak ? "improving" : dxy && dxy.trend3m === "up" ? "weakening" : "neutral"), src: "ดัชนีดอลลาร์ DXY (แนวโน้ม 3 เดือน)", now: dxy ? `${esc(dxy.displayValue || "")} · 3M ${trendTh(dxy.trend3m)}${dollarWeak ? " (อ่อน = ดีต่อสินทรัพย์เสี่ยง)" : dxy.trend3m === "up" ? " (แข็ง = กดดัน)" : ""}` : "ยังไม่มีข้อมูล" },
       { t: "Risk Assets", tone: toneOf(liqUp && (dollarWeak || !dxy)), src: "สรุปจากสภาพคล่อง + ดอลลาร์ (2 ข้อบน)", now: liqUp && (dollarWeak || !dxy) ? "เงื่อนไขเอื้อ" : "เงื่อนไขยังไม่เอื้อ" },
       { t: "Technology", tone: nas ? toneOf(nas.status) : "neutral", src: "Nasdaq ทำ higher-high / ยืนเหนือค่าเฉลี่ย", now: nas ? `${esc(nas.displayValue || "")} · ${nas.status === "improving" ? "โครงสร้างดีขึ้น" : nas.status === "weakening" ? "โครงสร้างอ่อนลง" : "ทรงตัว"}` : "ยังไม่มีข้อมูล" },
@@ -220,7 +230,7 @@
     const stTh = (c) => !c ? "ยังไม่มีข้อมูล" : c.status === "improving" ? "กำลังดีขึ้น ✓" : c.status === "weakening" ? "กำลังอ่อนลง ✗" : "ทรงตัว";
     const btcNow = btc ? `${esc(btc.displayValue || "")} · ${stTh(btc)}` + (bi && bi.available && bi.cycleState ? ` · เฟสวัฏจักร: ${esc(bi.cycleState)}` : "") : "ยังไม่มีข้อมูล";
     const steps = [
-      { t: "Global Liquidity", d: "จุดเริ่มของวัฏจักร — เงินในระบบมาก่อนราคาสินทรัพย์เสมอ", lag: "", src: "ตอนนี้ใช้ Regime score แทน (GLI/Fed เป็น plug-in)", now: R ? `score ${R.score}/100 = ${R.score >= 60 ? "สภาพคล่องหนุน" : R.score >= 40 ? "กลาง ๆ" : "สภาพคล่องตึง"}` : "—", watch: "จับตา: DXY อ่อนลง + ดอกเบี้ย 10Y ลดลง = สภาพคล่องกำลังกลับมา" },
+      { t: "Global Liquidity", d: "จุดเริ่มของวัฏจักร — เงินในระบบมาก่อนราคาสินทรัพย์เสมอ", lag: "", src: "วัดจากตัวแทนตลาด: เครดิต HYG + บอนด์ MOVE + VIX + DXY + 10Y", now: R ? `score ${R.score}/100 = ${R.score >= 60 ? "สภาพคล่องหนุน" : R.score >= 40 ? "กลาง ๆ" : "สภาพคล่องตึง"}` : "—", watch: "จับตา: HYG ยืนเหนือ MA50 + MOVE ต่ำ + DXY อ่อน = สภาพคล่องกำลังกลับมา" },
       { t: "Bitcoin", d: "ไวต่อสภาพคล่องที่สุด จึงมักฟื้น \"ก่อน\" สินทรัพย์เสี่ยงอื่น", lag: "ตามสภาพคล่อง ~6–10 สัปดาห์", src: "BTC เทียบ MA200 + เฟสวัฏจักรจาก Bitcoin Intelligence", now: btcNow, watch: "จับตา: BTC ยืนเหนือ MA200 ได้ = สัญญาณนำรอบใหม่" },
       { t: "Nasdaq / Tech", d: "หุ้นเติบโตตอบสนองถัดมา เมื่อความเสี่ยงเริ่มถูกยอมรับ", lag: "ตาม BTC ~2–6 สัปดาห์", src: "โครงสร้างราคา Nasdaq (higher-high)", now: nas ? `${esc(nas.displayValue || "")} · ${stTh(nas)}` : "ยังไม่มีข้อมูล", watch: "จับตา: Nasdaq ทำ higher-high ตาม BTC = ยืนยันรอบ" },
       { t: "Economy", d: "เศรษฐกิจจริงรับรู้ช้าสุด — ข่าวดี/ร้ายจริงมาหลังตลาดขยับไปแล้ว", lag: "ตามตลาด ~3–6 เดือน", src: "ไม่มีตัววัดตรงในระบบ — ใช้เป็นกรอบเวลา", now: "อย่ารอข่าวเศรษฐกิจเพื่อตัดสินใจ ตลาดนำหน้าไปก่อนแล้ว", watch: "" }
@@ -360,10 +370,14 @@
     const money = (v) => "฿" + Math.round(v).toLocaleString();
     const investedPct = P.total > 0 ? P.investedSum / P.total * 100 : 0, cashPct = 100 - investedPct;
     const top = P.rows[0], topWarn = top && top.pct > 40;
+    // bar = invested (solid type color) + cash-in-type (dimmed gray); length still = share of portfolio
     const typeBars = P.byType.map((g) => `<div class="mcx-pf-row">
       <span class="mcx-pf-dot" style="background:${g.color}"></span>
       <span class="mcx-pf-name">${esc(g.label)}</span>
-      <div class="mcx-pf-bar"><i style="width:${g.pct.toFixed(1)}%;background:${g.color}"></i></div>
+      <div class="mcx-pf-bar" title="ลงทุน ${money(g.invested)} · เงินสด ${money(g.cash)}">
+        <i style="width:${(g.pct * g.investedPct / 100).toFixed(1)}%;background:${g.color}"></i><i class="mcx-pf-cashseg" style="width:${(g.pct * (100 - g.investedPct) / 100).toFixed(1)}%"></i>
+      </div>
+      <span class="mcx-pf-inv">${g.type === "cash" ? "สด 100%" : `ลงทุน ${g.investedPct.toFixed(0)}%`}</span>
       <span class="mcx-pf-pct">${g.pct.toFixed(1)}%</span>
       <span class="mcx-pf-val">${money(g.gross)}</span>
     </div>`).join("");
@@ -477,7 +491,9 @@
     const hr = $("mcxHistRanges"); if (hr) hr.addEventListener("click", (e) => { const b = e.target.closest("[data-r]"); if (!b) return; histRange = b.dataset.r; render(); });
   }
 
-  window.addEventListener("portfolio-data-snapshot", () => { try { updateSnapBar(); render(); } catch (e) {} });
+  // Load Latest Data refreshed snapshot.portfolioStatus from the server — drop the
+  // page-load fetch so the (equally fresh) snapshot copy takes over.
+  window.addEventListener("portfolio-data-snapshot", () => { try { qpCache = null; updateSnapBar(); render(); } catch (e) {} });
   updateSnapBar();
   render();
 })();
