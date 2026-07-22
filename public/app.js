@@ -362,8 +362,110 @@ function getPreviousSavedQuarter(key) {
   return index > 0 ? state.data.quarters[keys[index - 1]] : null;
 }
 
+// ---------------------------------------------------------------- growth line chart
+// เส้นพอร์ตรวม + ทุกสินทรัพย์ ต่อไตรมาส (snapshot-first เหมือนตาราง growth ด้านล่าง)
+// โหมด "มูลค่า ฿" = เงินจริง · โหมด "ดัชนีเติบโต" = ทุกเส้นเริ่ม 100 เทียบอัตราโตกันตรงๆ
+let growthChartMode = "value";
+
+function compactMoney(v) {
+  if (!Number.isFinite(v)) return "-";
+  const abs = Math.abs(v);
+  if (abs >= 1e6) return `฿${(v / 1e6).toFixed(abs >= 1e7 ? 0 : 1)}M`;
+  if (abs >= 1e3) return `฿${Math.round(v / 1e3)}k`;
+  return `฿${Math.round(v)}`;
+}
+
+function growthChartSeries() {
+  const keys = Object.keys(state.data.quarters).sort(compareQuarter);
+  const perQuarterMaps = keys.map((k) => mapAssetsByKey(state.data.quarters[k].assets, { useSnapshot: true }));
+  const totals = keys.map((k) => getTotals(state.data.quarters[k].assets, { useSnapshot: true }).wealth);
+  const assetMeta = new Map();
+  perQuarterMaps.forEach((m) => m.forEach((v, kk) => { if (!assetMeta.has(kk)) assetMeta.set(kk, v); }));
+  const assets = [...assetMeta.entries()].map(([kk, meta], i) => ({
+    name: meta.name,
+    color: CHART_COLORS[i % CHART_COLORS.length],
+    values: perQuarterMaps.map((m) => (m.get(kk) ? m.get(kk).value : null))
+  }));
+  assets.sort((a, b) => (b.values[b.values.length - 1] || 0) - (a.values[a.values.length - 1] || 0));
+  return { keys, series: [{ name: "พอร์ตรวม", color: "#17324d", values: totals, total: true }, ...assets] };
+}
+
+function indexifySeries(s) {
+  const base = s.values.find((v) => Number.isFinite(v) && v > 0);
+  return { ...s, values: s.values.map((v) => (Number.isFinite(v) && base ? (v / base) * 100 : null)) };
+}
+
+function renderGrowthChart() {
+  const host = document.querySelector("#growthChart");
+  const legend = document.querySelector("#growthChartLegend");
+  if (!host) return;
+  const { keys, series: rawSeries } = growthChartSeries();
+  if (keys.length < 2) {
+    host.innerHTML = '<p class="growth-chart-empty">ต้องมีข้อมูลอย่างน้อย 2 ไตรมาสจึงจะวาดกราฟได้ — เพิ่ม/บันทึกไตรมาสก่อนหน้าเพื่อดูแนวโน้ม</p>';
+    if (legend) legend.innerHTML = "";
+    return;
+  }
+  const series = growthChartMode === "index" ? rawSeries.map(indexifySeries) : rawSeries;
+
+  const W = 940, H = 330, L = 62, R = 18, T = 14, B = 42;
+  let min = Infinity, max = -Infinity;
+  series.forEach((s) => s.values.forEach((v) => { if (Number.isFinite(v)) { if (v < min) min = v; if (v > max) max = v; } }));
+  if (!Number.isFinite(min) || !Number.isFinite(max)) { host.innerHTML = ""; return; }
+  if (growthChartMode === "value") min = 0; // เงินจริงเริ่มแกนที่ 0 เพื่อไม่บิดสัดส่วน
+  if (max === min) max = min + 1;
+  const pad = (max - min) * 0.06;
+  max += pad; if (growthChartMode === "index") min -= pad;
+
+  const X = (i) => L + (keys.length === 1 ? 0 : (i / (keys.length - 1)) * (W - L - R));
+  const Y = (v) => T + (1 - (v - min) / (max - min)) * (H - T - B);
+
+  let svg = "";
+  // y gridlines (4 ระดับ)
+  for (let g = 0; g <= 3; g += 1) {
+    const val = min + ((max - min) * g) / 3;
+    const gy = Y(val).toFixed(1);
+    svg += `<line x1="${L}" y1="${gy}" x2="${W - R}" y2="${gy}" class="gc-grid" />`;
+    svg += `<text x="${L - 8}" y="${(Number(gy) + 4).toFixed(1)}" text-anchor="end" class="gc-axis">${growthChartMode === "value" ? compactMoney(val) : Math.round(val)}</text>`;
+  }
+  // x labels (ถี่เกินให้เว้น)
+  const step = keys.length > 8 ? Math.ceil(keys.length / 8) : 1;
+  keys.forEach((k, i) => {
+    if (i % step !== 0 && i !== keys.length - 1) return;
+    svg += `<text x="${X(i).toFixed(1)}" y="${H - 12}" text-anchor="middle" class="gc-axis">${escapeHtml(k)}</text>`;
+  });
+  // เส้นราย series (ข้ามช่วงที่ไม่มีข้อมูล — วาดเป็นช่วงต่อเนื่องทีละ run)
+  series.forEach((s) => {
+    let run = [];
+    const flush = () => {
+      if (run.length >= 2) svg += `<polyline points="${run.join(" ")}" fill="none" stroke="${s.color}" stroke-width="${s.total ? 3 : 1.8}" stroke-linejoin="round" ${s.total ? "" : 'opacity="0.85"'} />`;
+      run = [];
+    };
+    s.values.forEach((v, i) => {
+      if (Number.isFinite(v)) run.push(`${X(i).toFixed(1)},${Y(v).toFixed(1)}`);
+      else flush();
+    });
+    flush();
+    s.values.forEach((v, i) => {
+      if (!Number.isFinite(v)) return;
+      svg += `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${s.total ? 4 : 3}" fill="${s.color}"><title>${escapeHtml(s.name)} · ${escapeHtml(keys[i])} · ${growthChartMode === "value" ? formatMoney(v) : Math.round(v)}</title></circle>`;
+    });
+  });
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="กราฟการเติบโตรายไตรมาส">${svg}</svg>`;
+
+  if (legend) {
+    legend.innerHTML = series.map((s) => {
+      const vals = s.values.filter((v) => Number.isFinite(v));
+      const first = vals[0], latest = vals[vals.length - 1];
+      const growth = growthPercent(latest, first);
+      const latestTxt = growthChartMode === "value" ? formatMoney(latest) : Math.round(latest);
+      const growthTxt = growth === null ? "" : ` <em class="${growth >= 0 ? "positive" : "negative"}">${formatPercent(growth, true)}</em>`;
+      return `<span class="growth-legend-item${s.total ? " is-total" : ""}"><i style="background:${s.color}"></i>${escapeHtml(s.name)} <strong>${latestTxt}</strong>${growthTxt}</span>`;
+    }).join("");
+  }
+}
+
 function render() {
-  renderQuarterOptions(); renderSummary(); renderRows(); renderPieChart(); renderGrowthTables();
+  renderQuarterOptions(); renderSummary(); renderRows(); renderPieChart(); renderGrowthTables(); renderGrowthChart();
 }
 
 function escapeHtml(value) {
@@ -545,6 +647,14 @@ elements.rows.addEventListener("click", (event) => {
 elements.quarterRows.addEventListener("click", (event) => {
   const deleteButton = event.target.closest("[data-delete-quarter]");
   if (deleteButton) deleteQuarter(deleteButton.dataset.deleteQuarter);
+});
+const growthModeBox = document.querySelector("#growthChartMode");
+if (growthModeBox) growthModeBox.addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-gmode]");
+  if (!btn || btn.dataset.gmode === growthChartMode) return;
+  growthChartMode = btn.dataset.gmode;
+  growthModeBox.querySelectorAll(".growth-mode-btn").forEach((b) => b.classList.toggle("is-active", b === btn));
+  renderGrowthChart();
 });
 
 setDefaultNewQuarterInputs();
