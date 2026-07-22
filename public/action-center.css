@@ -994,3 +994,136 @@ html[data-theme="light"] .scope-tabs button.is-active {
 .ac-modal-msg.err { color: #f87171; }
 .asset-remove-btn { margin-top: 10px; font-family: inherit; font-size: 11.5px; color: #f87171; background: transparent; border: 1px dashed rgba(248, 113, 113, 0.4); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
 .asset-remove-btn:hover { background: rgba(248, 113, 113, 0.08); }
+
+/* ============================================================
+   Fresh Technical Signals — new signals within the last 3 trading days
+   ============================================================ */
+.fresh-signals {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: var(--app-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fresh-head h2 { margin: 0; font-size: 1.15rem; }
+.fresh-head p { margin: 4px 0 0; color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
+
+.fresh-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.fresh-sum-card {
+  border: 1px solid var(--line);
+  background: var(--app-card);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: inherit;
+  transition: border-color 0.15s ease, transform 0.05s ease;
+}
+.fresh-sum-card:hover { border-color: var(--app-accent); }
+.fresh-sum-card:active { transform: translateY(1px); }
+.fresh-sum-card span { font-size: 0.78rem; color: var(--muted); font-weight: 700; }
+.fresh-sum-card strong { font-size: 1.9rem; line-height: 1.05; }
+.fresh-sum-card em { font-style: normal; font-size: 0.72rem; color: var(--muted); }
+.fresh-sum-buy strong, .fresh-sum-pfbuy strong { color: var(--green); }
+.fresh-sum-sell strong, .fresh-sum-pfsell strong { color: var(--red); }
+
+.fresh-body { display: flex; flex-direction: column; gap: 16px; }
+.fresh-block { display: flex; flex-direction: column; gap: 10px; }
+.fresh-block-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--line);
+}
+.fresh-block-head h3 { margin: 0; font-size: 1rem; }
+.fresh-block-buy .fresh-block-head { border-bottom-color: color-mix(in srgb, var(--green), transparent 55%); }
+.fresh-block-sell .fresh-block-head { border-bottom-color: color-mix(in srgb, var(--red), transparent 55%); }
+.fresh-block-buy .fresh-block-head h3 { color: var(--green); }
+.fresh-block-sell .fresh-block-head h3 { color: var(--red); }
+.fresh-block-count, .fresh-group-count {
+  font-weight: 800;
+  font-size: 0.78rem;
+  background: var(--gray-bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 9px;
+}
+
+.fresh-group { display: flex; flex-direction: column; gap: 8px; }
+.fresh-group-head { display: flex; align-items: center; gap: 8px; }
+.fresh-group-head h4 { margin: 0; font-size: 0.82rem; color: var(--muted); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; }
+
+.fresh-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+.fresh-card {
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--app-card);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.fresh-card.fresh-buy { border-left-color: var(--green); }
+.fresh-card.fresh-sell { border-left-color: var(--red); }
+.fresh-card.fresh-buy.fresh-strong { background: var(--green-bg); }
+.fresh-card.fresh-sell.fresh-strong { background: var(--red-bg); }
+
+.fresh-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fresh-symbol { font-weight: 900; font-size: 1.02rem; text-decoration: none; color: var(--ink); }
+.fresh-symbol:hover { color: var(--app-accent); text-decoration: underline; }
+.fresh-age-chip {
+  font-size: 0.68rem;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--gray-bg);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.fresh-age-chip.fresh-age-0 { background: var(--green-bg); border-color: color-mix(in srgb, var(--green), transparent 55%); color: var(--green); }
+
+.fresh-title { font-weight: 800; font-size: 0.9rem; }
+.fresh-card.fresh-buy .fresh-title { color: var(--green); }
+.fresh-card.fresh-sell .fresh-title { color: var(--red); }
+.fresh-lines { display: flex; flex-direction: column; gap: 3px; }
+.fresh-line { font-size: 0.8rem; line-height: 1.35; }
+.fresh-line-age { color: var(--muted); }
+.fresh-conf { font-size: 0.78rem; color: var(--muted); }
+.fresh-conf strong { color: var(--ink); }
+.fresh-card-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.fresh-price { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
+.fresh-card-foot .card-name { color: var(--muted); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+
+.fresh-empty {
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 22px 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fresh-empty span { font-size: 0.82rem; }
+
+@media (max-width: 720px) {
+  .fresh-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fresh-card-grid { grid-template-columns: 1fr; }
+}

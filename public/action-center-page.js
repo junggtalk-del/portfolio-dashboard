@@ -85,6 +85,7 @@
   const summaryRoot = document.querySelector("#actionSummaryCards");
   const filtersRoot = document.querySelector("#actionFilters");
   const sectionsRoot = document.querySelector("#actionSections");
+  const freshRoot = document.querySelector("#freshSignals");
   const refreshButton = document.querySelector("#refreshActionButton");
 
   const state = {
@@ -752,6 +753,254 @@
     return "mixed";
   }
 
+  // ============================================================
+  // Fresh Technical Signals — ONLY signals that occurred within the last
+  // 3 trading days (EMA12/26 cross · SMA200 breakout/breakdown). Reuses the
+  // snapshot's own daysSince* bar-counts (computed in data-snapshot.js), so
+  // stale signals drop off automatically on every render and NO history is
+  // deleted (Trend Status + Asset Detail keep the full record).
+  // ============================================================
+  const FRESH_WINDOW = 3; // trading days (0 = latest bar … 3 = 3 bars ago)
+  const FRESH_GROUPS = [
+    ["holdings", "Portfolio Holdings", "ในพอร์ต"],
+    ["aiBoom", "AI Boom Universe", "AI Boom"],
+    ["thailand", "Thailand", "หุ้นไทย"],
+    ["crypto", "Crypto", "คริปโต"]
+  ];
+
+  function ageLabel(n) {
+    return n === 0 ? "Today" : n === 1 ? "Yesterday" : n + " days ago";
+  }
+  function ageLabelThai(n) {
+    return n === 0 ? "วันนี้" : n === 1 ? "เมื่อวาน" : n + " วันก่อน";
+  }
+  function isFreshAge(n) {
+    return Number.isFinite(n) && n >= 0 && n <= FRESH_WINDOW;
+  }
+  function freshGroupOf(row) {
+    if (row.portfolio?.isHolding) return "holdings";
+    const g = marketGroup(row);
+    if (g === "crypto") return "crypto";
+    if (g === "thai") return "thailand";
+    return "aiBoom"; // us / fund / other non-holding
+  }
+
+  // Data quality per symbol — a fresh cross can only be trusted when the snapshot
+  // holds enough DENSE history for that indicator. A sparse/partial series (e.g. a
+  // ticker loaded before its history backfilled) yields a wrong SMA200 and phantom
+  // breakouts, so we require ≥200 dense bars for SMA200 and ≥30 for EMA.
+  function freshDataQuality(symbol) {
+    const hist = (state.snapshot && state.snapshot.historicalData && state.snapshot.historicalData[symbol]) || {};
+    const closes = Array.isArray(hist.closes) ? hist.closes : [];
+    const dates = Array.isArray(hist.dates) ? hist.dates : [];
+    const limited = hist.historicalSourceLimited === true;
+    const n = closes.length;
+    const spanDays = (k) => {
+      if (dates.length < k || k < 2) return Infinity;
+      const a = Date.parse(dates[dates.length - k]);
+      const b = Date.parse(dates[dates.length - 1]);
+      return Number.isFinite(a) && Number.isFinite(b) ? (b - a) / 86400000 : Infinity;
+    };
+    // 200 trading days ≈ 290 calendar days; >600 ⇒ sparse/weekly ⇒ SMA200 unreliable.
+    return {
+      smaOk: !limited && n >= 200 && spanDays(200) <= 600,
+      emaOk: !limited && n >= 30 && spanDays(30) <= 120
+    };
+  }
+
+  // Cross ages are recomputed HERE from the snapshot's own closes — never trusted
+  // from the precomputed daysSince* fields (partial Loads can leave those out of
+  // sync with the price history, producing phantom "Today" breakouts on assets
+  // that never crossed, e.g. GULF above its SMA200 for 100+ bars).
+  // Anti-glitch rule: a cross only counts when ≥2 of the 10 bars BEFORE it sat on
+  // the origin side — a single bad bar dipping across the line cannot fire a signal.
+  let freshFactsCache = new Map();
+  function freshSeriesFacts(symbol) {
+    if (freshFactsCache.has(symbol)) return freshFactsCache.get(symbol);
+    const hist = (state.snapshot && state.snapshot.historicalData && state.snapshot.historicalData[symbol]) || {};
+    const closes = (Array.isArray(hist.closes) ? hist.closes : []).map(Number);
+    let out = null;
+    if (closes.length >= 30) {
+      const n = closes.length;
+      const emaSeries = (p) => {
+        const arr = new Array(n).fill(null);
+        if (n < p) return arr;
+        let e = 0; for (let i = 0; i < p; i++) e += closes[i]; e /= p;
+        arr[p - 1] = e; const k = 2 / (p + 1);
+        for (let i = p; i < n; i++) { if (!Number.isFinite(closes[i])) return arr; e = (closes[i] - e) * k + e; arr[i] = e; }
+        return arr;
+      };
+      const e12 = emaSeries(12), e26 = emaSeries(26);
+      const s200 = (() => {
+        const arr = new Array(n).fill(null);
+        if (n < 200) return arr;
+        let sum = 0; for (let i = 0; i < 200; i++) sum += closes[i];
+        arr[199] = sum / 200;
+        for (let i = 200; i < n; i++) { sum += closes[i] - closes[i - 200]; arr[i] = sum / 200; }
+        return arr;
+      })();
+      // most recent cross of a over b in direction dir (+1 up / -1 down), with persistence
+      const crossAge = (aArr, bArr, dir) => {
+        for (let i = n - 1; i > 0; i--) {
+          const a = aArr[i], b = bArr[i], pa = aArr[i - 1], pb = bArr[i - 1];
+          if (a == null || b == null || pa == null || pb == null) continue;
+          const crossed = dir > 0 ? (pa <= pb && a > b) : (pa >= pb && a < b);
+          if (!crossed) continue;
+          let originSide = 0;
+          for (let j = i - 1; j >= Math.max(1, i - 10); j--) {
+            const aj = aArr[j], bj = bArr[j];
+            if (aj == null || bj == null) continue;
+            if (dir > 0 ? aj <= bj : aj >= bj) originSide++;
+          }
+          return originSide >= 2 ? n - 1 - i : null; // 1-bar glitch cross → no signal
+        }
+        return null;
+      };
+      out = {
+        emaBullAge: crossAge(e12, e26, +1), emaBearAge: crossAge(e12, e26, -1),
+        smaUpAge: crossAge(closes, s200, +1), smaDownAge: crossAge(closes, s200, -1),
+        lastClose: closes[n - 1], lastSma: s200[n - 1], lastE12: e12[n - 1], lastE26: e26[n - 1]
+      };
+    }
+    freshFactsCache.set(symbol, out);
+    return out;
+  }
+
+  // Build one card per asset per side (buy/sell). If BOTH the EMA cross and the
+  // SMA200 breakout/breakdown are fresh, they merge into one Strong Setup card.
+  // Gates: (A) cross recomputed from the same closes + persistence (above),
+  // (B) STATE-AGREEMENT — still in effect on those closes, (C) DATA-QUALITY.
+  function buildFreshCard(row, side) {
+    const facts = row.facts || {};
+    const q = freshDataQuality(row.symbol);
+    const F = freshSeriesFacts(row.symbol);
+    if (!F) return null;
+    const emaInEffect = F.lastE12 != null && F.lastE26 != null && (side === "buy" ? F.lastE12 > F.lastE26 : F.lastE12 < F.lastE26);
+    const smaInEffect = F.lastSma != null && Number.isFinite(F.lastClose) && (side === "buy" ? F.lastClose > F.lastSma : F.lastClose < F.lastSma);
+    const emaAge = side === "buy" ? F.emaBullAge : F.emaBearAge;
+    const smaAge = side === "buy" ? F.smaUpAge : F.smaDownAge;
+    const signals = [];
+    if (isFreshAge(emaAge) && emaInEffect && q.emaOk) {
+      signals.push({ kind: "ema", age: emaAge, text: side === "buy" ? "EMA12 crossed above EMA26" : "EMA12 crossed below EMA26" });
+    }
+    if (isFreshAge(smaAge) && smaInEffect && q.smaOk) {
+      signals.push({ kind: "sma", age: smaAge, text: side === "buy" ? "Price closed above SMA200" : "Price closed below SMA200" });
+    }
+    if (!signals.length) return null;
+    signals.sort((a, b) => a.age - b.age); // newest first
+    const combined = signals.length >= 2;
+    const hasEma = signals.some((s) => s.kind === "ema");
+    const hasSma = signals.some((s) => s.kind === "sma");
+    // confidence: both fresh → Very High; a single signal already confirmed by the
+    // OTHER (trend-aligned) indicator → High; a lone unconfirmed signal → Medium.
+    let confidence = "Medium";
+    if (combined) confidence = "Very High";
+    else if (side === "buy" && ((hasEma && facts.aboveSma) || (hasSma && facts.emaBull))) confidence = "High";
+    else if (side === "sell" && ((hasEma && facts.belowSma) || (hasSma && facts.emaBear))) confidence = "High";
+    let title;
+    if (combined) title = side === "buy" ? "Strong Buy Setup" : "Strong Sell Setup";
+    else if (hasEma) title = side === "buy" ? "EMA Bullish Cross" : "EMA Bearish Cross";
+    else title = side === "buy" ? "SMA200 Breakout" : "SMA200 Breakdown";
+    return {
+      row, side, signals, combined, confidence, title,
+      age: signals[0].age,
+      group: freshGroupOf(row),
+      weight: Number(row.portfolio?.weight) || 0
+    };
+  }
+
+  function computeFreshSignals(rows) {
+    freshFactsCache = new Map(); // per-render — snapshot data may have changed
+    const empty = () => Object.fromEntries(FRESH_GROUPS.map(([k]) => [k, []]));
+    const buy = empty(), sell = empty();
+    (rows || []).forEach((row) => {
+      const b = buildFreshCard(row, "buy");
+      if (b) buy[b.group].push(b);
+      const s = buildFreshCard(row, "sell");
+      if (s) sell[s.group].push(s);
+    });
+    const sortCards = (arr) => arr.sort((a, b) => a.age - b.age || b.weight - a.weight
+      || String(a.row.displaySymbol || a.row.symbol).localeCompare(String(b.row.displaySymbol || b.row.symbol)));
+    FRESH_GROUPS.forEach(([k]) => { sortCards(buy[k]); sortCards(sell[k]); });
+    const total = (obj) => FRESH_GROUPS.reduce((sum, [k]) => sum + obj[k].length, 0);
+    return {
+      buy, sell,
+      buyTotal: total(buy), sellTotal: total(sell),
+      pfBuy: buy.holdings.length, pfSell: sell.holdings.length
+    };
+  }
+
+  function renderFreshCard(card) {
+    const row = card.row;
+    const detailHref = `/asset/${encodeURIComponent(row.providerSymbol || row.symbol)}`;
+    const holding = row.portfolio?.isHolding;
+    const mark = card.side === "buy" ? "✓" : "✕";
+    const lines = card.signals.map((s) =>
+      `<div class="fresh-line">${mark} ${escapeHtml(s.text)} <span class="fresh-line-age">(${escapeHtml(ageLabel(s.age))})</span></div>`
+    ).join("");
+    return `
+      <article class="fresh-card fresh-${card.side}${card.combined ? " fresh-strong" : ""}">
+        <div class="fresh-card-top">
+          <a class="fresh-symbol asset-link" href="${detailHref}">${escapeHtml(row.displaySymbol || row.symbol)}</a>
+          <span class="fresh-age-chip fresh-age-${card.age}">${escapeHtml(ageLabel(card.age))} · ${escapeHtml(ageLabelThai(card.age))}</span>
+        </div>
+        <div class="fresh-title">${escapeHtml(card.title)}</div>
+        <div class="fresh-lines">${lines}</div>
+        <div class="fresh-conf">Confidence: <strong>${escapeHtml(card.confidence)}</strong></div>
+        <div class="fresh-card-foot">
+          <span class="badge ${holding ? "badge-blue" : "badge-gray"}">${holding ? "Holding" : "Watchlist"}</span>
+          <span class="fresh-price">${escapeHtml(formatPrice(row.latestClose))}</span>
+          <span class="card-name">${escapeHtml(row.name || row.symbol)}</span>
+        </div>
+      </article>`;
+  }
+
+  function renderFreshBlock(side, groups) {
+    const total = FRESH_GROUPS.reduce((sum, [k]) => sum + groups[k].length, 0);
+    if (!total) return "";
+    const heading = side === "buy" ? "Buy Signals · สัญญาณซื้อใหม่" : "Sell Signals · สัญญาณขายใหม่";
+    const groupsHtml = FRESH_GROUPS.map(([key, label, thai]) => {
+      const cards = groups[key];
+      if (!cards.length) return "";
+      return `
+        <div class="fresh-group" id="fresh-${side}-${key}">
+          <div class="fresh-group-head"><h4>${escapeHtml(label)} · ${escapeHtml(thai)}</h4><span class="fresh-group-count">${cards.length}</span></div>
+          <div class="fresh-card-grid">${cards.map(renderFreshCard).join("")}</div>
+        </div>`;
+    }).join("");
+    return `
+      <div class="fresh-block fresh-block-${side}" id="fresh-${side}">
+        <div class="fresh-block-head"><h3>${escapeHtml(heading)}</h3><span class="fresh-block-count">${total}</span></div>
+        ${groupsHtml}
+      </div>`;
+  }
+
+  function renderFreshSignals() {
+    if (!freshRoot) return;
+    const data = computeFreshSignals(state.rows);
+    const grandTotal = data.buyTotal + data.sellTotal;
+    const summary = `
+      <div class="fresh-head">
+        <div>
+          <h2>Fresh Technical Signals</h2>
+          <p>สัญญาณเทคนิคใหม่ภายใน 3 วันทำการล่าสุด — EMA12/26 cross และ SMA200 breakout / breakdown เท่านั้น</p>
+        </div>
+      </div>
+      <div class="fresh-summary">
+        <button type="button" class="fresh-sum-card fresh-sum-buy" data-fresh-jump="fresh-buy"><span>Fresh Buy Signals</span><strong>${data.buyTotal}</strong><em>สัญญาณซื้อใหม่</em></button>
+        <button type="button" class="fresh-sum-card fresh-sum-sell" data-fresh-jump="fresh-sell"><span>Fresh Sell Signals</span><strong>${data.sellTotal}</strong><em>สัญญาณขายใหม่</em></button>
+        <button type="button" class="fresh-sum-card fresh-sum-pfbuy" data-fresh-jump="fresh-buy-holdings"><span>Portfolio Buy Signals</span><strong>${data.pfBuy}</strong><em>ซื้อ (ในพอร์ต)</em></button>
+        <button type="button" class="fresh-sum-card fresh-sum-pfsell" data-fresh-jump="fresh-sell-holdings"><span>Portfolio Sell Signals</span><strong>${data.pfSell}</strong><em>ขาย (ในพอร์ต)</em></button>
+      </div>`;
+    if (grandTotal === 0) {
+      freshRoot.innerHTML = summary +
+        '<div class="fresh-empty">No fresh technical signals detected during the last 3 trading days.<span>ไม่มีสัญญาณเทคนิคใหม่ในช่วง 3 วันทำการล่าสุด</span></div>';
+      return;
+    }
+    freshRoot.innerHTML = summary +
+      '<div class="fresh-body">' + renderFreshBlock("buy", data.buy) + renderFreshBlock("sell", data.sell) + "</div>";
+  }
+
   function render() {
     state.snapshot = readSnapshot();
     if (!state.snapshot) {
@@ -760,6 +1009,7 @@
     }
     state.rows = buildRows(state.snapshot);
     updateHeader();
+    renderFreshSignals();
     renderFilters();
     renderSummary();
     renderSections();
@@ -769,6 +1019,7 @@
     actionStatus.textContent = "กรุณาโหลดข้อมูลล่าสุดก่อน";
     marketRiskText.textContent = "Please load latest data first.";
     summaryRoot.innerHTML = '<div class="empty-box">ยังไม่มี Data Snapshot · กด Load Latest Data ด้านบนก่อน</div>';
+    if (freshRoot) freshRoot.innerHTML = '<div class="empty-box">ยังไม่มี Data Snapshot · กด Load Latest Data เพื่อดูสัญญาณเทคนิคใหม่</div>';
     if (filtersRoot) filtersRoot.innerHTML = "";
     sectionsRoot.innerHTML = '<div class="empty-box">Please load latest data first. / กรุณาโหลดข้อมูลล่าสุดก่อน</div>';
   }
@@ -1127,6 +1378,18 @@
   refreshButton?.addEventListener("click", () => {
     actionStatus.textContent = "กำลัง refresh จาก Data Snapshot...";
     render();
+  });
+
+  // Fresh-signals summary cards scroll to the matching block/group (falls back to
+  // the parent buy/sell block when the specific portfolio group is empty).
+  freshRoot?.addEventListener("click", (event) => {
+    const card = event.target.closest?.("[data-fresh-jump]");
+    if (!card) return;
+    const targetId = card.dataset.freshJump;
+    let el = document.getElementById(targetId);
+    if (!el && targetId.startsWith("fresh-buy")) el = document.getElementById("fresh-buy");
+    if (!el && targetId.startsWith("fresh-sell")) el = document.getElementById("fresh-sell");
+    (el || freshRoot).scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   // ---- list management wiring (remove buttons live inside section cards) ----
