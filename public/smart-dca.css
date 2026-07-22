@@ -1,0 +1,122 @@
+/* ============================================================
+   Smart DCA — decision-tool page (compact, no poster).
+   Reuses mission-control theme tokens (--mc-*) so light/dark
+   themes both work. Namespace: .sdca-*
+   ============================================================ */
+:root {
+  --sdca-chip-bg: rgba(148, 163, 184, 0.10);
+  --sdca-track: rgba(148, 163, 184, 0.18);
+  --sdca-up: #34d399;
+  --sdca-down: #f43f5e;
+  --sdca-warn: #f59e0b;
+}
+[data-theme="light"] { --sdca-chip-bg: rgba(100, 116, 139, 0.08); --sdca-track: rgba(100, 116, 139, 0.18); }
+
+.sdca-page { padding: 22px 26px 60px; max-width: 1100px; margin: 0 auto; color: var(--mc-text); }
+.sdca-page * { box-sizing: border-box; }
+.sdca-dim { color: var(--mc-muted); font-size: 11.5px; }
+.sdca-up { color: var(--sdca-up); }
+.sdca-down { color: var(--sdca-down); }
+
+/* -------------------------------------------------- §0 header */
+.sdca-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.sdca-title { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
+.sdca-sub { margin: 4px 0 0; color: var(--mc-text-2); font-size: 13px; }
+.sdca-btn { border: 1px solid var(--mc-border); background: var(--sdca-chip-bg); color: var(--mc-text); font-family: inherit; font-size: 12.5px; font-weight: 700; border-radius: 9px; padding: 8px 14px; cursor: pointer; }
+.sdca-btn:hover { border-color: var(--mc-border-active); }
+.sdca-btn:disabled { opacity: 0.6; cursor: wait; }
+
+/* fallback-mode banner */
+.sdca-banner { border: 1px solid var(--mc-border-warning, rgba(245, 158, 11, 0.45)); background: rgba(245, 158, 11, 0.08); color: var(--mc-text); border-radius: 12px; padding: 11px 14px; font-size: 12.5px; margin-bottom: 16px; }
+
+/* -------------------------------------------------- §1 verdict hero */
+.sdca-hero { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card-glow), var(--mc-card); padding: 20px 24px; margin-bottom: 18px; }
+.sdca-hero-grid { display: grid; grid-template-columns: auto 1fr auto; gap: 22px; align-items: center; }
+.sdca-hero-main { min-width: 0; }
+.sdca-mult { font-size: 64px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.sdca-zone-name { font-size: 15px; font-weight: 800; }
+.sdca-suggest { font-size: 19px; font-weight: 600; margin-top: 6px; }
+.sdca-suggest b { font-weight: 800; font-variant-numeric: tabular-nums; }
+.sdca-pause { color: var(--sdca-warn); font-weight: 800; font-size: 16px; }
+.sdca-hero-meta { margin-top: 7px; font-size: 12.5px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.sdca-hero-controls { display: flex; flex-direction: column; gap: 10px; min-width: 172px; }
+.sdca-ctrl { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 700; color: var(--mc-text-2); }
+.sdca-ctrl input, .sdca-ctrl select, .sdca-inline select { border: 1px solid var(--mc-border); background: var(--mc-card); color: var(--mc-text); font-family: inherit; font-size: 13px; border-radius: 9px; padding: 8px 10px; }
+.sdca-ctrl input:focus, .sdca-ctrl select:focus, .sdca-inline select:focus { outline: none; border-color: var(--mc-border-active); }
+.sdca-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 14px; }
+.sdca-chip { font-size: 11px; font-weight: 700; border: 1px solid var(--mc-border); background: var(--sdca-chip-bg); color: var(--mc-text-2); border-radius: 999px; padding: 3px 10px; font-variant-numeric: tabular-nums; }
+.sdca-chip-warn { color: var(--sdca-warn); border-color: rgba(245, 158, 11, 0.4); }
+
+/* -------------------------------------------------- blocks */
+.sdca-block { margin-bottom: 20px; }
+.sdca-block-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.sdca-block-head h2 { margin: 0; font-size: 16.5px; font-weight: 800; }
+.sdca-block-sub { font-size: 12px; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
+.sdca-inline { font-size: 12px; font-weight: 700; color: var(--mc-text-2); display: inline-flex; align-items: center; gap: 7px; }
+.sdca-inline select { padding: 5px 8px; font-size: 12px; }
+
+/* -------------------------------------------------- §2 zone ladder */
+.sdca-ladder { border: 1px solid var(--mc-border); border-radius: 15px; background: var(--mc-card); padding: 6px 14px; }
+.sdca-zrow { display: grid; grid-template-columns: 14px minmax(112px, auto) 52px 1fr auto; gap: 12px; align-items: center; padding: 9px 8px; border-bottom: 1px solid var(--mc-border); font-size: 13px; }
+.sdca-zrow:last-child { border-bottom: 0; }
+.sdca-zrow.is-current { border-radius: 10px; border-bottom-color: transparent; font-weight: 600; }
+.sdca-zdot { width: 11px; height: 11px; border-radius: 4px; display: inline-block; }
+.sdca-zrange { font-variant-numeric: tabular-nums; color: var(--mc-text-2); font-weight: 600; }
+.sdca-zmult { font-variant-numeric: tabular-nums; font-size: 14px; }
+.sdca-zthai { color: var(--mc-text-2); font-size: 12.5px; }
+.sdca-znow { font-size: 11px; font-weight: 800; white-space: nowrap; }
+
+.sdca-info-btn { border: 1px solid var(--mc-border); background: var(--sdca-chip-bg); color: var(--mc-text-2); width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 13px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; padding: 0; }
+.sdca-info-btn:hover { color: var(--mc-text); border-color: var(--mc-border-active); }
+
+/* -------------------------------------------------- §3 backtest compare */
+.sdca-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sdca-cmp-card { border: 1px solid var(--mc-border); border-radius: 15px; background: var(--mc-card); padding: 14px 16px; }
+.sdca-cmp-card.is-winner { border-color: var(--sdca-up); box-shadow: inset 0 0 0 1px var(--sdca-up); }
+.sdca-cmp-title { font-size: 13.5px; font-weight: 800; }
+.sdca-cmp-roi { font-size: 26px; font-weight: 800; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.sdca-cmp-roi-l { font-size: 10.5px; color: var(--mc-muted); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.sdca-cmp-rows { margin-top: 10px; border-top: 1px dashed var(--mc-border); padding-top: 8px; }
+.sdca-cmp-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 3px 0; color: var(--mc-text-2); }
+.sdca-cmp-row b { color: var(--mc-text); font-variant-numeric: tabular-nums; font-weight: 700; }
+.sdca-cmp-note { margin-top: 8px; font-size: 11px; color: var(--mc-muted); }
+.sdca-diff { margin-top: 12px; border: 1px solid var(--mc-border); border-radius: 12px; background: var(--sdca-chip-bg); padding: 10px 14px; font-size: 12.5px; font-weight: 600; }
+.sdca-note { margin: 10px 0 0; font-size: 11px; color: var(--mc-muted); line-height: 1.6; }
+
+/* -------------------------------------------------- §4 chart */
+.sdca-chart-card { border: 1px solid var(--mc-border); border-radius: 15px; background: var(--mc-card); padding: 14px 16px; }
+.sdca-chart-card svg { width: 100%; height: auto; display: block; }
+.sdca-grid { stroke: var(--sdca-track); stroke-width: 1; }
+.sdca-axis { fill: var(--mc-muted); font-size: 11px; font-family: inherit; }
+.sdca-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 11.5px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.sdca-leg { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+.sdca-leg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* -------------------------------------------------- §5 methodology */
+.sdca-method { margin-top: 22px; font-size: 11.5px; color: var(--mc-muted); line-height: 1.7; border: 1px dashed var(--mc-border); border-radius: 12px; padding: 12px 14px; }
+.sdca-method b { color: var(--mc-text-2); }
+
+/* -------------------------------------------------- modal */
+.sdca-modal-back { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.72); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+.sdca-modal { width: 100%; max-width: 560px; background: var(--mc-bg); border: 1px solid var(--mc-border); border-radius: 16px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5); padding: 18px 20px; }
+.sdca-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.sdca-modal-head h3 { margin: 0; font-size: 17px; font-weight: 800; }
+.sdca-modal-close { border: 0; background: transparent; color: var(--mc-muted); font-size: 15px; cursor: pointer; font-family: inherit; padding: 2px 6px; }
+.sdca-modal-close:hover { color: var(--mc-text); }
+.sdca-modal-body { max-height: 70vh; overflow-y: auto; }
+.sdca-modal-sec { margin-top: 12px; }
+.sdca-modal-sec b { font-size: 13px; }
+.sdca-modal-sec p { margin: 5px 0 0; font-size: 12.5px; color: var(--mc-text-2); line-height: 1.75; }
+
+/* -------------------------------------------------- responsive */
+@media (max-width: 720px) {
+  .sdca-page { padding: 16px 12px 48px; }
+  .sdca-hero { padding: 16px; }
+  .sdca-hero-grid { grid-template-columns: 1fr; gap: 12px; }
+  .sdca-mult { font-size: 52px; }
+  .sdca-hero-controls { flex-direction: row; }
+  .sdca-ctrl { flex: 1; }
+  .sdca-compare { grid-template-columns: 1fr; }
+  .sdca-zrow { grid-template-columns: 12px auto 44px 1fr; }
+  .sdca-znow { display: none; }
+}
