@@ -43,6 +43,38 @@
     custom: []
   };
 
+  // 4-asset composition model — the "+ เพิ่ม ในก้อนนี้" flow adds one of these by % held.
+  // Each maps to a canonical signal source. Bitcoin uses the Buy Zone Score (same as the
+  // Bitcoin Monitor / bitcoin bucket) so it stays consistent app-wide; the rest use the
+  // snapshot timing signal on their proxy symbol. Cash carries no market signal (neutral).
+  var ASSET_MODEL = {
+    bitcoin: { label: "Bitcoin", display: "BTC", symbol: "BTCUSD", buyZone: true },
+    qqqm: { label: "QQQM · Nasdaq 100", display: "QQQM", symbol: "QQQM" },
+    set50: { label: "SET50 · หุ้นไทย", display: "SET50", symbol: "^SET50.BK", noSignal: true },
+    cash: { label: "เงินสด", display: "Cash", symbol: null, cash: true }
+  };
+  var ASSET_KEYS = Object.keys(ASSET_MODEL);
+
+  // scoring for a 4-asset composition item (returns a scoring-like object or null)
+  function assetScoring(assetKey, snapshot) {
+    var a = ASSET_MODEL[assetKey];
+    if (!a) return null;
+    if (a.cash) return { signalScore: null, thaiSignalLabel: "เงินสด (สภาพคล่อง)", thaiFinalAction: "", color: "#94a3b8", warnings: [], cash: true };
+    if (a.buyZone) {
+      var bz = readBuyZone();
+      if (bz && bz.score != null) {
+        return { signalScore: Math.round(bz.score), thaiSignalLabel: "BTC Buy Zone" + (bz.mode ? " · " + bz.mode : ""), thaiFinalAction: "", color: toneColor(bz.score), warnings: [], source: "buyzone" };
+      }
+    }
+    var st = a.symbol ? tickerState(a.symbol, snapshot) : null;
+    if (st) return st;
+    // no signal available. SET50/Thai indices have too little free history for EMA/SMA200/RSI —
+    // say so plainly (Load won't fix it) instead of the generic "press Load" prompt.
+    if (a.noSignal) return { signalScore: null, thaiSignalLabel: "ไม่มีสัญญาณ (ข้อมูลหุ้นไทยไม่พอ)", thaiFinalAction: "", color: "#94a3b8", warnings: [], noData: true };
+    return null;
+  }
+  function toneColor(score) { return score == null ? "#94a3b8" : score >= 60 ? "#10b981" : score >= 40 ? "#f59e0b" : "#ef4444"; }
+
   // Legacy values the old holdings modal's defaultBucket() used to write.
   var LEGACY_BUCKET_ALIASES = {
     crypto: "bitcoin",
@@ -212,7 +244,44 @@
   function toneOf(score) { return score == null ? null : score >= 60 ? "bull" : score >= 40 ? "neutral" : "bear"; }
 
   // ---------------------------------------------------------- bucket signal (facts)
+  // Bitcoin's canonical score = the Buy Zone Score cached by the Bitcoin Monitor
+  // page (Technical + Cycle/MVRV + Holder/Sentiment + Free Stress). Reused here so
+  // the Bitcoin bucket matches that page instead of a separate technical calc.
+  function readBuyZone() {
+    try { var s = (typeof window !== "undefined" && window.localStorage) ? window.localStorage.getItem("portfolio_dashboard_btc_buyzone") : null; return s ? JSON.parse(s) : null; } catch (e) { return null; }
+  }
+
   function bucketSignal(bucketType, tickers, snapshot) {
+    // 4-asset composition present → blend each asset's signal weighted by % held
+    // (normalised over the entered %). Cash counts as neutral 50; assets with no data
+    // are shown but excluded from the blend (renormalise over what has data).
+    var pctItems = (tickers || []).filter(function (t) { return t.percent != null && t.percent > 0; });
+    if (pctItems.length) {
+      var wsum = 0, acc = 0, cnt = { bull: 0, neutral: 0, bear: 0 }, syms = [];
+      pctItems.forEach(function (t) {
+        var sc = t.scoring && t.scoring.signalScore != null ? t.scoring.signalScore : null;
+        var eff = sc != null ? sc : (t.asset === "cash" ? 50 : null);
+        syms.push({ symbol: t.displaySymbol || t.symbol, weight: t.percent, score: eff });
+        if (eff == null) return; // no data (and not cash) → excluded from blend
+        wsum += t.percent; acc += eff * t.percent;
+        var tone = toneOf(eff); if (tone) cnt[tone] += 1;
+      });
+      return {
+        health: wsum > 0 ? Math.round(acc / wsum) : null,
+        source: "assets", counts: cnt,
+        thai: "จากสัดส่วนสินทรัพย์ " + pctItems.length + " ก้อน (ถ่วงตาม %)",
+        symbols: syms
+      };
+    }
+    if (bucketType === "bitcoin") {
+      var bz = readBuyZone();
+      if (bz && bz.score != null) {
+        var tnbz = toneOf(bz.score); var cbz = { bull: 0, neutral: 0, bear: 0 }; if (tnbz) cbz[tnbz] += 1;
+        return { health: Math.round(bz.score), source: "buyzone", counts: cbz,
+          thai: "จาก BTC Buy Zone Score · " + (bz.mode || "เทคนิค"),
+          symbols: [{ symbol: "Buy Zone", weight: 1, score: Math.round(bz.score) }] };
+      }
+    }
     var scored = (tickers || []).filter(function (t) { return t.scoring && t.scoring.signalScore != null; });
     if (scored.length) {
       var wsum = 0, acc = 0, counts = { bull: 0, neutral: 0, bear: 0 };
@@ -250,21 +319,34 @@
   // ---------------------------------------------------------- ticker rows per bucket
   function tickerRows(holdings, snapshot, w3map) {
     var rows = (holdings || []).map(function (h) {
+      var isAsset = !!h.__asset;
       return {
         symbol: h.canonicalSymbol,
         displaySymbol: h.displaySymbol || h.canonicalSymbol,
         name: h.assetName || h.canonicalSymbol,
         assetType: h.assetType || "",
         marketValue: fin(h.marketValue) || 0,
+        percent: h.__percent != null ? fin(h.__percent) : null,   // 4-asset composition (% held)
+        asset: h.__asset || null,
         notes: h.notes || "",
         bucket: bucketForHolding(h),
-        scoring: tickerState(h.canonicalSymbol, snapshot),
-        wave3: w3map[h.canonicalSymbol] || null
+        scoring: isAsset ? assetScoring(h.__asset, snapshot) : tickerState(h.canonicalSymbol, snapshot),
+        wave3: isAsset ? null : (w3map[h.canonicalSymbol] || null),
+        manual: !!h.__manual, itemId: h.__id || null
       };
     });
-    var sum = rows.reduce(function (s, r) { return s + r.marketValue; }, 0);
-    rows.forEach(function (r) { r.weightInBucket = sum > 0 ? round(r.marketValue / sum * 100, 1) : null; });
-    rows.sort(function (a, b) { return b.marketValue - a.marketValue; });
+    // weight within the bucket: by % when composition items exist, else by market value
+    var pctSum = rows.reduce(function (s, r) { return s + (r.percent || 0); }, 0);
+    var mvSum = rows.reduce(function (s, r) { return s + r.marketValue; }, 0);
+    rows.forEach(function (r) {
+      if (r.percent != null && pctSum > 0) r.weightInBucket = round(r.percent / pctSum * 100, 1);
+      else r.weightInBucket = mvSum > 0 ? round(r.marketValue / mvSum * 100, 1) : null;
+    });
+    rows.sort(function (a, b) {
+      var av = a.percent != null ? a.percent : a.marketValue;
+      var bv = b.percent != null ? b.percent : b.marketValue;
+      return bv - av;
+    });
     return rows;
   }
 
@@ -277,6 +359,33 @@
       if (!q) return { available: false, reason: "no-quarterly", thai: "ยังไม่มีข้อมูลใน Quarterly Editor — กรอกพอร์ตรายไตรมาสก่อน" };
 
       var H = mapHoldings(snapshot.portfolioHoldings);
+      // Portfolio-Position manual per-bucket placements (localStorage overlay via opts).
+      // The SAME ticker can live in several buckets — each is its own line item. They
+      // flow through tickerRows/bucketSignal like holdings; base ticker drives the signal.
+      var manualItems = opts.bucketItems || {};
+      Object.keys(manualItems).forEach(function (bk) {
+        (manualItems[bk] || []).forEach(function (it) {
+          if (!it) return;
+          if (it.asset && ASSET_MODEL[it.asset]) {
+            // 4-asset composition item: added by % held, signal from the asset's canonical source
+            var a = ASSET_MODEL[it.asset];
+            var pctv = fin(it.percent); if (pctv == null || !(pctv >= 0)) return;
+            (H.byBucket[bk] || (H.byBucket[bk] = [])).push({
+              canonicalSymbol: a.symbol || ("CASH-" + bk), displaySymbol: a.display, assetName: a.label,
+              assetType: "", marketValue: 0, notes: it.notes || "",
+              portfolioBucket: bk, isHolding: true, __manual: true, __id: it.id, __asset: it.asset, __percent: pctv
+            });
+            return;
+          }
+          // legacy shape (symbol + THB value) — kept working for older overlay entries
+          var sym = String((it.symbol || it.canonicalSymbol) || "").trim().toUpperCase(); if (!sym) return;
+          (H.byBucket[bk] || (H.byBucket[bk] = [])).push({
+            canonicalSymbol: sym, displaySymbol: it.displaySymbol || sym, assetName: it.name || sym,
+            assetType: it.assetType || "", marketValue: fin(it.marketValue) || 0, notes: it.notes || "",
+            portfolioBucket: bk, isHolding: true, __manual: true, __id: it.id
+          });
+        });
+      });
       var w3map = wave3Map(snapshot);
 
       var buckets = q.byType.map(function (g) {
@@ -340,7 +449,10 @@
     tickerState: tickerState,
     Q_TYPES: Q_TYPES,
     BUCKET_KEYS: BUCKET_KEYS,
-    BUCKET_PROXIES: BUCKET_PROXIES
+    BUCKET_PROXIES: BUCKET_PROXIES,
+    ASSET_MODEL: ASSET_MODEL,
+    ASSET_KEYS: ASSET_KEYS,
+    assetScoring: assetScoring
   };
 
   if (typeof window !== "undefined") window.PortfolioPosition = PortfolioPosition;

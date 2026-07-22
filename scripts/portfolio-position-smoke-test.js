@@ -168,5 +168,73 @@ function snap() { return { loadedAt: "2026-07-14T09:00:00Z", portfolioStatus: qu
   check("no holdings → foreign-stock proxy QQQM+SPY health = 76", fs2.signal.source === "proxy" && fs2.signal.health === 76, fs2.signal);
 })();
 
+// ---------------------------------------------------------------- 6 · 4-asset composition overlay (%)
+(function () {
+  console.log("\n[6] 4-asset composition per bucket (Bitcoin/QQQM/SET50/Cash by %)");
+  // Add a 4-asset composition into provident-fund: 50% QQQM + 30% Bitcoin + 20% Cash.
+  // (Bitcoin uses Buy Zone if cached; here none cached → falls back to BTCUSD timing,
+  // which the fixture doesn't score → excluded from blend. QQQM=80, cash=neutral 50.)
+  const s = snap();
+  const bucketItems = {
+    "provident-fund": [
+      { id: "a1", asset: "qqqm", percent: 50 },
+      { id: "a2", asset: "set50", percent: 30 },
+      { id: "a3", asset: "cash", percent: 20, notes: "สภาพคล่อง" }
+    ]
+  };
+  const out = PP.compute(s, { bucketItems: bucketItems });
+  check("available with composition", out.available === true, out.reason);
+  const pf = out.buckets.find((b) => b.type === "provident-fund");
+  const rows = pf.tickers;
+  check("3 composition rows in provident-fund", rows.length === 3, rows.map((t) => t.asset));
+  const qq = rows.find((t) => t.asset === "qqqm");
+  check("qqqm row carries percent 50 + manual + itemId", qq && qq.percent === 50 && qq.manual && qq.itemId === "a1", qq);
+  check("qqqm scoring from proxy (score 80)", qq && qq.scoring && qq.scoring.signalScore === 80, qq && qq.scoring);
+  const cashRow = rows.find((t) => t.asset === "cash");
+  check("cash row present, scoring cash-flagged, no numeric score", cashRow && cashRow.scoring && cashRow.scoring.cash === true && cashRow.scoring.signalScore == null, cashRow && cashRow.scoring);
+  // weightInBucket normalises entered % (50+30+20 = 100 already)
+  check("qqqm weightInBucket = 50%", qq && qq.weightInBucket === 50, qq && qq.weightInBucket);
+  // signal source = assets; blend over items WITH data → qqqm 80 (50) + cash 50 (20) = (4000+1000)/70 = 71
+  // (set50 has no fixture data → excluded, weights renormalise over qqqm+cash)
+  check("bucket signal source = assets", pf.signal.source === "assets", pf.signal.source);
+  check("blend = 71 (qqqm 80 @50 + cash 50 @20, set50 no-data excluded)", pf.signal.health === 71, pf.signal.health);
+  check("counts: qqqm bull + cash neutral", pf.signal.counts.bull === 1 && pf.signal.counts.neutral === 1, pf.signal.counts);
+  // SET50 shown in symbols with null score (transparency), not dropped
+  check("set50 surfaced in signal.symbols with null score", pf.signal.symbols.some((x) => x.symbol === "SET50" && x.score == null), pf.signal.symbols);
+
+  // non-100 totals renormalise: 30% qqqm + 10% cash → weightInBucket 75/25
+  const partial = PP.compute(snap(), { bucketItems: { "cash": [
+    { id: "b1", asset: "qqqm", percent: 30 }, { id: "b2", asset: "cash", percent: 10 }
+  ] } });
+  const cashB = partial.buckets.find((b) => b.type === "cash");
+  const qB = cashB.tickers.find((t) => t.asset === "qqqm");
+  check("non-100 total → weightInBucket renormalised (qqqm 30/40 = 75%)", qB && qB.weightInBucket === 75, qB && qB.weightInBucket);
+  // blend: qqqm 80 @30 + cash 50 @10 = (2400+500)/40 = 72.5 → 73
+  check("non-100 blend renormalised = 73", cashB.signal.health === 73, cashB.signal.health);
+
+  // same asset can sit in multiple buckets independently
+  const multi = PP.compute(snap(), { bucketItems: {
+    "rmf-jang": [{ id: "j", asset: "qqqm", percent: 60 }],
+    "rmf-tum": [{ id: "t", asset: "qqqm", percent: 40 }]
+  } });
+  const jq = multi.buckets.find((b) => b.type === "rmf-jang").tickers.find((t) => t.asset === "qqqm");
+  const tq = multi.buckets.find((b) => b.type === "rmf-tum").tickers.find((t) => t.asset === "qqqm");
+  check("qqqm in rmf-jang AND rmf-tum, independent %", jq && tq && jq.percent === 60 && tq.percent === 40, { j: jq && jq.percent, t: tq && tq.percent });
+
+  // Bitcoin composition item uses Buy Zone when cached — simulate via global localStorage
+  global.window = { localStorage: { getItem: (k) => k === "portfolio_dashboard_btc_buyzone" ? JSON.stringify({ score: 51, mode: "on-chain" }) : null } };
+  const btcComp = PP.compute(snap(), { bucketItems: { "bitcoin": [{ id: "z", asset: "bitcoin", percent: 100 }] } });
+  const bRow = btcComp.buckets.find((b) => b.type === "bitcoin").tickers.find((t) => t.asset === "bitcoin");
+  check("bitcoin asset uses Buy Zone Score (51) when cached", bRow && bRow.scoring && bRow.scoring.signalScore === 51, bRow && bRow.scoring);
+  check("bitcoin composition bucket blend = 51 (Buy Zone)", btcComp.buckets.find((b) => b.type === "bitcoin").signal.health === 51);
+  delete global.window;
+
+  // robustness: unknown asset / negative percent ignored, no throw
+  const safe = PP.compute(snap(), { bucketItems: { "cash": [
+    { id: "x", asset: "gold", percent: 50 }, { id: "y", asset: "qqqm", percent: -5 }
+  ] } });
+  check("unknown asset + negative % ignored, no throw", safe.available === true && !safe.buckets.find((b) => b.type === "cash").tickers.some((t) => t.asset), safe.available);
+})();
+
 console.log(`\n${passed + failed} checks · ${passed} passed · ${failed} failed`);
 process.exit(failed ? 1 : 0);
