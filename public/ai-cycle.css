@@ -1,0 +1,364 @@
+/* ============================================================
+   AI Cycle Intelligence — strategic command center styles.
+   Built on mission-control --mc-* tokens; dark + light aware.
+   ============================================================ */
+:root {
+  --aic-chip: rgba(148, 163, 184, 0.10);
+  --aic-in: #34d399; --aic-hot: #38bdf8; --aic-out: #f59e0b; --aic-stable: #94a3b8;
+}
+[data-theme="light"] { --aic-chip: rgba(100, 116, 139, 0.08); }
+
+.aic-page { padding: 24px 26px 70px; max-width: 1120px; margin: 0 auto; color: var(--mc-text); }
+.aic-page * { box-sizing: border-box; }
+
+/* ---- Section 1 · Hero ---- */
+.aic-hero { display: flex; gap: 26px; align-items: center; flex-wrap: wrap; padding: 26px 30px; border: 1px solid var(--mc-border); border-radius: 22px; background: var(--mc-card-glow), var(--mc-card); margin-bottom: 26px; }
+.aic-hero-left { flex: 1 1 360px; }
+.aic-hero-right { text-align: center; }
+.aic-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mc-muted); }
+.aic-phase-now { margin-top: 12px; font-size: 12px; color: var(--mc-muted); }
+.aic-phase-title { margin: 2px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -0.02em; background: linear-gradient(90deg, #a78bfa, #38bdf8, #34d399); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.aic-phase-thesis { margin: 8px 0 0; font-size: 14px; color: var(--mc-text-2); max-width: 560px; line-height: 1.6; }
+.aic-phase-next { margin-top: 12px; font-size: 13px; color: var(--mc-text-2); }
+.aic-phase-next b { color: var(--mc-text); }
+.aic-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+.aic-ring-hole { position: absolute; inset: 8px; border-radius: 50%; background: var(--mc-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.aic-ring-hole b { font-size: 30px; font-weight: 800; line-height: 1; }
+.aic-ring-hole b span { font-size: 14px; }
+.aic-ring-hole small { font-size: 10px; color: var(--mc-muted); margin-top: 3px; }
+.aic-evidence { margin-top: 10px; font-size: 11.5px; color: var(--mc-muted); }
+
+/* ---- section shell ---- */
+.aic-sec { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card); padding: 20px 22px; margin-bottom: 18px; }
+.aic-sec-head { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 16px; }
+.aic-sec-n { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px; background: var(--aic-chip); border: 1px solid var(--mc-border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--mc-text-2); }
+.aic-sec-head h2 { margin: 0; font-size: 18px; font-weight: 800; }
+.aic-sec-head p { margin: 3px 0 0; font-size: 12px; color: var(--mc-muted); line-height: 1.5; }
+.aic-sec-head > div { flex: 1; }
+
+.aic-why { margin-top: 10px; }
+.aic-why summary { cursor: pointer; font-size: 11.5px; font-weight: 700; color: var(--mc-muted); list-style: none; display: inline-flex; align-items: center; gap: 4px; }
+.aic-why summary::before { content: "ⓘ"; }
+.aic-why summary::-webkit-details-marker { display: none; }
+.aic-why ul { margin: 8px 0 0; padding-left: 16px; }
+.aic-why li { font-size: 12px; color: var(--mc-text-2); line-height: 1.55; margin: 3px 0; }
+
+/* ---- shared bar + direction ---- */
+.aic-bar { display: inline-block; height: 7px; border-radius: 4px; background: var(--aic-chip); overflow: hidden; vertical-align: middle; }
+.aic-bar i { display: block; height: 100%; border-radius: 4px; }
+.aic-dir { font-size: 11px; font-weight: 800; white-space: nowrap; padding: 2px 8px; border-radius: 999px; }
+.aic-dir-in { color: var(--aic-in); background: rgba(52, 211, 153, 0.12); }
+.aic-dir-hot { color: var(--aic-hot); background: rgba(56, 189, 248, 0.12); }
+.aic-dir-out { color: var(--aic-out); background: rgba(245, 158, 11, 0.12); }
+.aic-dir-stable { color: var(--aic-stable); background: var(--aic-chip); }
+
+/* ---- Section 2 · Capital Rotation ---- */
+.aic-rot-list { display: flex; flex-direction: column; gap: 3px; }
+.aic-rot-row { display: grid; grid-template-columns: 26px minmax(120px, 1.3fr) 2fr 42px auto; align-items: center; gap: 12px; padding: 8px 6px; border-radius: 8px; }
+.aic-rot-row:hover { background: var(--aic-chip); }
+.aic-rot-rank { font-size: 13px; font-weight: 800; color: var(--mc-muted); text-align: center; }
+.aic-rot-name { font-size: 13.5px; font-weight: 600; }
+.aic-rot-bar .aic-bar { width: 100%; height: 9px; }
+.aic-rot-score { font-size: 14px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---- Section 3 · Value Chain ---- */
+.aic-vc { display: flex; flex-direction: column; }
+.aic-vc-node { position: relative; padding-bottom: 12px; }
+.aic-vc-line { position: absolute; left: 26px; top: 44px; bottom: -4px; width: 2px; background: linear-gradient(var(--mc-border), transparent); }
+.aic-vc-card { border: 1px solid var(--mc-border); border-radius: 14px; background: var(--aic-chip); padding: 13px 15px; }
+.aic-vc-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.aic-vc-order { width: 24px; height: 24px; border-radius: 50%; background: var(--mc-bg); border: 1px solid var(--mc-border); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex: 0 0 auto; }
+.aic-vc-name { font-size: 15px; flex: 1; }
+.aic-vc-thesis { margin: 8px 0 10px; font-size: 12px; color: var(--mc-muted); line-height: 1.5; }
+.aic-vc-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.aic-metric { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--mc-muted); }
+.aic-metric span { white-space: nowrap; }
+.aic-metric .aic-bar { flex: 1; height: 7px; }
+.aic-metric b { font-size: 13px; color: var(--mc-text); font-variant-numeric: tabular-nums; }
+.aic-vc-cos { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 11px; }
+.aic-co { font-size: 11.5px; padding: 3px 9px; border-radius: 7px; background: var(--mc-bg); border: 1px solid var(--mc-border); }
+.aic-co b { color: var(--aic-hot); }
+.aic-co-owned { border-color: rgba(52, 211, 153, 0.5); }
+.aic-co-owned b { color: var(--aic-in); }
+
+/* ---- Section 4 · Exposure ---- */
+.aic-align-chip { flex: 0 0 auto; font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 999px; background: var(--aic-chip); border: 1px solid var(--mc-border); }
+.aic-exp-summary { font-size: 12px; color: var(--mc-muted); margin-bottom: 10px; }
+.aic-exp-list { display: flex; flex-direction: column; gap: 8px; }
+.aic-exp-row { display: grid; grid-template-columns: minmax(110px, 1fr) 2.2fr auto auto; align-items: center; gap: 12px; }
+.aic-exp-name { font-size: 12.5px; font-weight: 600; }
+.aic-exp-track { position: relative; height: 12px; background: var(--aic-chip); border-radius: 6px; overflow: visible; }
+.aic-exp-track i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #38bdf8, #818cf8); }
+.aic-exp-sug { position: absolute; top: -3px; width: 3px; height: 18px; background: var(--mc-text); border-radius: 2px; transform: translateX(-50%); box-shadow: 0 0 0 1.5px var(--mc-bg); }
+.aic-exp-nums { font-size: 12px; font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.aic-exp-nums small { color: var(--mc-muted); font-weight: 400; }
+.aic-badge { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.aic-over { color: var(--aic-out); background: rgba(245, 158, 11, 0.14); }
+.aic-under { color: var(--aic-hot); background: rgba(56, 189, 248, 0.14); }
+.aic-balanced { color: var(--aic-in); background: rgba(52, 211, 153, 0.14); }
+.aic-empty-inline { font-size: 13px; color: var(--mc-muted); padding: 12px 0; }
+.aic-empty-inline a { color: var(--aic-hot); }
+
+/* ---- Section 5 · Suggested Rotation ---- */
+.aic-plan-list { display: flex; flex-direction: column; gap: 4px; }
+.aic-plan-row { display: grid; grid-template-columns: minmax(110px, 1fr) auto 2fr auto; align-items: center; gap: 12px; padding: 8px 6px; border-radius: 8px; }
+.aic-plan-row:hover { background: var(--aic-chip); }
+.aic-plan-name { font-size: 13px; font-weight: 600; }
+.aic-act { font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.aic-act-inc { color: var(--aic-in); background: rgba(52, 211, 153, 0.14); border: 1px solid rgba(52, 211, 153, 0.4); }
+.aic-act-hold { color: var(--mc-text-2); background: var(--aic-chip); border: 1px solid var(--mc-border); }
+.aic-act-red { color: var(--aic-out); background: rgba(245, 158, 11, 0.14); border: 1px solid rgba(245, 158, 11, 0.4); }
+.aic-plan-note { font-size: 11.5px; color: var(--mc-muted); }
+
+/* ---- Section 6 · Opportunity table ---- */
+.aic-table-wrap { overflow-x: auto; }
+.aic-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.aic-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mc-muted); padding: 7px 10px; border-bottom: 1px solid var(--mc-border); }
+.aic-table td { padding: 8px 10px; border-bottom: 1px solid var(--mc-border); }
+.aic-table tr:last-child td { border-bottom: 0; }
+.aic-td-score { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.aic-td-score .aic-bar { width: 46px; height: 7px; margin-right: 6px; }
+.aic-td-note { color: var(--mc-muted); font-size: 11.5px; }
+.aic-owned-tag { font-size: 9.5px; font-weight: 800; color: #052e16; background: var(--aic-in); border-radius: 4px; padding: 1px 5px; }
+.aic-uni-tag { font-size: 9.5px; font-weight: 700; color: var(--aic-hot); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 4px; padding: 1px 5px; }
+
+/* ---- Section 7 · Timeline ---- */
+.aic-tl { display: flex; flex-direction: column; gap: 2px; }
+.aic-tl-node { display: flex; gap: 14px; padding: 10px 0; position: relative; }
+.aic-tl-node:not(:last-child)::before { content: ""; position: absolute; left: 6px; top: 24px; bottom: -2px; width: 2px; background: var(--mc-border); }
+.aic-tl-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--mc-border); background: var(--mc-bg); flex: 0 0 auto; margin-top: 3px; z-index: 1; }
+.aic-tl-current .aic-tl-dot { border-color: var(--aic-in); background: var(--aic-in); box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.18); }
+.aic-tl-next .aic-tl-dot { border-color: var(--aic-hot); }
+.aic-tl-past .aic-tl-dot { background: var(--mc-muted); border-color: var(--mc-muted); }
+.aic-tl-name { font-size: 14px; font-weight: 700; }
+.aic-tl-past .aic-tl-name, .aic-tl-future .aic-tl-name { opacity: 0.6; }
+.aic-tl-tag { font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+.aic-tl-current .aic-tl-tag { color: var(--aic-in); background: rgba(52, 211, 153, 0.15); }
+.aic-tl-next .aic-tl-tag { color: var(--aic-hot); background: rgba(56, 189, 248, 0.15); }
+.aic-tl-past .aic-tl-tag, .aic-tl-future .aic-tl-tag { color: var(--mc-muted); background: var(--aic-chip); }
+.aic-tl-thesis { font-size: 11.5px; color: var(--mc-muted); margin-top: 2px; line-height: 1.5; }
+
+/* ---- Section 8 · Checklist ---- */
+.aic-chk-list { display: flex; flex-direction: column; gap: 8px; }
+.aic-chk { display: flex; gap: 11px; align-items: flex-start; padding: 11px 14px; border-radius: 11px; border: 1px solid var(--mc-border); }
+.aic-chk-met { border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.05); }
+.aic-chk-pending { background: var(--aic-chip); }
+.aic-chk-mark { font-size: 15px; font-weight: 800; flex: 0 0 auto; }
+.aic-chk-met .aic-chk-mark { color: var(--aic-in); }
+.aic-chk-pending .aic-chk-mark { color: var(--mc-muted); }
+.aic-chk b { font-size: 13px; display: block; }
+.aic-chk small { font-size: 11px; color: var(--mc-muted); }
+.aic-chk-note { margin-top: 10px; font-size: 11.5px; color: var(--mc-muted); }
+
+/* ---- Section 9 · Actions ---- */
+.aic-action-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.aic-action { border: 1px solid var(--mc-border); border-left-width: 3px; border-radius: 12px; padding: 12px 14px; background: var(--aic-chip); }
+.aic-action b { font-size: 13px; }
+.aic-action p { margin: 5px 0 0; font-size: 12px; color: var(--mc-text-2); line-height: 1.5; }
+.aic-tone-good { border-left-color: var(--aic-in); }
+.aic-tone-warn { border-left-color: var(--aic-out); }
+.aic-tone-risk { border-left-color: var(--mc-red); }
+.aic-tone-info { border-left-color: var(--aic-hot); }
+
+/* ---- Section 10 · Explainability ---- */
+.aic-xai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.aic-xai h3 { margin: 0 0 8px; font-size: 13px; }
+.aic-xai ul { margin: 0; padding-left: 16px; }
+.aic-xai li { font-size: 12px; color: var(--mc-text-2); line-height: 1.55; margin: 5px 0; }
+
+.aic-method { margin-top: 20px; font-size: 11.5px; color: var(--mc-muted); line-height: 1.65; border: 1px dashed var(--mc-border); border-radius: 12px; padding: 13px 15px; }
+.aic-method b { color: var(--mc-text-2); }
+
+@media (max-width: 720px) {
+  .aic-page { padding: 16px 12px 50px; }
+  .aic-phase-title { font-size: 26px; }
+  .aic-rot-row { grid-template-columns: 22px 1fr auto; }
+  .aic-rot-bar, .aic-rot-row .aic-dir { display: none; }
+  .aic-exp-row { grid-template-columns: 1fr auto auto; }
+  .aic-exp-track { display: none; }
+  .aic-vc-metrics { grid-template-columns: 1fr; }
+  .aic-plan-row { grid-template-columns: 1fr auto; }
+  .aic-plan-note, .aic-plan-row .aic-dir { display: none; }
+}
+
+/* ============================================================
+   Enhancements (aic-2): Portfolio Score · Radar · Concentration ·
+   value-chain exposure line · rotation paths · owned highlight
+   ============================================================ */
+/* AI Portfolio Score */
+.aic-psc { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+.aic-psc-ring { flex: 0 0 auto; }
+.aic-psc-comps { flex: 1 1 320px; display: flex; flex-direction: column; gap: 12px; }
+.aic-psc-comp-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; font-weight: 600; }
+.aic-psc-comp-head small { color: var(--mc-muted); font-weight: 400; }
+.aic-psc-comp-head b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.aic-psc-comp .aic-bar { width: 100%; height: 8px; margin-top: 4px; }
+.aic-psc-desc { font-size: 11px; color: var(--mc-muted); margin-top: 3px; }
+
+/* Rotation Radar */
+.aic-radar-wrap { display: flex; flex-direction: column; align-items: center; }
+.aic-radar-svg { width: 100%; max-width: 380px; height: auto; }
+.aic-radar-ring { fill: none; stroke: var(--mc-border); stroke-width: 1; }
+.aic-radar-spoke { stroke: var(--mc-border); stroke-width: 1; opacity: 0.5; }
+.aic-radar-rot { fill: rgba(52, 211, 153, 0.22); stroke: #34d399; stroke-width: 2; }
+.aic-radar-exp { fill: rgba(167, 139, 250, 0.10); stroke: #a78bfa; stroke-width: 1.6; stroke-dasharray: 4 3; }
+.aic-radar-label { fill: var(--mc-text-2); font-size: 10px; font-weight: 600; }
+.aic-radar-legend { display: flex; gap: 18px; margin-top: 10px; font-size: 11.5px; color: var(--mc-text-2); }
+.aic-radar-legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
+.aic-lg-rot { background: #34d399; }
+.aic-lg-exp { background: repeating-linear-gradient(90deg, #a78bfa 0 4px, transparent 4px 7px); height: 2px !important; }
+
+/* Value-chain exposure line */
+.aic-vc-exp { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--mc-border); font-size: 12px; }
+.aic-vc-exp-lbl { color: var(--mc-muted); font-size: 11px; }
+.aic-vc-exp b { font-variant-numeric: tabular-nums; }
+.aic-vc-exp-sep { color: var(--mc-muted); font-size: 11px; }
+.aic-diff { font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.aic-diff-pos { color: var(--aic-out); }
+.aic-diff-neg { color: var(--aic-hot); }
+
+/* Concentration risk */
+.aic-conc-list { display: flex; flex-direction: column; gap: 7px; }
+.aic-conc-row { display: grid; grid-template-columns: minmax(110px, 1fr) 1.6fr auto auto auto; align-items: center; gap: 10px; }
+.aic-conc-name { font-size: 12.5px; font-weight: 600; }
+.aic-conc-bar .aic-bar { width: 100%; height: 8px; }
+.aic-conc-nums { font-size: 12px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.aic-conc-nums small { color: var(--mc-muted); font-weight: 400; }
+.aic-conc-clear { font-size: 13px; color: var(--aic-in); padding: 10px 0; }
+.aic-lvl-high { color: var(--mc-red); }
+.aic-lvl-med { color: var(--aic-out); }
+.aic-lvl-low { color: var(--aic-in); }
+
+/* Rotation paths */
+.aic-paths { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.aic-path { border: 1px solid var(--mc-border); border-radius: 12px; padding: 11px 14px; background: var(--aic-chip); }
+.aic-path-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.aic-path-node { font-size: 13.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+.aic-path-node .aic-dir { padding: 1px 5px; font-size: 10px; }
+.aic-path-from { color: var(--aic-out); }
+.aic-path-to { color: var(--aic-in); }
+.aic-path-arrow { font-size: 18px; color: var(--mc-muted); }
+.aic-path-pp { margin-left: auto; font-size: 12px; font-weight: 800; background: var(--mc-bg); border: 1px solid var(--mc-border); border-radius: 999px; padding: 3px 10px; }
+
+/* Owned opportunity row highlight */
+.aic-opp-owned { background: rgba(52, 211, 153, 0.06); }
+.aic-opp-owned td { border-left: 0; }
+.aic-opp-owned td:first-child { box-shadow: inset 3px 0 0 var(--aic-in); }
+
+/* ============================================================
+   v2 enhancements (aic-3): Flow Map · Conviction · New Capital ·
+   Phase Duration · Portfolio Impact · Concentration detail ·
+   Portfolio Rotation flows · Opportunity groups · Strategy
+   ============================================================ */
+/* phase duration in hero */
+.aic-phase-dur { margin-top: 12px; font-size: 12.5px; color: var(--mc-text-2); }
+.aic-phase-dur b { color: var(--mc-text); font-variant-numeric: tabular-nums; }
+.aic-hist-tag { font-size: 10px; font-weight: 800; color: var(--mc-muted); border: 1px solid var(--mc-border); border-radius: 999px; padding: 1px 8px; margin-left: 4px; }
+.aic-dur-note { margin-top: 5px; font-size: 11.5px; color: var(--aic-out); }
+
+/* Flow Map */
+.aic-flow-scroll { overflow-x: auto; padding-bottom: 6px; }
+.aic-flow-svg { width: 100%; min-width: 640px; height: auto; }
+.aic-flow-box { fill: var(--mc-bg); stroke-width: 1.6; }
+.aic-flow-name { fill: var(--mc-text); font-size: 12px; font-weight: 700; }
+.aic-flow-conv { font-size: 15px; font-weight: 800; }
+
+/* Conviction */
+.aic-conv-list { display: flex; flex-direction: column; gap: 4px; }
+.aic-conv-row { display: grid; grid-template-columns: minmax(120px, 1.3fr) 2fr 40px 74px auto; align-items: center; gap: 12px; padding: 7px 6px; border-radius: 8px; }
+.aic-conv-row:hover { background: var(--aic-chip); }
+.aic-conv-name { font-size: 13px; font-weight: 600; }
+.aic-conv-bar .aic-bar { width: 100%; height: 8px; }
+.aic-conv-score { font-size: 15px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.aic-conv-lbl { font-size: 11px; font-weight: 800; text-align: center; padding: 2px 8px; border-radius: 999px; }
+.aic-conv-extreme { color: #052e16; background: #34d399; }
+.aic-conv-high { color: var(--aic-in); background: rgba(52, 211, 153, 0.14); }
+.aic-conv-neutral { color: var(--aic-hot); background: rgba(56, 189, 248, 0.12); }
+.aic-conv-weak { color: var(--mc-muted); background: var(--aic-chip); }
+.aic-conv-why { justify-self: end; }
+.aic-conv-why summary { cursor: pointer; font-size: 10.5px; color: var(--mc-muted); list-style: none; }
+.aic-conv-why summary::-webkit-details-marker { display: none; }
+.aic-conv-why ul { margin: 6px 0 0; padding-left: 15px; }
+.aic-conv-why li { font-size: 11px; color: var(--mc-text-2); margin: 2px 0; }
+
+/* New Capital Allocation */
+.aic-nc-strip { display: flex; height: 22px; border-radius: 8px; overflow: hidden; margin-bottom: 14px; border: 1px solid var(--mc-border); }
+.aic-nc-strip span { height: 100%; }
+.aic-nc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.aic-nc-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.aic-nc-dot { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
+.aic-nc-name { flex: 1; }
+.aic-nc-pct { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* Portfolio Impact */
+.aic-impact-narr { font-size: 13.5px; line-height: 1.6; color: var(--mc-text); background: var(--aic-chip); border-radius: 12px; padding: 13px 15px; margin-bottom: 12px; }
+.aic-impact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.aic-impact-card { border: 1px solid var(--mc-border); border-top-width: 3px; border-radius: 12px; padding: 12px 14px; }
+.aic-impact-card b { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--mc-muted); }
+.aic-impact-card p { margin: 6px 0 0; font-size: 13px; line-height: 1.5; }
+.aic-impact-0 { border-top-color: var(--mc-red); }
+.aic-impact-1 { border-top-color: var(--aic-in); }
+.aic-impact-2 { border-top-color: var(--aic-hot); }
+
+/* Concentration detail */
+.aic-cl-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.aic-cl-metric { background: var(--aic-chip); border-radius: 10px; padding: 9px 12px; }
+.aic-cl-metric span { display: block; font-size: 11px; color: var(--mc-muted); }
+.aic-cl-metric b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.aic-cl-group { margin-bottom: 10px; }
+.aic-cl-lbl { font-size: 11px; font-weight: 700; color: var(--mc-muted); margin-bottom: 5px; }
+.aic-cl-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.aic-cl-chip { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.aic-cl-chip.aic-over { color: var(--aic-out); background: rgba(245, 158, 11, 0.12); }
+.aic-cl-chip.aic-under { color: var(--aic-hot); background: rgba(56, 189, 248, 0.12); }
+.aic-cl-chip.aic-miss { color: var(--mc-muted); background: var(--aic-chip); border: 1px dashed var(--mc-border); }
+.aic-cl-none { font-size: 12px; color: var(--mc-muted); }
+
+/* Portfolio Rotation flows */
+.aic-flows { display: flex; flex-direction: column; gap: 10px; }
+.aic-flowrow { border: 1px solid var(--mc-border); border-radius: 13px; padding: 12px 15px; background: var(--aic-chip); }
+.aic-flowrow-main { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.aic-flowrow-from { font-size: 14px; font-weight: 700; color: var(--aic-out); }
+.aic-flowrow-arrow { font-size: 18px; color: var(--mc-muted); font-weight: 800; }
+.aic-flowrow-to { font-size: 14px; font-weight: 700; color: var(--aic-in); }
+.aic-flowrow-from .aic-dir, .aic-flowrow-to .aic-dir { padding: 1px 5px; font-size: 10px; }
+.aic-flowrow-pp { margin-left: auto; font-size: 13px; font-weight: 800; background: var(--mc-bg); border: 1px solid var(--mc-border); border-radius: 999px; padding: 3px 12px; }
+.aic-flowrow-why { margin-top: 9px; padding-top: 9px; border-top: 1px dashed var(--mc-border); }
+.aic-flowrow-whyq { font-size: 11.5px; font-weight: 700; color: var(--aic-in); }
+.aic-flowrow-why ul { margin: 5px 0 0; padding-left: 16px; display: flex; flex-wrap: wrap; gap: 2px 18px; }
+.aic-flowrow-why li { font-size: 11.5px; color: var(--mc-text-2); flex: 0 0 auto; list-style: disc; }
+
+/* Opportunity groups */
+.aic-opp-group { margin-bottom: 16px; }
+.aic-opp-group:last-child { margin-bottom: 0; }
+.aic-opp-h { font-size: 13px; margin: 0 0 8px; }
+.aic-opp-h span { color: var(--mc-muted); font-weight: 400; }
+
+/* Today's Strategy */
+.aic-strategy { margin: 0; padding-left: 20px; }
+.aic-strategy li { font-size: 13.5px; line-height: 1.65; color: var(--mc-text); margin: 8px 0; padding-left: 4px; }
+.aic-strategy li::marker { color: var(--aic-hot); font-weight: 800; }
+
+/* ---- value-chain 5 related stocks, ranked by impact (aic-4) ---- */
+.aic-vc-stocks { margin-top: 11px; border-top: 1px dashed var(--mc-border); padding-top: 10px; }
+.aic-vc-stocks-h { font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; color: var(--mc-muted); text-transform: uppercase; margin-bottom: 6px; }
+.aic-vc-stock { display: grid; grid-template-columns: 20px minmax(96px, auto) 1fr 84px 30px; align-items: center; gap: 9px; padding: 4px 6px; border-radius: 7px; }
+.aic-vc-stock:hover { background: var(--mc-bg); }
+.aic-vc-stock-owned { background: rgba(52, 211, 153, 0.06); box-shadow: inset 2px 0 0 var(--aic-in); }
+.aic-vc-rank { font-size: 11px; font-weight: 800; color: var(--mc-muted); text-align: center; }
+.aic-vc-tk { font-size: 12.5px; white-space: nowrap; }
+.aic-vc-tk b { font-weight: 700; }
+.aic-vc-conm { font-size: 11.5px; color: var(--mc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aic-vc-scbar .aic-bar { width: 100%; height: 7px; }
+.aic-vc-sc { font-size: 13px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .aic-vc-stock { grid-template-columns: 18px 1fr auto; } .aic-vc-conm, .aic-vc-scbar { display: none; } }
+
+/* ---- Capital Rotation → Value Chain jump (aic-6) ---- */
+.aic-rot-row { grid-template-columns: 26px minmax(120px, 1.3fr) 2fr 42px auto 16px; }
+.aic-rot-jump { cursor: pointer; }
+.aic-rot-jump:hover, .aic-rot-jump:focus-visible { background: var(--aic-chip); outline: none; }
+.aic-rot-go { text-align: center; font-size: 17px; font-weight: 800; color: var(--mc-muted); opacity: 0.45; transition: opacity .15s, transform .15s; }
+.aic-rot-jump:hover .aic-rot-go, .aic-rot-jump:focus-visible .aic-rot-go { opacity: 1; transform: translateX(2px); color: var(--aic-hot); }
+.aic-vc-node { scroll-margin-top: 84px; }
+@keyframes aicFlash { 0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.55); } 100% { box-shadow: 0 0 0 7px rgba(56, 189, 248, 0); } }
+.aic-vc-node.aic-flash > .aic-vc-card { animation: aicFlash 1.4s ease-out; border-color: var(--aic-hot); }
