@@ -215,6 +215,45 @@
     };
   }
 
+  // ---------------------------------------------------------- DCA journal (real trades)
+  // Average-cost accounting over recorded buys/sells. Entries carry their own btc
+  // amount (computed at save time) so history never drifts. Sells consume cost at
+  // the running average; selling more BTC than held is clamped (flagged oversell).
+  var SELL_MULT = { rich: 0.5, hot: 1, euphoria: 2 };   // mirror of the buy ladder's expensive zones
+  function sellPlanFor(zoneKey, base) {
+    var m = SELL_MULT[zoneKey];
+    if (!m || !(num(base) > 0)) return null;
+    return { mult: m, amount: Math.round(base * m) };
+  }
+  function journalSummary(entries) {
+    var list = (Array.isArray(entries) ? entries : []).slice()
+      .filter(function (e) { return e && num(e.thb) > 0 && num(e.btc) > 0; })
+      .sort(function (a, b) { return String(a.date || "").localeCompare(String(b.date || "")); });
+    var btcHeld = 0, costRemaining = 0, invested = 0, proceeds = 0, realized = 0, buys = 0, sells = 0, oversell = false;
+    list.forEach(function (e) {
+      var thb = num(e.thb), btc = num(e.btc);
+      if (e.side === "sell") {
+        var sellBtc = Math.min(btc, btcHeld);
+        if (sellBtc < btc - 1e-12) oversell = true;
+        if (sellBtc <= 0) return;
+        var avg = btcHeld > 0 ? costRemaining / btcHeld : 0;
+        var costOut = avg * sellBtc;
+        var thbPart = thb * (sellBtc / btc);
+        costRemaining -= costOut; btcHeld -= sellBtc;
+        proceeds += thbPart; realized += thbPart - costOut; sells += 1;
+      } else {
+        btcHeld += btc; costRemaining += thb; invested += thb; buys += 1;
+      }
+    });
+    return {
+      btcHeld: round(btcHeld, 8),
+      costRemaining: round(costRemaining, 0),
+      avgCost: btcHeld > 0 ? round(costRemaining / btcHeld, 0) : null,
+      invested: round(invested, 0), proceeds: round(proceeds, 0),
+      realizedPnl: round(realized, 0), buys: buys, sells: sells, oversell: oversell
+    };
+  }
+
   // ---------------------------------------------------------- export
   var SmartDCA = {
     VERSION: VERSION,
@@ -228,7 +267,10 @@
     buildFromCoinMetrics: buildFromCoinMetrics,
     buildFromOhlc: buildFromOhlc,
     current: current,
-    backtest: backtest
+    backtest: backtest,
+    SELL_MULT: SELL_MULT,
+    sellPlanFor: sellPlanFor,
+    journalSummary: journalSummary
   };
 
   if (typeof window !== "undefined") window.SmartDCA = SmartDCA;

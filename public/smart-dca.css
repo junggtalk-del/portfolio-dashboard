@@ -120,3 +120,28 @@
   .sdca-zrow { grid-template-columns: 12px auto 44px 1fr; }
   .sdca-znow { display: none; }
 }
+
+/* -------------------------------------------------- DCA journal */
+.sdca-chip-done { color: var(--sdca-up); border-color: rgba(52, 211, 153, 0.4); }
+.sdca-j-tools { margin-left: auto; display: inline-flex; gap: 8px; }
+.sdca-btn-file { display: inline-flex; align-items: center; cursor: pointer; }
+.sdca-btn-primary { background: var(--mc-border-active); border-color: var(--mc-border-active); color: #fff; }
+.sdca-j-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.sdca-j-card { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+.sdca-j-card span { font-size: 10.5px; color: var(--mc-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.sdca-j-card b { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.sdca-j-card i { font-style: normal; font-size: 11px; font-weight: 700; color: var(--mc-muted); }
+.sdca-sellplan { border: 1px dashed var(--mc-border); border-radius: 11px; padding: 9px 12px; font-size: 12.5px; color: var(--mc-text-2); margin-bottom: 12px; }
+.sdca-sellplan.is-active { border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.08); color: var(--mc-text); }
+.sdca-j-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; border: 1px solid var(--mc-border); border-radius: 12px; padding: 12px; background: var(--mc-card); }
+.sdca-j-form label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; color: var(--mc-text-2); }
+.sdca-j-form input, .sdca-j-form select { border: 1px solid var(--mc-border); background: var(--mc-bg); color: var(--mc-text); font-family: inherit; font-size: 13px; border-radius: 8px; padding: 7px 9px; min-width: 120px; }
+.sdca-j-btc { font-size: 12px; color: var(--mc-muted); font-variant-numeric: tabular-nums; min-width: 130px; padding-bottom: 8px; }
+.sdca-j-list { margin-top: 12px; display: flex; flex-direction: column; }
+.sdca-j-row { display: grid; grid-template-columns: 88px 40px auto auto 1fr auto auto; gap: 12px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--mc-border); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.sdca-j-row:last-child { border-bottom: 0; }
+.sdca-j-row.is-sell { background: rgba(244, 63, 94, 0.04); }
+.sdca-j-zone { font-size: 11px; color: var(--mc-muted); text-align: right; }
+.sdca-mini-del { border: 1px solid var(--mc-border); background: transparent; color: var(--mc-muted); font-family: inherit; font-size: 11px; border-radius: 7px; padding: 3px 9px; cursor: pointer; }
+.sdca-mini-del:hover { color: var(--sdca-down); border-color: var(--sdca-down); }
+@media (max-width: 720px) { .sdca-j-row { grid-template-columns: 1fr auto auto; row-gap: 2px; } .sdca-j-zone { display: none; } }

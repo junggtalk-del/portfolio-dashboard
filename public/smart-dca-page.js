@@ -19,8 +19,34 @@
     "?assets=btc&metrics=CapMVRVCur,PriceUSD&frequency=1d&page_size=10000&sort=time";
   var YEARS = ["2016", "2018", "2020", "2022", "2024"];
 
-  var state = { series: null, source: null, loading: true, error: null };
+  var JOURNAL_KEY = "smart_dca_journal_v1";
+  var FX_KEY = "smart_dca_fx_v1";
+  var state = { series: null, source: null, loading: true, error: null, fx: null };
   var settings = loadSettings();
+
+  // ---------------------------------------------------------- USD→THB (ECB via frankfurter.dev, free + CORS, day-cached)
+  function loadFx() {
+    try {
+      var c = JSON.parse(window.localStorage.getItem(FX_KEY) || "null");
+      if (c && c.u === today() && Number.isFinite(Number(c.thb))) { state.fx = Number(c.thb); return; }
+    } catch (e) {}
+    window.fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=THB", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        var v = j && j.rates && Number(j.rates.THB);
+        if (Number.isFinite(v) && v > 0) {
+          state.fx = v;
+          try { window.localStorage.setItem(FX_KEY, JSON.stringify({ u: today(), thb: v })); } catch (e) {}
+          render();
+        }
+      })
+      .catch(function () {});
+  }
+
+  // ---------------------------------------------------------- DCA journal (device-local)
+  function readJournal() { try { var j = JSON.parse(window.localStorage.getItem(JOURNAL_KEY) || "[]"); return Array.isArray(j) ? j : []; } catch (e) { return []; } }
+  function writeJournal(list) { try { window.localStorage.setItem(JOURNAL_KEY, JSON.stringify(list || [])); } catch (e) {} }
+  function journalId() { return "j" + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4); }
 
   // ---------------------------------------------------------- helpers
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
@@ -42,6 +68,7 @@
     } catch (e) { return null; }
   }
   function r2(v) { return Math.round(v * 10) / 10; }
+  function input(id) { return document.getElementById(id); }
   function metricOf(series) { return series && series.type === "mayer" ? "Mayer" : "MVRV"; }
 
   // ---------------------------------------------------------- settings
@@ -145,6 +172,7 @@
     }
     html += heroHtml(cur, series);
     html += ladderHtml(series, cur);
+    html += journalHtml(cur);
     html += backtestHtml(bt);
     html += chartHtml(series, bt);
     html += methodHtml();
@@ -421,6 +449,139 @@
       "</div></section>";
   }
 
+  // -------------------------------------------------- §2.5 DCA journal (real trades)
+  function periodDoneChip(entries) {
+    var now = today();
+    var key = settings.freq === "monthly" ? now.slice(0, 7) : null;
+    var done = entries.some(function (e) {
+      if (e.side === "sell") return false;
+      if (key) return String(e.date || "").slice(0, 7) === key;
+      // weekly: same ISO week as today
+      return window.SmartDCA.isoWeekKey(String(e.date || "").slice(0, 10)) === window.SmartDCA.isoWeekKey(now);
+    });
+    var label = settings.freq === "monthly" ? "เดือนนี้" : "สัปดาห์นี้";
+    return done
+      ? '<span class="sdca-chip sdca-chip-done">✓ ' + label + "บันทึกแล้ว</span>"
+      : '<span class="sdca-chip sdca-chip-warn">' + label + "ยังไม่ได้บันทึก DCA</span>";
+  }
+
+  function journalHtml(cur) {
+    var entries = readJournal();
+    var sum = window.SmartDCA.journalSummary(entries);
+    var priceThbNow = cur && cur.ok && Number.isFinite(cur.price) && state.fx ? cur.price * state.fx : null;
+    var valueNow = priceThbNow != null && sum.btcHeld > 0 ? sum.btcHeld * priceThbNow : null;
+    var unrl = valueNow != null && sum.costRemaining > 0 ? valueNow - sum.costRemaining : null;
+    var unrlPct = unrl != null && sum.costRemaining > 0 ? unrl / sum.costRemaining * 100 : null;
+
+    // sell plan (mirror ladder) — only in expensive zones
+    var zoneKey = cur && cur.zone ? cur.zone.key : null;
+    var plan = window.SmartDCA.sellPlanFor(zoneKey, settings.base);
+    var planHtml;
+    if (plan && sum.btcHeld > 0) {
+      planHtml = '<div class="sdca-sellplan is-active">🔔 โซน <b>' + esc(cur.zone.thai) + "</b> — แผน DCA ขาย: ทยอยขาย ≈ <b>" + thb(plan.amount) + "</b>/งวด (×" + plan.mult + " ของเงินงวด)"
+        + (sum.avgCost != null && priceThbNow != null ? " · ราคาตอนนี้ " + (priceThbNow >= sum.avgCost ? "สูงกว่า" : "ต่ำกว่า") + "ต้นทุนเฉลี่ย " + nf(Math.abs(priceThbNow / sum.avgCost - 1) * 100, 1) + "%" : "") + "</div>";
+    } else if (plan) {
+      planHtml = '<div class="sdca-sellplan">โซนแพงแล้ว แต่ยังไม่มี BTC ในสมุดบันทึก — บันทึกการซื้อก่อน</div>';
+    } else {
+      planHtml = '<div class="sdca-sellplan">ยังไม่ถึงโซนขาย (rich/hot/euphoria) — สะสมตามแผนซื้อด้านบน แผนขายจะโผล่เมื่อ ' + esc(metricOf(state.series)) + " เข้าโซนแพง</div>";
+    }
+
+    var cards = '<div class="sdca-j-cards">' +
+      '<div class="sdca-j-card"><span>BTC คงเหลือ</span><b>' + nf(sum.btcHeld, 8) + "</b></div>" +
+      '<div class="sdca-j-card"><span>ต้นทุนเฉลี่ย/BTC</span><b>' + (sum.avgCost != null ? thb(sum.avgCost) : "—") + "</b></div>" +
+      '<div class="sdca-j-card"><span>ต้นทุนคงเหลือ</span><b>' + thb(sum.costRemaining) + "</b></div>" +
+      '<div class="sdca-j-card"><span>มูลค่าตอนนี้</span><b>' + (valueNow != null ? thb(valueNow) : "—") + "</b>" +
+        (unrlPct != null ? '<i class="' + (unrl >= 0 ? "sdca-up" : "sdca-down") + '">' + (unrl >= 0 ? "+" : "") + nf(unrlPct, 1) + "%</i>" : (sum.btcHeld > 0 ? "<i>รออัตรา USD/THB</i>" : "")) + "</div>" +
+      (sum.sells > 0 ? '<div class="sdca-j-card"><span>กำไรที่ขายแล้ว</span><b class="' + (sum.realizedPnl >= 0 ? "sdca-up" : "sdca-down") + '">' + (sum.realizedPnl >= 0 ? "+" : "") + thb(sum.realizedPnl) + "</b></div>" : "") +
+      "</div>";
+
+    var prefillPrice = priceThbNow != null ? Math.round(priceThbNow) : "";
+    var prefillBuy = cur && cur.ok && cur.mult > 0 ? cur.suggest : settings.base;
+    var form = '<form id="sdcaJForm" class="sdca-j-form">' +
+      '<label>วันที่<input type="date" id="sdcaJDate" value="' + today() + '" required /></label>' +
+      '<label>ประเภท<select id="sdcaJSide"><option value="buy">ซื้อ (DCA)</option><option value="sell">ขาย (DCA ขาย)</option></select></label>' +
+      '<label>จำนวนเงิน (฿)<input type="number" id="sdcaJThb" min="1" step="any" value="' + esc(prefillBuy) + '" required /></label>' +
+      '<label>ราคา BTC (฿/BTC)<input type="number" id="sdcaJPrice" min="1" step="any" value="' + esc(prefillPrice) + '" placeholder="เช่น 2200000" required /></label>' +
+      '<span class="sdca-j-btc" id="sdcaJBtcPreview"></span>' +
+      '<button type="submit" class="sdca-btn sdca-btn-primary">บันทึก</button>' +
+    "</form>";
+
+    var rows = entries.slice().sort(function (a, b) { return String(b.date || "").localeCompare(String(a.date || "")); })
+      .map(function (e) {
+        return '<div class="sdca-j-row' + (e.side === "sell" ? " is-sell" : "") + '">' +
+          "<span>" + esc(String(e.date || "").slice(0, 10)) + "</span>" +
+          '<b class="' + (e.side === "sell" ? "sdca-down" : "sdca-up") + '">' + (e.side === "sell" ? "ขาย" : "ซื้อ") + "</b>" +
+          "<span>" + thb(e.thb) + "</span>" +
+          '<span class="sdca-dim">@ ' + thb(e.priceThb) + "</span>" +
+          "<span>" + (e.side === "sell" ? "−" : "+") + nf(e.btc, 8) + " BTC</span>" +
+          '<span class="sdca-j-zone">' + (e.zone ? esc(e.zone) + (e.mvrv != null ? " " + nf(e.mvrv, 2) : "") : "—") + "</span>" +
+          '<button type="button" class="sdca-mini-del" data-jdel="' + esc(e.id) + '">ลบ</button>' +
+        "</div>";
+      }).join("");
+
+    return '<section class="sdca-block"><div class="sdca-block-head">' +
+      "<h2>📒 บันทึก DCA จริงของฉัน</h2>" + periodDoneChip(entries) +
+      (state.fx ? '<span class="sdca-block-sub">USD/THB ' + nf(state.fx, 2) + " (ECB)</span>" : "") +
+      '<span class="sdca-j-tools"><button type="button" class="sdca-btn" id="sdcaJExport">Export CSV</button>' +
+      '<label class="sdca-btn sdca-btn-file">Import CSV<input type="file" id="sdcaJImport" accept=".csv" hidden /></label></span>' +
+      "</div>" +
+      (sum.oversell ? '<div class="sdca-banner">⚠️ มีรายการขายมากกว่า BTC ที่บันทึกไว้ — ระบบตัดเท่าที่ถือจริง ตรวจสอบรายการย้อนหลัง</div>' : "") +
+      cards + planHtml + form +
+      (rows ? '<div class="sdca-j-list">' + rows + "</div>" : '<div class="sdca-dim" style="margin-top:10px">ยังไม่มีรายการ — บันทึกการ DCA ครั้งแรกของคุณด้านบน (เก็บในเครื่องนี้ · Export CSV เพื่อสำรอง)</div>') +
+      '<div class="sdca-note">ข้อมูลเก็บใน browser เครื่องนี้เท่านั้น (localStorage) — กด Export CSV เก็บสำรองไว้เสมอ · ต้นทุนคิดแบบถัวเฉลี่ย (average cost) · แผนขายเป็นกติกากระจกของตารางโซน: rich ×0.5 · hot ×1 · euphoria ×2 ของเงินงวด ไม่ใช่คำสั่งซื้อขาย</div>' +
+    "</section>";
+  }
+
+  function addJournalEntry() {
+    var date = String(input("sdcaJDate").value || "").slice(0, 10);
+    var side = input("sdcaJSide").value === "sell" ? "sell" : "buy";
+    var thbAmt = Number(input("sdcaJThb").value);
+    var price = Number(input("sdcaJPrice").value);
+    if (!date || !Number.isFinite(thbAmt) || thbAmt <= 0 || !Number.isFinite(price) || price <= 0) return;
+    var cur = state.series ? window.SmartDCA.current(state.series, { base: settings.base }) : null;
+    var list = readJournal();
+    list.push({
+      id: journalId(), date: date, side: side, thb: Math.round(thbAmt), priceThb: Math.round(price),
+      btc: Number((thbAmt / price).toFixed(8)),
+      zone: cur && cur.zone ? cur.zone.key : null, mvrv: cur && cur.value != null ? cur.value : null
+    });
+    writeJournal(list); render();
+  }
+
+  function exportJournalCsv() {
+    var head = "date,side,thb,priceThb,btc,zone,mvrv";
+    var lines = readJournal().map(function (e) {
+      return [e.date, e.side, e.thb, e.priceThb, e.btc, e.zone || "", e.mvrv != null ? e.mvrv : ""].join(",");
+    });
+    var blob = new Blob(["﻿" + head + "\n" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "smart-dca-journal-" + today() + ".csv";
+    document.body.appendChild(a); a.click();
+    window.setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  function importJournalCsv(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var lines = String(reader.result || "").replace(/^﻿/, "").replace(/\r/g, "").split("\n").filter(Boolean);
+        var added = 0, list = readJournal();
+        lines.slice(1).forEach(function (ln) {
+          var p = ln.split(",");
+          var date = String(p[0] || "").slice(0, 10), side = p[1] === "sell" ? "sell" : "buy";
+          var thbAmt = Number(p[2]), price = Number(p[3]), btc = Number(p[4]);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !(thbAmt > 0) || !(btc > 0)) return;
+          list.push({ id: journalId(), date: date, side: side, thb: thbAmt, priceThb: price > 0 ? price : Math.round(thbAmt / btc), btc: btc, zone: p[5] || null, mvrv: Number.isFinite(Number(p[6])) ? Number(p[6]) : null });
+          added += 1;
+        });
+        if (added > 0) { writeJournal(list); render(); }
+        else window.alert("อ่าน CSV ไม่ได้ — ต้องมีคอลัมน์ date,side,thb,priceThb,btc");
+      } catch (e) { window.alert("อ่านไฟล์ไม่สำเร็จ"); }
+    };
+    reader.readAsText(file);
+  }
+
   // -------------------------------------------------- §5 methodology + disclaimer
   function methodHtml() {
     return '<section class="sdca-method">' +
@@ -500,6 +661,42 @@
     });
     var info = document.getElementById("sdcaInfo");
     if (info) info.addEventListener("click", openInfo);
+
+    // ---- DCA journal ----
+    var jForm = input("sdcaJForm");
+    if (jForm) {
+      jForm.addEventListener("submit", function (e) { e.preventDefault(); addJournalEntry(); });
+      var updPreview = function () {
+        var t = Number(input("sdcaJThb").value), p = Number(input("sdcaJPrice").value);
+        var el = input("sdcaJBtcPreview");
+        if (el) el.textContent = (t > 0 && p > 0) ? "≈ " + (t / p).toFixed(8) + " BTC" : "";
+      };
+      input("sdcaJThb").addEventListener("input", updPreview);
+      input("sdcaJPrice").addEventListener("input", updPreview);
+      var sideSel = input("sdcaJSide");
+      if (sideSel) sideSel.addEventListener("change", function () {
+        // prefill: buy → suggested DCA amount, sell → zone sell-plan amount (if any)
+        var cur = state.series ? window.SmartDCA.current(state.series, { base: settings.base }) : null;
+        var plan = cur && cur.zone ? window.SmartDCA.sellPlanFor(cur.zone.key, settings.base) : null;
+        input("sdcaJThb").value = sideSel.value === "sell" ? (plan ? plan.amount : settings.base) : (cur && cur.mult > 0 ? cur.suggest : settings.base);
+        updPreview();
+      });
+      updPreview();
+    }
+    document.querySelectorAll("[data-jdel]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        if (!window.confirm("ลบรายการนี้?")) return;
+        writeJournal(readJournal().filter(function (e) { return e.id !== el.getAttribute("data-jdel"); }));
+        render();
+      });
+    });
+    var jExp = input("sdcaJExport");
+    if (jExp) jExp.addEventListener("click", exportJournalCsv);
+    var jImp = input("sdcaJImport");
+    if (jImp) jImp.addEventListener("change", function (e) {
+      var f = e.target.files && e.target.files[0];
+      if (f) importJournalCsv(f);
+    });
   }
 
   window.addEventListener("portfolio-data-snapshot", function () {
@@ -509,7 +706,7 @@
     render();
   });
 
-  function boot() { loadData(false); }
+  function boot() { loadData(false); loadFx(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
 

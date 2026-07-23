@@ -140,5 +140,48 @@ function mkSeries(startISO, n, priceFn, valFn) {
   check("current(null) → not ok", S.current(null, {}).ok === false);
 })();
 
+// ---------------------------------------------------------------- 7 · DCA journal accounting (average cost)
+(function () {
+  console.log("\n[7] journalSummary: average-cost buys/sells");
+  const J = S.journalSummary;
+  // two buys → weighted average cost
+  const b2 = J([
+    { date: "2026-01-05", side: "buy", thb: 10000, btc: 0.005 },   // 2,000,000 ฿/BTC
+    { date: "2026-02-05", side: "buy", thb: 10000, btc: 0.004 }    // 2,500,000 ฿/BTC
+  ]);
+  check("2 buys: btcHeld 0.009", b2.btcHeld === 0.009, b2.btcHeld);
+  check("2 buys: invested 20,000, avgCost 2,222,222", b2.invested === 20000 && b2.avgCost === 2222222, b2);
+  // sell consumes at running average
+  const s1 = J([
+    { date: "2026-01-05", side: "buy", thb: 10000, btc: 0.005 },
+    { date: "2026-02-05", side: "buy", thb: 10000, btc: 0.004 },
+    { date: "2026-03-05", side: "sell", thb: 13500, btc: 0.0045 } // ขายครึ่งที่ 3,000,000 ฿/BTC
+  ]);
+  check("sell: btcHeld 0.0045 เหลือครึ่ง", s1.btcHeld === 0.0045, s1.btcHeld);
+  check("sell: costRemaining = 10,000 (ครึ่งของ 20,000)", s1.costRemaining === 10000, s1.costRemaining);
+  check("sell: realized = 13,500 − 10,000 = 3,500", s1.realizedPnl === 3500, s1.realizedPnl);
+  check("sell: proceeds 13,500 · sells 1 · buys 2", s1.proceeds === 13500 && s1.sells === 1 && s1.buys === 2);
+  // oversell clamps + flags
+  const ov = J([
+    { date: "2026-01-05", side: "buy", thb: 10000, btc: 0.005 },
+    { date: "2026-02-05", side: "sell", thb: 30000, btc: 0.01 }   // ขายเกินที่ถือ
+  ]);
+  check("oversell: clamped to holdings (btcHeld 0)", ov.btcHeld === 0 && ov.oversell === true, ov);
+  check("oversell: proceeds prorated (15,000 จาก 30,000)", ov.proceeds === 15000, ov.proceeds);
+  // unsorted input sorted by date; garbage rows dropped
+  const un = J([
+    { date: "2026-02-05", side: "sell", thb: 5000, btc: 0.002 },
+    { date: "2026-01-05", side: "buy", thb: 10000, btc: 0.005 },
+    { date: "2026-03-01", side: "buy", thb: 0, btc: 0.001 },       // invalid
+    null
+  ]);
+  check("unsorted: sell processed after buy (btcHeld 0.003)", un.btcHeld === 0.003, un.btcHeld);
+  check("empty → zeros no throw", J([]).btcHeld === 0 && J(null).invested === 0);
+  // sell plan mirror
+  check("sellPlanFor rich ×0.5", S.sellPlanFor("rich", 10000).amount === 5000);
+  check("sellPlanFor euphoria ×2", S.sellPlanFor("euphoria", 10000).amount === 20000);
+  check("sellPlanFor accum → null (ยังไม่ถึงโซนขาย)", S.sellPlanFor("accum", 10000) === null);
+})();
+
 console.log(`\n${passed + failed} checks · ${passed} passed · ${failed} failed`);
 process.exit(failed ? 1 : 0);
