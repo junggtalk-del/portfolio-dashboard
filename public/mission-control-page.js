@@ -390,9 +390,40 @@
         <div><small>ลงทุน / เงินสด</small><strong>${investedPct.toFixed(0)}% / ${cashPct.toFixed(0)}%</strong></div>
       </div>
       <div class="mcx-pf-splitbar" title="ลงทุน ${investedPct.toFixed(0)}% · เงินสด ${cashPct.toFixed(0)}%"><i style="width:${investedPct.toFixed(1)}%"></i></div>
+      ${fourAssetStrip(P)}
       <div class="mcx-pf-subhead">สัดส่วนตามประเภท</div>
       <div class="mcx-pf-types">${typeBars}</div>
     </section>`;
+  }
+
+  // ---- 4-asset view: BTC / QQQM(หุ้นตปท.) / หุ้นไทย / เงินสด ----
+  // Invested money maps to its asset bucket; every UNinvested baht (any type) +
+  // the cash type itself counts as เงินสด — so the strip sums to the whole port.
+  function fourAssetStrip(P) {
+    const money = (v) => "฿" + Math.round(v).toLocaleString();
+    const B = { btc: 0, qqqm: 0, thai: 0, other: 0, cash: 0 };
+    P.byType.forEach((g) => {
+      B.cash += g.cash;
+      if (g.type === "bitcoin") B.btc += g.invested;
+      else if (g.type === "thai-stock") B.thai += g.invested;
+      else if (g.type === "custom") B.other += g.invested;
+      else B.qqqm += g.invested; // foreign-stock + provident-fund + rmf-jang + rmf-tum
+    });
+    const total = P.total || 1;
+    const items = [
+      { key: "btc", label: "Bitcoin", color: "#f7931a", v: B.btc },
+      { key: "qqqm", label: "QQQM / หุ้นตปท.", color: "#38bdf8", v: B.qqqm },
+      { key: "thai", label: "หุ้นไทย", color: "#a855f7", v: B.thai },
+      { key: "other", label: "อื่นๆ", color: "#94a3b8", v: B.other },
+      { key: "cash", label: "เงินสด", color: "#64748b", v: B.cash }
+    ].filter((x) => x.v > 0.5);
+    if (!items.length) return "";
+    const segs = items.map((x) => `<i style="width:${(x.v / total * 100).toFixed(1)}%;background:${x.color}" title="${esc(x.label)} ${money(x.v)}"></i>`).join("");
+    const chips = items.map((x) => `<span class="mcx-pf4-chip"><i style="background:${x.color}"></i>${esc(x.label)} <b>${(x.v / total * 100).toFixed(1)}%</b> <em>${money(x.v)}</em></span>`).join("");
+    return `<div class="mcx-pf-subhead">ถือเป็นสินทรัพย์อะไรบ้าง (มุมมอง 4 ก้อน)</div>
+      <div class="mcx-pf4-bar">${segs}</div>
+      <div class="mcx-pf4-chips">${chips}</div>
+      <div class="mcx-pf4-note">หุ้นตปท. รวมส่วนที่ลงทุนของกองทุน RMF/สำรองเลี้ยงชีพ · เงินสด = ก้อนเงินสด + ส่วนที่ยังไม่ลงทุนของทุกก้อน</div>`;
   }
 
   // ---- 3 · 🌍 ตลาดเป็นไง (regime gauge + trend + history + BTC chip, one card) ----
