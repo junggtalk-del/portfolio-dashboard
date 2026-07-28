@@ -1,0 +1,173 @@
+/* ============================================================
+   Adaptive Position — decision view (Core / Tactical exposure).
+   Reuses mission-control theme tokens (--mc-*) + --ap-* accents.
+   Light/dark safe. Compact — decision tool, not a report.
+   ============================================================ */
+:root {
+  --ap-bull: #34d399;
+  --ap-watch: #f59e0b;
+  --ap-bear: #f43f5e;
+  --ap-core: #38bdf8;
+  --ap-tactical: #a78bfa;
+  --ap-cash: #64748b;
+  --ap-chip-bg: rgba(148, 163, 184, 0.10);
+  --ap-track: rgba(148, 163, 184, 0.18);
+}
+[data-theme="light"] { --ap-chip-bg: rgba(100, 116, 139, 0.08); --ap-track: rgba(100, 116, 139, 0.18); }
+
+.ap-page { padding: 22px 26px 60px; max-width: 1150px; margin: 0 auto; color: var(--mc-text); }
+.ap-page * { box-sizing: border-box; }
+.ap-page a { color: var(--mc-text); }
+.ap-muted { color: var(--mc-muted); }
+
+/* -------------------------------------------------- §0 header */
+.ap-head { margin-bottom: 16px; }
+.ap-head h1 { margin: 0; font-size: 25px; font-weight: 800; letter-spacing: -0.01em; }
+.ap-headsub { margin: 5px 0 0; color: var(--mc-text-2); font-size: 13px; line-height: 1.6; max-width: 760px; }
+
+/* -------------------------------------------------- §1 verdict hero */
+.ap-hero { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card-glow), var(--mc-card); padding: 16px 18px; margin-bottom: 20px; }
+.ap-hero-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.ap-hcell { border: 1px solid var(--mc-border); border-radius: 14px; background: var(--ap-chip-bg); padding: 13px 15px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 0; }
+.ap-hlbl { font-size: 10.5px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--mc-muted); }
+.ap-hbig { font-size: 29px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.ap-hbig span { font-size: 14px; color: var(--mc-muted); font-weight: 700; margin-left: 3px; }
+.ap-hsub { font-size: 12px; color: var(--mc-text-2); line-height: 1.55; }
+.ap-hsub b { font-variant-numeric: tabular-nums; }
+.ap-chip { display: inline-block; font-size: 11.5px; font-weight: 800; border: 1px solid var(--mc-border); background: var(--ap-chip-bg); color: var(--mc-text-2); border-radius: 999px; padding: 3px 10px; }
+.ap-gate { font-size: 11.5px; font-weight: 700; border-radius: 9px; padding: 5px 9px; line-height: 1.45; }
+.ap-gate-open { color: var(--ap-bull); background: rgba(52, 211, 153, 0.10); border: 1px solid rgba(52, 211, 153, 0.35); }
+.ap-gate-closed { color: var(--ap-watch); background: rgba(245, 158, 11, 0.10); border: 1px solid rgba(245, 158, 11, 0.40); }
+.ap-reco-increase { color: var(--ap-bull); border-color: rgba(52, 211, 153, 0.45); }
+.ap-reco-reduce { color: var(--ap-watch); border-color: rgba(245, 158, 11, 0.50); }
+.ap-reco-maintain { color: var(--ap-core); border-color: rgba(56, 189, 248, 0.45); }
+.ap-reco-unknown { color: var(--mc-muted); border-style: dashed; }
+.ap-conf-badge { font-size: 11px; font-weight: 700; color: var(--mc-text-2); border: 1px dashed var(--mc-border); border-radius: 999px; padding: 3px 10px; font-variant-numeric: tabular-nums; }
+
+/* stacked allocation bar (Core / Tactical / Cash) */
+.ap-alloc-bar { display: flex; width: 100%; height: 26px; border-radius: 9px; overflow: hidden; border: 1px solid var(--mc-border); }
+.ap-alloc-bar span { display: flex; align-items: center; justify-content: center; height: 100%; min-width: 2px; font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+.ap-alloc-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--mc-text-2); }
+.ap-alloc-legend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; margin-right: 5px; }
+.ap-alloc-legend b { font-variant-numeric: tabular-nums; }
+
+/* -------------------------------------------------- sections */
+.ap-sec { border: 1px solid var(--mc-border); border-radius: 16px; background: var(--mc-card); padding: 16px 18px; margin-bottom: 18px; }
+.ap-sec-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+.ap-sec-n { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px; background: var(--ap-chip-bg); border: 1px solid var(--mc-border); color: var(--mc-text-2); font-size: 12.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.ap-sec-head h2 { margin: 0; font-size: 16px; font-weight: 800; }
+.ap-sec-head p { margin: 3px 0 0; font-size: 12px; color: var(--mc-muted); line-height: 1.55; }
+
+.ap-list { margin: 12px 0 0; padding-left: 18px; font-size: 12px; color: var(--mc-text-2); line-height: 1.65; }
+.ap-list li { margin: 2px 0; }
+.ap-h3 { margin: 0 0 4px; font-size: 12.5px; font-weight: 800; color: var(--mc-text-2); }
+.ap-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+.ap-two-col .ap-list { margin-top: 4px; }
+
+/* mini score bar */
+.ap-bar { flex: 1; display: inline-block; height: 7px; border-radius: 4px; background: var(--ap-track); overflow: hidden; min-width: 60px; }
+.ap-bar i { display: block; height: 100%; border-radius: 4px; }
+
+/* -------------------------------------------------- §2 component rows */
+.ap-comp-list { display: flex; flex-direction: column; }
+.ap-comp-row { display: grid; grid-template-columns: minmax(170px, 1.4fr) minmax(150px, 1.2fr) 100px 58px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--mc-border); }
+.ap-comp-list .ap-comp-row:last-child { border-bottom: 0; }
+.ap-comp-head { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mc-muted); padding: 2px 0 6px; }
+.ap-comp-name b { font-size: 13px; }
+.ap-comp-name small { display: block; font-size: 11px; color: var(--mc-muted); }
+.ap-comp-score { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ap-comp-score b { font-variant-numeric: tabular-nums; font-size: 13px; min-width: 26px; text-align: right; }
+.ap-trend { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ap-trend-up { color: var(--ap-bull); }
+.ap-trend-down { color: var(--ap-bear); }
+.ap-trend-flat { color: var(--mc-muted); }
+.ap-trend-na { color: var(--mc-muted); }
+.ap-comp-w { font-size: 12px; color: var(--mc-muted); text-align: right; font-variant-numeric: tabular-nums; }
+.ap-comp-src { grid-column: 1 / -1; font-size: 10.5px; color: var(--mc-muted); margin-top: -3px; line-height: 1.5; }
+
+/* state legend strip */
+.ap-states { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 14px; }
+.ap-state { position: relative; border: 1px solid var(--mc-border); border-radius: 11px; padding: 8px 10px; text-align: center; opacity: 0.6; }
+.ap-state b { display: block; font-size: 11.5px; color: var(--ap-st, var(--mc-text-2)); }
+.ap-state span { display: block; font-size: 10.5px; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
+.ap-state small { display: block; font-size: 10px; color: var(--mc-text-2); }
+.ap-state-cur { opacity: 1; border-color: var(--ap-st, var(--mc-border-active)); box-shadow: 0 0 0 1px var(--ap-st, transparent) inset; }
+.ap-state em { position: absolute; top: -8px; right: 8px; font-style: normal; font-size: 9px; font-weight: 800; background: var(--ap-st, var(--mc-muted)); color: #0f172a; border-radius: 6px; padding: 1px 6px; }
+
+/* -------------------------------------------------- §3 dip checklist */
+.ap-dipbanner { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; border: 1px solid; border-radius: 12px; padding: 11px 14px; margin-bottom: 12px; }
+.ap-dipbanner b { font-size: 16px; }
+.ap-dipbanner span { color: var(--mc-text-2); font-size: 12px; }
+.ap-tone-bull { color: var(--ap-bull); border-color: rgba(52, 211, 153, 0.40); background: rgba(52, 211, 153, 0.08); }
+.ap-tone-watch { color: var(--ap-watch); border-color: rgba(245, 158, 11, 0.40); background: rgba(245, 158, 11, 0.08); }
+.ap-tone-bear { color: var(--ap-bear); border-color: rgba(244, 63, 94, 0.40); background: rgba(244, 63, 94, 0.07); }
+.ap-chk-list { display: flex; flex-direction: column; gap: 8px; }
+.ap-chk { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--mc-border); border-radius: 11px; padding: 9px 12px; }
+.ap-chk-ic { font-size: 14px; line-height: 1.3; }
+.ap-chk b { display: block; font-size: 12.5px; }
+.ap-chk small { display: block; font-size: 11px; color: var(--mc-muted); line-height: 1.5; margin-top: 1px; }
+.ap-chk-met { background: rgba(52, 211, 153, 0.06); border-color: rgba(52, 211, 153, 0.30); }
+.ap-chk-fail { background: rgba(244, 63, 94, 0.05); border-color: rgba(244, 63, 94, 0.28); }
+.ap-chk-unknown { background: var(--ap-chip-bg); border-style: dashed; }
+.ap-note { margin-top: 12px; font-size: 11.5px; color: var(--ap-watch); border: 1px dashed rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 8px 12px; line-height: 1.55; }
+
+/* -------------------------------------------------- §4 allocation table + plan */
+.ap-table-wrap { overflow-x: auto; }
+.ap-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.ap-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mc-muted); padding: 6px 10px; border-bottom: 1px solid var(--mc-border); white-space: nowrap; }
+.ap-table td { padding: 8px 10px; border-bottom: 1px solid var(--mc-border); color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.ap-table td small { color: var(--mc-muted); font-size: 10.5px; }
+.ap-table tbody tr:last-child td { border-bottom: 0; }
+.ap-row-cur td { background: rgba(56, 189, 248, 0.08); color: var(--mc-text); font-weight: 700; }
+.ap-row-cur td:first-child { border-left: 3px solid var(--ap-core); }
+.ap-cur-tag { font-size: 9.5px; font-weight: 800; background: var(--ap-core); color: #082f49; border-radius: 6px; padding: 1px 6px; margin-left: 4px; vertical-align: middle; }
+
+/* invested% vs target marker bar */
+.ap-invwrap { margin-top: 14px; }
+.ap-invtrack { position: relative; height: 12px; border-radius: 7px; background: var(--ap-track); }
+.ap-invtrack i { display: block; height: 100%; border-radius: 7px; background: linear-gradient(90deg, var(--ap-core), var(--ap-bull)); }
+.ap-invmark { position: absolute; top: -4px; bottom: -4px; width: 3px; border-radius: 2px; background: var(--ap-tactical); }
+.ap-invcap { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--mc-muted); margin-top: 5px; }
+.ap-invcap b { color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+
+/* recommendation card */
+.ap-reco-card { margin-top: 14px; border: 1px solid var(--mc-border); border-radius: 13px; background: var(--ap-chip-bg); padding: 12px 15px; }
+.ap-reco-card b { font-size: 14.5px; }
+.ap-reco-card p { margin: 4px 0 0; font-size: 12.5px; color: var(--mc-text-2); line-height: 1.55; }
+.ap-reco-card small { display: block; margin-top: 7px; font-size: 11px; color: var(--mc-muted); line-height: 1.5; }
+.ap-reco-card-increase { border-color: rgba(52, 211, 153, 0.40); }
+.ap-reco-card-increase b { color: var(--ap-bull); }
+.ap-reco-card-reduce { border-color: rgba(245, 158, 11, 0.45); }
+.ap-reco-card-reduce b { color: var(--ap-watch); }
+.ap-reco-card-maintain { border-color: rgba(56, 189, 248, 0.40); }
+.ap-reco-card-maintain b { color: var(--ap-core); }
+.ap-reco-card-unknown { border-style: dashed; }
+.ap-reco-card-unknown b { color: var(--mc-text-2); }
+
+/* -------------------------------------------------- §5 confidence */
+.ap-conf-gauge { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.ap-conf-track { flex: 1; min-width: 180px; }
+.ap-conf-gauge b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.ap-part-list { display: flex; flex-direction: column; }
+.ap-part-row { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(160px, 1.4fr) 52px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--mc-border); font-size: 12.5px; }
+.ap-part-list .ap-part-row:last-child { border-bottom: 0; }
+.ap-part-name { color: var(--mc-text-2); }
+.ap-part-val { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ap-part-val b { min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* -------------------------------------------------- §6 misc */
+.ap-muted-box { margin-top: 12px; font-size: 12px; color: var(--mc-muted); border: 1px dashed var(--mc-border); border-radius: 11px; padding: 10px 13px; line-height: 1.6; }
+.ap-method { margin-top: 14px; font-size: 11.5px; color: var(--mc-muted); line-height: 1.7; border-top: 1px dashed var(--mc-border); padding-top: 11px; }
+
+/* -------------------------------------------------- responsive */
+@media (max-width: 900px) {
+  .ap-hero-grid { grid-template-columns: 1fr; }
+  .ap-states { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .ap-page { padding: 16px 12px 48px; }
+  .ap-comp-row { grid-template-columns: minmax(120px, 1.2fr) minmax(110px, 1fr) 74px; }
+  .ap-comp-w { display: none; }
+  .ap-two-col { grid-template-columns: 1fr; }
+  .ap-part-row { grid-template-columns: minmax(110px, 1fr) minmax(120px, 1.2fr) 44px; }
+}

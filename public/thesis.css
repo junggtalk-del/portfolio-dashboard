@@ -1,0 +1,271 @@
+/* ============================================================
+   Investment Thesis — answer-first company thesis view.
+   Reuses mission-control theme tokens (--mc-*) + --th-* accents.
+   Light/dark safe. Compact institutional look — decision tool,
+   not a report.
+   ============================================================ */
+:root {
+  --th-bull: #34d399;
+  --th-watch: #f59e0b;
+  --th-bear: #f43f5e;
+  --th-blue: #38bdf8;
+  --th-chip-bg: rgba(148, 163, 184, 0.10);
+  --th-track: rgba(148, 163, 184, 0.18);
+}
+[data-theme="light"] { --th-chip-bg: rgba(100, 116, 139, 0.08); --th-track: rgba(100, 116, 139, 0.18); }
+
+.th-page { padding: 22px 26px 60px; max-width: 1150px; margin: 0 auto; color: var(--mc-text); }
+.th-page * { box-sizing: border-box; }
+.th-page a { color: var(--mc-text); }
+.th-muted { color: var(--mc-muted); }
+
+/* -------------------------------------------------- §0 header + company chips */
+.th-head { margin-bottom: 16px; }
+.th-head h1 { margin: 0; font-size: 25px; font-weight: 800; letter-spacing: -0.01em; }
+.th-headsub { margin: 5px 0 0; color: var(--mc-text-2); font-size: 13px; line-height: 1.6; max-width: 780px; }
+.th-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.th-chipbtn { font-family: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: 0.02em; color: var(--mc-text-2); background: var(--th-chip-bg); border: 1px solid var(--mc-border); border-radius: 999px; padding: 6px 14px; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
+.th-chipbtn:hover { border-color: var(--mc-border-active); transform: translateY(-1px); }
+.th-chipbtn-on { color: var(--th-blue); border-color: rgba(56, 189, 248, 0.55); background: rgba(56, 189, 248, 0.10); }
+.th-datanote { margin-top: 10px; font-size: 11.5px; color: var(--th-watch); border: 1px dashed rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 7px 11px; line-height: 1.55; max-width: 780px; }
+.th-datanote b { font-variant-numeric: tabular-nums; }
+
+/* -------------------------------------------------- generic chips + tones */
+.th-chip { display: inline-block; font-size: 11.5px; font-weight: 800; border: 1px solid var(--mc-border); background: var(--th-chip-bg); color: var(--mc-text-2); border-radius: 999px; padding: 3px 10px; }
+.th-tone-bull { color: var(--th-bull); border-color: rgba(52, 211, 153, 0.45); background: rgba(52, 211, 153, 0.08); }
+.th-tone-watch { color: var(--th-watch); border-color: rgba(245, 158, 11, 0.50); background: rgba(245, 158, 11, 0.08); }
+.th-tone-bear { color: var(--th-bear); border-color: rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.07); }
+.th-tone-blue { color: var(--th-blue); border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.08); }
+.th-tone-neutral { color: var(--mc-text-2); border-color: var(--mc-border); background: var(--th-chip-bg); }
+
+/* -------------------------------------------------- §1 final verdict hero */
+.th-hero { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card-glow), var(--mc-card); padding: 18px 20px; margin-bottom: 20px; }
+.th-hero-yes { border-color: rgba(52, 211, 153, 0.45); box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.18) inset; }
+.th-hero-no { border-color: rgba(244, 63, 94, 0.45); box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.16) inset; }
+.th-hero-wait { border-color: rgba(245, 158, 11, 0.50); box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.16) inset; }
+.th-hero-co { font-size: 12px; font-weight: 700; color: var(--mc-muted); margin-bottom: 8px; letter-spacing: 0.02em; }
+.th-hero-grid { display: grid; grid-template-columns: minmax(230px, 1fr) minmax(0, 1.7fr); gap: 18px; align-items: start; }
+.th-hero-ans { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; }
+.th-q { font-size: 13px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mc-text-2); }
+.th-answer { font-size: 56px; font-weight: 800; line-height: 1; letter-spacing: -0.01em; }
+.th-answer-yes { color: var(--th-bull); }
+.th-answer-no { color: var(--th-bear); }
+.th-answer-wait { color: var(--th-watch); }
+.th-conf-badge { font-size: 11px; font-weight: 700; color: var(--mc-text-2); border: 1px dashed var(--mc-border); border-radius: 999px; padding: 3px 10px; font-variant-numeric: tabular-nums; }
+.th-hlbl { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--mc-muted); }
+.th-hero-fac .th-hlbl { margin-bottom: 8px; }
+.th-factors { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.th-fcell { border: 1px solid var(--mc-border); border-radius: 11px; background: var(--th-chip-bg); padding: 8px 10px; min-width: 0; }
+.th-fcell span { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.th-fcell b { display: block; font-size: 13px; margin-top: 3px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.th-valline { margin-top: 10px; font-size: 12px; color: var(--mc-text-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.th-valnote { font-size: 11.5px; color: var(--mc-muted); line-height: 1.5; }
+.th-pm { margin: 14px 0 0; font-size: 13px; color: var(--mc-text-2); line-height: 1.65; border-top: 1px dashed var(--mc-border); padding-top: 12px; }
+.th-risks { margin-top: 12px; }
+.th-risks .th-list { margin-top: 4px; }
+.th-h3 { margin: 0 0 4px; font-size: 12.5px; font-weight: 800; color: var(--mc-text-2); }
+
+/* -------------------------------------------------- sections */
+.th-sec { border: 1px solid var(--mc-border); border-radius: 16px; background: var(--mc-card); padding: 16px 18px; margin-bottom: 18px; }
+.th-sec-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+.th-sec-n { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px; background: var(--th-chip-bg); border: 1px solid var(--mc-border); color: var(--mc-text-2); font-size: 12.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.th-sec-head h2 { margin: 0; font-size: 16px; font-weight: 800; }
+.th-sec-head p { margin: 3px 0 0; font-size: 12px; color: var(--mc-muted); line-height: 1.55; }
+.th-list { margin: 10px 0 0; padding-left: 18px; font-size: 12px; color: var(--mc-text-2); line-height: 1.65; }
+.th-list li { margin: 2px 0; }
+.th-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+.th-two-col .th-list { margin-top: 4px; }
+.th-statement { margin: 12px 0 0; font-size: 12.5px; color: var(--mc-text-2); line-height: 1.65; }
+.th-muted-box { font-size: 12px; color: var(--mc-muted); border: 1px dashed var(--mc-border); border-radius: 11px; padding: 10px 13px; line-height: 1.6; }
+.th-note { margin-top: 12px; font-size: 11.5px; color: var(--th-watch); border: 1px dashed rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 8px 12px; line-height: 1.55; }
+.th-hint { margin-top: 10px; font-size: 11px; color: var(--mc-muted); line-height: 1.5; }
+
+/* mini score bar + trend arrows */
+.th-bar { flex: 1; display: inline-block; height: 7px; border-radius: 4px; background: var(--th-track); overflow: hidden; min-width: 56px; }
+.th-bar i { display: block; height: 100%; border-radius: 4px; }
+.th-trend { font-size: 12px; font-weight: 800; text-align: center; }
+.th-trend-up { color: var(--th-bull); }
+.th-trend-down { color: var(--th-bear); }
+.th-trend-flat { color: var(--mc-muted); }
+
+/* -------------------------------------------------- §2 thesis score */
+.th-score-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.th-score-big { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.th-score-big span { font-size: 14px; color: var(--mc-muted); font-weight: 700; margin-left: 3px; }
+.th-pillars { margin-top: 12px; display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+.th-pillars .th-hlbl { width: 100%; margin-bottom: 2px; }
+.th-pillar { font-weight: 700; }
+
+/* -------------------------------------------------- §3 why falling + dip class */
+.th-dd { font-size: 13px; color: var(--mc-text-2); margin-bottom: 12px; }
+.th-dd b { font-size: 17px; color: var(--th-bear); font-variant-numeric: tabular-nums; }
+.th-cause-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.th-cause { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--th-chip-bg); padding: 10px 13px; }
+.th-cause em { display: block; font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--mc-muted); }
+.th-cause b { display: block; font-size: 13.5px; margin-top: 3px; }
+.th-cause small { display: block; font-size: 11.5px; color: var(--mc-text-2); line-height: 1.55; margin-top: 3px; }
+.th-cause-primary { border-color: rgba(244, 63, 94, 0.40); background: rgba(244, 63, 94, 0.06); }
+.th-cause-none { border-style: dashed; }
+.th-mag-list { margin-top: 14px; }
+.th-mag-list .th-hlbl { margin-bottom: 6px; }
+.th-mag-row { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(150px, 1.2fr); gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--mc-border); }
+.th-mag-list .th-mag-row:last-child { border-bottom: 0; }
+.th-mag-name { font-size: 12.5px; font-weight: 700; }
+.th-mag-val { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.th-mag-val b { font-size: 12.5px; min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+.th-mag-detail { grid-column: 1 / -1; font-size: 11px; color: var(--mc-muted); line-height: 1.5; margin-top: -3px; }
+.th-dipbanner { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; border: 1px solid; border-radius: 12px; padding: 11px 14px; margin-top: 14px; }
+.th-dipbanner b { font-size: 15.5px; }
+.th-dipbanner span { color: var(--mc-text-2); font-size: 12px; line-height: 1.55; }
+.th-dipbanner-none { border-color: var(--mc-border); border-style: dashed; color: var(--mc-muted); }
+
+/* -------------------------------------------------- §4 decision */
+.th-dec { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; border: 1px solid var(--mc-border); border-radius: 13px; padding: 13px 16px; }
+.th-dec b { font-size: 20px; }
+.th-dec span { font-size: 12.5px; color: var(--mc-text-2); }
+
+/* -------------------------------------------------- §5 fundamentals */
+.th-fund-list { display: flex; flex-direction: column; }
+.th-fund-row { display: grid; grid-template-columns: minmax(170px, 1.4fr) minmax(120px, 1fr) 44px minmax(140px, 1.1fr); gap: 10px; align-items: center; padding: 8px 6px; border-bottom: 1px solid var(--mc-border); border-left: 3px solid transparent; }
+.th-fund-list .th-fund-row:last-child { border-bottom: 0; }
+.th-fund-head { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mc-muted); padding: 2px 6px 6px; }
+.th-fund-name { font-size: 12.5px; font-weight: 700; }
+.th-fund-cur { font-size: 12.5px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.th-fund-score { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.th-fund-score b { font-size: 12.5px; min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+.th-imp-positive { background: rgba(52, 211, 153, 0.05); border-left-color: rgba(52, 211, 153, 0.55); }
+.th-imp-negative { background: rgba(244, 63, 94, 0.05); border-left-color: rgba(244, 63, 94, 0.55); }
+.th-imp-neutral { border-left-color: transparent; }
+
+/* -------------------------------------------------- §7 revenue quality */
+.th-qchips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.th-table-wrap { overflow-x: auto; margin-top: 12px; }
+.th-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.th-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mc-muted); padding: 6px 10px; border-bottom: 1px solid var(--mc-border); white-space: nowrap; }
+.th-table td { padding: 8px 10px; border-bottom: 1px solid var(--mc-border); color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.th-table tbody tr:last-child td { border-bottom: 0; }
+
+/* -------------------------------------------------- §8 AI execution */
+.th-exe-list { display: flex; flex-direction: column; gap: 8px; }
+.th-exe { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--mc-border); border-radius: 11px; padding: 9px 12px; }
+.th-exe .th-chip { flex: 0 0 auto; margin-top: 1px; }
+.th-exe b { display: block; font-size: 12.5px; }
+.th-exe small { display: block; font-size: 11px; color: var(--mc-muted); line-height: 1.55; margin-top: 1px; }
+.th-st-executing { color: var(--th-bull); border-color: rgba(52, 211, 153, 0.45); background: rgba(52, 211, 153, 0.08); }
+.th-st-on-track { color: var(--th-blue); border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.08); }
+.th-st-at-risk { color: var(--th-bear); border-color: rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.07); }
+
+/* -------------------------------------------------- §9 competitive */
+.th-moat { font-size: 12.5px; color: var(--mc-text-2); }
+.th-comp-list { display: flex; flex-direction: column; margin-top: 12px; }
+.th-comp-row { display: grid; grid-template-columns: minmax(160px, 1.2fr) minmax(120px, auto); gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--mc-border); }
+.th-comp-list .th-comp-row:last-child { border-bottom: 0; }
+.th-comp-row .th-chip { justify-self: start; }
+.th-comp-name { font-size: 12.5px; font-weight: 700; }
+.th-comp-note { grid-column: 1 / -1; font-size: 11px; color: var(--mc-muted); line-height: 1.5; margin-top: -3px; }
+
+/* -------------------------------------------------- §10 capital allocation */
+.th-cap-list { display: flex; flex-direction: column; }
+.th-cap-row { display: grid; grid-template-columns: minmax(160px, 1.2fr) minmax(110px, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--mc-border); }
+.th-cap-list .th-cap-row:last-child { border-bottom: 0; }
+.th-cap-row .th-chip { justify-self: start; }
+.th-cap-name { font-size: 12.5px; font-weight: 700; }
+.th-cap-cur { font-size: 12.5px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.th-cap-why { grid-column: 1 / -1; font-size: 11px; color: var(--mc-muted); line-height: 1.5; margin-top: -3px; }
+.th-verdict { margin-top: 12px; font-size: 12.5px; color: var(--mc-text-2); border: 1px solid var(--mc-border); background: var(--th-chip-bg); border-radius: 11px; padding: 10px 13px; line-height: 1.6; }
+
+/* -------------------------------------------------- §11 what changed */
+.th-chg-list { display: flex; flex-direction: column; }
+.th-chg-row { display: grid; grid-template-columns: minmax(150px, 1.2fr) minmax(150px, 1.4fr) 36px; gap: 10px; align-items: center; padding: 8px 6px; border-bottom: 1px solid var(--mc-border); border-left: 3px solid transparent; }
+.th-chg-list .th-chg-row:last-child { border-bottom: 0; }
+.th-chg-name { font-size: 12.5px; font-weight: 700; }
+.th-chg-val { font-size: 12.5px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.th-chg-arr { font-style: normal; color: var(--mc-muted); padding: 0 3px; }
+.th-chg-up { background: rgba(52, 211, 153, 0.05); border-left-color: rgba(52, 211, 153, 0.55); }
+.th-chg-down { background: rgba(244, 63, 94, 0.05); border-left-color: rgba(244, 63, 94, 0.55); }
+.th-chg-flat { border-left-color: transparent; }
+
+/* -------------------------------------------------- §12 explain + confidence parts */
+.th-part-list { margin-top: 14px; display: flex; flex-direction: column; }
+.th-part-list .th-hlbl { margin-bottom: 6px; }
+.th-part-row { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(160px, 1.4fr) 52px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--mc-border); font-size: 12.5px; }
+.th-part-list .th-part-row:last-child { border-bottom: 0; }
+.th-part-name { color: var(--mc-text-2); }
+.th-part-val { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.th-part-val b { min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+.th-part-w { font-size: 12px; color: var(--mc-muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+/* -------------------------------------------------- §13 method */
+.th-method { font-size: 11.5px; color: var(--mc-muted); line-height: 1.7; border-top: 1px dashed var(--mc-border); padding-top: 11px; margin-top: 6px; }
+
+/* -------------------------------------------------- responsive */
+@media (max-width: 900px) {
+  .th-hero-grid { grid-template-columns: 1fr; }
+  .th-answer { font-size: 44px; }
+  .th-factors { grid-template-columns: repeat(3, 1fr); }
+  .th-cause-grid { grid-template-columns: 1fr; }
+  .th-two-col { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .th-page { padding: 16px 12px 48px; }
+  .th-factors { grid-template-columns: repeat(2, 1fr); }
+  .th-fund-row { grid-template-columns: minmax(120px, 1.2fr) minmax(90px, 1fr) 30px minmax(110px, 1fr); gap: 8px; }
+  .th-chg-row { grid-template-columns: minmax(110px, 1fr) minmax(130px, 1.3fr) 30px; }
+  .th-part-row { grid-template-columns: minmax(110px, 1fr) minmax(120px, 1.2fr) 44px; }
+}
+
+/* -------------------------------------------------- staleness badge + lite view */
+.th-stale { margin-top: 8px; font-size: 12px; border-radius: 10px; padding: 8px 12px; font-weight: 600; }
+.th-stale code { font-family: ui-monospace, monospace; font-size: 11px; background: rgba(148,163,184,0.15); border-radius: 5px; padding: 1px 6px; }
+.th-stale-warn { background: rgba(244, 63, 94, 0.10); color: var(--th-bear, #f43f5e); border: 1px solid rgba(244, 63, 94, 0.4); }
+.th-stale-soon { background: rgba(245, 158, 11, 0.10); color: var(--th-watch, #f59e0b); border: 1px solid rgba(245, 158, 11, 0.4); }
+.th-stale-ok { background: rgba(52, 211, 153, 0.08); color: var(--mc-emerald, #34d399); border: 1px solid rgba(52, 211, 153, 0.3); }
+.th-earn-est { opacity: 0.75; font-weight: 500; }
+.th-litebox { display: inline-flex; gap: 6px; align-items: center; margin-left: 10px; }
+.th-litebox input { border: 1px solid var(--mc-border); background: var(--mc-card); color: var(--mc-text); font-family: inherit; font-size: 12px; border-radius: 8px; padding: 6px 10px; width: 170px; text-transform: uppercase; }
+.th-litebox input:focus { outline: none; border-color: var(--mc-border-active); }
+.th-chipbtn-lite { border-style: dashed; }
+.th-lite-banner { border: 1px dashed rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.07); border-radius: 12px; padding: 11px 14px; font-size: 12.5px; margin-bottom: 14px; line-height: 1.6; }
+.th-lite-banner code, .th-lite-cta code { font-family: ui-monospace, monospace; font-size: 11px; background: rgba(148,163,184,0.15); border-radius: 5px; padding: 1px 6px; }
+.th-lite-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.th-lite-card { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.th-lite-card span { font-size: 10.5px; color: var(--mc-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.th-lite-card b { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.th-lite-card i { font-style: normal; font-size: 11.5px; color: var(--mc-text-2); line-height: 1.5; }
+.th-lite-causes { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 12px 16px; margin-bottom: 14px; }
+.th-lite-causes h3 { margin: 0 0 6px; font-size: 13.5px; }
+.th-lite-causes ul { margin: 0; padding-left: 20px; }
+.th-lite-causes li { font-size: 12.5px; margin: 4px 0; color: var(--mc-text-2); }
+.th-lite-cta { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 11px 14px; font-size: 12.5px; color: var(--mc-text-2); }
+
+/* -------------------------------------------------- §6 Business Growth vs Stock Price (5Y) */
+.th-bp-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0 6px; }
+.th-bp-panel { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 10px 12px 8px; }
+.th-bp-ptitle { font-size: 11px; font-weight: 700; color: var(--mc-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+.th-bp-svg { width: 100%; height: auto; display: block; }
+.th-bp-tick { font-size: 8.5px; fill: var(--mc-muted); font-variant-numeric: tabular-nums; }
+.th-bp-x { font-size: 8.5px; fill: var(--mc-muted); }
+.th-bp-mult { font-size: 9.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.th-bp-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.th-bp-leg { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--mc-text-2); }
+.th-bp-leg i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.th-bp-strip { font-size: 12px; color: var(--mc-text-2); background: rgba(148,163,184,0.07); border: 1px dashed var(--mc-border); border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; line-height: 1.6; }
+.th-bp-yoy { color: var(--mc-muted); font-size: 10.5px; }
+.th-bp-table td { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.th-bp-cagr td { border-top: 1px solid var(--mc-border); font-weight: 800; color: var(--mc-text); }
+.th-bp-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+.th-bp-card { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 12px 14px; }
+.th-bp-cardnote { margin: 6px 0 8px; font-size: 12px; color: var(--mc-text-2); line-height: 1.6; }
+.th-bp-attr { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 12px 14px; margin-bottom: 14px; display: block; }
+.th-bp-attr-row { display: grid; grid-template-columns: minmax(180px, 1.4fr) minmax(160px, 1fr); gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--mc-border); }
+.th-bp-attr-row:last-of-type { border-bottom: none; }
+.th-bp-attr-name { font-size: 12.5px; color: var(--mc-text); }
+.th-bp-attr-val { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+.th-bp-attr-val b { font-size: 12.5px; white-space: nowrap; }
+.th-bp-star { color: var(--mc-amber, #f59e0b); font-size: 10.5px; font-weight: 800; }
+.th-bp-why { margin-bottom: 10px; }
+@media (max-width: 900px) {
+  .th-bp-charts { grid-template-columns: 1fr; }
+  .th-bp-cards { grid-template-columns: 1fr; }
+  .th-bp-attr-row { grid-template-columns: 1fr; gap: 4px; }
+}

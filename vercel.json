@@ -81,6 +81,14 @@
       "destination": "/smart-dca.html"
     },
     {
+      "source": "/adaptive-position",
+      "destination": "/adaptive-position.html"
+    },
+    {
+      "source": "/thesis",
+      "destination": "/thesis.html"
+    },
+    {
       "source": "/wave3",
       "destination": "/wave3.html"
     },

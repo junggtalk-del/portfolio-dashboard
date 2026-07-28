@@ -323,12 +323,17 @@ function renderGrowthTables() {
     row.innerHTML = `<td>${summary.key}</td><td>${formatMoney(summary.totals.wealth)}</td><td class="${growth === null || growth >= 0 ? "positive" : "negative"}">${growth === null ? "-" : formatPercent(growth, true)}</td><td>${summary.assets.length}</td><td class="row-actions"><button class="delete-button" type="button" data-delete-quarter="${summary.key}">×</button></td>`;
     elements.quarterRows.appendChild(row);
   }
-  const latestKey = quarterKeys[quarterKeys.length - 1];
+  // อิง "ไตรมาสที่เลือก" (ไม่ใช่ไตรมาสสุดท้ายเสมอไป) → ตารางนี้ refresh ตาม dropdown
+  const selectedKey = state.data.currentQuarter && state.data.quarters[state.data.currentQuarter] ? state.data.currentQuarter : quarterKeys[quarterKeys.length - 1];
+  const latestKey = selectedKey;
   if (!latestKey) return;
+  const selIdx = quarterKeys.indexOf(latestKey);
   const latestAssets = mapAssetsByKey(state.data.quarters[latestKey].assets, { useSnapshot: true });
-  const previousKey = quarterKeys[quarterKeys.length - 2];
+  const previousKey = selIdx > 0 ? quarterKeys[selIdx - 1] : undefined;
   const previousAssets = previousKey ? mapAssetsByKey(state.data.quarters[previousKey].assets, { useSnapshot: true }) : new Map();
   const latestTotal = getTotals(state.data.quarters[latestKey].assets, { useSnapshot: true }).wealth;
+  const subtitle = document.querySelector("#assetGrowthSubtitle");
+  if (subtitle) subtitle.textContent = previousKey ? `ไตรมาส ${latestKey} เทียบกับ ${previousKey} · แนวโน้มย้อนหลังทุกไตรมาส` : `ไตรมาส ${latestKey} (ยังไม่มีไตรมาสก่อนหน้าให้เทียบ)`;
   for (const [key, latest] of latestAssets.entries()) {
     const previous = previousAssets.get(key);
     const growth = previous ? growthPercent(latest.value, previous.value) : null;
@@ -395,6 +400,103 @@ function indexifySeries(s) {
   return { ...s, values: s.values.map((v) => (Number.isFinite(v) && base ? (v / base) * 100 : null)) };
 }
 
+// ---------------------------------------------------------------- growth contribution (%)
+// แตกการเติบโต QoQ % ของพอร์ตเป็น "ส่วนที่มาจากสินทรัพย์แต่ละตัว" (percentage points)
+// contribution = (มูลค่าสินทรัพย์เปลี่ยนไป) ÷ (พอร์ตรวมไตรมาสก่อน) × 100 → ผลรวมทุกตัว = QoQ% ของพอร์ตพอดี
+// หมายเหตุ: มูลค่าใน Quarterly Editor รวมทั้งราคาที่โตและเงินที่เติม/ถอน — contribution สะท้อนทั้งสองอย่าง
+function contribData(keys, rawSeries) {
+  const totalSeries = rawSeries.find((s) => s.total);
+  const assets = rawSeries.filter((s) => !s.total);
+  const out = [];
+  for (let i = 1; i < keys.length; i += 1) {
+    const prevTotal = totalSeries.values[i - 1];
+    if (!Number.isFinite(prevTotal) || prevTotal <= 0) continue;
+    const entries = assets.map((a) => {
+      const prev = Number.isFinite(a.values[i - 1]) ? a.values[i - 1] : 0;
+      const now = Number.isFinite(a.values[i]) ? a.values[i] : 0;
+      return { name: a.name, color: a.color, pp: ((now - prev) / prevTotal) * 100 };
+    }).filter((e) => Math.abs(e.pp) > 0.0005);
+    const totalPct = ((totalSeries.values[i] - prevTotal) / prevTotal) * 100;
+    out.push({ key: keys[i], fromKey: keys[i - 1], entries, totalPct });
+  }
+  return out;
+}
+
+function renderContribChart(host, legend, keys, rawSeries) {
+  const cols = contribData(keys, rawSeries);
+  if (!cols.length) {
+    host.innerHTML = '<p class="growth-chart-empty">ยังคำนวณ contribution ไม่ได้ — ต้องมีไตรมาสก่อนหน้าที่มีมูลค่ามากกว่า 0</p>';
+    if (legend) legend.innerHTML = "";
+    return;
+  }
+  // สเกลจากยอด stack บวก/ลบ ของทุกคอลัมน์
+  let maxUp = 0, maxDown = 0;
+  cols.forEach((c) => {
+    const up = c.entries.filter((e) => e.pp > 0).reduce((s, e) => s + e.pp, 0);
+    const down = c.entries.filter((e) => e.pp < 0).reduce((s, e) => s + e.pp, 0);
+    if (up > maxUp) maxUp = up;
+    if (down < maxDown) maxDown = down;
+  });
+  if (maxUp === 0 && maxDown === 0) maxUp = 1;
+  const padScale = (maxUp - maxDown) * 0.12 || 1;
+  const top = maxUp + padScale, bottom = maxDown - padScale * 0.5;
+
+  const W = 940, H = 330, L = 62, R = 18, T = 16, B = 42;
+  const Y = (v) => T + (1 - (v - bottom) / (top - bottom)) * (H - T - B);
+  const slot = (W - L - R) / cols.length;
+  const barW = Math.min(84, slot * 0.55);
+
+  let svg = "";
+  // gridlines + แกน 0
+  for (let g = 0; g <= 3; g += 1) {
+    const val = bottom + ((top - bottom) * g) / 3;
+    svg += `<line x1="${L}" y1="${Y(val).toFixed(1)}" x2="${W - R}" y2="${Y(val).toFixed(1)}" class="gc-grid" />`;
+    svg += `<text x="${L - 8}" y="${(Y(val) + 4).toFixed(1)}" text-anchor="end" class="gc-axis">${val.toFixed(1)}%</text>`;
+  }
+  svg += `<line x1="${L}" y1="${Y(0).toFixed(1)}" x2="${W - R}" y2="${Y(0).toFixed(1)}" stroke="#17324d" stroke-width="1.4" />`;
+
+  cols.forEach((c, ci) => {
+    const cx = L + slot * ci + slot / 2;
+    const x0 = cx - barW / 2;
+    let upCursor = 0, downCursor = 0;
+    // เรียง segment ใหญ่→เล็ก ให้อ่านง่าย
+    c.entries.slice().sort((a, b) => Math.abs(b.pp) - Math.abs(a.pp)).forEach((e) => {
+      const isUp = e.pp >= 0;
+      const from = isUp ? upCursor : downCursor;
+      const to = from + e.pp;
+      const y1 = Y(Math.max(from, to)), y2 = Y(Math.min(from, to));
+      const h = Math.max(1, y2 - y1);
+      svg += `<rect x="${x0.toFixed(1)}" y="${y1.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="${e.color}" ${isUp ? "" : 'opacity="0.82"'}><title>${escapeHtml(e.name)} · ${escapeHtml(c.key)} · ${e.pp >= 0 ? "+" : ""}${e.pp.toFixed(2)}pp</title></rect>`;
+      // แสดง % บนท่อนแท่งโดยตรง (ท่อนสูงพอ: ≥28px = ชื่อ+ค่า, ≥13px = ค่าอย่างเดียว)
+      const midY = y1 + h / 2;
+      const ppTxt = `${e.pp >= 0 ? "+" : ""}${e.pp.toFixed(1)}%`;
+      if (h >= 28) {
+        const shortName = e.name.length > 10 ? e.name.slice(0, 10) + "…" : e.name;
+        svg += `<text x="${cx.toFixed(1)}" y="${(midY - 2.5).toFixed(1)}" text-anchor="middle" font-size="9" fill="#fff" opacity="0.92">${escapeHtml(shortName)}</text>`;
+        svg += `<text x="${cx.toFixed(1)}" y="${(midY + 9.5).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#fff">${ppTxt}</text>`;
+      } else if (h >= 13) {
+        svg += `<text x="${cx.toFixed(1)}" y="${(midY + 3.5).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="800" fill="#fff">${ppTxt}</text>`;
+      }
+      if (isUp) upCursor = to; else downCursor = to;
+    });
+    // จุด+ตัวเลขรวม QoQ%
+    const ty = Y(c.totalPct);
+    svg += `<circle cx="${cx.toFixed(1)}" cy="${ty.toFixed(1)}" r="4" fill="#17324d" stroke="#fff" stroke-width="1.5"><title>พอร์ตรวม ${escapeHtml(c.key)} · ${c.totalPct >= 0 ? "+" : ""}${c.totalPct.toFixed(2)}%</title></circle>`;
+    svg += `<text x="${cx.toFixed(1)}" y="${(Math.min(ty, Y(Math.max(upCursor, 0))) - 8).toFixed(1)}" text-anchor="middle" class="gc-axis" font-weight="800" fill="${c.totalPct >= 0 ? "#12805c" : "#c0392b"}">${c.totalPct >= 0 ? "+" : ""}${c.totalPct.toFixed(1)}%</text>`;
+    svg += `<text x="${cx.toFixed(1)}" y="${H - 12}" text-anchor="middle" class="gc-axis">${escapeHtml(c.key)}</text>`;
+  });
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ที่มาการเติบโตของพอร์ตรายไตรมาส (%)">${svg}</svg>` +
+    '<p class="growth-chart-note">แต่ละแท่ง = การเติบโต QoQ ของพอร์ต แยกตามสินทรัพย์ (หน่วย percentage point ของพอร์ตรวม) · จุดน้ำเงินเข้ม = QoQ รวม · ค่ารวมทั้งราคาที่เปลี่ยนและเงินที่เติม/ถอนระหว่างไตรมาส</p>';
+
+  if (legend) {
+    const last = cols[cols.length - 1];
+    const items = last.entries.slice().sort((a, b) => Math.abs(b.pp) - Math.abs(a.pp)).map((e) =>
+      `<span class="growth-legend-item"><i style="background:${e.color}"></i>${escapeHtml(e.name)} <em class="${e.pp >= 0 ? "positive" : "negative"}">${e.pp >= 0 ? "+" : ""}${e.pp.toFixed(2)}pp</em></span>`
+    ).join("");
+    legend.innerHTML = `<span class="growth-legend-item is-total"><i style="background:#17324d"></i>${escapeHtml(last.key)} รวม <em class="${last.totalPct >= 0 ? "positive" : "negative"}">${last.totalPct >= 0 ? "+" : ""}${last.totalPct.toFixed(2)}%</em></span>` + items;
+  }
+}
+
 function renderGrowthChart() {
   const host = document.querySelector("#growthChart");
   const legend = document.querySelector("#growthChartLegend");
@@ -405,6 +507,7 @@ function renderGrowthChart() {
     if (legend) legend.innerHTML = "";
     return;
   }
+  if (growthChartMode === "contrib") { renderContribChart(host, legend, keys, rawSeries); return; }
   const series = growthChartMode === "index" ? rawSeries.map(indexifySeries) : rawSeries;
 
   const W = 940, H = 330, L = 62, R = 18, T = 14, B = 42;

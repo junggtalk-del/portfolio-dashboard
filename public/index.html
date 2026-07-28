@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css?v=20260723-qe-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260728-qe-2" />
       <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
       <script src="/api-auth.js?v=20260620-auth-1"></script>
       <script src="/data-snapshot.js?v=20260715-snapshot-13"></script>
@@ -147,6 +147,7 @@
             <div class="growth-mode" id="growthChartMode">
               <button type="button" class="growth-mode-btn is-active" data-gmode="value">มูลค่า ฿</button>
               <button type="button" class="growth-mode-btn" data-gmode="index">ดัชนีเติบโต (เริ่ม 100)</button>
+              <button type="button" class="growth-mode-btn" data-gmode="contrib">ที่มาการเติบโต (%)</button>
             </div>
           </div>
           <div id="growthChart" class="growth-chart"></div>
@@ -157,7 +158,7 @@
           <div class="panel-header">
             <div>
               <h2>การเติบโตของแต่ละสินทรัพย์</h2>
-              <p>เทียบจากไตรมาสก่อนหน้า และดูแนวโน้มในแต่ละไตรมาส</p>
+              <p id="assetGrowthSubtitle">เทียบจากไตรมาสก่อนหน้า และดูแนวโน้มในแต่ละไตรมาส</p>
             </div>
           </div>
           <div class="table-wrap">
@@ -258,7 +259,7 @@
         </section>
       </section>
     </main>
-    <script src="/app.js?v=20260723-app-3"></script>
-<script src="/app-navigation.js?v=20260723-nav-13"></script>
+    <script src="/app.js?v=20260728-app-5"></script>
+<script src="/app-navigation.js?v=20260724-nav-15"></script>
   </body>
 </html>

@@ -1,0 +1,81 @@
+{
+  "$comment": "COMPANY_SCHEMA for thesis-data.js entries — same shape the original 8 configs were authored with (workflow thesis-build). All Thai text natural; numbers approximate with ~.",
+  "type": "object",
+  "required": ["ticker", "name", "layer", "thesis", "fundamentals", "revenueQuality", "aiExecution", "competitive", "capitalAllocation", "valuationView", "whatChanged", "risks", "asOf"],
+  "properties": {
+    "ticker": { "type": "string" },
+    "name": { "type": "string" },
+    "layer": { "type": "string", "enum": ["model", "cloud", "gpu", "networking", "memory", "foundry", "equipment", "power", "utility", "enterprise"] },
+    "thesis": {
+      "type": "object", "required": ["statement", "pillars"],
+      "properties": { "statement": { "type": "string" }, "pillars": { "type": "array", "items": { "type": "string" }, "minItems": 3, "maxItems": 6 } }
+    },
+    "fundamentals": {
+      "type": "array", "minItems": 10, "maxItems": 10,
+      "$comment": "EXACTLY these keys in this order: revenueGrowth, epsGrowth, fcf, margin, roic, cash, debt, dilution, capitalAllocation, valuation. valuation score = price attractiveness (cheap = high).",
+      "items": {
+        "type": "object", "required": ["key", "label", "current", "trend", "score", "impact", "why"],
+        "properties": {
+          "key": { "type": "string", "enum": ["revenueGrowth", "epsGrowth", "fcf", "margin", "roic", "cash", "debt", "dilution", "capitalAllocation", "valuation"] },
+          "label": { "type": "string" }, "current": { "type": "string" },
+          "trend": { "type": "string", "enum": ["up", "flat", "down"] },
+          "score": { "type": "number", "minimum": 0, "maximum": 100 },
+          "impact": { "type": "string", "enum": ["positive", "neutral", "negative"] },
+          "why": { "type": "string" }
+        }
+      }
+    },
+    "revenueQuality": {
+      "type": "object", "required": ["acceleration", "consistency", "note", "segments"],
+      "properties": {
+        "acceleration": { "type": "string", "enum": ["accelerating", "steady", "decelerating"] },
+        "consistency": { "type": "number", "minimum": 0, "maximum": 100 },
+        "recurringPct": { "type": ["number", "null"] },
+        "note": { "type": "string" },
+        "segments": {
+          "type": "array", "minItems": 3, "maxItems": 6,
+          "$comment": "sharePct must sum to ~100 (±10)",
+          "items": { "type": "object", "required": ["name", "sharePct", "growthNote", "trend"], "properties": { "name": { "type": "string" }, "sharePct": { "type": "number" }, "growthNote": { "type": "string" }, "trend": { "type": "string", "enum": ["up", "flat", "down"] } } }
+        }
+      }
+    },
+    "aiExecution": {
+      "type": "object", "required": ["score", "items"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "items": { "type": "array", "minItems": 4, "maxItems": 6, "items": { "type": "object", "required": ["item", "status", "evidence"], "properties": { "item": { "type": "string" }, "status": { "type": "string", "enum": ["executing", "on-track", "at-risk"] }, "evidence": { "type": "string" } } } }
+      }
+    },
+    "competitive": {
+      "type": "object", "required": ["overall", "moat", "factors"],
+      "properties": {
+        "overall": { "type": "string", "enum": ["strengthening", "stable", "weakening"] },
+        "moat": { "type": "string" },
+        "factors": {
+          "type": "array", "minItems": 8, "maxItems": 8,
+          "items": { "type": "object", "required": ["key", "label", "status", "note"], "properties": { "key": { "type": "string", "enum": ["marketLeadership", "techLeadership", "executionSpeed", "switchingCost", "ecosystem", "developerAdoption", "customerLockin", "moat"] }, "label": { "type": "string" }, "status": { "type": "string", "enum": ["strengthening", "stable", "weakening"] }, "note": { "type": "string" } } }
+        }
+      }
+    },
+    "capitalAllocation": {
+      "type": "object", "required": ["score", "items", "verdict"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "verdict": { "type": "string" },
+        "items": { "type": "array", "minItems": 4, "maxItems": 6, "items": { "type": "object", "required": ["label", "current", "assessment", "why"], "properties": { "label": { "type": "string" }, "current": { "type": "string" }, "assessment": { "type": "string", "enum": ["good", "neutral", "poor"] }, "why": { "type": "string" } } } }
+      }
+    },
+    "valuationView": {
+      "type": "object", "required": ["level", "note"],
+      "properties": { "level": { "type": "string", "enum": ["cheap", "fair", "premium", "expensive"] }, "note": { "type": "string" } }
+    },
+    "whatChanged": {
+      "type": "array", "minItems": 4, "maxItems": 6,
+      "$comment": "most recent reported quarter vs the prior one",
+      "items": { "type": "object", "required": ["metric", "prev", "now", "direction"], "properties": { "metric": { "type": "string" }, "prev": { "type": "string" }, "now": { "type": "string" }, "direction": { "type": "string", "enum": ["positive", "negative", "neutral"] } } }
+    },
+    "risks": { "type": "array", "minItems": 3, "maxItems": 5, "items": { "type": "string" } },
+    "asOf": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" },
+    "nextEarnings": { "type": "string", "pattern": "^\\d{4}-\\d{2}(-\\d{2})?$", "$comment": "OPTIONAL. Next expected quarterly report. YYYY-MM-DD = company-confirmed date; YYYY-MM = estimated month (shown with ~). Drives the earnings-aware reload reminder." }
+  }
+}

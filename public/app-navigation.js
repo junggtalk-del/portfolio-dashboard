@@ -473,7 +473,9 @@
       { p: "/market-risk", i: "🌐", t: "Macro Dashboard" }
     ] },
     { label: "Strategic Intelligence", items: [
-      { p: "/ai-cycle", i: "🧭", t: "AI Cycle Intelligence" }
+      { p: "/ai-cycle", i: "🧭", t: "AI Cycle Intelligence" },
+      { p: "/adaptive-position", i: "🎛️", t: "Adaptive Position" },
+      { p: "/thesis", i: "🧾", t: "Investment Thesis" }
     ] },
     { label: "Portfolio", items: [
       { p: "/portfolio", i: "📊", t: "Portfolio Position" },
@@ -509,7 +511,9 @@
     "/wave3": { category: "Opportunity Radar", title: "🌊 Wave 3 Setup", subtitle: "สินทรัพย์ที่ใกล้เข้าสู่ Major Wave 3 — Portfolio · AI Boom · ไทย · Crypto (Readiness / Quality / Confidence)" },
     "/ai-cycle": { category: "Strategic Intelligence", title: "🧭 AI Cycle Intelligence", subtitle: "วัฏจักร AI อยู่ตรงไหน · เงินหมุนเข้ากลุ่มไหน · พอร์ตวางตัวสอดคล้องแค่ไหน · ควรปรับกลยุทธ์อย่างไร" },
     "/backtest": { category: "Strategy Research", title: "Backtest Lab", subtitle: "ทดสอบกลยุทธ์ย้อนหลังด้วยข้อมูลราคาในอดีต" },
-    "/smart-dca": { category: "Bitcoin", title: "🪙 Smart DCA", subtitle: "DCA บิทคอยน์ตามโซน MVRV — ซื้อมากตอนถูก ซื้อน้อยตอนแพง พร้อม backtest เทียบ DCA ปกติ" }
+    "/smart-dca": { category: "Bitcoin", title: "🪙 Smart DCA", subtitle: "DCA บิทคอยน์ตามโซน MVRV — ซื้อมากตอนถูก ซื้อน้อยตอนแพง พร้อม backtest เทียบ DCA ปกติ" },
+    "/adaptive-position": { category: "Strategic Intelligence", title: "🎛️ Adaptive Position", subtitle: "ควรถือ exposure เท่าไหร่ — Mega Trend Gate · Core/Tactical · เงื่อนไขสะสมจังหวะย่อ · ความมั่นใจของ position" },
+    "/thesis": { category: "Strategic Intelligence", title: "🧾 Investment Thesis", subtitle: "บริษัทนี้ยังเดินตาม thesis ระยะยาวอยู่ไหม — พื้นฐาน · AI execution · moat · ทำไมหุ้นตก · ควรสะสมจังหวะย่อไหม" }
   };
 
   function buildSidebar(activePath) {

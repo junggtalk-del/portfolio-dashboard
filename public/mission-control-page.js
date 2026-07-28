@@ -484,11 +484,44 @@
   }
 
   // ---------------------------------------------------------------- render (3 questions + more)
+  // ---------------------------------------------------------------- thesis reload strip
+  // Earnings-aware nudge: which curated thesis configs need a /thesis-update reload
+  // (report already out / data stale) or are about to report. Pure date math off
+  // window.ThesisData + window.ThesisEngine — no snapshot needed. "" when nothing due.
+  const TH_MON_MC = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+  function thesisReloadStrip() {
+    const TE = window.ThesisEngine, DATA = window.ThesisData;
+    if (!TE || !TE.earningsStatusOf || !TE.companiesFrom || !DATA) return "";
+    const now = Date.now();
+    const reload = [], soon = [];
+    TE.companiesFrom(DATA).forEach((c) => {
+      const cfg = DATA.companies[c.ticker];
+      if (!cfg) return;
+      const es = TE.earningsStatusOf(cfg.asOf, cfg.nextEarnings, now);
+      if (es.state === "overdue" || es.state === "stale") reload.push({ t: c.ticker, es });
+      else if (es.state === "due-soon") soon.push({ t: c.ticker, es });
+    });
+    if (!reload.length && !soon.length) return "";
+    const chip = (x) => {
+      const d = x.es.daysToEarnings;
+      const when = x.es.state === "overdue" ? "งบออกแล้ว ~" + Math.abs(d) + " วัน"
+        : x.es.state === "stale" ? "ข้อมูล " + x.es.staleMonths + " เดือน" + (x.es.hasDate && d > 0 ? " · งบอีก ~" + d + " วัน" : "")
+        : "อีก ~" + d + " วัน";
+      return '<a class="mcx-reload-chip mcx-reload-' + (x.es.state === "due-soon" ? "soon" : "reload") + '" href="/thesis" data-th-ticker="' + esc(x.t) + '">' + esc(x.t) + ' <em>' + esc(when) + "</em></a>";
+    };
+    let parts = "";
+    if (reload.length) parts += '<div class="mcx-reload-line"><b class="mcx-reload-lbl is-reload">⚠ ควรโหลดใหม่</b>' + reload.map(chip).join("") + "</div>";
+    if (soon.length) parts += '<div class="mcx-reload-line"><b class="mcx-reload-lbl is-soon">🔔 ใกล้ออกงบ</b>' + soon.map(chip).join("") + "</div>";
+    return '<section class="mcx-reload mc-fade"><div class="mcx-reload-head">🧾 Investment Thesis · ความสดของข้อมูล curated</div>' + parts +
+      '<div class="mcx-reload-foot">อัปเดตด้วย <code>/thesis-update TICKER</code> ใน Claude Code หลังบริษัทออกงบ · คลิกชื่อเพื่อดูรายตัว</div></section>';
+  }
+
   function render() {
     ensureQuarterly();
     const R = regime();
-    if (!R || R.snapshotMissing) { root.innerHTML = emptyState(); wire(); return; }
+    if (!R || R.snapshotMissing) { root.innerHTML = thesisReloadStrip() + emptyState(); wire(); return; }
     root.innerHTML =
+      thesisReloadStrip() +   // 🧾 เตือนโหลด thesis ใหม่ (อิงวันประกาศงบ) — "" ถ้าไม่มี
       actionSection(R) +      // 1 · 🎯 วันนี้ต้องทำอะไร (decision + action queue)
       portfolioSection() +    // 2 · 💼 พอร์ตเป็นไง (quarterly holdings)
       marketSection(R) +      // 3 · 🌍 ตลาดเป็นไง (regime + trend + history + BTC)
@@ -519,6 +552,7 @@
     const lb = $("mcLoadLatest"); if (lb && !lb._wired) { lb._wired = true; lb.addEventListener("click", loadLatest); }
     const xb = $("mcxLoad"); if (xb) xb.addEventListener("click", loadLatest);
     const mt = $("mcMenuToggle"); if (mt && !mt._wired) { mt._wired = true; mt.addEventListener("click", () => { const s = $("mcSidebar"); if (s) s.classList.toggle("is-open"); }); }
+    if (!root._thWired) { root._thWired = true; root.addEventListener("click", (e) => { const a = e.target.closest && e.target.closest("[data-th-ticker]"); if (a) { try { window.localStorage.setItem("thesis_selected_v1", a.getAttribute("data-th-ticker")); } catch (_) {} } }); }
     const hr = $("mcxHistRanges"); if (hr) hr.addEventListener("click", (e) => { const b = e.target.closest("[data-r]"); if (!b) return; histRange = b.dataset.r; render(); });
   }
 
