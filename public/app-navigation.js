@@ -475,7 +475,8 @@
     { label: "Strategic Intelligence", items: [
       { p: "/ai-cycle", i: "🧭", t: "AI Cycle Intelligence" },
       { p: "/adaptive-position", i: "🎛️", t: "Adaptive Position" },
-      { p: "/thesis", i: "🧾", t: "Investment Thesis" }
+      { p: "/thesis", i: "🧾", t: "Investment Thesis" },
+      { p: "/accumulation-center", i: "🧺", t: "Accumulation Center" }
     ] },
     { label: "Portfolio", items: [
       { p: "/portfolio", i: "📊", t: "Portfolio Position" },
@@ -513,7 +514,8 @@
     "/backtest": { category: "Strategy Research", title: "Backtest Lab", subtitle: "ทดสอบกลยุทธ์ย้อนหลังด้วยข้อมูลราคาในอดีต" },
     "/smart-dca": { category: "Bitcoin", title: "🪙 Smart DCA", subtitle: "DCA บิทคอยน์ตามโซน MVRV — ซื้อมากตอนถูก ซื้อน้อยตอนแพง พร้อม backtest เทียบ DCA ปกติ" },
     "/adaptive-position": { category: "Strategic Intelligence", title: "🎛️ Adaptive Position", subtitle: "ควรถือ exposure เท่าไหร่ — Mega Trend Gate · Core/Tactical · เงื่อนไขสะสมจังหวะย่อ · ความมั่นใจของ position" },
-    "/thesis": { category: "Strategic Intelligence", title: "🧾 Investment Thesis", subtitle: "บริษัทนี้ยังเดินตาม thesis ระยะยาวอยู่ไหม — พื้นฐาน · AI execution · moat · ทำไมหุ้นตก · ควรสะสมจังหวะย่อไหม" }
+    "/thesis": { category: "Strategic Intelligence", title: "🧾 Investment Thesis", subtitle: "บริษัทนี้ยังเดินตาม thesis ระยะยาวอยู่ไหม — พื้นฐาน · AI execution · moat · ทำไมหุ้นตก · ควรสะสมจังหวะย่อไหม" },
+    "/accumulation-center": { category: "Strategic Intelligence", title: "🧺 Accumulation Center", subtitle: "จังหวะย่อตัวไหนควรค่าแก่การสะสมวันนี้ — จัดอันดับ 8 ปัจจัย (Thesis นำ · เทคนิคเป็นแค่เครื่องมือจับจังหวะ)" }
   };
 
   function buildSidebar(activePath) {

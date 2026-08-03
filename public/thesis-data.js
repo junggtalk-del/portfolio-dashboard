@@ -794,47 +794,47 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+18% YoY (ไตรมาสล่าสุด Q1 FY26) เร่งขึ้นจาก ~+15% ของทั้งปี FY25",
+          "current": "~+18% YoY (Q4 FY26 — $90.0B) · FY2026 ทั้งปี $331.8B (+18%) · Azure +43% ทะลุ $100B ต่อปีครั้งแรก",
           "trend": "up",
-          "score": 85,
+          "score": 87,
           "impact": "positive",
-          "why": "บริษัทขนาดเกือบ $300B/ปี ที่ยังเร่งความเร็วการโตได้เป็นเรื่องหายากมาก โดยแรงขับหลักคือ Azure (~+40%) และ Microsoft Cloud โดยรวม ~+26% — สะท้อนว่า demand ด้าน AI แปลงเป็นรายได้จริงแล้ว"
+          "why": "โตสองหลักสม่ำเสมอที่ฐานรายได้ ~$330B/ปี โดย Azure เร่งเป็น +43% และแตะหลัก $100B — เครื่องยนต์คลาวด์/AI ยังเป็นตัวขับหลักและดีมานด์เกิน capacity"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "EPS GAAP โต ~+13% YoY (ถูกกดจากส่วนแบ่งขาดทุน OpenAI ~-$0.41/หุ้น); หากตัดรายการนี้โต ~+20%+",
+          "current": "non-GAAP EPS $4.74 (Q4 FY26, +23% YoY) ชนะคาด $4.33 · GAAP $4.81 (+32%) · FY2026 net income $133.8B (+31%)",
           "trend": "up",
-          "score": 80,
+          "score": 84,
           "impact": "positive",
-          "why": "กำไรจากธุรกิจหลักโตแรงกว่ารายได้เพราะ operating leverage แต่ตัวเลข GAAP จะผันผวนตามผลขาดทุนทางบัญชีของ OpenAI ซึ่งเป็น non-cash — นักลงทุนต้องดู EPS ex-OpenAI ประกอบ"
+          "why": "กำไรโตเร็วกว่ารายได้จาก operating leverage — แม้ยังมีส่วนแบ่งขาดทุน OpenAI กด EPS การเติบโต 20%+ ที่ขนาดนี้หายากมาก"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "เงินสดจากการดำเนินงานสูงมาก (~$45B/ไตรมาส) แต่ FCF ถูก capex ระดับ ~$35B/ไตรมาสกดไว้",
-          "trend": "flat",
-          "score": 65,
+          "current": "OCF สูงมาก แต่ FCF ถูกกดหนักขึ้น — capex (รวม finance lease) >$40B/ไตรมาส · ~$190B ทั้งปี CY2026",
+          "trend": "down",
+          "score": 58,
           "impact": "neutral",
-          "why": "เครื่องผลิตเงินสดยังทำงานเต็มกำลัง แต่บริษัทเลือกเทเงินเกือบทั้งหมดลง datacenter สำหรับ AI — FCF ระยะสั้นจึงโตช้ากว่ากำไรมาก นี่คือ 'ต้นทุนของโอกาส' ที่ต้องติดตามว่าผลตอบแทนกลับมาจริง"
+          "why": "capex เร่งจาก ~$35B เป็น >$40B/ไตรมาส กลืน FCF มากขึ้น — เดิมพันว่าดีมานด์ AI/คลาวด์คุ้มค่าเสื่อม จุดนี้คือความเสี่ยง overbuild ที่ต้องจับตา"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "operating margin ~49% (ไตรมาสล่าสุด) — สูงที่สุดในกลุ่ม mega-cap tech",
-          "trend": "up",
-          "score": 90,
+          "current": "operating margin ~45% (Q4 FY26) — สูงสุดในกลุ่ม mega-cap · gross margin ~68% แคบลงจากค่าเสื่อม datacenter",
+          "trend": "flat",
+          "score": 88,
           "impact": "positive",
-          "why": "แม้จะแบกค่าเสื่อม datacenter ที่พุ่งขึ้น margin ยังขยายได้ เพราะ software/subscription เป็นแกนรายได้ และ Azure มี scale economics — พิสูจน์ว่า AI ยังไม่ได้ทำลายโครงสร้างกำไรอย่างที่หลายคนกลัว"
+          "why": "โครงสร้างกำไรยังแข็งแกร่งสุดในกลุ่ม แม้ gross margin ถูกกดจากค่าเสื่อม AI infra — operating leverage ของซอฟต์แวร์ยังชดเชยได้ดี"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "ยังสูง (~25-30%) แต่มีแนวโน้มถูกเจือจางเมื่อฐานสินทรัพย์ AI ขยายเร็วมาก",
+          "current": "ยังสูง (~25%) แต่ถูกเจือจางเมื่อฐานสินทรัพย์ AI ขยายเร็วมาก",
           "trend": "down",
-          "score": 75,
+          "score": 74,
           "impact": "neutral",
-          "why": "ธุรกิจ software เดิมให้ ROIC สูงมาก แต่เงินลงทุนก้อนใหม่ไหลเข้า GPU/datacenter ที่ให้ผลตอบแทนต่ำกว่าและเสื่อมเร็วกว่า — ROIC รวมจึงค่อย ๆ ลดลงชั่วคราว เป็นสิ่งที่ยอมรับได้หาก Azure AI โตตามแผน"
+          "why": "ผลตอบแทนต่อทุนลดลงตามการทุ่ม capex — จะฟื้นเมื่อ datacenter ที่สร้างเริ่มสร้างรายได้เต็มกำลัง"
         },
         {
           "key": "cash",
@@ -875,35 +875,35 @@
         {
           "key": "valuation",
           "label": "มูลค่าหุ้น",
-          "current": "forward P/E ~30x บน market cap ~$3.5-3.9T — premium เทียบตลาด แต่ไม่แพงสุดในกลุ่ม AI",
-          "trend": "flat",
-          "score": 55,
-          "impact": "neutral",
-          "why": "จ่ายแพงกว่าตลาดเพื่อคุณภาพระดับนี้ถือว่า 'สมเหตุสมผลแต่ไม่ถูก' — upside ต้องมาจากกำไรที่โตต่อเนื่อง ไม่ใช่การ re-rate ของ multiple ซึ่งจำกัด margin of safety หาก AI demand สะดุด"
+          "current": "forward P/E ~20-23x (ราคา ~$390 · mcap ~$2.92T) — de-rate ลงจาก ~30x, หุ้น +15% หลังงบ Q4",
+          "trend": "up",
+          "score": 70,
+          "impact": "positive",
+          "why": "หลัง underperform Mag7 มาทั้งปี multiple ลงมาเหลือ ~20-23x ทั้งที่กำไรโต 20%+ และ Azure เร่งตัว — คุณภาพระดับ AAA + margin 45% ที่ ~20x ถือว่าเหมาะสม ไม่ใช่ premium สุดโต่งอีกต่อไป"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
         "consistency": 92,
         "recurringPct": 80,
-        "note": "คุณภาพรายได้ระดับท็อปของตลาด — ส่วนใหญ่เป็น subscription/consumption ตามสัญญาระยะยาว โดย commercial RPO ~$392B (โต ~+50% YoY หลังรวมสัญญา OpenAI) ล็อกรายได้ล่วงหน้าหลายปี และการโตของทั้งบริษัทกำลัง 'เร่งขึ้น' ทั้งที่ฐานใหญ่มาก ซึ่งหายากมากในบริษัทขนาดนี้",
+        "note": "รายได้กระจายดี 3 ขา คุณภาพสูง (recurring/enterprise สูง) — Intelligent Cloud (Azure +43%, ทะลุ $100B ต่อปี, AI run rate ~$37B+ +123%) เป็นตัวเร่ง ขณะ PBP (M365 Copilot upsell) สม่ำเสมอ · commercial RPO/backlog พุ่งเป็น ~$627B (+99% YoY, +26% ถ้าตัด OpenAI) ให้ visibility หลายปี",
         "segments": [
           {
-            "name": "Productivity and Business Processes (Microsoft 365, LinkedIn, Dynamics)",
-            "sharePct": 43,
-            "growthNote": "โต ~+15% YoY สม่ำเสมอ — M365 Copilot คือตัว upsell ราคาต่อหัวที่เริ่มมีน้ำหนักขึ้นเรื่อย ๆ",
+            "name": "Intelligent Cloud (Azure, Server, Enterprise Services)",
+            "sharePct": 42,
+            "growthNote": "เครื่องยนต์หลัก — Azure +43% YoY ทะลุ $100B ต่อปีครั้งแรก, AI services เป็นตัวเร่ง, ดีมานด์ยังเกิน capacity",
             "trend": "up"
           },
           {
-            "name": "Intelligent Cloud (Azure, Server, Enterprise Services)",
-            "sharePct": 37,
-            "growthNote": "เครื่องยนต์หลัก — Azure โต ~+40% YoY โดย AI services มีสัดส่วนการโตเพิ่มขึ้นต่อเนื่อง และ demand ยังเกิน capacity",
+            "name": "Productivity and Business Processes (Microsoft 365, LinkedIn, Dynamics)",
+            "sharePct": 40,
+            "growthNote": "โตสองหลักสม่ำเสมอ — M365 Copilot เป็น upsell ราคาต่อหัวที่มีน้ำหนักขึ้นเรื่อย ๆ",
             "trend": "up"
           },
           {
             "name": "More Personal Computing (Windows, Gaming/Xbox, Search & Ads)",
-            "sharePct": 20,
-            "growthNote": "โตช้า (หลักหน่วย) — Windows/Gaming เป็นวัฏจักร แต่เป็นฐานผู้ใช้สำหรับกระจาย Copilot สู่ consumer",
+            "sharePct": 18,
+            "growthNote": "โตช้า (วัฏจักร) — แต่เป็นฐานผู้ใช้กระจาย Copilot สู่ consumer",
             "trend": "flat"
           }
         ]
@@ -914,7 +914,7 @@
           {
             "item": "Azure AI / AI Foundry — ขายโครงสร้างพื้นฐานและแพลตฟอร์มโมเดลให้องค์กร",
             "status": "executing",
-            "evidence": "Azure โต ~+40% YoY ต่อเนื่องหลายไตรมาส โดยผู้บริหารระบุว่า AI เป็นตัวเร่งหลักและ demand ยังเกิน supply — backlog ระดับ ~$392B คือหลักฐานเชิงสัญญาที่จับต้องได้"
+            "evidence": "Azure +43% YoY ทะลุ $100B ต่อปีครั้งแรก · AI business run rate ~$37B+ (+123% YoY) · commercial RPO ~$627B · ดีมานด์ยังเกิน supply — หลักฐานเชิงสัญญาที่จับต้องได้ที่สุดในกลุ่ม"
           },
           {
             "item": "Microsoft 365 Copilot — monetize AI ต่อหัวบนฐานผู้ใช้องค์กรหลายร้อยล้าน",
@@ -934,7 +934,7 @@
           {
             "item": "สร้าง AI datacenter ขนาดยักษ์ (โครงการตระกูล Fairwater) รองรับ demand ระยะยาว",
             "status": "executing",
-            "evidence": "capex รวม finance lease เร่งขึ้นสู่ระดับ ~$35B/ไตรมาส และบริษัทยังบอกว่า capacity ไม่พอขายไปถึงอย่างน้อยกลางปี 2026 — ปัญหาคือ 'สร้างไม่ทัน' ไม่ใช่ 'ไม่มีคนซื้อ'"
+            "evidence": "capex รวม finance lease >$40B/ไตรมาส (~$190B ทั้งปี CY2026) — โครงการตระกูล Fairwater เร่งสร้าง บริษัทย้ำว่า capacity ยังไม่พอขาย ปัญหาคือ 'สร้างไม่ทัน' ไม่ใช่ 'ไม่มีคนซื้อ'"
           },
           {
             "item": "โมเดล in-house ตระกูล MAI — ลดการพึ่งพา OpenAI ในระยะยาว",
@@ -1040,44 +1040,44 @@
         ]
       },
       "valuationView": {
-        "level": "premium",
-        "note": "forward P/E ~30x บนกำไรที่โต ~mid-to-high teens — แพงกว่าตลาดแต่ถูกกว่าหุ้น AI แท้หลายตัว และถูกกว่าค่าเฉลี่ยตัวเองช่วงพีคปี 2024-2025 หลังหุ้น underperform กลุ่ม Mag7 ในปี 2025 จากความกังวลเรื่อง capex/OpenAI; เหมาะกับการทยอยสะสมมากกว่ารอของถูก เพราะคุณภาพระดับนี้แทบไม่เคยลดราคาแรง"
+        "level": "fair",
+        "note": "forward P/E ~20-23x (ราคา ~$390, mcap ~$2.92T) — de-rate ลงชัดจาก ~30x หลังหุ้น underperform Mag7 ทั้งปี ทั้งที่รายได้โต ~18%, Azure +43% และงบดุล AAA · ที่ระดับนี้ถือว่า 'สมเหตุสมผล' สำหรับคุณภาพที่ได้ ไม่ใช่ของถูก แต่พ้นโซน premium สุดโต่งแล้ว — ความเสี่ยงหลักคือ capex/FCF ระยะสั้น ไม่ใช่ธุรกิจหลัก"
       },
       "whatChanged": [
         {
-          "metric": "การเติบโตของ Azure",
-          "prev": "~+39% YoY (Q4 FY25)",
-          "now": "~+40% YoY (Q1 FY26)",
+          "metric": "Azure (Q3 → Q4 FY26)",
+          "prev": "+40% YoY",
+          "now": "+43% YoY — ทะลุ $100B ต่อปีครั้งแรก",
           "direction": "positive"
         },
         {
-          "metric": "Commercial RPO (backlog)",
-          "prev": "~$368B",
-          "now": "~$392B (โต ~+50% YoY)",
+          "metric": "รายได้รวม",
+          "prev": "$82.9B (+18%)",
+          "now": "$90.0B (+18%) · FY2026 $331.8B (+18%)",
           "direction": "positive"
         },
         {
-          "metric": "CapEx รวม finance lease",
-          "prev": "~$24B/ไตรมาส",
-          "now": "~$35B/ไตรมาส และ guide เพิ่มต่อ",
-          "direction": "neutral"
+          "metric": "กำไร (non-GAAP EPS)",
+          "prev": "โตสองหลัก",
+          "now": "$4.74 (+23% YoY) ชนะคาด $4.33 · net income $133.8B FY26 (+31%)",
+          "direction": "positive"
         },
         {
-          "metric": "สถานะดีล OpenAI",
-          "prev": "สัญญาแบบเดิม สิทธิ์คลุมเครือ เป็น overhang ของหุ้น",
-          "now": "ถือหุ้น ~27% ใน OpenAI PBC + OpenAI ผูกซื้อ Azure เพิ่ม ~$250B + สิทธิ์ IP ถึง ~2032",
-          "direction": "positive"
+          "metric": "CapEx (incl finance lease)",
+          "prev": "~$35-38B/ไตรมาส",
+          "now": ">$40B/ไตรมาส (~$190B ทั้งปี CY2026)",
+          "direction": "negative"
         },
         {
           "metric": "Operating margin",
-          "prev": "~45%",
-          "now": "~49%",
-          "direction": "positive"
+          "prev": "~46%",
+          "now": "~45% · gross margin ~68% แคบลงจากค่าเสื่อม datacenter",
+          "direction": "neutral"
         },
         {
-          "metric": "พันธมิตรโมเดล AI",
-          "prev": "พึ่งพา OpenAI เป็นหลักค่ายเดียว",
-          "now": "เพิ่ม Anthropic — สัญญาซื้อ Azure ~$30B + Claude เข้า Copilot + MSFT ลงทุนสูงสุด ~$5B",
+          "metric": "Valuation",
+          "prev": "fwd P/E ~30x (premium)",
+          "now": "fwd P/E ~20-23x (de-rate) — หุ้น +15% หลังงบ Q4",
           "direction": "positive"
         }
       ],
@@ -1088,7 +1088,7 @@
         "การแข่งขันรุนแรงขึ้นทุกชั้น — Google Cloud/Gemini เร่งแรงและมี TPU ได้เปรียบด้านต้นทุน, AWS ยังใหญ่กว่า, ส่วน AI coding tools รุ่นใหม่กัดกิน GitHub Copilot ในกลุ่ม power developer",
         "แรงกดดันด้านกฎระเบียบและโครงสร้างดีลวนในอุตสาหกรรม AI (circular deals) — หากมูลค่าห่วงโซ่ AI ถูกตั้งคำถามทั้งระบบ หุ้นที่ multiple ระดับ premium อย่าง MSFT จะโดน de-rate ไปด้วยแม้พื้นฐานไม่เปลี่ยน"
       ],
-      "asOf": "2026-01",
+      "asOf": "2026-07",
       "history": {
         "fyNote": "ปีบัญชีของ Microsoft สิ้นสุด 30 มิ.ย. (เช่น FY2025 = ก.ค. 2024 – มิ.ย. 2025) — FY2026 สิ้นสุดแล้วแต่จะประกาศผลวันที่ 29 ก.ค. 2026 จึงยังไม่นับรวม ใช้ FY2021–FY2025",
         "epsBasis": "diluted GAAP, split-adjusted (ไม่มี split ตั้งแต่ปี 2003 — ตัวเลขตามงบจริงคือฐานหุ้นปัจจุบันอยู่แล้ว)",
@@ -1148,7 +1148,7 @@
           "https://www.statmuse.com/money/ask/msft-closing-price-on-june-30-2021 (cross-check, dividend-adjusted)"
         ]
       },
-      "nextEarnings": "2026-07-29"
+      "nextEarnings": "2026-10"
     },
     "META": {
       "ticker": "META",
@@ -1168,47 +1168,47 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตรายได้",
-          "current": "~+26% YoY (Q3 2025) และเร่งขึ้นจาก ~+22% ไตรมาสก่อน",
-          "trend": "up",
-          "score": 85,
+          "current": "~+28% YoY (Q2 2026 — $60.8B) ชะลอจาก +33% (Q1) แต่ยังแข็งแรง · guide Q3 $61-64B",
+          "trend": "flat",
+          "score": 84,
           "impact": "positive",
-          "why": "บริษัทขนาดรายได้ ~$190B+/ปี ที่ยังโตกว่า 20% และ \"เร่งขึ้น\" เป็นเรื่องหายาก — แรงขับหลักคือ AI ranking ทำให้ทั้งจำนวน impression (~+14%) และราคาต่อโฆษณา (~+10%) โตพร้อมกัน"
+          "why": "เครื่องยนต์โฆษณายังโตแรงมากสำหรับบริษัทขนาดนี้ — ปริมาณโฆษณา +14%, ราคาต่อโฆษณา +12% จาก AI ranking/Advantage+ การชะลอจาก +33% เป็นเรื่องฐานสูงของ Q1 ไม่ใช่ดีมานด์อ่อน"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตกำไรต่อหุ้น",
-          "current": "underlying ~+20% YoY แต่ GAAP Q3 2025 โดนภาษีครั้งเดียว ~$16B กดเหลือ ~$1.05",
-          "trend": "flat",
-          "score": 70,
-          "impact": "positive",
-          "why": "กำไรจากธุรกิจจริงยังโตแข็งแรง (ex-item EPS ~$7.2) แต่ปี 2026 จะเจอแรงกดจากค่าเสื่อมราคา datacenter และค่าใช้จ่าย AI talent ที่บริษัทเตือนเองว่าจะ \"โตขึ้นอย่างมีนัยสำคัญ\" — จึงให้คะแนนดีแต่ไม่สูงสุด"
+          "current": "GAAP EPS $6.18 (Q2 2026) ลดลง ~13% YoY — โดน costs +55%, legal $2.4B, severance $1.18B (layoffs พ.ค. 2026)",
+          "trend": "down",
+          "score": 52,
+          "impact": "negative",
+          "why": "กำไรที่รายงานหดจริงไตรมาสนี้ แม้ยอดขายโต — ต้นทุน AI (ค่าเสื่อม, ค่าตัว talent) + ค่าใช้จ่ายครั้งเดียว (คดี/ปรับโครงสร้าง) กดกำไร นี่คือราคาที่ต้องจ่ายของรอบลงทุน"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "~$30-40B/ปี และกำลังหดตัวจาก CapEx ที่พุ่งแรง",
+          "current": "ทรุดเหลือ ~$784M (Q2 2026) จาก capex $31B/ไตรมาส — FCF แทบเป็นศูนย์",
           "trend": "down",
-          "score": 50,
+          "score": 34,
           "impact": "negative",
-          "why": "Operating cash flow ยังแข็งแรงมาก แต่ CapEx ~$70B+ ปี 2025 (และมากกว่านั้นชัดเจนปี 2026) กัด FCF ลงจากจุดสูง ~$54B ปี 2024 — นี่คือจุดที่ตลาดกังวลที่สุดหลังงบ Q3 2025 และเป็นตัวชี้วัดสำคัญที่ต้องตามดู"
+          "why": "จุดอ่อนเชิงโครงสร้างที่ชัดที่สุดตอนนี้: capex $31B/ไตรมาส (guide FY $130-145B) กลืน operating cash flow เกือบหมด — FCF จะถูกกดต่อเนื่องจนกว่า capex จะ peak และ AI สร้างรายได้เพิ่ม"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "operating margin รวม ~40% (FoA ~50%+, Reality Labs ขาดทุน ~$4-5B/ไตรมาส)",
-          "trend": "flat",
-          "score": 82,
-          "impact": "positive",
-          "why": "Margin ของธุรกิจหลักอยู่ระดับดีที่สุดในโลกอินเทอร์เน็ต และฟื้นจากยุค \"Year of Efficiency\" ได้อย่างถาวร — แต่ค่าเสื่อมจาก AI infra จะเริ่มกดลงทีละน้อยตั้งแต่ปี 2026"
+          "current": "operating margin ~31% (Q2 2026) ร่วงจาก ~43% YoY / ~41% (Q1) — RL ขาดทุน + ค่าใช้จ่าย AI + one-off legal/severance",
+          "trend": "down",
+          "score": 66,
+          "impact": "neutral",
+          "why": "margin หดแรงจากทั้งของถาวร (ค่าเสื่อม AI, RL) และของครั้งเดียว (legal $2.4B, severance) — แกนโฆษณา FoA ยังทำ margin สูง แต่ภาพรวมถูกกดจนต่ำสุดในรอบหลายปี"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "สูง ~25%+ แต่มีทิศทางลดลงเมื่อฐานเงินลงทุนบวมจาก AI CapEx",
+          "current": "ยังสูงแต่ลดลง — ฐานเงินลงทุนบวมจาก AI capex ขณะ margin หด",
           "trend": "down",
-          "score": 70,
+          "score": 62,
           "impact": "neutral",
-          "why": "ธุรกิจโฆษณาเดิมให้ ROIC สูงมาก แต่เงินลงทุนก้อนใหม่หลายหมื่นล้านดอลลาร์ยังไม่มีรายได้รองรับเต็มที่ — ROIC ระยะ 2-3 ปีข้างหน้าขึ้นกับว่า monetize Meta AI และ Business AI ได้จริงแค่ไหน"
+          "why": "ผลตอบแทนต่อทุนถูกกดสองทาง (กำไรต่อหน่วยลด + ทุนที่ใช้เพิ่ม) — จะฟื้นก็ต่อเมื่อ AI capex เริ่มสร้างรายได้คุ้มค่าเสื่อม"
         },
         {
           "key": "cash",
@@ -1222,11 +1222,11 @@
         {
           "key": "debt",
           "label": "หนี้สิน",
-          "current": "หนี้รวมเพิ่มเป็น ~$55-60B หลังออกหุ้นกู้ ~$30B ปลายปี 2025 + JV financing โครงการ Hyperion ~$27B",
+          "current": "หนี้เพิ่มต่อเนื่อง — หุ้นกู้ ~$30B + JV/off-balance financing (Hyperion ~$27B) รองรับ capex",
           "trend": "down",
-          "score": 68,
+          "score": 60,
           "impact": "neutral",
-          "why": "จากบริษัทแทบไม่มีหนี้ กลายเป็นผู้ออกหุ้นกู้รายใหญ่ที่สุดรายหนึ่งของปี 2025 — สัดส่วนหนี้ต่อ EBITDA ยังต่ำและจัดการได้สบาย แต่ทิศทางคือก่อหนี้เพิ่มเพื่อ AI ซึ่งลดความยืดหยุ่นลงหากวงจร AI สะดุด"
+          "why": "จากบริษัทที่แทบไม่มีหนี้ กลายเป็นก่อหนี้และ commitment นอกงบดุลเร็ว — ยังบริหารได้ด้วยกระแสเงินสดโฆษณา แต่ลดความยืดหยุ่นหากรอบลงทุน AI สะดุด"
         },
         {
           "key": "dilution",
@@ -1240,44 +1240,44 @@
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรเงินทุน",
-          "current": "เทน้ำหนักเกือบทั้งหมดไปที่ AI CapEx + R&D; buyback และปันผลยังทำต่อเนื่อง",
+          "current": "AI CapEx FY2026 $130-145B + ค่าตัว AI talent + layoffs เพื่อ efficiency + buyback/ปันผลต่อ",
           "trend": "flat",
-          "score": 65,
+          "score": 62,
           "impact": "neutral",
-          "why": "ประวัติที่ผ่านมาดี (Year of Efficiency พิสูจน์วินัย) แต่การประกาศว่า CapEx ปี 2026 จะ \"ใหญ่ขึ้นอย่างมีนัยสำคัญ\" จาก ~$70-72B คือการเดิมพันที่ยังพิสูจน์ผลตอบแทนไม่ได้ — ความเสี่ยง overbuild มีจริง จึงให้คะแนนกลาง"
+          "why": "โหมดเดิมพันหนักสุดในประวัติศาสตร์บริษัท — เทเกือบทุกอย่างไป AI ควบคู่ปรับโครงสร้าง (layoffs) ผลตอบแทนยังพิสูจน์ไม่ได้ ผู้ถือหุ้นต้องยอม FCF หด 1-2 ปีแลก optionality"
         },
         {
           "key": "valuation",
           "label": "มูลค่าหุ้น",
-          "current": "forward P/E ~20-22x ต่ำสุดในกลุ่ม Mag7 สาย AI หลังหุ้นย่อแรงจากความกังวล CapEx",
+          "current": "forward P/E ~16x (ราคา ~$542 · mcap ~$1.35T หลังร่วง 9% จากงบ Q2) — ถูกสุดในกลุ่ม Mag7 สาย AI มาก",
           "trend": "up",
-          "score": 75,
+          "score": 82,
           "impact": "positive",
-          "why": "จ่าย ~20 เท่าให้บริษัทที่รายได้โต ~26% และมี AI optionality หลายชั้น ถือว่าน่าสนใจเชิงเปรียบเทียบ — ส่วนลดนี้คือ \"ค่าประกัน\" ที่ตลาดเก็บจากความไม่แน่นอนเรื่อง CapEx ซึ่งนักลงทุนระยะยาวรับได้"
+          "why": "ตลาดลงโทษความกลัว CapEx/FCF จน multiple เหลือ ~16x ทั้งที่รายได้ยังโต ~28% — ส่วนลดสะท้อนคุณภาพกำไรระยะสั้นที่แย่ลง ไม่ใช่ธุรกิจโฆษณาพัง PEG ต่ำมากสำหรับผู้รับความผันผวนของรอบลงทุนได้"
         }
       ],
       "revenueQuality": {
-        "acceleration": "accelerating",
+        "acceleration": "steady",
         "consistency": 80,
         "recurringPct": null,
-        "note": "รายได้โฆษณาไม่ใช่สัญญา recurring ตามนิยาม แต่พฤติกรรมใกล้เคียง — ผู้ลงโฆษณาหลายสิบล้านรายกลับมาซื้อซ้ำเพราะ ROI วัดผลได้ และการเติบโตกลับมาเร่งตัว (~+22% → ~+26%) โดยโตทั้งปริมาณและราคา; จุดอ่อนคือรายได้กระจุกในโฆษณาเกือบทั้งหมด อ่อนไหวต่อวัฏจักรเศรษฐกิจมากกว่า cloud/software",
+        "note": "รายได้ ~98% มาจากโฆษณา Family of Apps ที่ยังโตแรง (+28% YoY, ราคาต่อโฆษณา +12%, ปริมาณ +14%) — เร่งตัวจากปีก่อนแต่ชะลอเล็กน้อยจากฐานสูงของ Q1 (+33%) · คุณภาพการโตของ 'รายได้' ยังดี แต่คุณภาพของ 'กำไร' อ่อนลงจาก capex/ค่าเสื่อม AI ที่กด margin และ FCF",
         "segments": [
           {
             "name": "โฆษณา Family of Apps (Facebook, Instagram, WhatsApp, Messenger)",
             "sharePct": 97,
-            "growthNote": "~+26% YoY — AI ranking เพิ่มเวลาใช้งาน, Advantage+ เพิ่ม conversion, ราคาต่อโฆษณา ~+10%",
+            "growthNote": "~+28% YoY — AI ranking เพิ่ม engagement, Advantage+ เพิ่ม conversion, ราคาต่อโฆษณา +12% + ปริมาณ +14%",
             "trend": "up"
           },
           {
             "name": "รายได้อื่นของ FoA (WhatsApp Business, Meta Verified)",
             "sharePct": 1.5,
-            "growthNote": "โตเร็วมากจากฐานเล็ก — click-to-message และ Business AI คือ upside ระยะยาวของ WhatsApp",
+            "growthNote": "โตเร็วจากฐานเล็ก — click-to-message + Business AI คือ upside ระยะยาวของ WhatsApp",
             "trend": "up"
           },
           {
-            "name": "Reality Labs (Quest, แว่น Ray-Ban Meta / Oakley Meta)",
+            "name": "Reality Labs (Quest, แว่น Ray-Ban/Oakley Meta, Display)",
             "sharePct": 1.5,
-            "growthNote": "แว่น AI ขายเติบโตหลายเท่าตัวและเปิดรุ่น Display แล้ว แต่ Quest ทรงตัว — segment ยังขาดทุน ~$17-20B/ปี",
+            "growthNote": "แว่น AI โตหลายเท่าตัว + เปิดรุ่น Display — แต่ segment ยังขาดทุน ~$17-20B/ปี",
             "trend": "flat"
           }
         ]
@@ -1288,22 +1288,22 @@
           {
             "item": "AI ad stack (GEM, Andromeda, Advantage+) — ใช้ AI เพิ่มประสิทธิภาพโฆษณาโดยตรง",
             "status": "executing",
-            "evidence": "เห็นผลในงบแล้วจริง — รายได้เร่งขึ้นเป็น ~+26% YoY โดยราคาต่อโฆษณาโต ~+10% พร้อมปริมาณ ~+14%; นี่คือ AI monetization ที่จับต้องได้ที่สุดในกลุ่ม Mag7"
+            "evidence": "รายได้โฆษณา +28% YoY, ราคาต่อโฆษณา +12%, ปริมาณ +14% — AI monetization ที่จับต้องได้ที่สุดในกลุ่ม Mag7 และยังเห็นผลในงบทุกไตรมาส"
           },
           {
             "item": "Meta AI assistant กระจายผ่าน 4 แอปหลัก",
             "status": "executing",
-            "evidence": "ผู้ใช้ ~1 พันล้านคน/เดือน — ได้ distribution แล้วแต่ยังไม่เริ่ม monetize จริงจัง; แผนโฆษณา/subscription ใน Meta AI คือ upside ที่ยังไม่อยู่ในประมาณการ"
+            "evidence": "ผู้ใช้ ~1 พันล้านคน/เดือน — ได้ distribution แล้วแต่ยังแทบไม่ monetize; โฆษณา/subscription ใน Meta AI คือ upside ที่ยังไม่อยู่ในประมาณการ"
           },
           {
             "item": "Superintelligence Labs + โมเดล frontier (Llama)",
             "status": "at-risk",
-            "evidence": "Llama 4 ได้เสียงตอบรับต่ำกว่าคาด, โมเดลใหญ่ (Behemoth) ล่าช้า, ต้องทุ่มเงินซื้อทีม (ลงทุน Scale AI ~$14B, ดึง talent ด้วยแพ็กเกจมหาศาล) — ทีมใหม่ยังไม่มีผลงานพิสูจน์ว่าตามทัน Google/OpenAI"
+            "evidence": "Llama ยังตามหลัง Gemini/GPT · ทุ่มซื้อทีม (Scale AI ~$14B + แพ็กเกจ talent มหาศาล) แต่ยังไม่มีผลงาน frontier พิสูจน์ว่าตามทัน — เป็นทั้งต้นทุนจมและความเสี่ยงเชิงกลยุทธ์"
           },
           {
             "item": "AI infrastructure — Prometheus, Hyperion (หลาย GW), ชิป MTIA, ดีลเช่า cloud (Google, CoreWeave, Oracle)",
             "status": "on-track",
-            "evidence": "คลัสเตอร์ระดับกิกะวัตต์กำลังก่อสร้างตามแผน ใช้ทั้งสร้างเอง+เช่า+JV financing — ความเสี่ยงไม่ใช่การส่งมอบ แต่คือขนาดของเงิน (CapEx ปี 2026 \"ใหญ่ขึ้นอย่างมีนัยสำคัญ\" จาก ~$70-72B)"
+            "evidence": "capex FY2026 ยก guide เป็น $130-145B (Prometheus, Hyperion หลาย GW, ชิป MTIA, เช่า cloud) — ส่งมอบตามแผน ความเสี่ยงคือ 'ขนาดของเงิน' ที่กด FCF เหลือ ~$784M/ไตรมาส"
           },
           {
             "item": "AI glasses (Ray-Ban Meta, Ray-Ban Display, Oakley Meta)",
@@ -1414,55 +1414,55 @@
         ]
       },
       "valuationView": {
-        "level": "fair",
-        "note": "~20-22x forward P/E ถูกสุดในกลุ่ม Mag7 สาย AI ทั้งที่รายได้โต ~26% — ส่วนลดสะท้อนความกลัว CapEx/FCF หด ไม่ใช่ปัญหาธุรกิจหลัก; สำหรับนักลงทุนระยะยาวที่รับความผันผวนจากรอบลงทุนได้ ถือว่า risk/reward อยู่ฝั่งบวก แต่ไม่ใช่ของถูกแบบไร้เงื่อนไข เพราะกำไรปี 2026 จะโดนค่าเสื่อมและค่าใช้จ่าย AI กดจริง"
+        "level": "cheap",
+        "note": "forward P/E ~16x (ราคา ~$542, mcap ~$1.35T) — ถูกสุดในกลุ่ม Mag7 สาย AI ทั้งที่รายได้โต ~28% · headline multiple ถูกจริง แต่ต้องอ่านคู่กับ 'คุณภาพของ E': กำไร/FCF ปี 2026 ถูกกดหนักจาก capex $130-145B + ค่าเสื่อม + ค่าใช้จ่าย AI ส่วนลดคือค่าความไม่แน่นอนของรอบลงทุน ไม่ใช่ปัญหาธุรกิจหลัก — risk/reward อยู่ฝั่งบวกสำหรับระยะยาวที่รับความผันผวนได้"
       },
       "whatChanged": [
         {
-          "metric": "การเติบโตรายได้ YoY",
-          "prev": "~+22% (Q2 2025)",
-          "now": "~+26% (Q3 2025)",
-          "direction": "positive"
-        },
-        {
-          "metric": "CapEx guidance",
-          "prev": "ปี 2025 ~$66-72B",
-          "now": "ปี 2025 ~$70-72B + เตือนปี 2026 \"ใหญ่ขึ้นอย่างมีนัยสำคัญ\"",
-          "direction": "negative"
-        },
-        {
-          "metric": "GAAP EPS",
-          "prev": "~$7.1 (Q2 2025)",
-          "now": "~$1.05 (Q3 2025) จากภาษีครั้งเดียว ~$16B; ex-item ~$7.25 ยังโตดี",
+          "metric": "รายได้ (Q1 → Q2 2026)",
+          "prev": "$56.3B (+33% YoY)",
+          "now": "$60.8B (+28% YoY) — โตแรงแต่ชะลอจากฐานสูง",
           "direction": "neutral"
         },
         {
-          "metric": "ผู้ใช้ Meta AI",
-          "prev": "หลายร้อยล้านคน/เดือน",
-          "now": "~1 พันล้านคน/เดือน",
-          "direction": "positive"
-        },
-        {
-          "metric": "โครงสร้างเงินทุน",
-          "prev": "หนี้ต่ำ ~$29B แทบไม่กู้เพิ่ม",
-          "now": "ออกหุ้นกู้ ~$30B (ดีลใหญ่สุดของปี) + JV financing ~$27B สำหรับ Hyperion",
+          "metric": "กำไร/มาร์จิ้น",
+          "prev": "op margin ~41% · adj EPS ~$7.31",
+          "now": "op margin ~31% · GAAP EPS $6.18 (-13% YoY) จาก costs +55% + legal $2.4B",
           "direction": "negative"
         },
         {
-          "metric": "ท่าทีตลาดต่อหุ้น",
-          "prev": "หุ้นแถวจุดสูงสุด ตลาดเชียร์ AI story",
-          "now": "หุ้นย่อแรง ~10%+ หลังงบ Q3 จากความกังวล CapEx — valuation ถูกลงชัดเจน",
-          "direction": "neutral"
+          "metric": "Free cash flow",
+          "prev": "บางลงจาก capex",
+          "now": "~$784M — แทบเป็นศูนย์ จาก capex $31B/ไตรมาส",
+          "direction": "negative"
+        },
+        {
+          "metric": "CapEx guidance FY2026",
+          "prev": "$125-145B",
+          "now": "$130-145B (ยกขอบล่าง) · expenses $165-169B",
+          "direction": "negative"
+        },
+        {
+          "metric": "การปรับโครงสร้าง",
+          "prev": "—",
+          "now": "layoffs พ.ค. 2026 (severance $1.18B) — รอบตัดต้นทุนใหม่",
+          "direction": "negative"
+        },
+        {
+          "metric": "Valuation",
+          "prev": "fwd P/E ~20-22x",
+          "now": "fwd P/E ~16x (หุ้นร่วง 9% หลังงบ) — ถูกสุดในกลุ่ม Mag7",
+          "direction": "positive"
         }
       ],
       "risks": [
-        "AI overbuild: CapEx ระดับ $100B+/ปี สร้างค่าเสื่อมและ fixed cost มหาศาล — ถ้ารายได้จาก AI (Meta AI, Business AI) มาไม่ทัน กำไรและ FCF จะโดนกดหลายปี และตลาดจะลงโทษ multiple แรง",
-        "ความสามารถแข่งขันโมเดล frontier: Llama ตามหลัง Gemini/GPT และ Superintelligence Labs ยังไม่มีผลงาน — ถ้าซื้อ talent แพงมหาศาลแล้วยังตามไม่ทัน จะกลายเป็นทั้งต้นทุนจมและความเสี่ยงเชิงกลยุทธ์ระยะยาว",
-        "กฎระเบียบ: EU (DMA, ระบบโฆษณา less-personalized) กดดันรายได้ยุโรป และคดีความด้านความปลอดภัยเยาวชนในสหรัฐยังเป็น overhang แม้ชนะคดีผูกขาด FTC แล้ว",
-        "รายได้กระจุกในโฆษณา ~98%: อ่อนไหวต่อเศรษฐกิจถดถอยมากกว่าบริษัทที่มีรายได้ cloud/subscription และ engagement เสี่ยงถูกดึงโดยแอป AI-native รุ่นใหม่ (เช่น ผลิตภัณฑ์ consumer ของ OpenAI)",
-        "ภาระหนี้และ commitment นอกงบดุลที่โตเร็ว: ลดความยืดหยุ่นทางการเงินหากวงจรลงทุน AI ทั้งอุตสาหกรรมสะดุดพร้อมกัน"
+        "AI overbuild: capex $130-145B/ปี สร้างค่าเสื่อมและ fixed cost มหาศาล + FCF ทรุดเหลือ ~$784M/ไตรมาสแล้ว — ถ้ารายได้จาก AI (Meta AI, Business AI) มาไม่ทัน กำไรและ multiple จะโดนกดหลายปี",
+        "ความสามารถแข่งขันโมเดล frontier: Llama ตามหลัง Gemini/GPT และ Superintelligence Labs ยังไม่มีผลงาน — ทุ่มซื้อ talent แพงมหาศาลแล้วยังตามไม่ทัน = ต้นทุนจม + ความเสี่ยงเชิงกลยุทธ์",
+        "คุณภาพกำไรระยะสั้น: margin 43%→31% + ค่าใช้จ่ายครั้งเดียว (legal, severance) ทำให้กำไรที่รายงานผันผวน — ตลาดลงโทษหุ้นแรงทุกครั้งที่ margin/FCF ผิดคาด",
+        "กฎระเบียบ: EU (DMA, โฆษณา less-personalized) กดรายได้ยุโรป + คดีความปลอดภัยเยาวชนในสหรัฐยังเป็น overhang",
+        "รายได้กระจุกในโฆษณา ~98%: อ่อนไหวต่อเศรษฐกิจถดถอย และ engagement เสี่ยงถูกดึงโดยแอป AI-native รุ่นใหม่ (เช่นผลิตภัณฑ์ consumer ของ OpenAI)"
       ],
-      "asOf": "2026-01",
+      "asOf": "2026-07",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดเดือนธันวาคม (ตรงกับปีปฏิทิน) — FY2021 ถึง FY2025 (สิ้นสุด ธ.ค. 2025) คือ 5 ปีบัญชีล่าสุดที่ปิดงบและรายงานครบแล้ว ณ ก.ค. 2026",
         "epsBasis": "diluted GAAP; META ไม่เคยแตกหุ้น ตัวเลขที่รายงานจึงเท่ากับฐานหุ้นปัจจุบันทุกปี (no split adjustment needed)",
@@ -1523,7 +1523,7 @@
           "https://www.statmuse.com/money/ask/meta-closing-price-dec-31-2025"
         ]
       },
-      "nextEarnings": "2026-07-29"
+      "nextEarnings": "2026-10"
     },
     "AMZN": {
       "ticker": "AMZN",
@@ -1543,47 +1543,47 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+13% YoY (AWS ~+20%, โฆษณา ~+24%)",
+          "current": "~+20% YoY (Q2 2026 — $200.6B) เร่งขึ้น · AWS +37% ($42.2B), โฆษณายังโตแรง · guide Q3 +9-12%",
           "trend": "up",
-          "score": 72,
+          "score": 80,
           "impact": "positive",
-          "why": "รายได้รวมโตสองหลักต้น ๆ อย่างสม่ำเสมอสำหรับบริษัทขนาด ~$650B+/ปี โดยเครื่องยนต์คุณภาพสูงคือ AWS ที่เร่งจาก ~+17% เป็น ~+20% และโฆษณาที่โตกว่า ~+20% ทั้งคู่โตเร็วกว่าธุรกิจค้าปลีกและมี margin สูงกว่ามาก"
+          "why": "รายได้เร่งชัดจาก AWS ที่โตเร็วสุดตั้งแต่ปี 2021 บวกโฆษณา margin สูง — flywheel ค้าปลีก + คลาวด์ + โฆษณาทำงานพร้อมกัน"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "โตแรงกว่า ~+30% YoY (มีกำไรพิเศษจากมูลค่าหุ้น Anthropic ช่วยหนุน)",
+          "current": "operating income $27.5B (+43% YoY) · GAAP EPS $5.75 แต่รวม gain มูลค่าหุ้น Anthropic ~$53.4B (ครั้งเดียว) — ดู operating income เป็นหลัก",
           "trend": "up",
-          "score": 74,
+          "score": 78,
           "impact": "positive",
-          "why": "กำไรจากการดำเนินงานโตเร็วกว่ารายได้หลายปีติดจาก margin ที่ขยายทั้งฝั่ง AWS และค้าปลีก แม้ไตรมาสล่าสุดมีค่าใช้จ่ายครั้งเดียว (ค่าปรับ FTC, ค่าชดเชยพนักงาน) แต่กำไรพื้นฐานยังแข็งแรง และมูลค่าหุ้น Anthropic ที่ถือไว้สร้างกำไรพิเศษก้อนใหญ่"
+          "why": "กำไรจากการดำเนินงานโตแรง +43% จาก AWS + ค้าปลีกที่ margin ขยาย — EPS ที่รายงานถูกบิดด้วยกำไรครั้งเดียวจาก Anthropic จึงต้องอ่านที่ operating ไม่ใช่ bottom line"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "TTM เหลือ ~$15B ลดลงแรงจากปีก่อน",
+          "current": "FCF บางมาก — capex 2026 ยกเป็น ~$220B (จาก ~$125B ปี 2025) กลืน OCF ที่แม้จะสูงขึ้น",
           "trend": "down",
-          "score": 40,
+          "score": 38,
           "impact": "negative",
-          "why": "CapEx ระดับ ~$125B ในปี 2025 กดให้ FCF หดลงมากจากจุดสูงสุดราว ~$45B+ นี่คือการแลก cash flow วันนี้กับ capacity ของ AI ในอนาคต — ยอมรับได้ถ้า AWS โตต่อ แต่เป็นจุดอ่อนเชิงตัวเลขที่ชัดที่สุดของงบตอนนี้"
+          "why": "จุดอ่อนเชิงโครงสร้าง: capex เกือบเท่าตัวเพื่อสร้าง AI/AWS capacity ทำให้ FCF เกือบหมด — เดิมพันเดียวกับยุคแรกของ AWS แต่กด FCF หนักหลายปี"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "operating margin ~10-11% (AWS ~30% กลาง ๆ, ค้าปลีกขยายต่อเนื่อง)",
+          "current": "operating margin ~13.7% (Q2 2026, op income $27.5B) ขยายจาก ~10-11% — AWS margin สูง + ค้าปลีก/robotics เพิ่มประสิทธิภาพ",
           "trend": "up",
-          "score": 65,
+          "score": 72,
           "impact": "positive",
-          "why": "margin โครงสร้างดีขึ้นชัดเจนหลายปีติดจาก mix ที่เอียงไปทาง AWS/โฆษณา และประสิทธิภาพ fulfillment จาก robotics แม้ค่าเสื่อมจาก data center ที่กำลังพุ่งจะเป็นแรงกดในปีถัด ๆ ไป"
+          "why": "margin ขยายจากทั้ง mix (AWS/โฆษณาโตเร็ว) และค้าปลีกที่ลดต้นทุนด้วย automation — แม้ค่าเสื่อม AI จะเริ่มกดในระยะถัดไป"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "~10%+ และถูกกดชั่วคราวจากฐานสินทรัพย์ที่โตเร็วมาก",
-          "trend": "flat",
-          "score": 58,
+          "current": "~10%+ และดีขึ้นตาม operating income แต่ยังถูกกดจากฐานสินทรัพย์ AI ที่โตเร็วมาก",
+          "trend": "up",
+          "score": 62,
           "impact": "neutral",
-          "why": "ROIC ดีขึ้นจากยุคขาดทุนค้าปลีก แต่การเทเงินลงทุนมหาศาลเข้า data center ทำให้ฐานทุนโตเร็วกว่ากำไรในระยะสั้น — ต้องรอพิสูจน์ว่า AI capacity เหล่านี้สร้างผลตอบแทนตามคาด ซึ่ง backlog ที่ล็อกไว้ช่วยลดความเสี่ยงนี้ได้มาก"
+          "why": "ผลตอบแทนต่อทุนฟื้นตาม margin ที่ขยาย — แต่ capex $220B จะเพิ่มฐานทุนเร็ว ต้องรอ datacenter สร้างรายได้เต็มกำลัง"
         },
         {
           "key": "cash",
@@ -1615,62 +1615,62 @@
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรเงินทุน",
-          "current": "CapEx ~$125B ปี 2025 (และมีแผนสูงขึ้นอีกปี 2026) เทไปที่ AWS/AI เกือบทั้งหมด",
+          "current": "CapEx 2026 ~$220B (เกือบเท่าตัวจาก ~$125B ปี 2025) เทไป AWS/AI เกือบทั้งหมด · SBC สูง, buyback แทบไม่มี",
           "trend": "up",
           "score": 70,
           "impact": "positive",
-          "why": "เลือกเทเงินเข้าโอกาสที่ใหญ่ที่สุดในรอบทศวรรษแทนการคืนเงินผู้ถือหุ้น — ดีล Anthropic ที่มูลค่างอกหลายเท่าและ AWS ที่เร่งตัวเป็นหลักฐานว่าการตัดสินใจนี้เริ่มออกดอกผล แม้ไม่มีปันผล/buyback เป็นตัวช่วยพยุงหุ้น"
+          "why": "เดิมพันหนักสุดในประวัติศาสตร์บริษัทที่โครงสร้างพื้นฐาน AI — ผู้บริหารเทียบกับยุคลงทุน AWS แรก ๆ ที่ภายหลังเป็นธุรกิจทำกำไรสูงสุด ผู้ถือหุ้นต้องยอม FCF บางหลายปี"
         },
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "forward P/E ~30x, market cap ~$2.4T",
+          "current": "forward P/E ~30-33x (ราคา ~$248 หลังเด้ง ~8% · mcap ~$2.5T) — trailing บิดจาก gain Anthropic · analyst target ~$314",
           "trend": "flat",
-          "score": 55,
+          "score": 58,
           "impact": "neutral",
-          "why": "ไม่ถูกแต่ก็ไม่แพงเกินไปเทียบ big tech AI ด้วยกัน — ตลาดยังให้ค่า AWS ต่ำกว่ามูลค่าที่ควรเป็นถ้าแยกบริษัท แต่ FCF ที่บางจาก CapEx ทำให้มูลค่าบนฐาน cash flow ดูตึง ราคาปัจจุบันเหมาะกับการถือยาวมากกว่าการหวังกำไรเร็ว"
+          "why": "ไม่ได้ถูกบน headline แต่ AWS +37% ทำให้ข้อโต้แย้ง 'sum-of-parts: AWS เดี่ยวควรได้ multiple สูงกว่านี้' มีน้ำหนักขึ้น — 62/66 นักวิเคราะห์ให้มุมมองบวก, upside ~27% ตามเป้า"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
-        "consistency": 80,
+        "consistency": 82,
         "recurringPct": 30,
-        "note": "รายได้รวมโตสม่ำเสมอราว ~+11-13% ต่อไตรมาสมาหลายปี โดยส่วนที่กำลังเร่งคือ AWS และโฆษณา ซึ่งเป็นรายได้คุณภาพสูงสุดของบริษัท ส่วนที่นับเป็น recurring ชัดเจน (AWS + Subscription) อยู่ราว ~25-30% ของรายได้ แต่คิดเป็นสัดส่วนกำไรที่สูงกว่านั้นมาก ค้าปลีกผันผวนตามผู้บริโภคแต่มี Prime membership ช่วยตรึงความถี่การซื้อ",
+        "note": "รายได้กระจายหลายขาและเร่งตัว — AWS (+37%, run rate AI + custom chips >$25B ต่อปีทั้งคู่) เป็นเครื่องยนต์กำไรหลัก, โฆษณา margin สูงโตต่อเนื่อง, 3P seller + subscription เหนียวแน่น · คุณภาพรายได้ดีขึ้นจาก mix ที่เอียงไปหาส่วน margin สูง แต่ FCF ถูกกดจาก capex",
         "segments": [
           {
             "name": "Online Stores",
-            "sharePct": 37,
-            "growthNote": "โตช้า ~หลัก 1 หลักปลาย ๆ ต่อปี แต่เป็นฐาน traffic ของ flywheel ทั้งหมด",
+            "sharePct": 36,
+            "growthNote": "โตช้า ~หลักหน่วยปลาย ๆ แต่เป็นฐาน traffic ของ flywheel ทั้งหมด",
             "trend": "flat"
           },
           {
             "name": "Third-Party Seller Services",
             "sharePct": 24,
-            "growthNote": "โต ~+10% ขึ้นไป margin ดีกว่าขายเอง และโตตาม marketplace ที่ขยายตัว",
+            "growthNote": "โต ~+10%+ · margin ดีกว่าขายเอง โตตาม marketplace",
             "trend": "up"
           },
           {
             "name": "AWS",
-            "sharePct": 18,
-            "growthNote": "เร่งตัวสู่ ~+20% YoY จากดีมานด์ AI, backlog ~$200B — เครื่องยนต์กำไรหลักของบริษัท",
+            "sharePct": 21,
+            "growthNote": "+37% YoY ($42.2B) — เร็วสุดตั้งแต่ 2021 จากดีมานด์ AI · AI + custom chips run rate >$25B ต่อปีทั้งคู่",
             "trend": "up"
           },
           {
             "name": "Advertising",
             "sharePct": 10,
-            "growthNote": "โต ~+20% กว่า ๆ ต่อเนื่อง margin สูงมาก และได้แรงหนุนจากโฆษณาใน Prime Video",
+            "growthNote": "โต ~+20%+ ต่อเนื่อง margin สูงมาก + แรงหนุนจากโฆษณาใน Prime Video",
             "trend": "up"
           },
           {
-            "name": "Subscription Services",
+            "name": "Subscription Services (Prime)",
             "sharePct": 7,
-            "growthNote": "Prime และบริการสมาชิกโตสองหลักต้น ๆ เป็นรายได้ recurring ที่เหนียวแน่น",
+            "growthNote": "โตสองหลักต้น ๆ — รายได้ recurring ที่เหนียวแน่น",
             "trend": "up"
           },
           {
             "name": "Physical Stores และอื่น ๆ",
-            "sharePct": 4,
-            "growthNote": "โตช้า ไม่ใช่ตัวขับเคลื่อนหลักของ thesis",
+            "sharePct": 2,
+            "growthNote": "โตช้า ไม่ใช่ตัวขับหลัก",
             "trend": "flat"
           }
         ]
@@ -1681,7 +1681,7 @@
           {
             "item": "AWS กลับมาเร่งตัวจากดีมานด์ AI",
             "status": "executing",
-            "evidence": "การเติบโต AWS เร่งจาก ~+17% เป็น ~+20% YoY ในไตรมาสล่าสุดที่รายงาน พร้อม backlog ~$200B ที่โตกว่า ~+20% YoY — เป็นหลักฐานตรงที่สุดว่า capacity ที่ลงทุนไปขายได้จริง"
+            "evidence": "AWS +37% YoY ($42.2B) — เร่งสุดตั้งแต่ 2021 (จาก +28% Q1) · AI + custom silicon run rate >$25B ต่อปีทั้งคู่ · backlog หลักแสนล้าน — capacity ที่ลงทุนขายได้จริงและยังไม่พอ"
           },
           {
             "item": "ชิป Trainium และ Project Rainier",
@@ -1691,7 +1691,7 @@
           {
             "item": "พันธมิตร Anthropic + ดีล OpenAI",
             "status": "executing",
-            "evidence": "ลงทุนใน Anthropic รวม ~$8B และเป็น cloud หลักในการเทรนโมเดล ล่าสุดยังปิดดีลให้ OpenAI ใช้ AWS มูลค่า ~$38B หลายปี — ล็อกลูกค้า AI ระดับ frontier ไว้ได้ทั้งสองค่าย"
+            "evidence": "ลงทุน Anthropic (มูลค่าหุ้นพุ่งจน mark-to-market ~+$53B ในไตรมาสนี้) + เป็น cloud หลักเทรน Claude · ปิดดีล OpenAI ใช้ AWS ~$38B — ล็อกลูกค้า AI frontier ทั้งสองค่าย"
           },
           {
             "item": "Bedrock + โมเดล Nova",
@@ -1808,54 +1808,54 @@
       },
       "valuationView": {
         "level": "premium",
-        "note": "ที่ market cap ~$2.4T และ forward P/E ~30x AMZN ซื้อขายแถวค่าเฉลี่ยของ big tech AI — ไม่ได้ถูก แต่ตลาดยังคิดมูลค่า AWS แบบรวม ๆ กับค้าปลีก ทั้งที่ AWS เดี่ยว ๆ ควรได้ multiple สูงกว่านี้ ความเสี่ยงฝั่ง valuation คือ FCF ที่บางจาก CapEx ทำให้หุ้นอ่อนไหวต่อข่าว 'AI ลงทุนเกินตัว' มากกว่า peer ที่ FCF หนา เหมาะสะสมเมื่อย่อมากกว่าไล่ราคา"
+        "note": "market cap ~$2.5T · forward P/E ~30-33x (P/E ที่รายงานบิดจาก gain Anthropic ~$53B ครั้งเดียว) — ยัง premium แต่ AWS ที่กลับมาโต +37% เร็วสุดตั้งแต่ 2021 หนุนข้อโต้แย้งว่า AWS เดี่ยว ๆ ควรได้ multiple สูงกว่าที่ตลาดคิดรวมกับค้าปลีก · ความเสี่ยง valuation คือ FCF บางจาก capex $220B ที่ทำให้หุ้นไวต่อข่าว 'AI ลงทุนเกินตัว' — เหมาะสะสมจังหวะย่อมากกว่าไล่ราคา"
       },
       "whatChanged": [
         {
-          "metric": "การเติบโต AWS (YoY)",
-          "prev": "~+17.5%",
-          "now": "~+20%",
+          "metric": "AWS (Q1 → Q2 2026)",
+          "prev": "+28% YoY",
+          "now": "+37% YoY ($42.2B) — เร็วสุดตั้งแต่ 2021",
           "direction": "positive"
         },
         {
-          "metric": "AWS backlog",
-          "prev": "~$195B",
-          "now": "~$200B และยังเร่งขึ้น",
+          "metric": "รายได้รวม",
+          "prev": "โตสองหลัก",
+          "now": "$200.6B (+20% YoY)",
           "direction": "positive"
         },
         {
-          "metric": "CapEx guidance ปี 2025",
-          "prev": "~$118B",
-          "now": "~$125B",
-          "direction": "neutral"
-        },
-        {
-          "metric": "ดีลลูกค้า AI ระดับ frontier",
-          "prev": "Anthropic เป็น anchor หลักรายเดียว",
-          "now": "เพิ่มสัญญา OpenAI-AWS ~$38B หลายปี",
+          "metric": "Operating income",
+          "prev": "โตดี",
+          "now": "$27.5B (+43% YoY) — margin ขยายเป็น ~13.7%",
           "direction": "positive"
         },
         {
-          "metric": "FCF (TTM)",
-          "prev": "~$18B",
-          "now": "~$15B",
+          "metric": "AWS AI + custom chips",
+          "prev": "กำลัง ramp",
+          "now": "run rate ทะลุ $25B ต่อปีทั้งคู่",
+          "direction": "positive"
+        },
+        {
+          "metric": "CapEx guidance 2026",
+          "prev": "~$200B",
+          "now": "~$220B (ราคา memory ดันขึ้น)",
           "direction": "negative"
         },
         {
-          "metric": "โครงสร้างองค์กร",
-          "prev": "ยังไม่มีแผนลดคนรอบใหญ่",
-          "now": "ประกาศลดพนักงานออฟฟิศ ~14,000 ตำแหน่ง (สื่อรายงานว่าแผนรวมอาจถึง ~30,000)",
+          "metric": "GAAP EPS",
+          "prev": "—",
+          "now": "$5.75 — แต่รวม gain มูลค่าหุ้น Anthropic ~$53.4B (ครั้งเดียว)",
           "direction": "neutral"
         }
       ],
       "risks": [
-        "CapEx ระดับ ~$125B+/ปี จะกลายเป็นค่าเสื่อมก้อนมหึมาในปี 2026-2028 — ถ้าดีมานด์ AI ชะลอหรือราคาค่าเช่า compute ถูกกดจากการแข่งขัน margin ของ AWS จะโดนบีบสองทาง",
-        "การแข่งขัน cloud รุนแรงขึ้น: Azure และ GCP โตเร็วกว่า AWS ต่อเนื่องหลายปี และผู้เล่น GPU cloud เฉพาะทาง (เช่น CoreWeave, Oracle) แย่ง workload AI บางส่วนไป",
-        "ผลตอบแทนจาก AI ผูกกับความสำเร็จของลูกค้าไม่กี่ราย — ถ้า Anthropic หรือ OpenAI สะดุดทางการเงินหรือย้าย workload สัญญาก้อนใหญ่ใน backlog อาจไม่แปลงเป็นรายได้ตามคาด",
-        "คดี antitrust ของ FTC ที่ฟ้อง Amazon เรื่องผูกขาด marketplace ยังเดินหน้าอยู่ — ผลลัพธ์เลวร้ายสุดอาจกระทบโครงสร้าง flywheel ค้าปลีก/โฆษณา",
-        "ธุรกิจค้าปลีกอ่อนไหวต่อกำลังซื้อผู้บริโภคและนโยบายภาษีนำเข้า/ภูมิรัฐศาสตร์ ซึ่งกระทบทั้ง volume และต้นทุนสินค้าจากผู้ขายจีน"
+        "CapEx ~$220B/ปี จะกลายเป็นค่าเสื่อมก้อนมหึมาปี 2026-2028 — ถ้าดีมานด์ AI ชะลอหรือราคา compute ถูกกดจากการแข่งขัน margin ของ AWS จะโดนบีบสองทาง + FCF บางอยู่แล้ว",
+        "การแข่งขัน cloud: Azure (+43%) และ GCP โตเร็ว และ GPU cloud เฉพาะทาง (CoreWeave, Oracle) แย่ง workload AI บางส่วน — แม้ AWS เพิ่งกลับมาเร่ง แต่ยังต้องรักษาโมเมนตัม",
+        "ผลตอบแทน AI ผูกกับลูกค้าไม่กี่ราย — ถ้า Anthropic/OpenAI สะดุดทางการเงินหรือย้าย workload สัญญาก้อนใหญ่ใน backlog อาจไม่แปลงเป็นรายได้ตามคาด (และ gain จากมูลค่าหุ้น Anthropic ก็กลับทางได้)",
+        "คดี antitrust FTC เรื่องผูกขาด marketplace ยังเดินหน้า — ผลเลวร้ายสุดกระทบโครงสร้าง flywheel ค้าปลีก/โฆษณา",
+        "ค้าปลีกอ่อนไหวต่อกำลังซื้อผู้บริโภคและภาษีนำเข้า/ภูมิรัฐศาสตร์ — กระทบทั้ง volume และต้นทุนสินค้าจากผู้ขายจีน"
       ],
-      "asOf": "2026-01",
+      "asOf": "2026-07",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดเดือนธันวาคม (ปีปฏิทิน) — FY2025 สิ้นสุด ธ.ค. 2025 รายงานผลเมื่อ 5 ก.พ. 2026",
         "epsBasis": "diluted GAAP, split-adjusted (ปรับ 20:1 split มิ.ย. 2022 ทุกปี)",
@@ -1915,7 +1915,7 @@
           "https://www.macrotrends.net/stocks/charts/AMZN/amazon/stock-price-history"
         ]
       },
-      "nextEarnings": "2026-07-30"
+      "nextEarnings": "2026-10"
     },
     "TSM": {
       "ticker": "TSM",
@@ -1935,38 +1935,38 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+35% YoY (ปี 2025, USD); Q3/2025 ~+40% YoY",
+          "current": "~+36% YoY (Q2 2026 — US$40.2B สถิติ, +12% QoQ) · FY2026 guide ยกเป็น >+40% YoY",
           "trend": "up",
           "score": 92,
           "impact": "positive",
-          "why": "AI/HPC ดัน demand N3/N5 เต็มกำลังผลิต บริษัทปรับเป้าทั้งปี 2025 ขึ้นเป็นราว mid-30s% ระหว่างปี — โตเร่งขึ้นทั้งที่ฐานรายได้ทะลุ $100B แล้ว"
+          "why": "รายได้ทำสถิติจากดีมานด์ AI — HPC โต +20% QoQ เป็น 66% ของรายได้ · TSMC ยก guidance ทั้งปีเป็น >+40% สะท้อนคอขวด AI ที่ยังตึง"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "~+40% YoY (Q3/2025)",
+          "current": "EPS US$4.31/ADR (Q2 2026) เร่งจาก $3.49 (Q1) — โตตามรายได้ + margin สถิติ",
           "trend": "up",
-          "score": 90,
+          "score": 91,
           "impact": "positive",
-          "why": "กำไรโตเร็วกว่ารายได้จาก operating leverage และ margin ที่ขยับขึ้น แม้เจอแรงกดจากค่าเงิน NT$ แข็งและต้นทุน fab ต่างประเทศ"
+          "why": "กำไรเร่งตามรายได้และ margin ที่ทำ all-time high — operating leverage ของ node ล้ำสมัยชัดเจน"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "OCF ระดับ ~$80B+/ปี; FCF เป็นบวกชัดเจนแม้ CapEx ~$40B+",
-          "trend": "up",
-          "score": 82,
+          "current": "OCF สูงมาก แต่ CapEx 2026 ยกเป็นสถิติ ~$56B รองรับ AI — FCF ยังบวกแต่ถูกกดจาก capex",
+          "trend": "flat",
+          "score": 78,
           "impact": "positive",
-          "why": "เป็นเครื่องจักรผลิตเงินสด — จ่าย CapEx มหาศาลได้จากเงินสดภายในโดยไม่พึ่งหนี้ และยังเหลือจ่ายปันผลเพิ่มขึ้นทุกปี"
+          "why": "capex เร่งจาก ~$42B เป็น ~$56B เพื่อขยาย node ล้ำ/CoWoS — กด FCF ระยะสั้นแต่เป็นการลงทุนตามดีมานด์ที่ล็อกไว้แล้ว"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "Gross margin ~59-60%, operating margin ~50%",
+          "current": "Gross margin 67.7% · operating margin 60.3% (Q2 2026) — ทั้งคู่ทำ all-time high",
           "trend": "up",
-          "score": 92,
+          "score": 94,
           "impact": "positive",
-          "why": "สูงเป็นประวัติการณ์สำหรับธุรกิจโรงงานผลิต — สะท้อน pricing power จากการผูกขาด node ขั้นสูง ทั้งที่โดน dilution จาก fab สหรัฐ/ญี่ปุ่นราว 2-3 จุด"
+          "why": "margin สูงสุดในประวัติศาสตร์จาก utilization เต็ม + ขึ้นราคา node ล้ำ + คุมต้นทุน — แม้ถูกกดบางส่วนจาก fab ต่างประเทศและ NT$ แข็ง"
         },
         {
           "key": "roic",
@@ -2016,11 +2016,11 @@
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "Forward P/E ~20-25x",
+          "current": "forward P/E ~20-25x (mcap ~$1.83T) — ยังถูกกว่าหุ้น AI สหรัฐแทบทุกตัวเทียบการเติบโต",
           "trend": "flat",
-          "score": 68,
+          "score": 70,
           "impact": "positive",
-          "why": "ถูกเมื่อเทียบกับคุณภาพ+การเติบโต ~30% และถูกกว่าหุ้น AI สหรัฐแทบทุกตัว — ส่วนลดหลักมาจากความเสี่ยงไต้หวัน ซึ่งเป็นสิ่งที่ต้องติดตาม ไม่ใช่เหตุผลให้หนี"
+          "why": "~20-25x สำหรับบริษัทโต ~40% margin ~60% ผูกขาดคอขวด AI ทั้งโลก — ส่วนลดหลักคือความเสี่ยงภูมิรัฐศาสตร์ไต้หวัน ไม่ใช่คุณภาพธุรกิจ"
         }
       ],
       "revenueQuality": {
@@ -2031,32 +2031,32 @@
         "segments": [
           {
             "name": "HPC (AI accelerator, CPU/GPU ดาต้าเซ็นเตอร์)",
-            "sharePct": 57,
-            "growthNote": "เครื่องยนต์หลักของบริษัท — AI accelerator คาดโต ~mid-40s% CAGR ถึง 2029",
+            "sharePct": 66,
+            "growthNote": "+20% QoQ — เครื่องยนต์หลัก · AI accelerator ดีมานด์ล้น node N3/N2 · advanced nodes = 77% ของ wafer",
             "trend": "up"
           },
           {
             "name": "Smartphone",
-            "sharePct": 30,
-            "growthNote": "iPhone/Android เรือธงใช้ N3 — โตตามฤดูกาล ไม่ใช่ตัวขับหลักอีกต่อไป",
+            "sharePct": 25,
+            "growthNote": "iPhone/Android เรือธงใช้ N3/N2 — โตตามฤดูกาล ไม่ใช่ตัวขับหลักอีกต่อไป",
             "trend": "flat"
           },
           {
             "name": "IoT",
-            "sharePct": 5,
-            "growthNote": "ทรงตัว รอ edge AI เป็นตัวจุดรอบใหม่",
+            "sharePct": 4,
+            "growthNote": "ทรงตัว รอ edge AI จุดรอบใหม่",
             "trend": "flat"
           },
           {
             "name": "Automotive",
-            "sharePct": 5,
-            "growthNote": "ฟื้นตัวช้า แต่ content ชิปต่อคันเพิ่มขึ้นในระยะยาว",
+            "sharePct": 3,
+            "growthNote": "ฟื้นช้า แต่ content ชิปต่อคันเพิ่มระยะยาว",
             "trend": "flat"
           },
           {
-            "name": "DCE และอื่นๆ",
-            "sharePct": 3,
-            "growthNote": "สัดส่วนเล็ก ไม่มีนัยยะต่อภาพรวม",
+            "name": "DCE และอื่น ๆ",
+            "sharePct": 2,
+            "growthNote": "สัดส่วนเล็ก ไม่มีนัยยะ",
             "trend": "flat"
           }
         ]
@@ -2067,12 +2067,12 @@
           {
             "item": "AI accelerator ramp (Nvidia, AMD, custom ASIC ของ hyperscaler)",
             "status": "executing",
-            "evidence": "รายได้ AI accelerator เพิ่มราวเท่าตัวในปี 2025 ตามที่ประกาศไว้ และบริษัทยืนเป้า CAGR ~mid-40s% ถึง 2029 — ลูกค้าชิป AI หลักของโลกทุกรายผลิตที่ TSMC"
+            "evidence": "HPC = 66% ของรายได้ (+20% QoQ) · AI accelerator ดีมานด์ล้นจนต้องยก guidance ทั้งปีเป็น >+40% — เป็นคอขวดที่ NVIDIA/AMD/hyperscaler ทุกรายต้องผ่าน"
           },
           {
             "item": "N2 (2nm) เข้าสู่ volume production",
             "status": "executing",
-            "evidence": "เริ่มผลิตจำนวนมากช่วง H2/2025 ตามแผน จำนวน tape-out สูงกว่า N3 ณ จุดเดียวกันของวัฏจักร — มีแนวโน้มเป็น node ที่ ramp เร็วที่สุดในประวัติศาสตร์บริษัท"
+            "evidence": "N2 (2nm) เข้า volume production · advanced nodes (7nm ลงไป) = 77% ของ wafer revenue — ครองการผลิต node ล้ำเกือบเบ็ดเสร็จ"
           },
           {
             "item": "Advanced packaging (CoWoS / SoIC)",
@@ -2082,7 +2082,7 @@
           {
             "item": "ขยายกำลังผลิตทั่วโลก (Arizona ~$165B, Japan, Germany)",
             "status": "on-track",
-            "evidence": "Fab แรกที่ Arizona ผลิตเชิงพาณิชย์แล้วด้วย yield ใกล้เคียงไต้หวัน — ลดความเสี่ยงภูมิรัฐศาสตร์และตอบโจทย์ลูกค้า/รัฐบาลสหรัฐ"
+            "evidence": "CapEx 2026 ยกเป็นสถิติ ~$56B (Arizona, Japan, Germany) — ลงทุนตามดีมานด์ AI ที่ล็อกไว้แล้ว"
           },
           {
             "item": "Roadmap A16 / Super Power Rail (กำหนด H2/2026)",
@@ -2189,44 +2189,44 @@
       },
       "valuationView": {
         "level": "fair",
-        "note": "Forward P/E ~20-25x สำหรับบริษัทที่รายได้โต ~30%+ margin ~60% และผูกขาดคอขวดของ AI ทั้งโลก — ถูกกว่าหุ้น AI สหรัฐแทบทุกตัว ส่วนลดที่เห็นสะท้อนความเสี่ยงไต้หวันเป็นหลัก ไม่ใช่ปัญหาพื้นฐานธุรกิจ"
+        "note": "forward P/E ~20-25x (mcap ~$1.83T) สำหรับบริษัทที่รายได้โต ~40% margin ~68% และผูกขาดคอขวดการผลิตชิป AI ทั้งโลก — ถูกกว่าหุ้น AI สหรัฐแทบทุกตัวเทียบการเติบโต · ส่วนลดถาวรมาจากความเสี่ยงภูมิรัฐศาสตร์ไต้หวัน (tail risk) ไม่ใช่ปัญหาธุรกิจ — เหมาะกับผู้ที่รับความเสี่ยงภูมิรัฐศาสตร์ได้"
       },
       "whatChanged": [
         {
-          "metric": "รายได้รายไตรมาส (USD)",
-          "prev": "~$30B (Q2/2025, ~+44% YoY)",
-          "now": "~$33B (Q3/2025, ~+40% YoY)",
+          "metric": "รายได้ (Q1 → Q2 2026, USD)",
+          "prev": "$35.9B",
+          "now": "$40.2B (+36% YoY, +12% QoQ) — สถิติใหม่",
           "direction": "positive"
         },
         {
           "metric": "Gross margin",
-          "prev": "~58.6% (Q2/2025)",
-          "now": "~59.5% (Q3/2025)",
+          "prev": "66.2%",
+          "now": "67.7% — all-time high",
           "direction": "positive"
         },
         {
-          "metric": "เป้ารายได้ทั้งปี 2025",
-          "prev": "~+30% YoY",
-          "now": "ปรับขึ้นเป็น ~mid-30s% YoY",
+          "metric": "Operating margin",
+          "prev": "~59%",
+          "now": "60.3% — all-time high",
           "direction": "positive"
         },
         {
-          "metric": "สถานะ N2 (2nm)",
-          "prev": "เตรียมการผลิต / รับ tape-out",
-          "now": "เข้าสู่ volume production ปลายปี 2025; tape-out มากกว่า N3 ณ จุดเดียวกัน",
+          "metric": "HPC/AI (สัดส่วนรายได้)",
+          "prev": "~57%",
+          "now": "66% (+20% QoQ)",
           "direction": "positive"
         },
         {
-          "metric": "สัดส่วนรายได้ HPC",
-          "prev": "~60% (Q2/2025)",
-          "now": "~57% (Q3/2025 — smartphone ฟื้นตามฤดูกาล iPhone)",
+          "metric": "เป้ารายได้ทั้งปี 2026",
+          "prev": "~mid-30s% YoY",
+          "now": "ยกเป็น >+40% YoY",
+          "direction": "positive"
+        },
+        {
+          "metric": "CapEx 2026",
+          "prev": "~$42B",
+          "now": "~$56B — สถิติ รองรับ AI",
           "direction": "neutral"
-        },
-        {
-          "metric": "CapEx guidance ปี 2025",
-          "prev": "กรอบ ~$38-42B",
-          "now": "ยืนยันโซนบนของกรอบ ~$40-42B",
-          "direction": "positive"
         }
       ],
       "risks": [
@@ -2236,7 +2236,7 @@
         "การกระจุกตัวของลูกค้า: Apple และ Nvidia รวมกันคิดเป็นสัดส่วนรายได้ที่สูงมาก อำนาจต่อรองและชะตากรรมผูกกันแน่น",
         "ค่าเงิน NT$ แข็งและ margin dilution จาก fab ต่างประเทศ กัด gross margin ต่อเนื่องราว 2-4 จุดในปีข้างหน้า"
       ],
-      "asOf": "2026-01",
+      "asOf": "2026-07",
       "history": {
         "fyNote": "ปีบัญชีตรงกับปีปฏิทิน สิ้นสุดเดือนธันวาคม (FY2025 = ม.ค.–ธ.ค. 2025 รายงานผลครบแล้วเมื่อ ม.ค. 2026)",
         "epsBasis": "diluted EPS ต่อ 1 ADR ในสกุล USD (1 ADR = 5 หุ้นสามัญ), ADR ไม่เคยแตกหุ้น จึงไม่มี split adjustment",
@@ -2318,20 +2318,20 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+22-25% YoY (FY2025 ~$63B) และมีแนวโน้มเร่งขึ้นใน FY2026",
+          "current": "~+48% YoY (Q2 FY26 — $22.2B สถิติ) · guide Q3 รายได้รวม $29.4B (+84% YoY)",
           "trend": "up",
-          "score": 87,
+          "score": 90,
           "impact": "positive",
-          "why": "รายได้ AI semiconductor โต ~+60% YoY เป็นเครื่องยนต์หลัก ขณะที่ non-AI semis ผ่านจุดต่ำสุดของวัฏจักรแล้ว และ backlog คำสั่งซื้อระดับแสนล้านดอลลาร์ให้ visibility หลายปี"
+          "why": "เร่งแรงมากจาก AI semiconductor — guidance Q3 บ่งชี้การเติบโตต่อเนื่องเป็นสถิติ ดีมานด์ custom accelerator จาก hyperscaler ล้นตลาด"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "~+30-35% YoY (non-GAAP) โตเร็วกว่ารายได้",
+          "current": "non-GAAP EPS $1.91 (Q2 FY26) — โตเร็วกว่ารายได้จาก operating leverage + margin สูง",
           "trend": "up",
-          "score": 85,
+          "score": 88,
           "impact": "positive",
-          "why": "Operating leverage จากธุรกิจชิป บวก margin ของ VMware ที่ขยายขึ้นมากหลัง integration ทำให้กำไรโตเร็วกว่ารายได้อย่างต่อเนื่อง"
+          "why": "กำไรต่อหุ้นเร่งตามรายได้ AI และ margin ~67% — โครงสร้างกำไรของ AVGO แปลงการโตเป็น EPS ได้ดีมาก"
         },
         {
           "key": "fcf",
@@ -2345,11 +2345,11 @@
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "Gross ~77%, EBITDA ~66% (non-GAAP)",
-          "trend": "flat",
-          "score": 88,
+          "current": "non-GAAP operating margin ~67% · gross ~77% (Q2 FY26)",
+          "trend": "up",
+          "score": 89,
           "impact": "positive",
-          "why": "ซอฟต์แวร์ margin สูงมากช่วยพยุงภาพรวม แม้สัดส่วน XPU ที่เพิ่มขึ้นจะกด gross margin ฝั่งชิปลงเล็กน้อย แต่ EBITDA margin โดยรวมยังทรงตัวในระดับสูงมาก"
+          "why": "margin ระดับสูงสุดของอุตสาหกรรมจาก mix ที่เอียงไป custom silicon + ซอฟต์แวร์ VMware margin สูง"
         },
         {
           "key": "roic",
@@ -2372,11 +2372,11 @@
         {
           "key": "debt",
           "label": "ภาระหนี้",
-          "current": "หนี้รวม ~$60-70B จากดีล VMware ทยอยลดลงต่อเนื่อง",
-          "trend": "down",
-          "score": 55,
+          "current": "หนี้จากดีล VMware ~$50-60B ทยอยลดลงต่อเนื่อง",
+          "trend": "up",
+          "score": 60,
           "impact": "neutral",
-          "why": "หนี้สูงเป็นมรดกจากการซื้อ VMware แต่ FCF ~$25B+/ปีครอบคลุมได้สบาย อันดับเครดิตยัง investment grade และบริษัทมีวินัยลดหนี้ชัดเจน — จับตาถ้ามี M&A ใหญ่รอบใหม่"
+          "why": "ลดหนี้อย่างมีวินัยด้วยกระแสเงินสดที่แข็งแรง — ทิศทางงบดุลดีขึ้นชัดเจนเทียบช่วงหลังปิดดีล VMware"
         },
         {
           "key": "dilution",
@@ -2399,11 +2399,11 @@
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "Forward P/E ~40x+ สูงกว่าค่าเฉลี่ยในอดีตของตัวเองมาก",
-          "trend": "down",
-          "score": 38,
-          "impact": "negative",
-          "why": "ตลาดรับรู้เรื่อง AI และดีล OpenAI ไปมากแล้ว ราคาปัจจุบันต้องการให้บริษัทส่งมอบการเติบโตตามแผนหลายปีติดต่อกันจึงจะคุ้ม — ไม่ถูก แต่มี backlog รองรับความคาดหวังมากกว่าหุ้น AI ส่วนใหญ่"
+          "current": "forward P/E ~24x (de-rate จาก ~40x เพราะกำไร AI ไล่ทัน) · ราคา ~$395 · mcap ~$1.79T",
+          "trend": "up",
+          "score": 52,
+          "impact": "neutral",
+          "why": "multiple หดลงชัดจาก ~40x เหลือ ~24x forward เพราะกำไรพุ่งเร็วกว่าราคา — ยังไม่ถูก (concentration ลูกค้า AI สูง + trailing ~60x) แต่พ้นโซนแพงสุดโต่งแล้ว"
         }
       ],
       "revenueQuality": {
@@ -2414,20 +2414,20 @@
         "segments": [
           {
             "name": "AI Semiconductors (custom XPU + AI networking)",
-            "sharePct": 33,
-            "growthNote": "~+60% YoY และเร่งขึ้น — แรงขับหลักจาก TPU ของ Google, ลูกค้า XPU รายใหม่ และ Tomahawk/Jericho สำหรับ AI cluster",
+            "sharePct": 49,
+            "growthNote": "$10.8B (+143% YoY) — 6 ลูกค้า custom (Google, Meta, ByteDance, Anthropic, OpenAI...) + Tomahawk/Jericho · guide Q3 $16B (+200%)",
             "trend": "up"
           },
           {
             "name": "Non-AI Semiconductors (broadband, wireless/Apple, storage, industrial)",
-            "sharePct": 25,
-            "growthNote": "ผ่านจุดต่ำสุดของวัฏจักรแล้ว ทยอยฟื้นแบบช้า ๆ ไม่ใช่ตัวขับเคลื่อนหลักของ thesis",
+            "sharePct": 20,
+            "growthNote": "ผ่านจุดต่ำสุดวัฏจักร ทยอยฟื้นช้า ๆ — ไม่ใช่ตัวขับหลัก",
             "trend": "flat"
           },
           {
-            "name": "Infrastructure Software (VMware, CA, Symantec, mainframe)",
-            "sharePct": 42,
-            "growthNote": "โตเลขหลักเดียวสูงถึงสองหลักจากการแปลง VMware เป็น subscription (VCF) — margin สูงมากและ ARR ยังขยาย",
+            "name": "Infrastructure Software (VMware VCF, CA, Symantec)",
+            "sharePct": 31,
+            "growthNote": "แปลง VMware เป็น subscription (VCF) — margin สูง, guide Q3 +31% YoY",
             "trend": "up"
           }
         ]
@@ -2438,12 +2438,12 @@
           {
             "item": "Custom XPU สำหรับ hyperscaler (Google TPU, Meta MTIA, ByteDance)",
             "status": "executing",
-            "evidence": "รายได้ AI ปี FY2025 ~$20B โต ~+60% YoY ต่อเนื่องทุกไตรมาส — Google TPU คือโปรแกรม custom accelerator ที่ใหญ่และสำเร็จที่สุดนอกค่าย NVIDIA"
+            "evidence": "AI semiconductor $10.8B (+143% YoY) · ตอนนี้มี 6 ลูกค้า custom หลัก (Google TPU, Meta MTIA, ByteDance, Anthropic, OpenAI...) — เครื่องยนต์ที่ครองพอร์ตแล้ว"
           },
           {
             "item": "ดีล OpenAI: custom accelerator + networking ระดับ 10 GW",
             "status": "on-track",
-            "evidence": "ประกาศเป็นทางการปลายปี 2025 เริ่มส่งมอบ H2 2026 ถึง 2029 พร้อมคำสั่งซื้อเริ่มต้นระดับ ~$10B เข้า backlog แล้ว — เป็น optionality ที่ใหญ่ที่สุดของบริษัทแต่ยังต้องพิสูจน์การส่งมอบจริง"
+            "evidence": "ดีล custom accelerator + networking ระดับ 10 GW เริ่มส่งมอบ H2 2026 — หนุน guide Q3 AI semi $16B (+200% YoY) และเป้า AI FY2027 >$100B"
           },
           {
             "item": "AI Ethernet networking (Tomahawk 5/6, Jericho3-AI, NIC/DSP)",
@@ -2560,37 +2560,43 @@
       },
       "valuationView": {
         "level": "premium",
-        "note": "Forward P/E ~40x+ และ EV/FCF สูงกว่าค่าเฉลี่ยในอดีตของตัวเองมาก — ตลาด price in การเร่งตัวของรายได้ AI และดีล OpenAI ไปแล้วส่วนใหญ่ ความแพงนี้พอปกป้องได้ด้วย backlog ที่ให้ visibility หลายปีและสัดส่วนซอฟต์แวร์ recurring แต่ margin of safety ต่ำ หากการส่งมอบสะดุดหรือ AI CapEx cycle ชะลอ ราคามี downside แรง เหมาะทยอยสะสมช่วงย่อมากกว่าไล่ราคา"
+        "note": "forward P/E ~24x — de-rate ลงชัดจาก ~40x+ (asOf ก่อน) เพราะกำไร AI เร่งไล่ทันราคา · ราคา ~$395, mcap ~$1.79T · ยังจัดเป็น premium เพราะ trailing ~60x + รายได้ AI กระจุกที่ hyperscaler ไม่กี่ราย และราคายัง price-in ดีล OpenAI 10GW ที่ต้องส่งมอบจริง — คุณภาพสูงแต่ margin of safety บาง เหมาะสะสมจังหวะย่อ"
       },
       "whatChanged": [
         {
-          "metric": "รายได้ AI semiconductor ต่อไตรมาส",
-          "prev": "~$5.2B (+~60% YoY) ใน Q3 FY2025",
-          "now": "~$6.5B (+~65% YoY) ใน Q4 FY2025",
+          "metric": "รายได้รวม (Q1 → Q2 FY26)",
+          "prev": "$19.31B (+29%)",
+          "now": "$22.2B (+48% YoY) — สถิติใหม่",
           "direction": "positive"
         },
         {
-          "metric": "รายได้รวมต่อไตรมาส",
-          "prev": "~$16B",
-          "now": "~$17.5B+ ทำสถิติใหม่",
+          "metric": "AI semiconductor",
+          "prev": "$8.4B (+106%)",
+          "now": "$10.8B (+143% YoY)",
           "direction": "positive"
         },
         {
-          "metric": "สถานะลูกค้า XPU รายที่ 4 (OpenAI)",
-          "prev": "คำสั่งซื้อ ~$10B จากลูกค้าที่ยังไม่เปิดชื่อ",
-          "now": "ดีลทางการระดับ 10 GW เริ่มส่งมอบ H2 2026 ถึง 2029",
+          "metric": "Guidance Q3 FY26",
+          "prev": "—",
+          "now": "AI semi $16B (+200%) · รายได้รวม $29.4B (+84%) · op margin ~67%",
           "direction": "positive"
         },
         {
-          "metric": "Backlog รวม",
-          "prev": "~$110B (ระดับสูงสุดเป็นประวัติการณ์)",
-          "now": "เพิ่มขึ้นต่อเนื่อง ทำสถิติใหม่อีกครั้ง",
+          "metric": "ลูกค้า custom chip",
+          "prev": "~3-4 ราย",
+          "now": "6 ราย (เพิ่ม Anthropic, OpenAI ฯลฯ)",
           "direction": "positive"
         },
         {
-          "metric": "เงินปันผลรายไตรมาส",
-          "prev": "$0.59/หุ้น",
-          "now": "~$0.65/หุ้น (+~10%)",
+          "metric": "เป้า AI FY2027",
+          "prev": "—",
+          "now": "ยืนยัน AI semiconductor >$100B",
+          "direction": "positive"
+        },
+        {
+          "metric": "Valuation",
+          "prev": "fwd P/E ~40x+",
+          "now": "~24x — กำไร AI ไล่ทัน multiple หด",
           "direction": "positive"
         }
       ],
@@ -2601,7 +2607,7 @@
         "Valuation แพงบนความคาดหวังสูง — หาก AI CapEx cycle ของทั้งอุตสาหกรรมชะลอแม้ชั่วคราว หุ้นที่เทรด ~40x+ จะถูก de-rate แรงกว่าพื้นฐานที่แย่ลงจริง",
         "หนี้สูงจากดีล VMware บวกความเสี่ยง key-man — Hock Tan อายุ 70+ ปี และ thesis ส่วนใหญ่ผูกกับฝีมือการจัดสรรทุนของเขาโดยตรง"
       ],
-      "asOf": "2026-01",
+      "asOf": "2026-07",
       "history": {
         "fyNote": "ปีบัญชีของ Broadcom สิ้นสุดราวสัปดาห์แรกของเดือน พ.ย. (52/53 สัปดาห์) — FY2021 สิ้นสุด 31 ต.ค. 2021, FY2022 สิ้นสุด 30 ต.ค. 2022, FY2023 สิ้นสุด 29 ต.ค. 2023, FY2024 สิ้นสุด 3 พ.ย. 2024, FY2025 สิ้นสุด 2 พ.ย. 2025 (รายงานผลเดือน ธ.ค. 2025)",
         "epsBasis": "diluted GAAP, split-adjusted (ปรับ 10:1 split ก.ค. 2024 ทุกปี)",
@@ -2682,47 +2688,47 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+36% YoY (Q3 2025, รายได้ ~$9.2B สถิติใหม่)",
+          "current": "~+38% YoY (Q1 2026 — $10.3B สถิติใหม่) · Data Center +57% · guide Q2 ~$11.2B (+46% YoY)",
           "trend": "up",
-          "score": 85,
+          "score": 88,
           "impact": "positive",
-          "why": "โตแรงทั้งสามเครื่องยนต์: Data Center ~+22% (ทั้งที่โดนข้อจำกัดส่งออก MI308 ไปจีน), Client & Gaming ~+70% จากการกินส่วนแบ่ง Ryzen — และปี 2026 มี MI450/OpenAI ramp รออยู่ บริษัทตั้งเป้าโต ~35% ต่อปีในงาน Analyst Day"
+          "why": "เร่งแรงจากทั้ง Data Center (EPYC + Instinct) และ Client · guidance Q2 สูงกว่าคาด ~7% — ดีมานด์ AI + การชิงส่วนแบ่ง server CPU จาก Intel ทำงานพร้อมกัน"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "Non-GAAP EPS ~$1.20 ใน Q3 2025 (~+30% YoY)",
+          "current": "non-GAAP EPS $1.37 (Q1 2026) ชนะคาด ~$1.28 · GAAP EPS $0.84 (ต่างจาก amortization/SBC)",
           "trend": "up",
-          "score": 78,
+          "score": 80,
           "impact": "positive",
-          "why": "กำไรฟื้นแรงหลังไตรมาสที่โดน write-down สินค้าคงคลัง MI308 ~$800M ผ่านพ้นไป operating leverage เริ่มทำงาน และผู้บริหารวางเป้า EPS ระยะยาว ~$20 — สูงแต่มีเส้นทางชัดหาก data center AI สเกลจริง"
+          "why": "กำไรโตตามรายได้และ margin ที่ฟื้น — ช่องว่าง GAAP vs non-GAAP ยังกว้างจาก amortization ดีล Xilinx และ SBC/warrant"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "FCF รายไตรมาสทำสถิติใหม่ระดับ ~$1.5B+",
+          "current": "FCF สถิติใหม่ ~$2.6B (Q1 2026, FCF margin ~25%)",
           "trend": "up",
-          "score": 70,
+          "score": 78,
           "impact": "positive",
-          "why": "โมเดล fabless ทำให้แปลงกำไรเป็นเงินสดได้ดี แต่ปี 2026 จะถูกกดชั่วคราวจาก working capital (สต๊อกชิป/HBM ล่วงหน้าเพื่อ ramp MI450) — เป็นการลงทุนเพื่อโต ไม่ใช่สัญญาณเสื่อม"
+          "why": "กระแสเงินสดพุ่งตามกำไรและวินัยเงินทุนหมุนเวียน — แปลงกำไรเป็นเงินสดได้ดีขึ้นมากเทียบปีก่อน"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "Non-GAAP gross margin ~54%",
-          "trend": "flat",
-          "score": 65,
+          "current": "non-GAAP gross margin ~55% · operating margin ~25% (Q1 2026) — ฟื้นจากผลกระทบ MI308 ปีก่อน",
+          "trend": "up",
+          "score": 70,
           "impact": "neutral",
-          "why": "GM ต่ำกว่า NVIDIA (~70%+) ชัดเจน เพราะ Instinct รุ่นแรก ๆ margin ต่ำกว่าค่าเฉลี่ยบริษัทและต้องตั้งราคาแข่ง — คาดค่อย ๆ ดีขึ้นตาม scale และ mix ของ data center แต่ยังไม่ใช่จุดแข็ง"
+          "why": "margin ฟื้นและขยายจาก mix ที่ดีขึ้น (Data Center/EPYC สัดส่วนสูง) — แต่ยังต่ำกว่า NVIDIA มาก และไวต่อ mix ของ GPU ราคาสูง"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "กำลังไต่ขึ้น — ยังโดนกดด้วย amortization จากดีล Xilinx",
+          "current": "ไต่ขึ้นตามกำไร แต่ยังถูกกดด้วย amortization จากดีล Xilinx",
           "trend": "up",
-          "score": 60,
+          "score": 63,
           "impact": "neutral",
-          "why": "ROIC แบบ GAAP ดูต่ำเพราะ goodwill/intangibles ก้อนใหญ่จาก Xilinx (~$49B) แต่ผลตอบแทนเชิงเศรษฐกิจจริงกำลังดีขึ้นเร็วตามกำไร data center — ต้องรอ MI450 พิสูจน์ว่า R&D ก้อนโตแปลงเป็นกำไรได้จริง"
+          "why": "ผลตอบแทนต่อทุนดีขึ้นตาม margin/กำไร — จะเด่นชัดเมื่อ MI400 ramp เต็มปีและ amortization Xilinx ทยอยหมด"
         },
         {
           "key": "cash",
@@ -2763,35 +2769,35 @@
         {
           "key": "valuation",
           "label": "มูลค่าหุ้น",
-          "current": "Forward P/E ระดับ ~40-50x หลังหุ้นวิ่งแรงมากจากดีล OpenAI ปี 2025",
+          "current": "forward P/E ~65-75x (ราคา ~$540 · mcap ~$861B, ก.ค. 2026) — แพงขึ้นอีกจาก ~40-50x",
           "trend": "down",
-          "score": 40,
+          "score": 32,
           "impact": "negative",
-          "why": "ราคาปัจจุบัน price-in ความสำเร็จของ MI450/OpenAI ไปมากแล้ว — ถ้าเทียบเป้า EPS ~$20 ระยะยาวยังถือว่ามี upside แต่ margin of safety บาง หาก execution สะดุดแม้ไตรมาสเดียว downside แรง"
+          "why": "หุ้นวิ่งต่อจนราคาฝัง 'ความสำเร็จของ MI450/OpenAI ในปี 2026-2027' ไว้เกือบเต็ม — แพงกว่าค่าเฉลี่ยตัวเองและแพงกว่า NVIDIA ในมุมกำไรปัจจุบัน margin of safety บางมาก"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
         "consistency": 68,
         "recurringPct": null,
-        "note": "รายได้เป็นแบบขายฮาร์ดแวร์ ไม่ใช่ recurring — แต่คุณภาพดีขึ้นชัดเจน: ดีลหลายปี (OpenAI 6GW, Oracle) ทำให้ visibility ของ data center ยาวขึ้นกว่ายุคที่พึ่ง PC cycle ล้วน ๆ จุดอ่อนคือประวัติความสม่ำเสมอ — ปี 2022-2023 เคยสะดุดแรงจาก PC downturn และ Embedded ยังอยู่ในช่วงระบายสต๊อก",
+        "note": "รายได้เร่งตัวและกระจายหลายขา (Data Center, Client, Gaming, Embedded) — Data Center (+57%, $5.8B) เป็นเครื่องยนต์ AI หลัก แต่คุณภาพยังผูกกับ 'execution ของ MI400/Helios' ในครึ่งหลังปี 2026 (จุดพิสูจน์ใหญ่) · Client แข็งจากการชิงส่วนแบ่ง Intel แต่เป็นตลาดวัฏจักร · consistency ปานกลางเพราะพึ่งการ ramp GPU รุ่นใหม่และดีลลูกค้าไม่กี่ราย",
         "segments": [
           {
-            "name": "Data Center (EPYC + Instinct)",
-            "sharePct": 46,
-            "growthNote": "~+22% YoY ทั้งที่โดนข้อจำกัดส่งออก MI308 ไปจีน — เครื่องยนต์หลักปี 2026 จาก MI350 volume + MI450/Helios ramp ครึ่งปีหลัง",
+            "name": "Data Center (EPYC + Instinct GPU)",
+            "sharePct": 56,
+            "growthNote": "+57% YoY ($5.8B) — MI350/MI355X volume + EPYC ชิงส่วนแบ่ง · MI400/Helios ramp ครึ่งหลังปี 2026",
             "trend": "up"
           },
           {
             "name": "Client & Gaming (Ryzen, Radeon, คอนโซล)",
-            "sharePct": 44,
-            "growthNote": "~+70% YoY — Ryzen กินส่วนแบ่ง desktop/notebook จาก Intel ต่อเนื่อง บวก AI PC cycle แต่เป็นตลาดวัฏจักร ไม่ควรคาดหวังอัตรานี้ยั่งยืน",
+            "sharePct": 36,
+            "growthNote": "โตแรงจาก Ryzen ชิงส่วนแบ่ง desktop/notebook จาก Intel + AI PC — แต่เป็นตลาดวัฏจักร",
             "trend": "up"
           },
           {
             "name": "Embedded (Xilinx FPGA)",
-            "sharePct": 9,
-            "growthNote": "ยังหดตัวเล็กน้อย YoY — อยู่ปลายทางของรอบระบายสต๊อก industrial/comms คาดฟื้นช้า ๆ ปี 2026",
+            "sharePct": 8,
+            "growthNote": "ฟื้นช้า ๆ จากปลายรอบระบายสต๊อก industrial/comms",
             "trend": "flat"
           }
         ]
@@ -2802,12 +2808,12 @@
           {
             "item": "Ramp Instinct MI350/MI355X (CDNA 4)",
             "status": "executing",
-            "evidence": "เปิดตัวกลางปี 2025 และส่งมอบระดับ volume แล้วให้ hyperscaler หลายราย (Microsoft, Meta, Oracle) — หนุนให้ Data Center Q3 2025 ทำสถิติ ~$4.3B และเป็นฐานก่อนส่งไม้ต่อให้ MI450"
+            "evidence": "MI350/MI355X ส่งมอบ volume ให้ hyperscaler หลายราย — หนุน Data Center Q1 2026 เป็น $5.8B (+57%) เป็นฐานก่อนส่งไม้ต่อให้ MI400"
           },
           {
             "item": "MI400 series + Helios rack-scale ปี 2026",
             "status": "on-track",
-            "evidence": "เป็นครั้งแรกที่ AMD ขาย 'ทั้งแร็ค' แข่งกับ NVL ของ NVIDIA โดยตรง — ดีไซน์มาจากทีม ZT Systems, มี Oracle สั่ง ~50,000 MI450 และ OpenAI เป็น anchor ยังไม่ถึงกำหนดส่งมอบ จึงยังเป็นความเสี่ยง execution ที่ใหญ่ที่สุดของปี 2026"
+            "evidence": "MI400/Helios rack-scale (CDNA Next, TSMC 2nm — GPU ตัวแรกบน 2nm) · ลูกค้า: Oracle ~50,000 MI450, OpenAI anchor 6GW, และ Meta เข้าร่วม — ยังไม่ถึงกำหนดส่งมอบ จึงเป็นความเสี่ยง execution ใหญ่สุดของปี 2026"
           },
           {
             "item": "พันธมิตรเชิงยุทธศาสตร์ OpenAI 6GW",
@@ -2822,7 +2828,7 @@
           {
             "item": "EPYC ยึดหัวหาด server CPU ในยุค AI",
             "status": "executing",
-            "evidence": "ส่วนแบ่งรายได้ server CPU เกิน ~40% แล้วและยังไต่ขึ้น — ทุก AI cluster ต้องมี head-node CPU และความสัมพันธ์ EPYC คือประตูขาย Instinct พ่วง"
+            "evidence": "guide server CPU +70% YoY ใน Q2 · ส่วนแบ่งรายได้ server CPU เกิน ~40% และไต่ขึ้น — ทุก AI cluster ต้องมี head-node CPU และเป็นประตูขาย Instinct พ่วง"
           },
           {
             "item": "Networking / มาตรฐานเปิด (UALink, Pensando)",
@@ -2928,55 +2934,55 @@
         ]
       },
       "valuationView": {
-        "level": "premium",
-        "note": "หลังดีล OpenAI หุ้นวิ่งแรงจนเทรดที่ forward P/E ~40-50x — แพงกว่าค่าเฉลี่ยตัวเองและแพงกว่า NVIDIA ในบางมุมเมื่อเทียบกำไรปัจจุบัน ตลาดจ่ายล่วงหน้าให้ 'สิ่งที่ยังต้องพิสูจน์ในปี 2026' คือ MI450 ramp หากเชื่อเป้า EPS ~$20 ในอีก ~3-5 ปี ราคานี้ยังพอมีเหตุผล แต่ต้องยอมรับว่า margin of safety บางและหุ้นจะผันผวนแรงตามข่าว execution รายไตรมาส"
+        "level": "expensive",
+        "note": "forward P/E ~65-75x (ราคา ~$540, mcap ~$861B) — แพงมาก แพงกว่า NVIDIA ในมุมกำไรปัจจุบันด้วยซ้ำ ตลาดจ่ายล่วงหน้าให้ 'สิ่งที่ยังต้องพิสูจน์': MI450/Helios ramp + ดีล OpenAI · ถ้าเชื่อเป้า EPS ระยะยาว (~$20 ใน 3-5 ปี) ยังพอมีเหตุผล แต่ margin of safety บางและหุ้นจะเหวี่ยงแรงตามข่าว execution รายไตรมาส — ความเสี่ยง valuation สูงที่สุดในกลุ่มสาย AI compute"
       },
       "whatChanged": [
         {
-          "metric": "รายได้รวม (Q2 2025 → Q3 2025)",
-          "prev": "~$7.7B",
-          "now": "~$9.2B (สถิติใหม่, ~+36% YoY)",
+          "metric": "รายได้รวม (Q1 2026)",
+          "prev": "Q4'25 ~$9.7B",
+          "now": "$10.3B (+38% YoY) — สถิติใหม่",
           "direction": "positive"
         },
         {
-          "metric": "รายได้ Data Center",
-          "prev": "~$3.2B (โดนผลกระทบ MI308/จีน)",
-          "now": "~$4.3B (สถิติใหม่)",
+          "metric": "Data Center (Q4'25 → Q1'26)",
+          "prev": "$5.4B",
+          "now": "$5.8B (+57% YoY)",
           "direction": "positive"
         },
         {
-          "metric": "Non-GAAP gross margin",
-          "prev": "~43% (โดน write-down สินค้าคงคลัง MI308 ~$800M)",
-          "now": "~54% (กลับสู่ระดับปกติ)",
+          "metric": "non-GAAP EPS",
+          "prev": "โตต่อเนื่อง",
+          "now": "$1.37 — ชนะคาด ~$1.28",
           "direction": "positive"
         },
         {
-          "metric": "Non-GAAP EPS",
-          "prev": "~$0.48",
-          "now": "~$1.20",
+          "metric": "Guidance Q2 2026",
+          "prev": "—",
+          "now": "~$11.2B (+46% YoY, ~7% เหนือคาด · server CPU +70%)",
           "direction": "positive"
         },
         {
-          "metric": "Backlog/ดีลเชิงยุทธศาสตร์ AI",
-          "prev": "ยังไม่มี anchor customer ระดับ frontier",
-          "now": "OpenAI 6GW + Oracle ~50,000 MI450 + เป้า Analyst Day: โต ~35%/ปี, EPS ~$20",
+          "metric": "Free cash flow",
+          "prev": "โตต่อเนื่อง",
+          "now": "สถิติ $2.6B (Q1, FCF margin ~25%)",
           "direction": "positive"
         },
         {
-          "metric": "รายได้ Embedded (Xilinx)",
-          "prev": "~$820M",
-          "now": "~$860M — ฟื้นช้ากว่าที่หวัง ยังติดลบ YoY",
-          "direction": "neutral"
+          "metric": "Valuation",
+          "prev": "fwd P/E ~40-50x",
+          "now": "~65-75x — แพงขึ้นหลังหุ้นวิ่งต่อ",
+          "direction": "negative"
         }
       ],
       "risks": [
-        "Execution risk ปี 2026 กระจุกอยู่ที่ MI450/Helios — ถ้า ramp สะดุด (yield, HBM supply, rack integration) ราคาหุ้นที่ price-in ความสำเร็จไว้แล้วจะปรับลงแรง",
+        "Execution risk ปี 2026 กระจุกที่ MI450/Helios (GPU ตัวแรกบน TSMC 2nm) — ถ้า ramp สะดุด (yield, HBM supply, rack integration) ราคาหุ้นที่ price-in ความสำเร็จไว้เกือบเต็มจะปรับลงแรง",
+        "Valuation ~65-75x forward — แพงที่สุดในกลุ่มสาย AI compute margin of safety บางมาก หุ้นเหวี่ยงแรงตามข่าว execution รายไตรมาส",
         "ช่องว่างซอฟต์แวร์กับ CUDA ยังกว้าง โดยเฉพาะ training — ถ้า ROCm ตามไม่ทัน ลูกค้าอาจใช้ AMD แค่เป็นเครื่องมือต่อรองราคากับ NVIDIA",
-        "การกระจุกตัวของ upside ที่ OpenAI — ทั้งดีล 6GW และ warrant ผูกกับลูกค้ารายเดียวที่ยังขาดทุนหนักและพึ่งการระดมทุนต่อเนื่อง (ความเสี่ยง circular financing ของทั้งอุตสาหกรรม AI)",
-        "โดนบีบสองทาง: NVIDIA Rubin จากด้านบน และ custom ASIC ของ hyperscaler (TPU, Trainium, MTIA) ที่กินงาน inference ปริมาณมากจากด้านล่าง",
-        "ภูมิรัฐศาสตร์ — ข้อจำกัดส่งออกชิป AI ไปจีน (บทเรียน MI308 ~$800M) และการพึ่ง TSMC/ไต้หวันเกือบ 100% ของการผลิตชิปหลัก"
+        "การกระจุกตัวของ upside ที่ OpenAI — ดีล 6GW + warrant ~160M หุ้น (~10%) ผูกกับลูกค้ารายเดียวที่ยังขาดทุนหนักและพึ่งการระดมทุน (ความเสี่ยง circular financing ของทั้งอุตสาหกรรม AI)",
+        "โดนบีบสองทาง: NVIDIA Rubin จากด้านบน + custom ASIC ของ hyperscaler (TPU, Trainium, MTIA) กินงาน inference ปริมาณมาก · และพึ่ง TSMC/ไต้หวันเกือบ 100% + ข้อจำกัดส่งออกจีน (บทเรียน MI308)"
       ],
-      "asOf": "2026-01",
+      "asOf": "2026-07",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดปลายเดือนธันวาคม (สัปดาห์สุดท้ายของ ธ.ค.) — FY2025 สิ้นสุด ธ.ค. 2025 รายงานผลเมื่อ 3 ก.พ. 2026",
         "epsBasis": "diluted GAAP (ไม่เคยแตกหุ้นในช่วงนี้ จึงเป็น current share basis อยู่แล้ว)",
@@ -3792,6 +3798,1035 @@
         ]
       },
       "nextEarnings": "2026-08-05"
+    },
+    "ASML": {
+      "ticker": "ASML",
+      "name": "ASML Holding",
+      "layer": "equipment",
+      "thesis": {
+        "statement": "ASML คือผู้ผลิตเครื่อง EUV lithography เพียงรายเดียวในโลก — เครื่องที่ทำให้การผลิตชิปล้ำสมัยที่สุด (ต่ำกว่า 7nm) เกิดขึ้นได้จริงในเชิงฟิสิกส์ ชิป AI ทุกตัว (GPU ของ NVIDIA ที่ TSMC ผลิต) สุดท้ายพึ่งเครื่องของ ASML ทั้งสิ้น นี่คือ 'คนขายจอบเสียม' ที่ผูกขาดที่สุดของยุค AI: de-facto monopoly บน EUV และกำลังดัน High-NA EUV สำหรับ node ถัดไป รายได้เป็นวัฏจักร (ผูกกับรอบ capex ของโรงงานชิป) แต่คูเมืองลึกที่สุดในวงการเทค — R&D หลายทศวรรษ + ซัพพลายเออร์เฉพาะ (เลนส์ Zeiss) ที่ลอกเลียนไม่ได้ เดิมพันคือดีมานด์ AI ยืดรอบสร้างโรงงานออกไปหลายปี และ ASML เก็บเกี่ยวทั้งจากการขายเครื่องและธุรกิจบริการ (Installed Base) margin สูงที่โตตามฐานเครื่องที่ติดตั้ง",
+        "pillars": [
+          "ผูกขาด EUV — ผู้ผลิตเครื่อง EUV รายเดียว ไม่มีคู่แข่งสำหรับ lithography ต่ำกว่า 7nm · High-NA EUV ต่อยอดความนำอีกทศวรรษ",
+          "ดีมานด์ AI ดัน guidance ขึ้น 2 ครั้งในปี 2026 — FY2026 ยอดขายสุทธิ €43-45B (จาก €36-40B) เมื่อ capex fab ล้ำสมัย (TSMC/Samsung/Intel) เร่งเพื่อ AI",
+          "Installed Base Management (บริการ/อัปเกรด) ~€2.8B/ไตรมาส — recurring, margin สูงมาก, โตทุกครั้งที่ขายเครื่อง ช่วยกลบวัฏจักรของยอดขายเครื่อง",
+          "Gross margin 54%+ และสูงขึ้น — พลังตั้งราคาของผู้ผูกขาด (guide GM 54-56%)",
+          "แรงหนุนเชิงโครงสร้าง: ชิป AI ทุกตัวต้องใช้ ASML — ยิ่งโลกสร้าง compute มากเท่าไร ยิ่งต้องใช้เวเฟอร์ node ล้ำ ยิ่งต้องใช้เครื่อง ASML"
+        ]
+      },
+      "fundamentals": [
+        {
+          "key": "revenueGrowth",
+          "label": "การเติบโตของรายได้",
+          "current": "FY2026 guide €43-45B (~+35% YoY) ยกขึ้น 2 ครั้ง · Q2 2026 €9.3B",
+          "trend": "up",
+          "score": 85,
+          "impact": "positive",
+          "why": "กลับมาเร่งแรงหลังช่วง digestion 2024-25 — ดีมานด์ AI ทำให้ลูกค้าเร่งสั่งเครื่อง node ล้ำ การยก guidance 2 ครั้งในปีเดียวเป็นสัญญาณดีมานด์ที่หายาก"
+        },
+        {
+          "key": "epsGrowth",
+          "label": "การเติบโตของกำไรต่อหุ้น",
+          "current": "EPS €7.59 (Q2 2026) · net income €2.9B — โตตามรายได้ + margin ที่สูงขึ้น",
+          "trend": "up",
+          "score": 82,
+          "impact": "positive",
+          "why": "กำไรเร่งตามยอดขายเครื่องและบริการ margin สูง — operating leverage ของธุรกิจผูกขาดทำให้กำไรโตเร็วกว่ารายได้ในขาขึ้นของวัฏจักร"
+        },
+        {
+          "key": "fcf",
+          "label": "กระแสเงินสดอิสระ",
+          "current": "Q2 2026 FCF ~€1.3B — เป็นบวกแต่ผันผวนสูงตามจังหวะรับเงินลูกค้า/สินค้าคงคลัง",
+          "trend": "flat",
+          "score": 68,
+          "impact": "neutral",
+          "why": "FCF ของ ASML แกว่งแรงรายไตรมาส (prepayment ลูกค้า + inventory เครื่องราคาสูง) — ดูเป็นรายปีจะเห็นกระแสเงินสดแข็งแรง แต่เดา timing รายไตรมาสยาก"
+        },
+        {
+          "key": "margin",
+          "label": "อัตรากำไร",
+          "current": "Gross margin 54.0% · operating margin 37.1% (Q2 2026) — สูงมากสำหรับธุรกิจฮาร์ดแวร์",
+          "trend": "up",
+          "score": 88,
+          "impact": "positive",
+          "why": "margin ระดับซอฟต์แวร์บนธุรกิจเครื่องจักร — พลังตั้งราคาของผู้ผูกขาด + สัดส่วนบริการ margin สูง guide ยกเป็น 54-56%"
+        },
+        {
+          "key": "roic",
+          "label": "ผลตอบแทนต่อเงินลงทุน",
+          "current": "สูงมาก (~30%+) จาก margin สูงและทุนที่ใช้ไม่บวมเท่ารายได้",
+          "trend": "up",
+          "score": 84,
+          "impact": "positive",
+          "why": "ผลตอบแทนต่อทุนสูงเด่นจากการผูกขาด — ทุกยูโรที่ลงทุน R&D สร้างเครื่องที่ตั้งราคาได้เต็มที่และมีบริการตามหลังยาว"
+        },
+        {
+          "key": "cash",
+          "label": "เงินสดในมือ",
+          "current": "งบดุลแข็ง สถานะใกล้ net cash",
+          "trend": "flat",
+          "score": 80,
+          "impact": "positive",
+          "why": "เงินสดเพียงพอลงทุน R&D High-NA + คืนเงินผู้ถือหุ้น โดยไม่ต้องพึ่งหนี้มาก"
+        },
+        {
+          "key": "debt",
+          "label": "หนี้สิน",
+          "current": "หนี้ต่ำเทียบขนาดและกระแสเงินสด",
+          "trend": "flat",
+          "score": 85,
+          "impact": "positive",
+          "why": "งบดุลสะอาด — ความเสี่ยงทางการเงินต่ำ รองรับวัฏจักรขาลงได้โดยไม่ตึง"
+        },
+        {
+          "key": "dilution",
+          "label": "การเจือจางของหุ้น",
+          "current": "ลดจำนวนหุ้นสุทธิ — buyback + ปันผลต่อเนื่อง, SBC ต่ำ",
+          "trend": "flat",
+          "score": 84,
+          "impact": "positive",
+          "why": "คืนเงินผู้ถือหุ้นสม่ำเสมอและซื้อหุ้นคืนจนจำนวนหุ้นลดลง — เป็นมิตรต่อผู้ถือหุ้นแบบ compounder ยุโรปคลาสสิก"
+        },
+        {
+          "key": "capitalAllocation",
+          "label": "การจัดสรรเงินทุน",
+          "current": "R&D หนัก (High-NA EUV) + ปันผลเพิ่ม + buyback ต่อเนื่อง",
+          "trend": "flat",
+          "score": 80,
+          "impact": "positive",
+          "why": "ลงทุน R&D เพื่อรักษาความนำทางเทคโนโลยี (คูเมือง) ควบคู่คืนเงินผู้ถือหุ้นอย่างมีวินัย — จัดสรรทุนระดับตัวอย่างของอุตสาหกรรม"
+        },
+        {
+          "key": "valuation",
+          "label": "ความน่าสนใจของราคา",
+          "current": "forward P/E ~40x (ราคา ADR ~$1,815 · mcap ~$700B, ก.ค. 2026)",
+          "trend": "down",
+          "score": 38,
+          "impact": "negative",
+          "why": "แพงเทียบค่าเฉลี่ยตัวเอง (~30-35x) — ตลาดจ่ายพรีเมียมให้การผูกขาด + reaccel จาก AI ราคาระดับนี้ฝังการเติบโตหลายปี และหุ้นไวต่อสัญญาณ order/วัฏจักรมาก"
+        }
+      ],
+      "revenueQuality": {
+        "acceleration": "accelerating",
+        "consistency": 65,
+        "recurringPct": 30,
+        "note": "รายได้เร่งตัวจากดีมานด์ AI (ยก guidance 2 ครั้ง) แต่มีลักษณะ 'วัฏจักร' สูงเชิงโครงสร้าง — ยอดขายเครื่องขึ้นกับรอบ capex ของโรงงานชิปไม่กี่ราย (จุดอ่อนด้าน consistency) · ตัวถ่วงคือ Installed Base Management (~30% ของยอดขาย) ที่เป็น recurring margin สูงและโตตามฐานเครื่องที่ติดตั้ง ช่วยกลบความผันผวน · หมายเหตุ: ASML เลิกเปิดตัวเลข net bookings รายไตรมาสแล้ว (ล่าสุด Q4'25 €13.2B, EUV €7.4B)",
+        "segments": [
+          {
+            "name": "Net system sales — EUV (รวม High-NA)",
+            "sharePct": 40,
+            "growthNote": "เครื่องยนต์การโต — node ล้ำสำหรับ AI/HPC · High-NA เริ่มส่งมอบลูกค้าชั้นนำ",
+            "trend": "up"
+          },
+          {
+            "name": "Net system sales — DUV + metrology",
+            "sharePct": 30,
+            "growthNote": "ฐานกว้างสำหรับ node ผู้ใหญ่/mature — โตตามการขยายกำลังการผลิตทั่วไป",
+            "trend": "flat"
+          },
+          {
+            "name": "Installed Base Management (บริการ + อัปเกรด)",
+            "sharePct": 30,
+            "growthNote": "~€2.8B/ไตรมาส — recurring, margin สูงมาก, โตทุกครั้งที่ขายเครื่องเพิ่ม",
+            "trend": "up"
+          }
+        ]
+      },
+      "aiExecution": {
+        "score": 85,
+        "items": [
+          {
+            "item": "ผูกขาด EUV — ผู้เปิดทางเดียวสู่ชิปต่ำกว่า 7nm",
+            "status": "executing",
+            "evidence": "ชิป AI ล้ำสมัยทุกตัวผลิตได้เพราะเครื่อง EUV ของ ASML — ไม่มีทางเลือกอื่นในเชิงฟิสิกส์ เป็นคอขวดที่ทั้งอุตสาหกรรมต้องผ่าน"
+          },
+          {
+            "item": "High-NA EUV — เครื่อง node ถัดไป",
+            "status": "executing",
+            "evidence": "ทยอยส่งมอบลูกค้าชั้นนำ (Intel/TSMC/Samsung) และวางแผนขยายกำลังผลิต — ต่อยอดความนำทางเทคโนโลยีไปอีกทศวรรษ แม้ราคาต่อเครื่องสูงมาก (~€350M)"
+          },
+          {
+            "item": "Installed Base Management — บริการ margin สูง recurring",
+            "status": "executing",
+            "evidence": "~€2.8B/ไตรมาส และโตตามฐานเครื่องที่ติดตั้งสะสม — เปลี่ยนธุรกิจวัฏจักรให้มีขา recurring ที่คาดการณ์ได้และกำไรสูง"
+          },
+          {
+            "item": "ดีมานด์ AI → ยก guidance 2 ครั้งในปี 2026",
+            "status": "executing",
+            "evidence": "FY2026 ยอดขายสุทธิยกจาก €36-40B เป็น €43-45B และ GM เป็น 54-56% — หลักฐานตรงว่ารอบ capex ล้ำสมัยกำลังเร่งจริงเพื่อ AI"
+          },
+          {
+            "item": "คูเมือง R&D + ซัพพลายเชน (Zeiss optics)",
+            "status": "on-track",
+            "evidence": "เลนส์ความแม่นยำระดับอะตอมจาก Zeiss + ซัพพลายเออร์หลายพันราย + R&D หลายทศวรรษ — เป็นกำแพงที่แม้ทุ่มเงินมหาศาลก็สร้างใหม่ไม่ได้ในเวลาสั้น"
+          },
+          {
+            "item": "บริหารความเสี่ยงจีนภายใต้ export controls",
+            "status": "at-risk",
+            "evidence": "จีน ~20% ของยอดขาย ถูกจำกัดโดยกฎสหรัฐ/เนเธอร์แลนด์ — ต้องบริหารทั้งการปฏิบัติตามกฎและความเสี่ยงว่าจีนจะเร่งสร้าง lithography เอง (SMEE)"
+          }
+        ]
+      },
+      "competitive": {
+        "overall": "strengthening",
+        "moat": "คูเมืองลึกที่สุดแห่งหนึ่งในวงการเทค — ผู้ผลิต EUV รายเดียวในโลก, เลนส์ Zeiss แบบเอกสิทธิ์, ซัพพลายเออร์หลายพันราย, R&D หลายทศวรรษ และลูกค้าร่วมลงทุนพัฒนา — ไม่มีคู่แข่งสำหรับ EUV เลย switching cost แทบเป็นอนันต์ (ไม่มีทางเลือกอื่นในการผลิตชิปล้ำ) แทบเป็นไปไม่ได้ที่จะถูกแทนที่ในหนึ่งทศวรรษข้างหน้า",
+        "factors": [
+          {
+            "key": "marketLeadership",
+            "label": "ผู้นำตลาด",
+            "status": "strengthening",
+            "note": "ส่วนแบ่ง EUV ~100% (ผูกขาด) · ครองตลาดเครื่อง lithography ล้ำสมัยทั้งหมด"
+          },
+          {
+            "key": "techLeadership",
+            "label": "ผู้นำเทคโนโลยี",
+            "status": "strengthening",
+            "note": "High-NA EUV ต่อยอดความนำ — นำหน้าทุกคนที่พยายามเข้ามาแข่งเป็นสิบปี"
+          },
+          {
+            "key": "executionSpeed",
+            "label": "ความเร็วในการ execute",
+            "status": "stable",
+            "note": "รอบผลิตภัณฑ์ยาว (เครื่องซับซ้อนมาก) — จุดแข็งไม่ใช่ความเร็วแต่คือความสามารถทำสิ่งที่คนอื่นทำไม่ได้เลย"
+          },
+          {
+            "key": "switchingCost",
+            "label": "ต้นทุนการย้ายค่าย",
+            "status": "strengthening",
+            "note": "แทบเป็นอนันต์สำหรับ EUV — ไม่มีทางเลือกอื่น ลูกค้าต้องพึ่งเครื่อง + บริการของ ASML ทั้งวงจรชีวิต"
+          },
+          {
+            "key": "ecosystem",
+            "label": "ecosystem",
+            "status": "strengthening",
+            "note": "ระบบนิเวศซัพพลายเออร์/ลูกค้าที่ลึก (Zeiss, TSMC, Intel, Samsung ร่วมพัฒนา) — ผูกกันแน่นทั้งห่วงโซ่"
+          },
+          {
+            "key": "developerAdoption",
+            "label": "developer adoption",
+            "status": "stable",
+            "note": "ไม่ใช่แพลตฟอร์มซอฟต์แวร์ — มิตินี้ไม่ใช่สนามแข่งของ ASML"
+          },
+          {
+            "key": "customerLockin",
+            "label": "การล็อกอินลูกค้า",
+            "status": "strengthening",
+            "note": "ลูกค้าพึ่งเครื่อง + Installed Base service ตลอดอายุใช้งานหลายปี — ล็อกแน่นทั้งฮาร์ดแวร์และบริการ"
+          },
+          {
+            "key": "moat",
+            "label": "moat",
+            "status": "strengthening",
+            "note": "ผูกขาด EUV + R&D + Zeiss — คูเมืองที่แทบไม่มีใครโจมตีได้ในทศวรรษนี้ ความเสี่ยงเดียวคือวัฏจักรและการเมืองจีน ไม่ใช่คู่แข่ง"
+          }
+        ]
+      },
+      "capitalAllocation": {
+        "score": 80,
+        "verdict": "จัดสรรทุนระดับตัวอย่าง — ลงทุน R&D หนักเพื่อรักษาคูเมือง (High-NA) ควบคู่คืนเงินผู้ถือหุ้นอย่างมีวินัย (ปันผลเพิ่ม + buyback ลดจำนวนหุ้น) บนงบดุลที่แข็ง จุดที่ต้องยอมรับคือรายได้เป็นวัฏจักร ทำให้ผลตอบแทนแต่ละปีไม่สม่ำเสมอ",
+        "items": [
+          {
+            "label": "R&D",
+            "current": "ลงทุนหนักใน High-NA EUV และ node ถัดไป",
+            "assessment": "good",
+            "why": "เป็นการลงทุนที่รักษาความผูกขาด — คูเมืองของ ASML คือ R&D ที่สะสมมาหลายทศวรรษ"
+          },
+          {
+            "label": "เงินปันผล",
+            "current": "เพิ่มต่อเนื่อง",
+            "assessment": "good",
+            "why": "ประวัติปันผลเพิ่มสม่ำเสมอแบบ compounder — เป็นมิตรต่อผู้ถือหุ้นระยะยาว"
+          },
+          {
+            "label": "Buyback",
+            "current": "ซื้อหุ้นคืนต่อเนื่องจนจำนวนหุ้นลดสุทธิ",
+            "assessment": "good",
+            "why": "คืนเงินส่วนเกินอย่างมีวินัยและเพิ่มมูลค่าต่อหุ้น"
+          },
+          {
+            "label": "การลงทุนกำลังการผลิต",
+            "current": "ขยายกำลังผลิต EUV/High-NA ตามดีมานด์",
+            "assessment": "neutral",
+            "why": "จำเป็นเพื่อรองรับ order แต่ต้องบาลานซ์กับวัฏจักร — สร้างมากไปในขาลงจะเป็นภาระ"
+          }
+        ]
+      },
+      "valuationView": {
+        "level": "expensive",
+        "note": "forward P/E ~40x (ราคา ADR ~$1,815, mcap ~$700B) — แพงเทียบค่าเฉลี่ยตัวเอง (~30-35x) ตลาดจ่ายพรีเมียมให้การผูกขาดที่แทบไม่มีความเสี่ยงถูกแทนที่ + reaccel จาก AI · ราคาระดับนี้ฝังการเติบโตหลายปีและทำให้หุ้นไวต่อสัญญาณ order/วัฏจักร fab มาก — คุณภาพธุรกิจสูงสุด แต่ 'ราคาของคุณภาพ' ก็สูงตาม เหมาะสะสมจังหวะย่อของวัฏจักรมากกว่าไล่ราคาช่วง guidance พุ่ง"
+      },
+      "whatChanged": [
+        {
+          "metric": "รายได้ (Q1 → Q2 2026)",
+          "prev": "€8.8B",
+          "now": "€9.3B — net income €2.9B, op margin 37.1%",
+          "direction": "positive"
+        },
+        {
+          "metric": "Guidance FY2026 (ยอดขายสุทธิ)",
+          "prev": "€36-40B",
+          "now": "€43-45B — ยกครั้งที่ 2 จากดีมานด์ AI",
+          "direction": "positive"
+        },
+        {
+          "metric": "Guidance gross margin FY2026",
+          "prev": "51-53%",
+          "now": "54-56%",
+          "direction": "positive"
+        },
+        {
+          "metric": "Gross margin (จริง)",
+          "prev": "ตาม guide",
+          "now": "54.0% (เหนือ guide จากสัดส่วนบริการ margin สูง)",
+          "direction": "positive"
+        },
+        {
+          "metric": "Installed Base Management",
+          "prev": "โตตามฐานเครื่อง",
+          "now": "€2.8B/ไตรมาส — recurring margin สูง",
+          "direction": "positive"
+        },
+        {
+          "metric": "จีน (สัดส่วนยอดขาย)",
+          "prev": "—",
+          "now": "~20% ภายใต้ export controls สหรัฐ/เนเธอร์แลนด์",
+          "direction": "negative"
+        }
+      ],
+      "risks": [
+        "วัฏจักร (cyclicality): รายได้ผูกกับรอบ capex ของโรงงานชิป (TSMC/Samsung/Intel) — ถ้ารอบลงทุนชะลอ ยอดขายเครื่องหดแรงและเร็ว (เคยเกิดช่วง digestion 2023-2024) และหุ้น multiple สูงจะโดนลงโทษหนัก",
+        "จีน + export controls: ~20% ของยอดขายอยู่ภายใต้กฎจำกัดของสหรัฐ/เนเธอร์แลนด์ — ความตึงเครียดภูมิรัฐศาสตร์เพิ่มความเสี่ยงถูกตัดตลาดเพิ่ม และเร่งให้จีนพยายามสร้าง lithography เอง (SMEE)",
+        "การกระจุกตัวของลูกค้า: พึ่งลูกค้าไม่กี่ราย (TSMC เป็นรายใหญ่สุด) — ถ้าลูกค้าหลักเลื่อนแผน fab หรือสะดุด order ก้อนใหญ่กระทบทันที",
+        "Valuation ~40x: แพงเทียบประวัติตัวเอง — หุ้นไวมากต่อทุกสัญญาณ order/guidance และจุดกลับของวัฏจักร แม้พื้นฐานผูกขาดไม่เปลี่ยน",
+        "High-NA adoption: เครื่องรุ่นถัดไปแพงมาก (~€350M/เครื่อง) — ถ้าลูกค้าชะลอรับ High-NA หรือ node ถัดไปสะดุดทางเทคนิค การเติบโตระยะยาวจะช้าลง"
+      ],
+      "asOf": "2026-07",
+      "nextEarnings": "2026-10",
+      "history": {
+        "fyNote": "ปีบัญชี = ปีปฏิทิน (สิ้นสุด ธ.ค.) — FY2021-FY2025 · ตัวเลขแปลงเป็น USD (ADR)",
+        "epsBasis": "diluted GAAP, USD (ADR) — ASML รายงาน EUR แปลงด้วยอัตราเฉลี่ยรายปี · ไม่มี split",
+        "years": [
+          {
+            "fy": "FY2021",
+            "endYm": "2021-12",
+            "revenueB": 22,
+            "epsAdj": 16.96,
+            "opMarginPct": 36.3,
+            "fcfB": 11.8,
+            "priceFYEnd": 762.54
+          },
+          {
+            "fy": "FY2022",
+            "endYm": "2022-12",
+            "revenueB": 22.3,
+            "epsAdj": 16.92,
+            "opMarginPct": 34.6,
+            "fcfB": 8.6,
+            "priceFYEnd": 531.64
+          },
+          {
+            "fy": "FY2023",
+            "endYm": "2023-12",
+            "revenueB": 29.8,
+            "epsAdj": 22.28,
+            "opMarginPct": 34.5,
+            "fcfB": 4.7,
+            "priceFYEnd": 741.19
+          },
+          {
+            "fy": "FY2024",
+            "endYm": "2024-12",
+            "revenueB": 30.6,
+            "epsAdj": 22.95,
+            "opMarginPct": 35.2,
+            "fcfB": 11.1,
+            "priceFYEnd": 684.12
+          },
+          {
+            "fy": "FY2025",
+            "endYm": "2025-12",
+            "revenueB": 36.9,
+            "epsAdj": 29.69,
+            "opMarginPct": 36.9,
+            "fcfB": 13.9,
+            "priceFYEnd": 1064.74
+          }
+        ],
+        "notes": "ตัวเลขแปลง USD จากงบ EUR ด้วยอัตราเฉลี่ยรายปี (~2-3% ความคลาด) · operating margin เป็นอัตราส่วนจึงไม่ขึ้นกับ FX · FCF ผันผวนสูง: พุ่งปี 2021 (prepayment ลูกค้า) ต่ำสุด ~$4.7B ปี 2023 (สต๊อก/WIP) แล้วฟื้นเป็น ~$14B ปี 2025 · ราคาเป็น ADR (Nasdaq) ปิดสิ้นปีจริง USD ไม่มี split · จำนวนหุ้นลดจาก ~410M เป็น ~389M จาก buyback",
+        "sources": [
+          "https://stockanalysis.com/stocks/asml/financials/",
+          "https://www.asml.com/en/news/press-releases/2026/q2-2026-financial-results"
+        ]
+      }
+    },
+    "QQQM": {
+      "ticker": "QQQM",
+      "name": "Invesco Nasdaq-100 ETF",
+      "layer": "enterprise",
+      "thesis": {
+        "statement": "QQQM คือยานพาหนะต้นทุนต่ำ (expense 0.15%) สำหรับถือ 'ทั้งกระดาน mega-cap เทคโนโลยี/AI' ผ่านดัชนี Nasdaq-100 แบบ full replication — ผู้ถือได้ NVDA, MSFT, GOOG, AMZN, META, AVGO (ซึ่ง 6 ตัวนี้มี thesis เต็มรายตัวใน KB นี้แล้ว) พร้อมกันโดยไม่ต้องเลือกผู้ชนะรายตัว เหมาะเป็น core ของ bucket หุ้นต่างประเทศ เดิมพันหลักคือกำไรของ mega-cap tech ยังโตต่อจากรอบ AI — หมายเหตุสำคัญ: QQQM เป็น ETF ไม่ใช่บริษัท ทุกหัวข้อในหน้านี้ตีความเป็น 'ระดับดัชนี/บริษัทที่ถืออยู่ข้างใน' และไม่มีงบรายไตรมาสของตัวเอง",
+        "pillars": [
+          "โครงสร้างต้นทุนดีสุดในกลุ่ม — expense 0.15% (ถูกกว่า QQQ 0.20%) + full replication NDX · AUM ~$82.9B สภาพคล่องเหลือเฟือสำหรับผู้ถือระยะยาว",
+          "การกระจุกใน AI winners คือฟีเจอร์: top-10 ~47% ของดัชนีคือบริษัทแกน AI ที่กำไรกำลังเร่ง (งบ Q2 2026: Azure +43%, AWS +37%, AVGO AI +143%)",
+          "Rebalance เชิงกลไก — ผู้ชนะรายใหม่ไต่น้ำหนักขึ้นเอง ไม่ต้องพึ่งฝีมือผู้จัดการกองทุน ไม่มี style drift",
+          "กระจายทั้งห่วงโซ่ AI ในไม้เดียว: ชิป (NVDA AVGO AMD) + cloud (MSFT AMZN GOOG) + model/app (META GOOG) + อุปกรณ์/บริการ (AAPL)",
+          "6 ตัวแกนของดัชนีติดตามลึกรายตัวได้ในหน้า Thesis นี้ — ใช้ QQQM เป็น core แล้วใช้ thesis รายตัวจับจังหวะส่วน tactical"
+        ]
+      },
+      "fundamentals": [
+        {
+          "key": "revenueGrowth",
+          "label": "การเติบโตของรายได้ (ระดับดัชนี)",
+          "current": "บริษัทแกนของดัชนีรายงานงบ Q2 2026 โตแรง — MSFT +18%, AMZN +20%, META +28%, AVGO +48%, NVDA +85%",
+          "trend": "up",
+          "score": 80,
+          "impact": "positive",
+          "why": "เครื่องยนต์กำไรของดัชนีคือ mega-cap AI ที่รายได้ยังเร่งตัว — น้ำหนักดัชนีเอียงเข้าหาบริษัทที่โตแรงโดยอัตโนมัติ"
+        },
+        {
+          "key": "epsGrowth",
+          "label": "การเติบโตกำไรต่อหุ้น (ระดับดัชนี)",
+          "current": "กำไรรวมของ NDX โตสองหลักจากรอบ AI — หลายตัวแกนโต 20%+",
+          "trend": "up",
+          "score": 78,
+          "impact": "positive",
+          "why": "การเติบโตกำไรของดัชนีขับด้วย operating leverage ของ mega-cap — เป็นเหตุผลหลักที่ multiple ยังยืนได้"
+        },
+        {
+          "key": "fcf",
+          "label": "กระแสเงินสดอิสระ (ระดับดัชนี)",
+          "current": "แกนดัชนีสร้าง OCF มหาศาล แต่ FCF ถูกกดทั้งกระดานจาก AI capex (MSFT ~$190B/ปี, AMZN ~$220B, META $130-145B)",
+          "trend": "down",
+          "score": 62,
+          "impact": "neutral",
+          "why": "รอบลงทุน AI กด FCF ของผู้ถือหุ้นใหญ่ในดัชนีพร้อมกัน — เป็นความเสี่ยงร่วม (systematic) ที่กระจายไม่ได้ภายในดัชนีนี้"
+        },
+        {
+          "key": "margin",
+          "label": "อัตรากำไร (ระดับดัชนี)",
+          "current": "mega-cap แกนดัชนี margin สูงมาก (MSFT op ~45%, NVDA gross ~75%, TSM ~68%)",
+          "trend": "flat",
+          "score": 82,
+          "impact": "positive",
+          "why": "โครงสร้างกำไรของดัชนีแข็งจากธุรกิจ software/platform/semiconductor ที่ margin สูงสุดในตลาดหุ้นโลก"
+        },
+        {
+          "key": "roic",
+          "label": "ผลตอบแทนต่อเงินลงทุน (ระดับดัชนี)",
+          "current": "สูงตามโปรไฟล์ mega-cap tech แต่ถูกเจือจางจากฐานสินทรัพย์ AI ที่บวมเร็ว",
+          "trend": "flat",
+          "score": 74,
+          "impact": "positive",
+          "why": "ROIC รวมของแกนดัชนียังสูง — จุดจับตาเดียวกับ thesis รายตัว: ผลตอบแทนของ AI capex ต้องพิสูจน์ใน 2-3 ปีข้างหน้า"
+        },
+        {
+          "key": "cash",
+          "label": "งบดุล (ระดับดัชนี)",
+          "current": "แกนดัชนีถือเงินสดรวมหลายแสนล้าน$ — หลายตัวสถานะใกล้ net cash",
+          "trend": "flat",
+          "score": 84,
+          "impact": "positive",
+          "why": "งบดุลรวมของ NDX แข็งแรงที่สุดในบรรดาดัชนีหลักของโลก — ทนวัฏจักรดอกเบี้ย/สินเชื่อได้ดี"
+        },
+        {
+          "key": "debt",
+          "label": "หนี้สิน (ระดับดัชนี)",
+          "current": "ต่ำเทียบกำไร แต่เริ่มก่อหนี้เพื่อ AI capex มากขึ้น (META ~$30B bond, MSFT lease)",
+          "trend": "down",
+          "score": 72,
+          "impact": "neutral",
+          "why": "ทิศทางหนี้ของแกนดัชนีกำลังเพิ่มตามรอบลงทุน — ยังบริหารได้สบายแต่เป็นเทรนด์ที่ต้องรู้"
+        },
+        {
+          "key": "dilution",
+          "label": "ต้นทุนกองทุน (แทน dilution)",
+          "current": "expense ratio 0.15% — ถูกสุดของ NDX ETF (เทียบ QQQ 0.20%) · ไม่มี dilution แบบบริษัท",
+          "trend": "flat",
+          "score": 90,
+          "impact": "positive",
+          "why": "ต้นทุนแฝงเดียวของผู้ถือคือค่าธรรมเนียม ซึ่งต่ำมาก — ทุก 1 ล้านบาทเสีย ~1,500 บาท/ปี"
+        },
+        {
+          "key": "capitalAllocation",
+          "label": "โครงสร้างกองทุน (แทน capital allocation)",
+          "current": "full replication ตามดัชนี + rebalance เชิงกลไก · AUM ~$82.9B",
+          "trend": "flat",
+          "score": 82,
+          "impact": "positive",
+          "why": "ไม่มี manager risk — วินัยการจัดพอร์ตคือกฎของดัชนี ผู้ชนะไต่น้ำหนักเอง ผู้แพ้ถูกลดออกเอง"
+        },
+        {
+          "key": "valuation",
+          "label": "ความน่าสนใจของราคา (ระดับดัชนี)",
+          "current": "NDX P/E ~31.6 (trailing) · forward ~27x — โซนบน-กลางของกรอบ 5 ปี [27.4, 33.4]",
+          "trend": "flat",
+          "score": 48,
+          "impact": "neutral",
+          "why": "ไม่ถูกแต่ยังไม่สุดโต่งเทียบประวัติตัวเอง — จ่ายพรีเมียมให้กำไร AI ที่กำลังเร่ง จุดเสี่ยงคือถ้า E ชะลอ multiple โซนบนจะหดแรง"
+        }
+      ],
+      "revenueQuality": {
+        "acceleration": "accelerating",
+        "consistency": 85,
+        "recurringPct": null,
+        "note": "คุณภาพ 'กำไรของดัชนี' ขึ้นกับ mega-cap ~47% แรก — งบ Q2 2026 ของแกนดัชนีแข็งทั่วหน้า (MSFT/AMZN/META/AVGO/NVDA) ทำให้กำไรรวมเร่งตัว · consistency สูงเพราะกระจาย ~100 บริษัท แต่การกระจุกใน top-10 ทำให้พฤติกรรมจริงใกล้ 'ตะกร้า Mag7' มากกว่าดัชนีกว้าง · สัดส่วนด้านล่างคือโครงสร้างน้ำหนักดัชนีโดยประมาณ",
+        "segments": [
+          {
+            "name": "แกน AI ที่มี thesis รายตัวใน KB (NVDA MSFT GOOG AMZN META AVGO)",
+            "sharePct": 40,
+            "growthNote": "เครื่องยนต์หลักของดัชนี — ทุกตัวมี thesis เต็มในหน้านี้ กดดูรายตัวได้",
+            "trend": "up"
+          },
+          {
+            "name": "Tech ใหญ่อื่น (AAPL, TSLA, semis/software ที่เหลือ)",
+            "sharePct": 35,
+            "growthNote": "AAPL/TSLA + AMD, INTC, software — โตปานกลาง ผสมผลงาน",
+            "trend": "flat"
+          },
+          {
+            "name": "Consumer / Healthcare / อื่น ๆ (COST, PEP, ISRG ฯลฯ)",
+            "sharePct": 25,
+            "growthNote": "ส่วนถ่วงที่ไม่ใช่ tech แท้ — ลดความผันผวนของดัชนีลงเล็กน้อย",
+            "trend": "flat"
+          }
+        ]
+      },
+      "aiExecution": {
+        "score": 80,
+        "items": [
+          {
+            "item": "การกระจุกใน AI winners (top-10 ~46.7%)",
+            "status": "executing",
+            "evidence": "น้ำหนักดัชนีเอียงเข้า NVDA/MSFT/AAPL/AVGO/GOOG/AMZN/META โดยกลไก — ผู้ถือ QQQM ได้ exposure รอบ AI เต็มที่โดยอัตโนมัติ"
+          },
+          {
+            "item": "Earnings delivery ของแกนดัชนี",
+            "status": "executing",
+            "evidence": "งบ Q2 2026: Azure +43% ($100B+/ปี), AWS +37%, AVGO AI semi +143%, NVDA +85%, META โฆษณา +28% — กำไรจริงตามรอบ AI มาแล้ว"
+          },
+          {
+            "item": "Rebalance เชิงกลไก",
+            "status": "executing",
+            "evidence": "ดัชนีปรับน้ำหนักตาม market cap — ผู้ชนะใหม่ (เช่น AVGO ที่ AI พุ่ง) ไต่ขึ้นเองโดยผู้ถือไม่ต้องทำอะไร"
+          },
+          {
+            "item": "ไม่มี manager risk / style drift",
+            "status": "executing",
+            "evidence": "full replication — ผลตอบแทนเบี่ยงจากดัชนีเพียงค่า fee ไม่มีความเสี่ยงฝีมือผู้จัดการ"
+          },
+          {
+            "item": "ใช้คู่กับ Thesis KB รายตัว",
+            "status": "on-track",
+            "evidence": "6 ตัวแกน (~40% ของดัชนี) มี thesis เต็มในระบบนี้ — ถือ QQQM เป็น core แล้วใช้สัญญาณรายตัวบริหารส่วน tactical"
+          }
+        ]
+      },
+      "competitive": {
+        "overall": "stable",
+        "moat": "ในฐานะ ETF: ค่าธรรมเนียมต่ำสุดของกลุ่ม NDX (0.15%) + ขนาด AUM ~$82.9B + โครงสร้าง Invesco ที่ผูกกับดัชนีหลัก — ในฐานะดัชนี: NDX คือ 'ดัชนี AI ของโลก' ที่บริษัทแกนมี moat ลึกที่สุดในตลาด (ดู thesis รายตัว) · คู่แข่งของ QQQM คือ QQQ (แพงกว่า) และ index funds อื่น — สำหรับผู้ถือยาว QQQM ชนะเชิงต้นทุน",
+        "factors": [
+          {
+            "key": "marketLeadership",
+            "label": "ผู้นำตลาด",
+            "status": "stable",
+            "note": "NDX คือดัชนีเทคโนโลยีหลักของโลก · QQQM เป็น share class ประหยัดของตระกูล QQQ ที่ใหญ่สุดในกลุ่ม"
+          },
+          {
+            "key": "techLeadership",
+            "label": "ผู้นำเทคโนโลยี (ผ่านดัชนี)",
+            "status": "strengthening",
+            "note": "บริษัทที่นำ AI ทุกชั้นอยู่ในดัชนี — ความนำเชิงเทคโนโลยีของ NDX แข็งขึ้นตามรอบ AI"
+          },
+          {
+            "key": "executionSpeed",
+            "label": "ความเร็ว (rebalance)",
+            "status": "stable",
+            "note": "ปรับน้ำหนักตามกฎดัชนี — ช้ากว่า active แต่ไม่มีความเสี่ยงตัดสินใจผิด"
+          },
+          {
+            "key": "switchingCost",
+            "label": "ต้นทุนการย้าย",
+            "status": "stable",
+            "note": "ย้ายไป ETF อื่นง่าย (ตลาดรอง) — moat ของกองคือ fee ต่ำ+ขนาด ไม่ใช่ lock-in"
+          },
+          {
+            "key": "ecosystem",
+            "label": "ecosystem",
+            "status": "stable",
+            "note": "อยู่ในตระกูล QQQ ecosystem (options/liquidity ใหญ่สุดของ ETF เทค)"
+          },
+          {
+            "key": "developerAdoption",
+            "label": "developer adoption",
+            "status": "stable",
+            "note": "ไม่เกี่ยวกับ ETF — มิตินี้ดูที่ thesis รายตัวของบริษัทในดัชนี"
+          },
+          {
+            "key": "customerLockin",
+            "label": "การล็อกอินผู้ถือ",
+            "status": "stable",
+            "note": "ผู้ถือระยะยาวอยู่เพราะต้นทุน/ภาษี (ขายมี capital gain) มากกว่า lock-in เชิงโครงสร้าง"
+          },
+          {
+            "key": "moat",
+            "label": "moat",
+            "status": "strengthening",
+            "note": "moat แท้จริงคือ moat รวมของบริษัทในดัชนี — ซึ่งเป็นกลุ่มที่คูเมืองลึกที่สุดในตลาดโลก และแข็งขึ้นตามรอบ AI"
+          }
+        ]
+      },
+      "capitalAllocation": {
+        "score": 82,
+        "verdict": "โครงสร้างกองทุนสะอาดและถูก — full replication, fee 0.15%, AUM ใหญ่พอไม่มีปัญหาสภาพคล่อง/tracking · ความเสี่ยงเชิงโครงสร้างของตัวกองต่ำมาก ความเสี่ยงจริงทั้งหมดอยู่ที่ 'ดัชนีที่มันถือ' (กระจุก + valuation)",
+        "items": [
+          {
+            "label": "ค่าธรรมเนียม",
+            "current": "0.15%/ปี (ถูกกว่า QQQ 0.20%)",
+            "assessment": "good",
+            "why": "ต่ำสุดในกลุ่ม NDX ETF — เหมาะกับผู้ถือระยะยาวที่สุด"
+          },
+          {
+            "label": "วิธี track ดัชนี",
+            "current": "Full replication (ถือครบทุกตัวตามน้ำหนัก)",
+            "assessment": "good",
+            "why": "tracking error ต่ำ ไม่มีความเสี่ยง sampling/derivative"
+          },
+          {
+            "label": "ขนาดกองทุน",
+            "current": "AUM ~$82.9B",
+            "assessment": "good",
+            "why": "ใหญ่พอสำหรับสภาพคล่อง/spread แคบ โดยไม่มีความเสี่ยงกองเล็กถูกปิด"
+          },
+          {
+            "label": "โครงสร้างภาษี/ปันผล",
+            "current": "จ่ายปันผลรายไตรมาส (yield ต่ำตามธรรมชาติ NDX)",
+            "assessment": "neutral",
+            "why": "ผู้ถือไทยโดนหัก withholding — ประเด็นภาษีเป็นเรื่องผู้ถือ ไม่ใช่ข้อบกพร่องของกอง"
+          }
+        ]
+      },
+      "valuationView": {
+        "level": "premium",
+        "note": "P/E ดัชนี ~31.6 trailing / forward ~27x — โซนบน-กลางของกรอบ 5 ปีตัวเอง [27.4, 33.4] ไม่ถูกแต่ไม่สุดโต่ง · จ่ายพรีเมียมให้กำไร AI ที่กำลังเร่งจริง (งบ Q2 แกนดัชนี beat ทั่วหน้า) · นัยเชิงปฏิบัติสำหรับ core position: ทยอยสะสมตามแผน/ตอนดัชนีย่อ ดีกว่าไล่ราคาช่วง multiple ชนขอบบน"
+      },
+      "whatChanged": [
+        {
+          "metric": "NDX forward P/E (ต้นปี → ก.ค. 2026)",
+          "prev": "~27.4x",
+          "now": "trailing ~31.6x / fwd ~27x — ขยับเข้าโซนบนของกรอบ",
+          "direction": "neutral"
+        },
+        {
+          "metric": "งบ Q2 2026 ของแกนดัชนี",
+          "prev": "รอผล",
+          "now": "beat ทั่วหน้า: MSFT/Azure +43%, AMZN/AWS +37%, AVGO AI +143%, META +28%, NVDA +85%",
+          "direction": "positive"
+        },
+        {
+          "metric": "การกระจุก top-10",
+          "prev": "~45-46%",
+          "now": "~46.7% — เพิ่มตามรอบ AI",
+          "direction": "neutral"
+        },
+        {
+          "metric": "AUM ของกอง",
+          "prev": "โตต่อเนื่อง",
+          "now": "~$82.9B — เงินไหลเข้า NDX ETF ต้นทุนต่ำต่อเนื่อง",
+          "direction": "positive"
+        },
+        {
+          "metric": "AI capex ของแกนดัชนี",
+          "prev": "สูง",
+          "now": "ยกขึ้นอีกทั้งกระดาน (MSFT ~$190B, AMZN ~$220B, META $130-145B) — กด FCF ร่วมกัน",
+          "direction": "negative"
+        }
+      ],
+      "risks": [
+        "การกระจุกตัว: top-10 ~47% — พฤติกรรมจริงใกล้ 'ตะกร้า Mag7' ถ้ารอบ AI สะดุด ดัชนีย่อแรงพร้อมกันทั้งกระดาน (กระจายภายในดัชนีไม่ช่วย)",
+        "Valuation โซนบนของกรอบ 5 ปี — ถ้ากำไรแกนดัชนีชะลอ (AI capex ไม่คืนทุน) การหดของ multiple จะซ้ำเติมราคา",
+        "AI capex cycle เป็นความเสี่ยงร่วมของผู้ถือหุ้นใหญ่เกือบทุกตัวในดัชนี — FCF ถูกกดพร้อมกัน เป็น systematic risk ของไม้นี้",
+        "ไม่มี financials/defensive ถ่วง — NDX เป็น tech beta เกือบเพียว รอบ risk-off ดัชนีนี้ลงแรงกว่าตลาดกว้าง",
+        "สำหรับผู้ถือไทย: ความเสี่ยง FX (USD/THB) และ withholding tax ของปันผล — ต้องคิดรวมในผลตอบแทนคาดหวัง"
+      ],
+      "asOf": "2026-07"
+    },
+    "GULF.BK": {
+      "ticker": "GULF.BK",
+      "name": "Gulf Development (GULF)",
+      "layer": "power",
+      "thesis": {
+        "statement": "GULF คือผู้ผลิตไฟฟ้าเอกชนรายใหญ่ที่สุดของไทย ที่หลังควบรวม Intouch (เม.ย. 2025) กลายเป็น holding โครงสร้างพื้นฐาน+ดิจิทัล: โรงไฟฟ้า (ก๊าซ/พลังงานหมุนเวียน) + ถือหุ้น AIS ~40% (เครื่องผลิตเงินสด) + ธุรกิจ data center/cloud (Gulf Edge) — มุม AI ของ thesis คือ 'ไฟฟ้าคือคอขวดของ AI ไทย': GULF คุมตั้งแต่ generation → data center → telecom ในกลุ่มเดียว พร้อมแผนลงทุน AI data center ~$4.3B เพิ่ม 2,000MW ใน 5 ปีร่วมกับ Microsoft และ Google Cloud · รายได้แกนมาจากสัญญาซื้อขายไฟระยะยาว (PPA) จึง recurring สูงและคาดการณ์ได้ — เดิมพันคือการแปลงกระแสเงินสดจากไฟฟ้า+AIS ไปสร้างขา AI infrastructure ให้สำเร็จ",
+        "pillars": [
+          "ผู้นำ IPP ไทย — กำลังผลิตตามสัดส่วนถือหุ้นระดับหลาย GW ผูก PPA ระยะยาวกับ กฟผ. = กระแสเงินสดคาดการณ์ได้หลายทศวรรษ",
+          "AIS ~40% หลังควบรวม Intouch — ส่วนแบ่งกำไร ~฿4.4-4.5B/ไตรมาส เป็น cash cow เลี้ยง capex รอบใหม่",
+          "AI data center: Gulf Edge × Google Cloud (sovereign cloud) + GSA DC (JV Singtel+AIS, เฟสแรก 25MW) + แผน ~$4.3B / 2,000MW ใน 5 ปีกับ Microsoft/Google",
+          "ตำแหน่งเชิงยุทธศาสตร์: ไฟฟ้าคือคอขวดของ data center ไทย — ผู้ผลิตไฟที่ทำ DC เองได้เปรียบเชิงต้นทุน/ความเร็วกว่าผู้เล่น DC ล้วน",
+          "Q1 2026 core profit ทำสถิติ ฿9,326M (+43% YoY) — เครื่องยนต์พลังงานยังโตแรงจาก GJP, LNG และโรงไฟฟ้าใหม่ COD"
+        ]
+      },
+      "fundamentals": [
+        {
+          "key": "revenueGrowth",
+          "label": "การเติบโตของรายได้",
+          "current": "~+21% YoY (Q1 2026 — ฿39.0B) จากโรงไฟฟ้าใหม่ + LNG + ธุรกิจดิจิทัล",
+          "trend": "up",
+          "score": 74,
+          "impact": "positive",
+          "why": "โตสองหลักจากกำลังผลิตใหม่ที่ทยอย COD และ LNG trading — การโตของ utility แบบมีสัญญารองรับ ไม่ใช่การเก็งวัฏจักร"
+        },
+        {
+          "key": "epsGrowth",
+          "label": "การเติบโตของกำไร",
+          "current": "core profit ฿9,326M (Q1 2026, +43% YoY — สถิติใหม่) · net profit ฿9.1B (+39%)",
+          "trend": "up",
+          "score": 80,
+          "impact": "positive",
+          "why": "กำไรแกนโตแรงจากทั้งพลังงาน (GJP +251%, LNG +140%) และส่วนแบ่ง AIS ฿4,461M — หมายเหตุ: EPS ต่อหุ้นโตช้ากว่ากำไรรวมเพราะฐานหุ้นใหญ่ขึ้นหลังควบรวม"
+        },
+        {
+          "key": "fcf",
+          "label": "กระแสเงินสดอิสระ",
+          "current": "ผันผวนตามรอบ capex โรงไฟฟ้า/DC — บางปีติดลบตามโมเดล project finance",
+          "trend": "flat",
+          "score": 45,
+          "impact": "neutral",
+          "why": "ธรรมชาติของธุรกิจ infra: ลงทุนก้อนใหญ่ล่วงหน้า เก็บเกี่ยวยาว — FCF รวมยังถูกกดจากการสร้าง DC/renewables แต่มี AIS เป็นกระแสเงินสดสม่ำเสมอช่วยถ่วง"
+        },
+        {
+          "key": "margin",
+          "label": "อัตรากำไร",
+          "current": "core margin แข็งแรงตามโครงสร้าง IPP (net margin ~23-24% ใน Q1 2026)",
+          "trend": "up",
+          "score": 72,
+          "impact": "positive",
+          "why": "margin ของสัญญา PPA มั่นคงและขยายเมื่อโรงใหม่ COD เต็มไตรมาส + mix ดิจิทัล margin สูงเพิ่มขึ้น"
+        },
+        {
+          "key": "roic",
+          "label": "ผลตอบแทนต่อเงินลงทุน",
+          "current": "ระดับ utility (กลาง ๆ) — ยกระดับด้วยส่วนแบ่งกำไร AIS ที่ ROIC สูง",
+          "trend": "flat",
+          "score": 58,
+          "impact": "neutral",
+          "why": "โครงการไฟฟ้าให้ผลตอบแทนคงที่แบบสัญญา ไม่หวือหวา — มูลค่าเพิ่มจริงอยู่ที่การ recycle เงินสดเข้าธุรกิจ margin สูงกว่า (DC/cloud)"
+        },
+        {
+          "key": "cash",
+          "label": "สภาพคล่อง",
+          "current": "บริหารผ่านโครงสร้าง project finance + เงินปันผลรับจาก AIS",
+          "trend": "flat",
+          "score": 55,
+          "impact": "neutral",
+          "why": "สภาพคล่องพอเพียงแต่ไม่หนา — พึ่งการ refinance และกระแสเงินสดเข้าจาก AIS เป็นตัวหล่อเลี้ยง"
+        },
+        {
+          "key": "debt",
+          "label": "หนี้สิน",
+          "current": "หนี้สูงตามโมเดล project finance (D/E สูงกว่ากลุ่มเทคมาก)",
+          "trend": "flat",
+          "score": 40,
+          "impact": "negative",
+          "why": "จุดอ่อนเชิงโครงสร้างของ IPP — อ่อนไหวต่อดอกเบี้ยและการ refinance แม้หนี้ส่วนใหญ่ผูกกับโครงการที่มีรายได้สัญญารองรับ"
+        },
+        {
+          "key": "dilution",
+          "label": "การเจือจางของหุ้น",
+          "current": "ฐานหุ้นใหญ่ขึ้นมากจากการควบรวม Intouch (แลกกับได้สินทรัพย์ AIS เข้ามา)",
+          "trend": "flat",
+          "score": 55,
+          "impact": "neutral",
+          "why": "การเพิ่มหุ้นเป็นการแลกสินทรัพย์คุณภาพสูง ไม่ใช่การเผาเงิน — แต่ผู้ถือเดิมต้องยอมรับสัดส่วนที่เจือจางลง"
+        },
+        {
+          "key": "capitalAllocation",
+          "label": "การจัดสรรเงินทุน",
+          "current": "ควบรวม Intouch สำเร็จ + เท capex เข้า renewables/data center + ปันผลต่อเนื่อง",
+          "trend": "up",
+          "score": 72,
+          "impact": "positive",
+          "why": "ทีมบริหารมีประวัติ deal ใหญ่ที่สร้างมูลค่า (INTUCH/AIS) — ตอนนี้ recycle เงินสดจากไฟฟ้า+โทรคมเข้า AI infrastructure ซึ่งเป็นเดิมพันที่มีตรรกะเชิงกลยุทธ์"
+        },
+        {
+          "key": "valuation",
+          "label": "ความน่าสนใจของราคา",
+          "current": "P/E TTM ~11x แต่บิดจากกำไรควบรวม ฿56.1bn — normalized (core) ~30x · ราคา ฿66.75 · mcap ~฿997B (ท็อป SET)",
+          "trend": "flat",
+          "score": 45,
+          "impact": "neutral",
+          "why": "ตลาดให้พรีเมียมเหนือ utility ปกติจาก AIS + optionality ของ AI data center — ไม่ถูก แต่มีเครื่องยนต์กำไรที่กำลังโตจริงรองรับ ต้อง execute แผน DC เพื่อ justify ราคา"
+        }
+      ],
+      "revenueQuality": {
+        "acceleration": "accelerating",
+        "consistency": 85,
+        "recurringPct": 80,
+        "note": "คุณภาพรายได้สูงเป็นพิเศษสำหรับหุ้นไทย — แกนหลักคือสัญญา PPA ระยะยาวกับภาครัฐ (คาดการณ์ได้หลายทศวรรษ) + ส่วนแบ่งกำไร AIS ที่สม่ำเสมอ · การเร่งตัวมาจากโรงไฟฟ้าใหม่ COD, LNG trading และ GJP · สัดส่วนด้านล่างเป็นโครงสร้างกำไร/รายได้โดยประมาณหลังควบรวม",
+        "segments": [
+          {
+            "name": "โรงไฟฟ้าก๊าซ (IPP/SPP รวม GJP)",
+            "sharePct": 50,
+            "growthNote": "แกนหลัก — GJP พลิกโตแรง (+251% YoY ใน Q1) และโรงใหม่ทยอย COD เต็มไตรมาส",
+            "trend": "up"
+          },
+          {
+            "name": "ส่วนแบ่งกำไร AIS (~40%)",
+            "sharePct": 22,
+            "growthNote": "฿4,461M ใน Q1 2026 — cash cow ที่โตตามตลาดมือถือ/enterprise ไทย",
+            "trend": "up"
+          },
+          {
+            "name": "พลังงานหมุนเวียน (ในและต่างประเทศ)",
+            "sharePct": 13,
+            "growthNote": "ทยอย COD ตามแผน PDP — ขาโตระยะยาวที่ margin ดี",
+            "trend": "up"
+          },
+          {
+            "name": "LNG shipper & trading",
+            "sharePct": 8,
+            "growthNote": "18 cargoes ใน Q1 (+140% YoY กำไร) — ขาใหม่ที่สเกลเร็ว",
+            "trend": "up"
+          },
+          {
+            "name": "Infrastructure & Digital (Gulf Edge DC, Binance TH, ท่าเรือ)",
+            "sharePct": 7,
+            "growthNote": "ยังเล็กแต่คือ optionality หลักของ thesis — DC 25MW เฟสแรก + แผน 2,000MW",
+            "trend": "up"
+          }
+        ]
+      },
+      "aiExecution": {
+        "score": 70,
+        "items": [
+          {
+            "item": "Gulf Edge × Google Cloud (sovereign cloud ไทย)",
+            "status": "executing",
+            "evidence": "พันธมิตรทางการ — ให้บริการ AI/cloud อธิปไตยข้อมูลสำหรับองค์กรไทย เริ่มจาก AIS เป็นลูกค้าแรก"
+          },
+          {
+            "item": "แผน AI data center ~$4.3B / 2,000MW ใน 5 ปี",
+            "status": "on-track",
+            "evidence": "ประกาศแผนร่วม Microsoft + Google Cloud — ใหญ่ที่สุดในไทย แต่ยังอยู่ช่วงเริ่มก่อสร้าง ต้องติดตาม execution จริง"
+          },
+          {
+            "item": "GSA DC (JV กับ Singtel + AIS)",
+            "status": "executing",
+            "evidence": "data center เฟสแรก 25MW ก่อสร้าง/เปิดให้บริการ — โมเดล JV ลดความเสี่ยงและได้ know-how จาก Singtel"
+          },
+          {
+            "item": "ข้อได้เปรียบ 'ไฟฟ้า → DC' ครบวงจร",
+            "status": "executing",
+            "evidence": "ผู้ผลิตไฟรายใหญ่ทำ DC เอง = ต้นทุนไฟและความเร็วเชื่อมต่อ grid เหนือคู่แข่ง DC ล้วน — คอขวดจริงของ AI ไทยคือไฟฟ้า"
+          },
+          {
+            "item": "Synergy กับ AIS (5G/enterprise/cloud)",
+            "status": "on-track",
+            "evidence": "ช่องขายตรงสู่ลูกค้าองค์กรของ AIS — DC + connectivity + cloud ในกลุ่มเดียว"
+          },
+          {
+            "item": "Gulf Binance (exchange ไทย)",
+            "status": "on-track",
+            "evidence": "ขาดิจิทัลเสริม — ยังเล็กเชิงกำไร เป็น optionality มากกว่าแกน"
+          }
+        ]
+      },
+      "competitive": {
+        "overall": "strengthening",
+        "moat": "คูเมืองแบบ infra ไทย: สัญญา PPA ระยะยาว + ใบอนุญาต/สัมปทานที่ผู้เล่นใหม่เข้ายาก + ทุนหนาและต้นทุนเงินต่ำกว่าคู่แข่ง + สายสัมพันธ์เชิงนโยบายที่แข็ง — และหลังควบรวม กลายเป็นรายเดียวในไทยที่คุม value chain ไฟฟ้า → data center → telecom ครบในกลุ่มเดียว ซึ่งเป็นตำแหน่งที่ลอกเลียนยากมากสำหรับรอบ AI ของไทย",
+        "factors": [
+          {
+            "key": "marketLeadership",
+            "label": "ผู้นำตลาด",
+            "status": "strengthening",
+            "note": "IPP เอกชนรายใหญ่สุดของไทย + หนึ่งใน market cap สูงสุดของ SET หลังควบรวม"
+          },
+          {
+            "key": "techLeadership",
+            "label": "ผู้นำเทคโนโลยี",
+            "status": "stable",
+            "note": "ไม่ใช่ผู้สร้างเทคเอง — ใช้พันธมิตร (Google, Microsoft, Singtel) เข้าถึงเทคโนโลยี DC/cloud ระดับโลก"
+          },
+          {
+            "key": "executionSpeed",
+            "label": "ความเร็วในการ execute",
+            "status": "strengthening",
+            "note": "ประวัติสร้างโรงไฟฟ้า/ปิดดีลใหญ่ตามแผนสม่ำเสมอ — ควบรวม INTUCH จบเร็วกว่าที่ตลาดคาด"
+          },
+          {
+            "key": "switchingCost",
+            "label": "ต้นทุนการย้ายค่าย",
+            "status": "stable",
+            "note": "PPA คือสัญญาผูกยาวโดยธรรมชาติ · ฝั่ง DC ลูกค้า enterprise ย้ายยากเมื่อ workload ลงแล้ว"
+          },
+          {
+            "key": "ecosystem",
+            "label": "ecosystem",
+            "status": "strengthening",
+            "note": "ไฟฟ้า + DC + AIS (มือถือ/enterprise) + Binance — ระบบนิเวศ infra-ดิจิทัลเดียวในไทย"
+          },
+          {
+            "key": "developerAdoption",
+            "label": "developer adoption",
+            "status": "stable",
+            "note": "ไม่ใช่สนามของ utility — ฝาก ecosystem นักพัฒนาไว้กับพันธมิตร cloud"
+          },
+          {
+            "key": "customerLockin",
+            "label": "การล็อกอินลูกค้า",
+            "status": "stable",
+            "note": "กฟผ./ภาครัฐผูกด้วย PPA · AIS ผูกฐานลูกค้ามือถือใหญ่สุดของประเทศ"
+          },
+          {
+            "key": "moat",
+            "label": "moat",
+            "status": "strengthening",
+            "note": "ใบอนุญาต + ทุน + สายสัมพันธ์ + value chain ครบ — คู่แข่ง DC ไทย (WHA, TRUE/ต่างชาติ) ไม่มีขาไฟฟ้าเป็นของตัวเอง"
+          }
+        ]
+      },
+      "capitalAllocation": {
+        "score": 72,
+        "verdict": "ทีมบริหารมีประวัติจัดสรรทุนเชิงรุกที่สร้างมูลค่าจริง (ดีล INTUCH/AIS) — ตอนนี้อยู่โหมด recycle กระแสเงินสดจากไฟฟ้า+โทรคมเข้า AI infrastructure จุดต้องจับตาคือหนี้ที่สูงตามโมเดลและวินัยการลงทุน DC ให้ได้ผลตอบแทนจริง ไม่ใช่แค่ตามกระแส",
+        "items": [
+          {
+            "label": "M&A (ควบรวม Intouch)",
+            "current": "ปิดดีลสำเร็จ เม.ย. 2025 — ได้ AIS ~40% เข้าพอร์ต",
+            "assessment": "good",
+            "why": "ดีลเปลี่ยนโครงสร้างที่ให้ cash cow ระยะยาว — จ่ายด้วยหุ้นแลกสินทรัพย์คุณภาพ"
+          },
+          {
+            "label": "CapEx พลังงาน (ก๊าซ/renewables)",
+            "current": "ทยอย COD ตามแผน PDP",
+            "assessment": "good",
+            "why": "ลงทุนแบบมีสัญญารองรับ — ความเสี่ยง demand ต่ำ"
+          },
+          {
+            "label": "CapEx AI data center (~$4.3B/5 ปี)",
+            "current": "เริ่มเฟสแรก (GSA DC 25MW) + แผน 2,000MW",
+            "assessment": "neutral",
+            "why": "เดิมพันใหญ่ที่มีตรรกะ แต่ผลตอบแทนยังต้องพิสูจน์ — ตลาด DC ไทยแข่งขึ้นเรื่อย ๆ"
+          },
+          {
+            "label": "เงินปันผล",
+            "current": "จ่ายต่อเนื่อง โตตามกำไร",
+            "assessment": "good",
+            "why": "กระแสเงินสด PPA + AIS รองรับปันผลได้มั่นคง"
+          },
+          {
+            "label": "โครงสร้างหนี้",
+            "current": "D/E สูงตามโมเดล project finance",
+            "assessment": "neutral",
+            "why": "ปกติของอุตสาหกรรมแต่ลดความยืดหยุ่น — ดอกเบี้ยขาขึ้นคือแรงกดโดยตรง"
+          }
+        ]
+      },
+      "valuationView": {
+        "level": "premium",
+        "note": "P/E headline ~11x (บิดจากกำไรควบรวมครั้งเดียว ฿56.1bn ที่จะหลุด TTM หลัง ส.ค. 2026) — ฐาน core จริง ~30x · ราคา ฿66.75, mcap ~฿997B (ท็อปของ SET) · หุ้น +60% YTD 2026 หลังร่วง 30% ปี 2025 — แพงกว่า utility ทั่วไปหลายเท่า ตลาดให้ค่ากับ AIS + optionality ของ AI data center · ถ้ามองเป็น 'utility' คือแพง ถ้ามองเป็น 'ทางด่วน AI infra ของไทย' คือจ่ายพรีเมียมรอ execution — ควรติดตามความคืบหน้า DC เป็นตัวชี้ขาด ไม่ใช่แค่กำไรพลังงานรายไตรมาส"
+      },
+      "whatChanged": [
+        {
+          "metric": "Core profit (Q1 2025 → Q1 2026)",
+          "prev": "฿6,506M",
+          "now": "฿9,326M (+43% — สถิติใหม่)",
+          "direction": "positive"
+        },
+        {
+          "metric": "รายได้รวม",
+          "prev": "฿32.3B",
+          "now": "฿39.0B (+21% YoY)",
+          "direction": "positive"
+        },
+        {
+          "metric": "ส่วนแบ่งกำไร GJP (ก๊าซ)",
+          "prev": "฿175M",
+          "now": "฿614M (+251%)",
+          "direction": "positive"
+        },
+        {
+          "metric": "LNG shipper",
+          "prev": "฿85M",
+          "now": "฿204M (+140% · 18 cargoes ~1.2 ล้านตัน)",
+          "direction": "positive"
+        },
+        {
+          "metric": "ส่วนแบ่งกำไร AIS",
+          "prev": "รับรู้ผ่าน INTUCH",
+          "now": "฿4,461M — รับรู้ตรงหลังควบรวม",
+          "direction": "positive"
+        },
+        {
+          "metric": "แผน AI data center",
+          "prev": "GSA DC 25MW เฟสแรก",
+          "now": "ประกาศแผน ~$4.3B เพิ่ม 2,000MW ใน 5 ปี (Microsoft + Google Cloud)",
+          "direction": "positive"
+        }
+      ],
+      "risks": [
+        "หนี้สูงตามโมเดล project finance — อ่อนไหวต่อดอกเบี้ยและการ refinance · การทุ่ม capex DC เพิ่มจะยิ่งกดงบดุลก่อนรายได้ตามมา",
+        "Execution risk ของแผน AI DC 2,000MW — ตลาด data center ไทยแข่งเดือด (WHA, TRUE/ต่างชาติ, hyperscaler สร้างเอง) และดีมานด์จริงของ AI ไทยยังต้องพิสูจน์",
+        "ความเสี่ยงนโยบาย/กฎเกณฑ์: ค่าไฟ, โครงสร้าง PDP, กกพ. — รายได้แกนผูกกับภาครัฐไทยสูงมาก การเมืองเปลี่ยน = ความเสี่ยงเชิงโครงสร้าง",
+        "Valuation premium ~25-30x บนหุ้น SET ที่สภาพคล่อง/flow ต่างชาติผันผวน — ถ้า DC story สะดุด multiple หดแรง",
+        "การพึ่งพา AIS เป็นสัดส่วนกำไรใหญ่ — การแข่งขัน telecom ไทย (TRUE) หรือ regulation ค่าบริการกระทบ GULF ทางตรง"
+      ],
+      "asOf": "2026-07",
+      "nextEarnings": "2026-08-11",
+      "history": {
+        "currency": "฿",
+        "fyNote": "ปีบัญชี = ปีปฏิทิน (สิ้นสุด ธ.ค.) — หน่วยเป็นพันล้านบาท (฿B)",
+        "epsBasis": "EPS ตามรายงาน (฿/หุ้น) · FY2025 ใช้ฐาน core (~฿2.0) แทนตัวเลขรายงาน ฿6.04 ที่รวมกำไรควบรวม Intouch ครั้งเดียว ฿56.1bn",
+        "years": [
+          {
+            "fy": "FY2021",
+            "endYm": "2021-12",
+            "revenueB": 52.9,
+            "epsAdj": 0.65,
+            "opMarginPct": 16.2,
+            "fcfB": -8.2,
+            "priceFYEnd": 45.75
+          },
+          {
+            "fy": "FY2022",
+            "endYm": "2022-12",
+            "revenueB": 95.1,
+            "epsAdj": 0.97,
+            "opMarginPct": 12.1,
+            "fcfB": -6.4,
+            "priceFYEnd": 55.25
+          },
+          {
+            "fy": "FY2023",
+            "endYm": "2023-12",
+            "revenueB": 117,
+            "epsAdj": 1.27,
+            "opMarginPct": 13,
+            "fcfB": -1.8,
+            "priceFYEnd": 44.5
+          },
+          {
+            "fy": "FY2024",
+            "endYm": "2024-12",
+            "revenueB": 124.6,
+            "epsAdj": 1.55,
+            "opMarginPct": 15,
+            "fcfB": -7.7,
+            "priceFYEnd": 59.5
+          },
+          {
+            "fy": "FY2025",
+            "endYm": "2025-12",
+            "revenueB": 135.6,
+            "epsAdj": 2,
+            "opMarginPct": 21,
+            "fcfB": 5.3,
+            "priceFYEnd": 41.75
+          }
+        ],
+        "notes": "ตัวเลขประมาณ ~2-3% · margin = net margin (GULF มี equity income ของ AIS/INTUCH อยู่ใต้บรรทัดรายได้ จึงไม่ใช้ operating margin) · FY2025: กำไรรายงาน ฿86.6bn รวม one-time ควบรวม ฿56.1bn — ใช้ core ฿28.8bn / EPS core ~฿2.0 / margin core ~21% แทน · หุ้นเพิ่ม 11.73→14.94bn จาก swap ควบรวม (×1.02974 ราคาต่อเนื่อง ~3%) · FCF ติดลบ 2021-24 ตามรอบสร้างโรงไฟฟ้า พลิกบวก ฿5.3bn ปี 2025 · ราคาปิดปีจริง — ปี 2025 หุ้นร่วง ~30% (SET ซบ + merger re-rating) แล้ว rally ~60% ใน 2026 (ปัจจุบัน ~฿66.75)",
+        "sources": [
+          "https://www.gulf.co.th/en/newsroom/ (FY2021-2025 + Q1/2026 press releases)",
+          "https://stockanalysis.com/quote/bkk/GULF/",
+          "https://www.digrin.com/stocks/detail/GULF.BK/price"
+        ]
+      }
     }
   }
 };

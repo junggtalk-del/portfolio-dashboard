@@ -403,10 +403,11 @@
       "</div>";
 
     // ---- 5Y table ----
+    var CUR = Hy.currency || "$"; // "฿" สำหรับหุ้นไทย (history.currency)
     var rows = (Hy.years || []).map(function (y) {
       var yoyR = y.revYoyPct != null ? ' <small class="th-bp-yoy">(' + fmtPct(y.revYoyPct) + ")</small>" : "";
       var yoyE = y.epsYoyPct != null ? ' <small class="th-bp-yoy">(' + fmtPct(y.epsYoyPct) + ")</small>" : (y.epsTurn ? ' <small class="th-bp-yoy">(พลิกกำไร)</small>' : "");
-      return "<tr><td>" + esc(y.fy) + "</td><td>~$" + esc(fmt(y.revenueB)) + "B" + yoyR + "</td><td>~$" + esc(fmt(y.epsAdj)) + yoyE + "</td><td>~" + esc(fmt(y.opMarginPct)) + "%</td><td>~$" + esc(fmt(y.fcfB)) + "B</td><td>~$" + esc(fmt(y.priceFYEnd)) + "</td></tr>";
+      return "<tr><td>" + esc(y.fy) + "</td><td>~" + CUR + esc(fmt(y.revenueB)) + "B" + yoyR + "</td><td>~" + CUR + esc(fmt(y.epsAdj)) + yoyE + "</td><td>~" + esc(fmt(y.opMarginPct)) + "%</td><td>~" + CUR + esc(fmt(y.fcfB)) + "B</td><td>~" + CUR + esc(fmt(y.priceFYEnd)) + "</td></tr>";
     }).join("");
     var foot = "<tr class=\"th-bp-cagr\"><td>CAGR</td><td>~" + esc(fmt(M.revCagrPct)) + "%</td><td>" + (M.epsCagrPct != null ? "~" + esc(fmt(M.epsCagrPct)) + "%" : (M.epsTurnaround ? "พลิกกำไร" : "—")) + "</td><td>" + (M.marginDeltaPp != null ? (M.marginDeltaPp >= 0 ? "+" : "") + esc(fmt(M.marginDeltaPp)) + "pp" : "—") + "</td><td>" + (M.fcfCagrPct != null ? "~" + esc(fmt(M.fcfCagrPct)) + "%" : "—") + "</td><td>~" + esc(fmt(M.priceCagr5FYPct)) + "%/ปี</td></tr>";
     var table = rows

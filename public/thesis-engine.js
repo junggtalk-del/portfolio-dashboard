@@ -600,7 +600,8 @@
         (priceBasis === "live" ? " (ถึงราคาล่าสุด)" : " (ถึงสิ้นปีบัญชีล่าสุด)") +
         (gapPp != null ? " → " + (gapPp >= 0 ? "นำหน้า" : "ตามหลัง") + "การเติบโตพื้นฐาน ~" + round(Math.abs(gapPp), 1) + "pp/ปี" : ""));
       if (marginDelta != null) why.push("ความสามารถทำกำไร: operating margin " + first.margin + "% → " + last.margin + "% (" + (marginDelta >= 0 ? "+" : "") + round(marginDelta, 1) + "pp ใน 5 ปี)");
-      if (last.fcf != null) why.push("กระแสเงินสด: FCF " + (first.fcf != null ? "~$" + first.fcf + "B → " : "") + "~$" + last.fcf + "B · เป็นบวก " + fcfPos + "/5 ปี");
+      var curSym = H.currency || "$"; // หุ้นไทยใช้ "฿" — กำหนดใน history.currency
+      if (last.fcf != null) why.push("กระแสเงินสด: FCF " + (first.fcf != null ? "~" + curSym + first.fcf + "B → " : "") + "~" + curSym + last.fcf + "B · เป็นบวก " + fcfPos + "/5 ปี");
       if (opts.thesisScore != null) why.push("Investment thesis: คะแนน " + opts.thesisScore + "/100 — ข้อสรุปนี้อ่านคู่กับ thesis เสมอ ไม่แทนกัน");
       why.push("สรุปจากการรวม การเติบโตธุรกิจ + ราคาหุ้น + ความสามารถทำกำไร + กระแสเงินสด — ไม่ตัดสินจาก valuation ratio ตัวเดียว และไม่มีการพยากรณ์/ราคาเป้าหมาย");
 
@@ -616,6 +617,7 @@
 
       return {
         available: true, ticker: T, name: cfg.name, asOf: cfg.asOf || null,
+        currency: curSym,
         fyNote: H.fyNote || "", epsBasis: H.epsBasis || "", notes: H.notes || "",
         years: Y.map(function (y, idx) {
           return {

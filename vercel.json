@@ -89,6 +89,10 @@
       "destination": "/thesis.html"
     },
     {
+      "source": "/accumulation-center",
+      "destination": "/accumulation-center.html"
+    },
+    {
       "source": "/wave3",
       "destination": "/wave3.html"
     },

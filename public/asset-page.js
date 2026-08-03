@@ -349,6 +349,18 @@
         action = window.Scoring.actionFromSignal(signal, input);
       } catch (_e) { /* ignore */ }
     }
+    // Investment Thesis reconcile — SAME shared rules as Action Center, so the
+    // action shown here can never contradict it (e.g. no raw "ขายหมด" when the
+    // thesis is strong + cheap). Also yields the thesis summary panel below.
+    let thesisInfo = null, thesisNote = null;
+    if (window.ThesisReconcile) {
+      try {
+        const tr = window.ThesisReconcile.forAsset(key, snapshot, action, input.isHolding);
+        thesisInfo = tr.thesis;
+        if (tr.action) action = tr.action;
+        thesisNote = tr.note;
+      } catch (_e) { /* thesis unavailable — technical view stands alone */ }
+    }
     const sq = window.SignalQuality ? (function () { try { return window.SignalQuality.calculate(input); } catch (_e) { return null; } })() : null;
 
     // --- chart S/R + state ---
@@ -363,6 +375,7 @@
     root.innerHTML = [
       heroSection(displaySym, name, assetType, key, cur, price, dailyChange, timing, action, holding, sq, signal),
       snapshotSection(cur, price, dailyChange, tech.latestDate || hist.latestDate, timing, action, holding, fresh, sq, signal),
+      thesisSection(thesisInfo, thesisNote),
       mainGrid(timing, quadrant, action, sq, signal),
       indicatorSection(tech, rsi, price, cur),
       portfolioSection(holding, exposure, key),
@@ -377,6 +390,33 @@
   }
 
   // ---------------------------------------------------------------- sections
+  // Investment Thesis panel — ล้อกับ Action Center (shared reconcile module)
+  function thesisSection(th, note) {
+    if (!th) return "";
+    const VAL = (window.ThesisReconcile && window.ThesisReconcile.VAL_TH) || {};
+    const ansColor = th.answer === "YES" ? "var(--app-up,#34d399)" : th.answer === "NO" ? "var(--app-down,#f43f5e)" : "var(--app-warn,#f59e0b)";
+    const scoreColor = th.score >= 70 ? "var(--app-up,#34d399)" : th.score >= 55 ? "var(--app-warn,#f59e0b)" : "var(--app-down,#f43f5e)";
+    const cell = (label, valueHtml) =>
+      `<div style="display:flex;flex-direction:column;gap:3px;min-width:0;"><span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--mc-muted,#94a3b8);">${label}</span>${valueHtml}</div>`;
+    const staleWarn = th.stale
+      ? `<span style="font-size:11px;color:var(--app-warn,#f59e0b);">⚠ ข้อมูล curated อายุ ${th.staleMonths} เดือน — สั่ง /thesis-update ${esc(th.ticker)}</span>` : "";
+    return `
+      <section class="mc-card mc-glow" style="padding:16px 18px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          <div style="font-size:14px;font-weight:800;">🧾 Investment Thesis</div>
+          <a href="/thesis" onclick="try{localStorage.setItem('thesis_selected_v1','${esc(th.ticker)}')}catch(e){}" style="font-size:12px;color:var(--app-info,#38bdf8);text-decoration:none;">เปิดหน้า Thesis เต็ม →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+          ${cell("Thesis Score", `<b style="font-size:16px;color:${scoreColor};">${th.score}/100</b><em style="font-style:normal;font-size:11px;color:var(--mc-muted,#94a3b8);">${esc(th.statusLabel)} · ${esc(th.trendThai || "")}</em>`)}
+          ${cell("Decision · Should I Buy This Dip?", `<b style="font-size:13px;">${esc(th.decisionLabel)} <span style="color:${ansColor};">· ${esc(th.answer)}</span></b><em style="font-style:normal;font-size:11px;color:var(--mc-muted,#94a3b8);">${esc(th.decisionThai)}</em>`)}
+          ${cell("Valuation", `<b style="font-size:13px;">${esc(VAL[th.valLevel] || th.valLevel || "—")}</b>`)}
+          ${cell("ประเภทการย่อ (dip class)", `<b style="font-size:13px;">${esc(th.dipClassLabel || "—")}</b>`)}
+        </div>
+        ${note ? `<div style="margin-top:10px;font-size:11.5px;color:var(--app-warn,#f59e0b);border:1px dashed color-mix(in srgb,var(--app-border,#334155),var(--app-warn,#f59e0b) 50%);border-radius:10px;padding:7px 11px;line-height:1.55;">⚠ ${esc(note)}</div>` : ""}
+        <div style="margin-top:10px;font-size:11px;color:var(--mc-muted,#94a3b8);line-height:1.5;">📎 Action ด้านบนผ่านการชั่ง เทคนิค × Thesis แล้ว (กฎชุดเดียวกับ Action Center) — ไม่ใช่คำแนะนำซื้อขาย ${staleWarn}</div>
+      </section>`;
+  }
+
   function metric(label, value, sub, subClass) {
     return `<div class="mc-card mc-metric mc-glow">
       <div class="mc-label"><span>${esc(label)}</span></div>

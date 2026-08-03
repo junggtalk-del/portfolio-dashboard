@@ -113,10 +113,12 @@
   // ============================================================
   const STORAGE_KEY = "aiBoomUniverseUserAssets";
   const REMOVED_KEY = "aiBoomUniverseRemovedAssetIds";
+  const WATCH_KEY = "aiBoomUniverseWatchTickers";
+  const EXCL_KEY = "aiBoomUniverseExcludedTickers";
   const WATCHLIST_STORE_KEY = "portfolio_dashboard_watchlist";
   const WATCHLIST_MIGRATED_KEY = "watchlistMigratedToUniverse_v1";
 
-  let persistedState = { userAssets: [], removedIds: [] };
+  let persistedState = { userAssets: [], removedIds: [], watchTickers: [], excludedTickers: [] };
   let universeStorageMode = "loading";
 
   function readJsonArrayLocal(key) {
@@ -131,7 +133,16 @@
       seenTickers.add(t);
       return true;
     });
-    return { userAssets, removedIds: Array.isArray(safe.removedIds) ? safe.removedIds : [] };
+    // yellow-flag watch set. First run (field absent) → derive from user-added
+    // assets so existing behaviour ("things I added = watching") is preserved.
+    const rawWatch = Array.isArray(safe.watchTickers)
+      ? safe.watchTickers
+      : userAssets.map((a) => a.ticker);
+    const watchTickers = [...new Set(rawWatch.map((t) => canonical(t)).filter(Boolean))];
+    // tickers removed by the user that are NEITHER user-added NOR seed (they leak
+    // in from snapshot series) — persisted so "เอาออกจาก list" actually sticks.
+    const excludedTickers = [...new Set((Array.isArray(safe.excludedTickers) ? safe.excludedTickers : []).map((t) => canonical(t)).filter(Boolean))];
+    return { userAssets, removedIds: Array.isArray(safe.removedIds) ? safe.removedIds : [], watchTickers, excludedTickers };
   }
   async function loadUniverseState() {
     try {
@@ -143,9 +154,12 @@
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedState.userAssets));
         localStorage.setItem(REMOVED_KEY, JSON.stringify(persistedState.removedIds));
+        localStorage.setItem(WATCH_KEY, JSON.stringify(persistedState.watchTickers));
+        localStorage.setItem(EXCL_KEY, JSON.stringify(persistedState.excludedTickers));
       } catch (_e) { /* cache best-effort */ }
     } catch (_error) {
-      persistedState = sanitizeUniverseState({ userAssets: readJsonArrayLocal(STORAGE_KEY), removedIds: readJsonArrayLocal(REMOVED_KEY) });
+      const localWatch = localStorage.getItem(WATCH_KEY) == null ? undefined : readJsonArrayLocal(WATCH_KEY);
+      persistedState = sanitizeUniverseState({ userAssets: readJsonArrayLocal(STORAGE_KEY), removedIds: readJsonArrayLocal(REMOVED_KEY), watchTickers: localWatch, excludedTickers: readJsonArrayLocal(EXCL_KEY) });
       universeStorageMode = "local-cache";
     }
   }
@@ -154,6 +168,8 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(persistedState.userAssets));
       localStorage.setItem(REMOVED_KEY, JSON.stringify(persistedState.removedIds));
+      localStorage.setItem(WATCH_KEY, JSON.stringify(persistedState.watchTickers));
+      localStorage.setItem(EXCL_KEY, JSON.stringify(persistedState.excludedTickers));
     } catch (_e) { /* cache best-effort */ }
     try {
       const response = await fetch("/api/ai-universe", {
@@ -207,6 +223,8 @@
     const key = canonical(ticker);
     if (!key) return { ok: false, message: "กรุณาใส่ ticker" };
     const inSeed = (seed.ai_boom_universe || []).some((a) => canonical(a?.ticker) === key);
+    // re-adding a previously excluded snapshot symbol → un-exclude it
+    persistedState.excludedTickers = (persistedState.excludedTickers || []).filter((t) => t !== key);
     if (userAssetByTicker(key) || (inSeed && !removedTickerSet().has(key))) return { ok: false, message: key + " อยู่ใน list แล้ว" };
     // re-adding a removed seed asset → just un-remove it
     if (inSeed) {
@@ -215,6 +233,7 @@
     } else {
       persistedState.userAssets = (persistedState.userAssets || []).concat([makeUserAssetLite(key, name)]);
     }
+    if (!isWatchTicker(key)) persistedState.watchTickers = (persistedState.watchTickers || []).concat([key]);
     await saveUniverseState();
     return { ok: true, message: "เพิ่ม " + key + " แล้ว — กด Load Latest Data เพื่อดึงสัญญาณ" };
   }
@@ -226,11 +245,18 @@
       persistedState.userAssets = (persistedState.userAssets || []).filter((a) => canonical(a.ticker) !== key);
     } else {
       const seedAsset = (seed.ai_boom_universe || []).find((a) => canonical(a?.ticker) === key);
-      if (!seedAsset) return false;
-      const ids = new Set(persistedState.removedIds || []);
-      ids.add(seedAsset.id);
-      persistedState.removedIds = [...ids];
+      if (seedAsset) {
+        const ids = new Set(persistedState.removedIds || []);
+        ids.add(seedAsset.id);
+        persistedState.removedIds = [...ids];
+      } else {
+        // defect fix: symbols merged from snapshot series (e.g. ^VIXEQ) are
+        // neither user-added nor seed — persist an explicit exclusion so
+        // "เอาออกจาก list" actually removes them.
+        persistedState.excludedTickers = [...new Set([...(persistedState.excludedTickers || []), key])];
+      }
     }
+    persistedState.watchTickers = (persistedState.watchTickers || []).filter((t) => t !== key);
     await saveUniverseState();
     return true;
   }
@@ -270,6 +296,16 @@
     }
   }
 
+  // Never show these in Action Center (user request 2026-07-31): macro/regime
+  // indicator series that leak in from snapshot.technicalSignals (not investable
+  // actions) + Thai tech funds the user does not track here. Covers canonical
+  // variants with/without ^ and with underscores stripped.
+  const EXCLUDED_TICKERS = new Set([
+    "VIX", "^VIX", "VVIX", "^VVIX", "VIXEQ", "^VIXEQ", "DX-Y.NYB", "DXY", "MOVE", "^MOVE",
+    "TNX", "^TNX", "HYG",
+    "BINNOTECH", "B-INNOTECH", "SCBGLOBALTECH", "KKPGTECH", "KKPNDQ", "KKP-GTECH"
+  ]);
+
   function buildAssetMap(snapshot) {
     const map = new Map();
     const seedMeta = new Map();
@@ -277,9 +313,11 @@
       const key = canonical(asset?.ticker);
       if (key) seedMeta.set(key, asset);
     });
+    // held assets are exempt from exclusion — "ทุกตัวที่ถือ ต้องมีการ์ดเสมอ"
+    const heldKeys = new Set(holdingsFromSnapshot(snapshot).filter((h) => h.isHolding).map((h) => canonical(h.canonicalSymbol)));
     const addAsset = (asset = {}) => {
       const key = canonical(asset.canonicalSymbol || asset.ticker || asset.symbol || asset.providerSymbol || asset.provider_symbol);
-      if (!key) return;
+      if (!key || (EXCLUDED_TICKERS.has(key) && !heldKeys.has(key))) return;
       const previous = map.get(key) || {};
       const seeded = seedMeta.get(key) || {};
       map.set(key, {
@@ -323,6 +361,7 @@
     (persistedState.userAssets || []).forEach((asset) => addAsset(asset));
     const holdingKeys = new Set(holdingsFromSnapshot(snapshot).map((h) => canonical(h.canonicalSymbol)));
     removedTickerSet().forEach((key) => { if (!holdingKeys.has(key)) map.delete(key); });
+    (persistedState.excludedTickers || []).forEach((key) => { if (!holdingKeys.has(key)) map.delete(key); });
     return map;
   }
 
@@ -378,9 +417,113 @@
         holding: holding || null
       };
       const enriched = core.enrichWithHolding ? core.enrichWithHolding(baseRow, holdings, totalValue) : enrichWithHoldingFallback(baseRow, holding, totalValue);
-      rows.push(resolveDecision(enriched, snapshot));
+      rows.push(applyThesisToDecision(resolveDecision(enriched, snapshot)));
     }
     return rows.sort(compareRows);
+  }
+
+  // ============================================================
+  // Investment Thesis as an ACTION condition (user request 2026-07-31).
+  // Companies covered by the curated Thesis KB get their Thesis Engine verdict
+  // (score · Accumulate/Wait/Reduce/Review · YES/WAIT/NO) folded into the
+  // Action Center decision — reusing window.ThesisEngine.compute untouched.
+  // ============================================================
+  let thesisCache = new Map();
+  let thesisCoveredSet = null;
+  function thesisFor(symbol) {
+    const TE = window.ThesisEngine, TD = window.ThesisData;
+    if (!TE || typeof TE.compute !== "function" || !TD) return null;
+    if (!thesisCoveredSet) {
+      const list = TE.companiesFrom ? TE.companiesFrom(TD) : [];
+      thesisCoveredSet = new Set(list.map((c) => canonical(c.ticker)));
+    }
+    const key = canonical(symbol);
+    const lookup = thesisCoveredSet.has(key) ? key
+      : (key === "GOOGL" && thesisCoveredSet.has("GOOG") ? "GOOG" : null);
+    if (!lookup) return null;
+    if (thesisCache.has(lookup)) return thesisCache.get(lookup);
+    let out = null;
+    try {
+      const o = TE.compute(lookup, state.snapshot || {}, {});
+      if (o && o.available) {
+        out = {
+          ticker: lookup,
+          score: o.thesis.score,
+          statusLabel: o.thesis.status ? o.thesis.status.label : "",
+          trendKey: o.thesis.trend ? o.thesis.trend.key : null,
+          decisionKey: o.decision.key,
+          decisionLabel: o.decision.label,
+          decisionThai: o.decision.thai,
+          answer: o.finalVerdict ? o.finalVerdict.answer : "WAIT",
+          dipClassKey: o.dipClass ? o.dipClass.key : null,
+          dipClassLabel: o.dipClass ? o.dipClass.label : "",
+          valLevel: o.valuationView ? o.valuationView.level : null,
+          gateOpen: o.inputs && o.inputs.megaTrend ? o.inputs.megaTrend.gateOpen : null,
+          macroOk: o.inputs && o.inputs.regime ? o.inputs.regime.score >= 40 : null,
+          stale: Boolean(o.stale)
+        };
+      }
+    } catch (_e) { /* thesis unavailable → no adjustment */ }
+    thesisCache.set(lookup, out);
+    return out;
+  }
+  // Buy-the-dip position cap (user spec): น้ำหนักรวมต่อ bucket ไม่เกิน 10%
+  // (ฐาน % = bucketAlloc → Quarterly Editor gross ของหุ้นต่างประเทศ)
+  const BUY_DIP_MAX_PCT = 10;
+  const VAL_TH_LABEL = { cheap: "ถูก", fair: "สมเหตุสมผล", premium: "พรีเมียม", expensive: "แพง" };
+  function applyThesisToDecision(row) {
+    const th = thesisFor(row.symbol);
+    if (!th) return row;
+    row.thesis = th;
+    const d = row.decision || {};
+    const conflicts = row.conflicts || (row.conflicts = []);
+    const held = Boolean(row.portfolio?.isHolding);
+
+    // ---------- SELL-side reconciliation (กัน "ขายหมด" สวน thesis ที่แข็ง) ----------
+    // กฎอยู่ใน SHARED module (public/thesis-reconcile.js) — Asset 360 ใช้ชุดเดียวกัน
+    if (held && (d.actionKey === "SELL_ALL" || d.actionKey === "SELL_FIRST") && window.ThesisReconcile) {
+      const res = window.ThesisReconcile.reconcileSell(d.actionKey, th, bucketAlloc(row), d.reason || "");
+      if (res) {
+        if (!res.unchanged) {
+          d.actionKey = res.key;
+          d.action = res.code;
+          d.actionThai = res.thaiAction;
+          d.section = res.section;
+        }
+        d.reason = res.reason;
+        if (res.conflict) conflicts.push(res.conflict);
+      }
+      return row;
+    }
+
+    // ---------- BUY-side / weak-thesis rules (เดิม) ----------
+    if (held && (th.decisionKey === "review-thesis" || th.score < 55) && d.section !== "urgent") {
+      // ถือจริง + thesis อ่อน/ต้องทบทวน → ดันขึ้น Urgent (เปลี่ยน actionKey ด้วย
+      // เพื่อให้ verdict บนการ์ดเป็นเสียงเดียว — ไม่ใช่ 🟢 ถือต่อ ทับเหตุผลทบทวน)
+      d.section = "urgent";
+      d.actionKey = "REVIEW_THESIS";
+      d.action = "review";
+      d.actionThai = `ทบทวนการถือ — Thesis อ่อน (${th.score}/100)`;
+      d.reason = `Investment Thesis อ่อน (${th.score}/100 · ${th.decisionLabel}) — ทบทวนเหตุผลการถือก่อนตัดสินใจใด ๆ · ${d.reason || ""}`;
+      conflicts.push({ label: "THESIS", severity: "high", reason: `Thesis ${th.score}/100 (${th.statusLabel}) — ${th.decisionThai}` });
+    } else if (d.section === "buy" && th.answer === "NO") {
+      // สัญญาณเทคนิคชวนซื้อ แต่ thesis ปฏิเสธ → ลดลง watch + conflict แรง
+      d.section = "watch";
+      d.reason = `Thesis ไม่สนับสนุน (${th.decisionLabel} · ${th.score}/100) — เทคนิคบวกแต่โครงสร้างไม่หนุน · ${d.reason || ""}`;
+      conflicts.push({ label: "THESIS", severity: "high", reason: `Investment Thesis ไม่สนับสนุนการเพิ่ม (${th.decisionLabel} · score ${th.score})` });
+    } else if (d.section === "buy" && th.answer === "WAIT") {
+      // เทคนิคบวกแต่ thesis ให้รอ → คง buy แต่ติดธงเตือน
+      conflicts.push({ label: "THESIS", severity: "medium", reason: `Thesis ให้รอ: ${th.decisionThai} (score ${th.score})` });
+    }
+    if (th.answer === "YES" && (d.section === "buy" || d.section === "watch")) d.thesisAligned = true;
+    return row;
+  }
+  function thesisChip(row) {
+    const th = row.thesis;
+    if (!th) return "";
+    const tone = th.answer === "YES" ? "badge-buy" : th.answer === "NO" ? "badge-sell" : "badge-gray";
+    const stale = th.stale ? " ⚠" : "";
+    return `<a class="badge ${tone} thesis-chip" href="/thesis" data-th-goto="${escapeHtml(th.ticker)}" title="เปิด Investment Thesis ของ ${escapeHtml(th.ticker)}${th.stale ? " (ข้อมูล curated เก่า — ควร /thesis-update)" : ""}">🧾 Thesis ${th.score} · ${escapeHtml(th.decisionLabel)}${stale}</a>`;
   }
 
   const isDev = location.hostname === "localhost" || location.hostname === "127.0.0.1";
@@ -388,6 +531,11 @@
   const ACTION_CODE = {
     SELL_ALL: { code: "review", thai: "ขายหมด / ออกจากสถานะ" },
     SELL_FIRST: { code: "review", thai: "ขายไม้แรก / ลดน้ำหนัก" },
+    // thesis-reconciled actions (applyThesisToDecision)
+    BUY_DIP: { code: "buy", thai: "ทยอยซื้อเพิ่ม (Buy the Dip)" },
+    HOLD_CORE: { code: "watch", thai: "ถือ Core / ลดเฉพาะ Tactical" },
+    HOLD_LIMIT: { code: "watch", thai: "ถือ — เต็มเพดานน้ำหนัก" },
+    REVIEW_THESIS: { code: "review", thai: "ทบทวนการถือ — Thesis อ่อน" },
     BUY_MORE: { code: "buy", thai: "ซื้อเพิ่ม / เพิ่มน้ำหนัก" },
     HOLD_ADD: { code: "buy", thai: "ถือต่อ / เพิ่มได้" },
     BUY_FIRST_WAIT_VOLUME: { code: "watch", thai: "ซื้อไม้แรก / รอวอลุ่ม" },
@@ -574,6 +722,9 @@
       decision: {
         action,
         actionThai,
+        // synthetic actionKey so the thesis reconcile + positionVerdict work on
+        // the legacy path too (review finding: legacy had no actionKey at all)
+        actionKey: section === "urgent" ? "SELL_FIRST" : action === "buy" ? "BUY_MORE" : action === "watch" ? "WATCH_WAIT" : "AVOID_WAIT",
         section,
         signalGroup: signal ? signal.groupKey : null,
         signalLabel: signal ? signal.thaiLabel : null,
@@ -761,12 +912,13 @@
   // deleted (Trend Status + Asset Detail keep the full record).
   // ============================================================
   const FRESH_WINDOW = 3; // trading days (0 = latest bar … 3 = 3 bars ago)
-  const FRESH_GROUPS = [
-    ["holdings", "Portfolio Holdings", "ในพอร์ต"],
-    ["aiBoom", "AI Boom Universe", "AI Boom"],
-    ["thailand", "Thailand", "หุ้นไทย"],
-    ["crypto", "Crypto", "คริปโต"]
+  // V2 priority zones — inbox order: what the USER cares about first, not market category.
+  const ZONE_DEFS = [
+    ["positions", "🔥 My Positions", "สิ่งที่ถืออยู่ — ดูก่อนเสมอ"],
+    ["watch", "⭐ Watchlist", "ตัวที่ตั้งใจเฝ้า (ยังไม่ได้ถือ)"],
+    ["market", "📈 Market Opportunities", "ที่เหลือทั้งตลาด — เฉพาะสัญญาณใหม่"]
   ];
+  const MARKET_CHIP = { us: "US Stocks", thai: "Thailand", crypto: "Crypto", fund: "Funds" };
 
   function ageLabel(n) {
     return n === 0 ? "Today" : n === 1 ? "Yesterday" : n + " days ago";
@@ -777,12 +929,47 @@
   function isFreshAge(n) {
     return Number.isFinite(n) && n >= 0 && n <= FRESH_WINDOW;
   }
-  function freshGroupOf(row) {
-    if (row.portfolio?.isHolding) return "holdings";
-    const g = marketGroup(row);
-    if (g === "crypto") return "crypto";
-    if (g === "thai") return "thailand";
-    return "aiBoom"; // us / fund / other non-holding
+  // watch = explicitly monitored but not owned: user-added universe assets +
+  // holdings records flagged watchlist-only. Derived — no new data source.
+  function isWatchTicker(symbol) {
+    const key = canonical(symbol);
+    return (persistedState.watchTickers || []).some((t) => t === key);
+  }
+  function isUserWatch(row) {
+    if (row.portfolio?.isHolding) return false;
+    const key = canonical(row.symbol);
+    if (isWatchTicker(key)) return true;
+    // holdings records saved as watchlist-only (isHolding=false) are watch too
+    const rec = holdingsFromSnapshot(state.snapshot).find((h) => canonical(h.canonicalSymbol || h.displaySymbol) === key);
+    return Boolean(rec && !rec.isHolding);
+  }
+  // yellow flag — explicitly watch / unwatch any asset (seed or user-added).
+  // Ensures the asset lives in the universe list so the flag survives reloads.
+  async function toggleWatch(symbol) {
+    const key = canonical(symbol);
+    if (!key) return { ok: false, message: "ticker ไม่ถูกต้อง" };
+    if (isWatchTicker(key)) {
+      persistedState.watchTickers = (persistedState.watchTickers || []).filter((t) => t !== key);
+      await saveUniverseState();
+      return { ok: true, watched: false, message: "เอา " + key + " ออกจาก Watchlist แล้ว" };
+    }
+    const inSeed = (seed.ai_boom_universe || []).some((a) => canonical(a?.ticker) === key);
+    if (!inSeed && !userAssetByTicker(key)) {
+      persistedState.userAssets = (persistedState.userAssets || []).concat([makeUserAssetLite(key, "")]);
+    }
+    persistedState.watchTickers = (persistedState.watchTickers || []).concat([key]);
+    await saveUniverseState();
+    return { ok: true, watched: true, message: "เพิ่ม " + key + " เข้า Watchlist แล้ว" };
+  }
+  function zoneOf(row) {
+    if (row.portfolio?.isHolding) return "positions";
+    return isUserWatch(row) ? "watch" : "market";
+  }
+  // action priority inside a zone (spec): Strong Sell → Strong Buy → Buy → Sell,
+  // then newest first, then portfolio weight.
+  function priorityRank(card) {
+    if (card.combined) return card.side === "sell" ? 0 : 1;
+    return card.side === "buy" ? 2 : 3;
   }
 
   // Data quality per symbol — a fresh cross can only be trusted when the snapshot
@@ -904,33 +1091,41 @@
     return {
       row, side, signals, combined, confidence, title,
       age: signals[0].age,
-      group: freshGroupOf(row),
+      zone: zoneOf(row),
       weight: Number(row.portfolio?.weight) || 0
     };
   }
 
+  // V2: one merged, priority-sorted list per zone (Strong Sell → Strong Buy →
+  // Buy → Sell, newest first) — the same fresh-card pipeline, regrouped by
+  // ownership instead of market category.
   function computeFreshSignals(rows) {
     freshFactsCache = new Map(); // per-render — snapshot data may have changed
-    const empty = () => Object.fromEntries(FRESH_GROUPS.map(([k]) => [k, []]));
-    const buy = empty(), sell = empty();
+    const zones = { positions: [], watch: [], market: [] };
     (rows || []).forEach((row) => {
       const b = buildFreshCard(row, "buy");
-      if (b) buy[b.group].push(b);
+      if (b) zones[b.zone].push(b);
       const s = buildFreshCard(row, "sell");
-      if (s) sell[s.group].push(s);
+      if (s) zones[s.zone].push(s);
     });
-    const sortCards = (arr) => arr.sort((a, b) => a.age - b.age || b.weight - a.weight
+    const sortCards = (arr) => arr.sort((a, b) => priorityRank(a) - priorityRank(b)
+      || a.age - b.age || b.weight - a.weight
       || String(a.row.displaySymbol || a.row.symbol).localeCompare(String(b.row.displaySymbol || b.row.symbol)));
-    FRESH_GROUPS.forEach(([k]) => { sortCards(buy[k]); sortCards(sell[k]); });
-    const total = (obj) => FRESH_GROUPS.reduce((sum, [k]) => sum + obj[k].length, 0);
-    return {
-      buy, sell,
-      buyTotal: total(buy), sellTotal: total(sell),
-      pfBuy: buy.holdings.length, pfSell: sell.holdings.length
-    };
+    ZONE_DEFS.forEach(([k]) => sortCards(zones[k]));
+    return zones;
   }
 
-  function renderFreshCard(card) {
+  // dual flags on every asset everywhere: ⚑ แดง = ถืออยู่ (amount modal),
+  // ⚑ เหลือง = Watchlist toggle (hidden while held — a position outranks watch)
+  function flagButtons(row) {
+    const held = Boolean(row.portfolio?.isHolding);
+    const watch = !held && isWatchTicker(row.symbol);
+    const red = `<button type="button" class="ac-flagbtn ac-flag-held${held ? " is-on" : ""}" data-ac-flag="${escapeHtml(row.symbol)}" title="${held ? "ถืออยู่ — แก้ไขจำนวน / เลิกถือ" : "ปักธงแดง: ถืออยู่ + ใส่จำนวนเงิน"}">⚑</button>`;
+    const yellow = held ? "" : `<button type="button" class="ac-flagbtn ac-flag-watch${watch ? " is-on" : ""}" data-ac-watch="${escapeHtml(row.symbol)}" title="${watch ? "เอาออกจาก Watchlist" : "ปักธงเหลือง: เฝ้าดู (เข้า Watchlist)"}">⚑</button>`;
+    return `<span class="ac-flags">${red}${yellow}</span>`;
+  }
+
+  function renderFreshCard(card, sizeClass) {
     const row = card.row;
     const detailHref = `/asset/${encodeURIComponent(row.providerSymbol || row.symbol)}`;
     const holding = row.portfolio?.isHolding;
@@ -938,71 +1133,182 @@
     const lines = card.signals.map((s) =>
       `<div class="fresh-line">${mark} ${escapeHtml(s.text)} <span class="fresh-line-age">(${escapeHtml(ageLabel(s.age))})</span></div>`
     ).join("");
+    const positionRow = holding
+      ? `<div class="zone-pos-row"><span>Position · สัดส่วนพอร์ต</span><strong>${escapeHtml(formatHolding(row))}</strong></div>`
+      : "";
     return `
-      <article class="fresh-card fresh-${card.side}${card.combined ? " fresh-strong" : ""}">
+      <article class="fresh-card fresh-${card.side}${card.combined ? " fresh-strong" : ""}${sizeClass ? " " + sizeClass : ""}">
         <div class="fresh-card-top">
           <a class="fresh-symbol asset-link" href="${detailHref}">${escapeHtml(row.displaySymbol || row.symbol)}</a>
-          <span class="fresh-age-chip fresh-age-${card.age}">${escapeHtml(ageLabel(card.age))} · ${escapeHtml(ageLabelThai(card.age))}</span>
+          <span class="fresh-card-top-right">
+            <span class="fresh-age-chip fresh-age-${card.age}">${escapeHtml(ageLabel(card.age))} · ${escapeHtml(ageLabelThai(card.age))}</span>
+            ${flagButtons(row)}
+          </span>
         </div>
         <div class="fresh-title">${escapeHtml(card.title)}</div>
         <div class="fresh-lines">${lines}</div>
-        <div class="fresh-conf">Confidence: <strong>${escapeHtml(card.confidence)}</strong></div>
+        ${positionRow}
+        <div class="fresh-conf">Confidence: <strong>${escapeHtml(card.confidence)}</strong>${row.thesis ? " · " + thesisChip(row) : ""}</div>
         <div class="fresh-card-foot">
-          <span class="badge ${holding ? "badge-blue" : "badge-gray"}">${holding ? "Holding" : "Watchlist"}</span>
           <span class="fresh-price">${escapeHtml(formatPrice(row.latestClose))}</span>
           <span class="card-name">${escapeHtml(row.name || row.symbol)}</span>
         </div>
       </article>`;
   }
 
-  function renderFreshBlock(side, groups) {
-    const total = FRESH_GROUPS.reduce((sum, [k]) => sum + groups[k].length, 0);
-    if (!total) return "";
-    const heading = side === "buy" ? "Buy Signals · สัญญาณซื้อใหม่" : "Sell Signals · สัญญาณขายใหม่";
-    const groupsHtml = FRESH_GROUPS.map(([key, label, thai]) => {
-      const cards = groups[key];
-      if (!cards.length) return "";
-      return `
-        <div class="fresh-group" id="fresh-${side}-${key}">
-          <div class="fresh-group-head"><h4>${escapeHtml(label)} · ${escapeHtml(thai)}</h4><span class="fresh-group-count">${cards.length}</span></div>
-          <div class="fresh-card-grid">${cards.map(renderFreshCard).join("")}</div>
-        </div>`;
-    }).join("");
+  // Zone 3 — compact one-line rows (inbox style, lowest visual weight)
+  function renderMarketRow(card) {
+    const row = card.row;
+    const detailHref = `/asset/${encodeURIComponent(row.providerSymbol || row.symbol)}`;
+    const chip = MARKET_CHIP[marketGroup(row)] || "Other";
     return `
-      <div class="fresh-block fresh-block-${side}" id="fresh-${side}">
-        <div class="fresh-block-head"><h3>${escapeHtml(heading)}</h3><span class="fresh-block-count">${total}</span></div>
-        ${groupsHtml}
+      <div class="zone-mkt-row zone-mkt-${card.side}${card.combined ? " zone-mkt-strong" : ""}">
+        <span class="zone-mkt-side">${card.side === "buy" ? "▲" : "▼"}</span>
+        <a class="zone-mkt-sym asset-link" href="${detailHref}">${escapeHtml(row.displaySymbol || row.symbol)}</a>
+        <span class="zone-mkt-title">${escapeHtml(card.title)}</span>
+        <span class="zone-mkt-chip">${escapeHtml(chip)}</span>
+        <span class="zone-mkt-age">${escapeHtml(ageLabelThai(card.age))}</span>
+        <span class="zone-mkt-conf">${escapeHtml(card.confidence)}</span>
+        ${flagButtons(row)}
       </div>`;
+  }
+
+  // ============================================================
+  // Zone 1 V3 — POSITION CARDS: every held asset gets one full card, always
+  // visible while held. The headline is ONE reconciled verdict (technical ⊗
+  // thesis via applyThesisToDecision) — technical events and thesis become
+  // supporting FACTS, never a second competing instruction.
+  // ============================================================
+  function positionVerdict(row) {
+    const d = row.decision || {};
+    const k = d.actionKey || "";
+    // rank: 0 = ต้องลงมือฝั่งลด/ทบทวน · 1 = ฝั่งซื้อจริง · 2 = ถือแบบมีเงื่อนไข/เฝ้าระวัง · 3 = ถือเฉย ๆ
+    if (k === "SELL_ALL") return { rank: 0, tone: "sell", icon: "🔴", title: d.actionThai || "ขายหมด / ออกจากสถานะ" };
+    if (k === "SELL_FIRST") return { rank: 0, tone: "sell", icon: "🟠", title: d.actionThai || "ลดน้ำหนักบางส่วน" };
+    if (k === "REVIEW_THESIS") return { rank: 0, tone: "sell", icon: "🟠", title: d.actionThai || "ทบทวนการถือ — Thesis อ่อน" };
+    if (k === "BUY_DIP" || k === "BUY_MORE") return { rank: 1, tone: "buy", icon: "🟢", title: d.actionThai || "ทยอยซื้อเพิ่ม" };
+    if (k === "HOLD_ADD") return { rank: 2, tone: "buy", icon: "🟢", title: d.actionThai || "ถือต่อ / เพิ่มได้" }; // hold ในขาขึ้น — ไม่ใช่คำสั่งต้องลงมือ
+    if (k === "HOLD_CORE") return { rank: 2, tone: "watch", icon: "🟡", title: d.actionThai || "ถือ Core / ลดเฉพาะ Tactical" };
+    if (k === "HOLD_LIMIT") return { rank: 2, tone: "watch", icon: "🟡", title: d.actionThai || "ถือ — เต็มเพดานน้ำหนัก" };
+    if (k === "WATCH_CLOSELY") return { rank: 2, tone: "watch", icon: "🟡", title: d.actionThai || "เฝ้าระวังใกล้ชิด" };
+    if (k === "DATA_WAITING") return { rank: 3, tone: "none", icon: "⚪", title: "รอข้อมูล — ยังประเมินไม่ได้" };
+    // ไม่มี actionKey (เส้นทาง fallback) → อนุมานจาก section/action เพื่อไม่ให้
+    // การ์ดขึ้น "ไม่มีสัญญาณ" สวนกับ section Urgent ข้างล่าง
+    if (!k && d.section === "urgent") return { rank: 0, tone: "sell", icon: "🟠", title: d.actionThai || "ทบทวน / ลดน้ำหนัก" };
+    if (!k && d.action === "buy") return { rank: 1, tone: "buy", icon: "🟢", title: d.actionThai || "ทยอยซื้อ" };
+    if (!k && d.action === "watch") return { rank: 2, tone: "watch", icon: "🟡", title: d.actionThai || "เฝ้าดูใกล้ชิด" };
+    return { rank: 3, tone: "none", icon: "⚪", title: d.actionThai || "ถือต่อ — ไม่มีสัญญาณต้องลงมือ" };
+  }
+  // scoring.js signal tones (bull/bear/watch-*) → pos-fact colour classes
+  const SIG_TONE_CLASS = { bull: "signal-buy", bear: "signal-sell", "watch-bull": "signal-watch", "watch-bear": "signal-watch", neutral: "signal-neutral", waiting: "signal-neutral" };
+  function renderPositionCard(entry) {
+    const row = entry.row, v = entry.verdict;
+    const d = row.decision || {};
+    const detailHref = `/asset/${encodeURIComponent(row.providerSymbol || row.symbol)}`;
+    const sig = row.signal || {};
+    // fresh technical events (ข้อเท็จจริงประกอบ ไม่ใช่คำสั่ง)
+    const events = entry.fresh.flatMap((c) => c.signals.map((s) =>
+      `<div class="pos-event pos-event-${c.side}">${c.side === "buy" ? "▲" : "▼"} ${escapeHtml(s.text)} <em>(${escapeHtml(ageLabelThai(s.age))})</em></div>`)).join("");
+    const th = row.thesis;
+    const thCell = th
+      ? `${thesisChip(row)}<em>${escapeHtml(th.statusLabel)} · valuation ${escapeHtml(VAL_TH_LABEL[th.valLevel] || th.valLevel || "-")}</em>`
+      : '<span class="pos-muted">ไม่อยู่ใน Thesis KB</span>';
+    // แสดง conflict ของ THESIS ก่อนเสมอ (คำอธิบายว่าทำไม verdict ถึงถูกชั่งใหม่)
+    const conflict = (row.conflicts || []).find((c) => c.label === "THESIS") || (row.conflicts || [])[0];
+    const conflictNote = conflict ? `<div class="pos-conflict">⚠ ${escapeHtml(conflict.reason)}</div>` : "";
+    return `
+      <article class="pos-card pos-${v.tone}">
+        <div class="pos-head">
+          <div class="pos-head-l">
+            <a class="fresh-symbol asset-link" href="${detailHref}">${escapeHtml(row.displaySymbol || row.symbol)}</a>
+            <span class="card-name">${escapeHtml(row.name || row.symbol)}</span>
+          </div>
+          <div class="pos-head-r">${flagButtons(row)}<span class="fresh-price">${escapeHtml(formatPrice(row.latestClose))}</span></div>
+        </div>
+        <div class="pos-verdict">${v.icon} <strong>${escapeHtml(v.title)}</strong></div>
+        ${d.reason ? `<p class="pos-reason">${escapeHtml(d.reason)}</p>` : ""}
+        ${conflictNote}
+        <div class="pos-facts">
+          <div class="pos-fact"><span>Position · % ของ${escapeHtml(bucketAlloc(row).basis)}</span><b>${escapeHtml(formatHolding(row))}</b></div>
+          <div class="pos-fact"><span>เทคนิค (ข้อเท็จจริง)</span><b class="${escapeHtml(SIG_TONE_CLASS[sig.tone] || "signal-neutral")}">${escapeHtml(sig.thaiLabel || "ไม่มีสัญญาณ")}</b>${events}</div>
+          <div class="pos-fact"><span>Investment Thesis</span>${thCell}</div>
+          <div class="pos-fact"><span>Signal Score (ประกอบ)</span><b>${row.score != null ? row.score + "/100" : "—"}</b><em>${escapeHtml(row.scoreLabel ? row.scoreLabel.thai : "")}</em></div>
+        </div>
+      </article>`;
   }
 
   function renderFreshSignals() {
     if (!freshRoot) return;
-    const data = computeFreshSignals(state.rows);
-    const grandTotal = data.buyTotal + data.sellTotal;
+    const zones = computeFreshSignals(state.rows);
+    // Zone 1 V3: one position card per HELD asset, always visible while held.
+    const freshMap = new Map();
+    zones.positions.forEach((c) => {
+      const arr = freshMap.get(c.row.symbol) || [];
+      arr.push(c);
+      freshMap.set(c.row.symbol, arr);
+    });
+    const posEntries = (state.rows || [])
+      .filter((r) => r.portfolio?.isHolding)
+      .map((r) => ({ row: r, fresh: freshMap.get(r.symbol) || [], verdict: positionVerdict(r) }))
+      .sort((a, b) => a.verdict.rank - b.verdict.rank
+        || (a.fresh[0]?.age ?? 9) - (b.fresh[0]?.age ?? 9)
+        || (b.row.portfolio?.weight || 0) - (a.row.portfolio?.weight || 0));
+    const actionCount = posEntries.filter((e) => e.verdict.rank <= 1).length;
     const summary = `
       <div class="fresh-head">
         <div>
-          <h2>Fresh Technical Signals</h2>
-          <p>สัญญาณเทคนิคใหม่ภายใน 3 วันทำการล่าสุด — EMA12/26 cross และ SMA200 breakout / breakdown เท่านั้น</p>
+          <h2>Action Inbox</h2>
+          <p>เรียงตามความสำคัญของคุณ — พอร์ตก่อน ตามด้วย watchlist แล้วค่อยทั้งตลาด · ทุกตัวที่ถือแสดงข้อสรุปเดียวที่ชั่งเทคนิค × Investment Thesis แล้ว</p>
         </div>
       </div>
-      <div class="fresh-summary">
-        <button type="button" class="fresh-sum-card fresh-sum-buy" data-fresh-jump="fresh-buy"><span>Fresh Buy Signals</span><strong>${data.buyTotal}</strong><em>สัญญาณซื้อใหม่</em></button>
-        <button type="button" class="fresh-sum-card fresh-sum-sell" data-fresh-jump="fresh-sell"><span>Fresh Sell Signals</span><strong>${data.sellTotal}</strong><em>สัญญาณขายใหม่</em></button>
-        <button type="button" class="fresh-sum-card fresh-sum-pfbuy" data-fresh-jump="fresh-buy-holdings"><span>Portfolio Buy Signals</span><strong>${data.pfBuy}</strong><em>ซื้อ (ในพอร์ต)</em></button>
-        <button type="button" class="fresh-sum-card fresh-sum-pfsell" data-fresh-jump="fresh-sell-holdings"><span>Portfolio Sell Signals</span><strong>${data.pfSell}</strong><em>ขาย (ในพอร์ต)</em></button>
+      <div class="zone-summary">
+        <button type="button" class="zone-sum zone-sum-pos" data-fresh-jump="zone-positions"><span>🔥 My Positions</span><strong>${actionCount}</strong><em>${actionCount === 1 ? "Action" : "Actions"} · ถืออยู่ ${posEntries.length} ตัว</em></button>
+        <button type="button" class="zone-sum zone-sum-watch" data-fresh-jump="zone-watch"><span>⭐ Watchlist</span><strong>${zones.watch.length}</strong><em>${zones.watch.length === 1 ? "New Opportunity" : "New Opportunities"} · ตัวที่เฝ้าอยู่</em></button>
+        <button type="button" class="zone-sum zone-sum-mkt" data-fresh-jump="zone-market"><span>📈 Market</span><strong>${zones.market.length}</strong><em>${zones.market.length === 1 ? "Signal" : "Signals"} · ทั้งตลาด</em></button>
       </div>`;
-    if (grandTotal === 0) {
-      freshRoot.innerHTML = summary +
-        '<div class="fresh-empty">No fresh technical signals detected during the last 3 trading days.<span>ไม่มีสัญญาณเทคนิคใหม่ในช่วง 3 วันทำการล่าสุด</span></div>';
-      return;
+
+    // Zone 1 — every held asset, verdict-first, always on while held
+    let posBody;
+    if (!posEntries.length) {
+      posBody = '<div class="zone-empty">ยังไม่มีตำแหน่งในพอร์ต — ปักธงแดง ⚑ บนสินทรัพย์ตัวไหนก็ได้เพื่อบันทึกว่าถืออยู่</div>';
+    } else {
+      const okLine = actionCount === 0
+        ? '<div class="zone-empty zone-empty-ok">No action required for your current holdings.<span>ไม่มีตัวไหนต้องลงมือ — ถือตามแผนต่อ</span></div>' : "";
+      posBody = okLine + `<div class="pos-grid">${posEntries.map(renderPositionCard).join("")}</div>`;
     }
-    freshRoot.innerHTML = summary +
-      '<div class="fresh-body">' + renderFreshBlock("buy", data.buy) + renderFreshBlock("sell", data.sell) + "</div>";
+    const zone1 = `
+      <section class="zone zone-positions" id="zone-positions">
+        <div class="zone-head"><h3>🔥 My Positions</h3><span class="zone-count">${posEntries.length}</span><p>ทุกตัวที่ถือ — หัวการ์ดคือข้อสรุปเดียว (เทคนิค × Thesis) · สัญญาณเทคนิคและ Thesis เป็นข้อมูลประกอบด้านล่าง</p></div>
+        ${posBody}
+      </section>`;
+
+    // Zone 2 — only actionable watch items; hidden assets stay hidden
+    const watchBody = zones.watch.length
+      ? `<div class="fresh-card-grid zone-grid-watch">${zones.watch.map((c) => renderFreshCard(c, "zone-card-mid")).join("")}</div>`
+      : '<div class="zone-empty">No new watchlist opportunities.<span>ไม่มีโอกาสใหม่จากตัวที่เฝ้าอยู่ — เลือกตัวเฝ้าด้วยธงเหลือง ⚑ บนการ์ดไหนก็ได้</span></div>';
+    const zone2 = `
+      <section class="zone zone-watch" id="zone-watch">
+        <div class="zone-head"><h3>⭐ Watchlist</h3><span class="zone-count">${zones.watch.length}</span><p>ตัวที่ปักธงเหลือง ⚑ ว่าตั้งใจเฝ้า (ยังไม่ได้ถือ) — แสดงเฉพาะเมื่อมีสัญญาณใหม่</p></div>
+        ${watchBody}
+      </section>`;
+
+    // Zone 3 — compact list, fresh signals only
+    const mktBody = zones.market.length
+      ? `<div class="zone-mkt-list">${zones.market.map(renderMarketRow).join("")}</div>`
+      : '<div class="zone-empty">No fresh market signals within the last 3 trading days.<span>ไม่มีสัญญาณใหม่จากตลาดใน 3 วันทำการ</span></div>';
+    const zone3 = `
+      <section class="zone zone-market" id="zone-market">
+        <div class="zone-head"><h3>📈 Market Opportunities</h3><span class="zone-count">${zones.market.length}</span><p>AI Boom · Thailand · Crypto · US — เฉพาะสัญญาณใหม่ใน ${FRESH_WINDOW} วันทำการ</p></div>
+        ${mktBody}
+      </section>`;
+
+    freshRoot.innerHTML = summary + zone1 + zone2 + zone3;
   }
 
   function render() {
     state.snapshot = readSnapshot();
+    holdingCachesDirty = true; // bucket totals / records may have changed
+    thesisCache = new Map(); thesisCoveredSet = null; // thesis verdicts follow the snapshot
     if (!state.snapshot) {
       renderMissingSnapshot();
       return;
@@ -1125,10 +1431,12 @@
     try {
       const input = timingInputForRow(row);
       const timing = window.Scoring.calculateTimingScore(input);
-      const action = window.Scoring.recommendAction(input, timing);
       const chip = window.Scoring.renderTimingChip(timing);
-      const actionLabel = action?.thaiAction
-        ? `<span class="ts-action-chip" title="${escapeHtml(action.action || "")}">${escapeHtml(action.thaiAction)}</span>`
+      // CRITICAL fix: the action label must be the RECONCILED decision (technical
+      // ⊗ thesis) — never re-call recommendAction here, or a raw "ขายหมด" leaks
+      // past the thesis reconcile onto the card.
+      const actionLabel = row.decision?.actionThai
+        ? `<span class="ts-action-chip" title="${escapeHtml(row.decision.actionKey || "")}">${escapeHtml(row.decision.actionThai)}</span>`
         : "";
       return `<div class="ts-chip-row">${chip}${actionLabel}</div>`;
     } catch (_error) {
@@ -1150,6 +1458,7 @@
             <p class="card-name">${escapeHtml(row.name || row.symbol)}</p>
           </div>
           <div class="decision-price">
+            ${flagButtons(row)}
             <strong>${escapeHtml(formatPrice(row.latestClose))}</strong>
             <span>${escapeHtml(formatDate(row.latestDate))}</span>
           </div>
@@ -1157,6 +1466,7 @@
         <div class="badge-row">
           <span class="badge ${holding ? "badge-blue" : "badge-gray"}">${holding ? "Holding" : "Watchlist Only"}</span>
           ${holding ? `<span class="badge badge-blue">${escapeHtml(formatHolding(row))}</span>` : '<span class="badge badge-gray">No portfolio impact</span>'}
+          ${thesisChip(row)}
         </div>
         ${signalStateChip(row)}
         <div class="decision-action-row">
@@ -1311,10 +1621,161 @@
     return `${row.facts.volumeRatio.toFixed(2)}x`;
   }
 
-  function formatHolding(row) {
+  // ---- V2: allocation % against the Portfolio Position BUCKET (per user spec:
+  // % ของ "หุ้นต่างประเทศ" — not of total wealth). Denominator = sum of holdings
+  // in the asset's portfolioBucket; falls back to total portfolio when the
+  // bucket has no value yet. Reuses snapshot.portfolioHoldings — no new store.
+  const BUCKET_LABELS = {
+    "foreign-stock": "หุ้นต่างประเทศ", "thai-stock": "หุ้นไทย", bitcoin: "Bitcoin",
+    "rmf-jang": "RMF", "rmf-tum": "RMF", cash: "เงินสด"
+  };
+  let holdingCachesDirty = true;
+  let bucketTotalsCache = {};
+  let quarterlyBucketCache = {};
+  let holdingRecCache = new Map();
+  // Bucket GROSS from the Quarterly Editor (snapshot.portfolioStatus) — the same
+  // source Portfolio Position uses. Gross per type INCLUDES the cash parked in
+  // that sleeve (user spec: เงินสดที่ถือในหุ้นต่างประเทศเป็นตัวหารด้วย).
+  function computeQuarterlyBuckets() {
+    const totals = {};
+    try {
+      const ps = state.snapshot?.portfolioStatus;
+      const data = ps && (ps.data || (ps.quarters ? ps : null));
+      if (!data || !data.quarters || typeof data.quarters !== "object") return totals;
+      const keys = Object.keys(data.quarters).sort();
+      const key = (data.currentQuarter && data.quarters[data.currentQuarter]) ? data.currentQuarter : keys[keys.length - 1];
+      const assets = (data.quarters[key] && Array.isArray(data.quarters[key].assets)) ? data.quarters[key].assets : [];
+      assets.forEach((a) => {
+        const m = Number(a?.manualValue), s = Number(a?.snapshotValue);
+        const gross = Number.isFinite(m) ? m : (Number.isFinite(s) ? s : 0); // current quarter → prefer manual (pp-engine grossOf)
+        if (gross > 0) {
+          const type = a?.type || "custom";
+          totals[type] = (totals[type] || 0) + gross;
+        }
+      });
+    } catch (_e) { /* graceful — fall back to holdings totals */ }
+    return totals;
+  }
+  function refreshHoldingCaches() {
+    if (!holdingCachesDirty) return;
+    bucketTotalsCache = {};
+    holdingRecCache = new Map();
+    holdingsFromSnapshot(state.snapshot).forEach((h) => {
+      holdingRecCache.set(h.canonicalSymbol, h);
+      if (h.isHolding) {
+        const b = h.portfolioBucket || "";
+        bucketTotalsCache[b] = (bucketTotalsCache[b] || 0) + (Number(h.marketValue) || 0);
+      }
+    });
+    quarterlyBucketCache = computeQuarterlyBuckets();
+    holdingCachesDirty = false;
+  }
+  function defaultBucketFor(row) {
+    const g = marketGroup(row);
+    if (g === "thai") return "thai-stock";
+    if (g === "crypto") return "bitcoin";
+    return "foreign-stock"; // us / fund / other
+  }
+  function holdingRecOf(symbol) {
+    refreshHoldingCaches();
+    return holdingRecCache.get(canonical(symbol)) || null;
+  }
+  function bucketAlloc(row) {
+    refreshHoldingCaches();
     const value = Number(row.portfolio?.marketValue) || 0;
-    const weight = Number(row.portfolio?.weight) || 0;
-    return `${formatPrice(value)} THB · ${weight.toFixed(1)}%`;
+    const rec = holdingRecOf(row.symbol);
+    const bucket = (rec && rec.portfolioBucket) || defaultBucketFor(row);
+    // 1st choice: Quarterly Editor bucket GROSS (ลงทุน + เงินสดใน sleeve) —
+    // มูลค่าทั้งหมดของหุ้นต่างประเทศตาม Portfolio Position
+    const qDenom = quarterlyBucketCache[bucket] || 0;
+    if (qDenom > 0) return { value, pct: (value / qDenom) * 100, basis: BUCKET_LABELS[bucket] || bucket || "พอร์ต", quarterly: true };
+    // fallback: sum of flagged holdings in the bucket, then total portfolio
+    const denom = bucketTotalsCache[bucket] || 0;
+    if (denom > 0) return { value, pct: (value / denom) * 100, basis: (BUCKET_LABELS[bucket] || bucket || "พอร์ต") + " (เฉพาะที่ปักธง)", quarterly: false };
+    const total = Number(row.portfolio?.totalValue) || 0;
+    return { value, pct: total > 0 ? (value / total) * 100 : 0, basis: "พอร์ตรวม", quarterly: false };
+  }
+  function formatHolding(row) {
+    const a = bucketAlloc(row);
+    return `${formatPrice(a.value)} THB · ${a.pct.toFixed(1)}% ของ${a.basis}`;
+  }
+
+  // ---- V2: flag-as-held + amount, straight from the Action Center. Persists
+  // through PortfolioCore.saveHoldings (server + snapshot + event) — the same
+  // record Portfolio Position reads. Unflag keeps the record as watchlist-only.
+  async function saveHoldingFlag(symbol, amount, hold, bucket) {
+    const key = canonical(symbol);
+    const row = (state.rows || []).find((r) => r.symbol === key) || null;
+    const holdings = core.readLocalHoldings ? core.readLocalHoldings() : holdingsFromSnapshot(state.snapshot).slice();
+    const idx = holdings.findIndex((h) => h.canonicalSymbol === key);
+    const base = idx >= 0 ? holdings[idx] : core.normalizeHolding({
+      symbol: key,
+      assetName: row?.name || key,
+      assetType: row?.assetType || ""
+    });
+    const next = {
+      ...base,
+      isHolding: hold,
+      watchlistOnly: !hold,
+      marketValue: hold ? Math.max(0, Number(amount) || 0) : 0,
+      portfolioBucket: base.portfolioBucket || bucket || "foreign-stock",
+      updatedAt: new Date().toISOString()
+    };
+    if (idx >= 0) holdings[idx] = next; else holdings.push(next);
+    holdingCachesDirty = true;
+    try {
+      await core.saveHoldings(holdings); // → snapshot update + "portfolio-holdings-updated" → render()
+      return { ok: true, message: hold ? `บันทึก ${key} เป็นถืออยู่แล้ว` : `เอา ${key} ออกจากพอร์ตแล้ว (ยังอยู่ใน watchlist)` };
+    } catch (err) {
+      // local + snapshot already updated by writeLocalHoldings — sync later
+      return { ok: true, message: "บันทึกในเครื่องแล้ว · เซิร์ฟเวอร์ไม่ตอบ จะ sync อัตโนมัติครั้งถัดไป" };
+    }
+  }
+
+  function openFlagModal(symbol) {
+    const key = canonical(symbol);
+    const rec = holdingRecOf(key);
+    const row = (state.rows || []).find((r) => r.symbol === key) || null;
+    const isHeld = Boolean(rec && rec.isHolding);
+    const bucket = (rec && rec.portfolioBucket) || (row ? defaultBucketFor(row) : "foreign-stock");
+    const bucketLabel = BUCKET_LABELS[bucket] || bucket;
+    const prev = document.getElementById("acFlagModal");
+    if (prev) prev.remove();
+    const back = document.createElement("div");
+    back.id = "acFlagModal";
+    back.className = "ac-modal-back";
+    back.setAttribute("data-pv-skip", "1"); // privacy: ให้แก้ตัวเลขได้ขณะล็อก
+    back.innerHTML = `
+      <div class="ac-modal" role="dialog" aria-modal="true">
+        <h3>🚩 ${escapeHtml(row?.displaySymbol || key)} · ${isHeld ? "แก้ไขจำนวนในพอร์ต" : "ปักธงว่าถืออยู่"}</h3>
+        <label>จำนวนเงินในพอร์ต (บาท)
+          <input id="acFlagAmount" type="number" min="0" step="any" inputmode="decimal" placeholder="เช่น 250000" value="${isHeld && Number(rec.marketValue) > 0 ? Number(rec.marketValue) : ""}" />
+        </label>
+        <p class="ac-modal-note">คิดสัดส่วนเป็น % ของ <strong>${escapeHtml(bucketLabel)}</strong> (จาก Portfolio Position) · บันทึกลงชุดข้อมูลเดียวกับหน้า Portfolio</p>
+        <div class="ac-modal-actions">
+          ${isHeld ? '<button type="button" id="acFlagRemove" class="ac-flag-remove">เลิกถือ</button>' : ""}
+          <button type="button" id="acFlagCancel">ยกเลิก</button>
+          <button type="button" id="acFlagSave" class="ac-primary">${isHeld ? "บันทึก" : "ปักธง + บันทึก"}</button>
+        </div>
+        <p class="ac-modal-msg" id="acFlagMsg"></p>
+      </div>`;
+    document.body.appendChild(back);
+    const close = () => back.remove();
+    back.addEventListener("click", (e) => { if (e.target === back) close(); });
+    back.querySelector("#acFlagCancel").addEventListener("click", close);
+    const amountInput = back.querySelector("#acFlagAmount");
+    amountInput.focus();
+    const finish = (result) => {
+      const msg = back.querySelector("#acFlagMsg");
+      msg.textContent = result.message;
+      msg.className = "ac-modal-msg " + (result.ok ? "ok" : "err");
+      if (result.ok) window.setTimeout(close, 800);
+    };
+    const save = async () => finish(await saveHoldingFlag(key, amountInput.value, true, bucket));
+    back.querySelector("#acFlagSave").addEventListener("click", save);
+    amountInput.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
+    const removeBtn = back.querySelector("#acFlagRemove");
+    if (removeBtn) removeBtn.addEventListener("click", async () => finish(await saveHoldingFlag(key, 0, false, bucket)));
   }
 
   function formatPrice(value) {
@@ -1438,6 +1899,29 @@
     tickerInput.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
   }
   document.querySelector("#addAssetButton")?.addEventListener("click", openAddAssetModal);
+
+  // V2: flag buttons (delegated — cards re-render every pass)
+  // ⚑ แดง (data-ac-flag) → amount modal · ⚑ เหลือง (data-ac-watch) → watch toggle
+  // thesis chip → jump to /thesis with that company selected
+  document.addEventListener("click", (event) => {
+    const goto = event.target.closest?.("[data-th-goto]");
+    if (goto) { try { localStorage.setItem("thesis_selected_v1", goto.getAttribute("data-th-goto")); } catch (_e) {} }
+  });
+  document.addEventListener("click", async (event) => {
+    const watchBtn = event.target.closest?.("[data-ac-watch]");
+    if (watchBtn) {
+      event.preventDefault();
+      watchBtn.disabled = true;
+      const res = await toggleWatch(watchBtn.getAttribute("data-ac-watch"));
+      if (actionStatus && res.message) actionStatus.textContent = res.message;
+      render();
+      return;
+    }
+    const btn = event.target.closest?.("[data-ac-flag]");
+    if (!btn) return;
+    event.preventDefault();
+    openFlagModal(btn.getAttribute("data-ac-flag"));
+  });
 
   window.addEventListener("portfolio-data-snapshot", render);
   window.addEventListener("portfolio-holdings-updated", render);

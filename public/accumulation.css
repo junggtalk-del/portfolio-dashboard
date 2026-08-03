@@ -1,0 +1,64 @@
+/* ============================================================
+   Accumulation Center — "จังหวะย่อตัวไหนควรค่าแก่การสะสม"
+   Reuses mission-control theme tokens (--mc-*). Ranking-first layout.
+   ============================================================ */
+.acc-page { padding: 22px 26px 60px; max-width: 1150px; margin: 0 auto; color: var(--mc-text); }
+.acc-page * { box-sizing: border-box; }
+
+.acc-header { margin-bottom: 18px; }
+.acc-header h1 { margin: 0; font-size: 25px; font-weight: 800; letter-spacing: -0.01em; }
+.acc-header p { margin: 6px 0 0; color: var(--mc-text-2); font-size: 13px; line-height: 1.6; max-width: 860px; }
+.acc-strip { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.acc-pill { font-size: 12px; font-weight: 700; border: 1px solid var(--mc-border); border-radius: 999px; padding: 4px 12px; background: var(--mc-card); }
+.acc-pill b { font-variant-numeric: tabular-nums; }
+
+.acc-sec { border: 1px solid var(--mc-border); border-radius: 16px; background: var(--mc-card); padding: 16px 18px; margin-bottom: 18px; }
+.acc-sec h2 { margin: 0 0 4px; font-size: 16px; font-weight: 800; }
+.acc-sec > p { margin: 0 0 12px; font-size: 12px; color: var(--mc-muted); line-height: 1.6; }
+
+.acc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 12px; }
+.acc-card { border: 1px solid var(--mc-border); border-radius: 14px; background: var(--mc-card); padding: 13px 15px; display: flex; flex-direction: column; gap: 8px; }
+.acc-card-top { border-color: rgba(52, 211, 153, 0.45); box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.12) inset; }
+.acc-head { display: flex; align-items: center; gap: 10px; }
+.acc-rank { font-size: 13px; font-weight: 800; color: var(--mc-muted); flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.acc-title { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.acc-sym { font-size: 17px; font-weight: 800; color: var(--mc-text); text-decoration: none; }
+.acc-sym:hover { text-decoration: underline; }
+.acc-title small { font-size: 11px; color: var(--mc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc-score { text-align: right; font-variant-numeric: tabular-nums; }
+.acc-score b { font-size: 24px; font-weight: 800; }
+.acc-score span { font-size: 11px; color: var(--mc-muted); }
+
+.acc-line { font-size: 12.5px; line-height: 1.55; color: var(--mc-text-2); }
+.acc-line b { color: var(--mc-text); }
+
+.acc-rec { border-radius: 11px; padding: 9px 12px; font-size: 14px; font-weight: 800; display: flex; flex-direction: column; gap: 2px; }
+.acc-rec small { font-size: 11px; font-weight: 500; color: var(--mc-text-2); line-height: 1.5; }
+.acc-rec-bull { background: rgba(52, 211, 153, 0.10); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; }
+.acc-rec-watch { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4); color: #f59e0b; }
+.acc-rec-bear { background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.4); color: #f43f5e; }
+
+.acc-details summary { font-size: 11.5px; color: var(--mc-muted); cursor: pointer; }
+.acc-whywrap { margin: 8px 0; display: flex; flex-direction: column; gap: 3px; }
+.acc-why { font-size: 12px; line-height: 1.5; }
+.acc-ok { color: #34d399; }
+.acc-no { color: #f43f5e; }
+.acc-parts { display: flex; flex-direction: column; gap: 5px; border-top: 1px dashed var(--mc-border); padding-top: 8px; }
+.acc-part { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(90px, 1.1fr) 34px; gap: 8px; align-items: center; font-size: 11px; }
+.acc-part span { color: var(--mc-muted); }
+.acc-part span em { font-style: normal; opacity: 0.7; }
+.acc-part b { text-align: right; font-variant-numeric: tabular-nums; }
+.acc-bar { height: 6px; border-radius: 4px; background: rgba(148, 163, 184, 0.18); overflow: hidden; }
+.acc-bar i { display: block; height: 100%; border-radius: 4px; }
+.acc-exp { margin-top: 8px; font-size: 11px; color: var(--mc-muted); }
+.acc-exp a { color: var(--mc-text-2); }
+.acc-stale { font-size: 11px; color: #f59e0b; border: 1px dashed rgba(245, 158, 11, 0.45); border-radius: 9px; padding: 5px 9px; }
+
+.acc-uncovered p code { font-family: ui-monospace, monospace; font-size: 11px; background: rgba(148, 163, 184, 0.15); border-radius: 5px; padding: 1px 6px; }
+.acc-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.acc-chip { font-size: 11.5px; font-weight: 700; border: 1px solid var(--mc-border); border-radius: 999px; padding: 4px 11px; color: var(--mc-text-2); text-decoration: none; background: rgba(148, 163, 184, 0.08); }
+.acc-chip:hover { border-color: var(--mc-border-active); }
+
+.acc-foot { font-size: 11px; color: var(--mc-muted); line-height: 1.6; padding: 0 4px; }
+
+@media (max-width: 720px) { .acc-page { padding: 16px 12px 48px; } .acc-grid { grid-template-columns: 1fr; } }
