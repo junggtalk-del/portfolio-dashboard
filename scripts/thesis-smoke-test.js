@@ -243,11 +243,30 @@ const OPTS = (over = {}) => Object.assign({ data: DATA(mkCfg(over.cfg || {})), m
   const dn = TE.computeHistory("TEST", {}, histOpts(hist(G, [1, 1.05, 1.1, 1.15, 1.2], M30, FCF, [100, 90, 80, 72, 65.6])));
   check("ราคาลงจาก multiple หด → mainDriver = valuation", dn.attribution.mainDriver.key === "valuation" && dn.attribution.mainDriver.pp < 0, dn.attribution);
 
-  // KB สะสมเกิน 5 ปี → ใช้ 5 ปีล่าสุด
+  // KB สะสมเกิน 5 ปี → default ใช้ 5 ปีล่าสุด
   const h6 = hist(G, E10, M30, FCF, G);
   h6.years.unshift({ fy: "FY2020", endYm: "2020-12", revenueB: 90, epsAdj: 0.9, opMarginPct: 30, fcfB: 28, priceFYEnd: 90 });
   const six = TE.computeHistory("TEST", {}, histOpts(h6));
-  check("6 ปีใน KB → ใช้ 5 ปีล่าสุด (ปีแรก = FY2021)", six.years[0].fy === "FY2021" && six.years.length === 5, six.years.map((y) => y.fy));
+  check("6 ปีใน KB → default ใช้ 5 ปีล่าสุด (ปีแรก = FY2021)", six.years[0].fy === "FY2021" && six.years.length === 5, six.years.map((y) => y.fy));
+  check("window: default years=5 · available=6 · max=6", six.window.years === 5 && six.window.available === 6 && six.window.maxYears === 6 && six.window.minYears === 2, six.window);
+  // เลือกช่วงปีได้ 2-6
+  const w6 = TE.computeHistory("TEST", {}, Object.assign(histOpts(h6), { years: 6 }));
+  check("years:6 → ใช้ครบ 6 ปี (ปีแรก = FY2020)", w6.window.years === 6 && w6.years.length === 6 && w6.years[0].fy === "FY2020", w6.years.map((y) => y.fy));
+  const w2 = TE.computeHistory("TEST", {}, Object.assign(histOpts(h6), { years: 2 }));
+  check("years:2 → ใช้ 2 ปีล่าสุด + verdict ยังคำนวณได้", w2.window.years === 2 && w2.years.length === 2 && w2.verdict != null, w2.window);
+  const wClampLo = TE.computeHistory("TEST", {}, Object.assign(histOpts(h6), { years: 1 }));
+  check("years:1 → clamp เป็น 2 (ต้อง ≥2 จุด)", wClampLo.window.years === 2, wClampLo.window);
+  const wClampHi = TE.computeHistory("TEST", {}, Object.assign(histOpts(h6), { years: 10 }));
+  check("years:10 → clamp เป็น 6 (เท่าที่มีจริง)", wClampHi.window.years === 6, wClampHi.window);
+  const w5only = TE.computeHistory("TEST", {}, Object.assign(histOpts(hist(G, E10, M30, FCF, G)), { years: 6 }));
+  check("มี 5 ปี ขอ 6 → clamp เป็น 5 · maxYears=5", w5only.window.years === 5 && w5only.window.maxYears === 5, w5only.window);
+  // ราคาแยกจากธุรกิจ → gap ต่างกันตามช่วงปี (พิสูจน์ว่า recompute จริงต่อ window)
+  const h6div = hist(G, E10, M30, FCF, [140, 200, 280, 400, 560]);
+  h6div.years.unshift({ fy: "FY2020", endYm: "2020-12", revenueB: 90, epsAdj: 0.9, opMarginPct: 30, fcfB: 28, priceFYEnd: 100 });
+  const d2 = TE.computeHistory("TEST", {}, Object.assign(histOpts(h6div), { years: 2 }));
+  const d6 = TE.computeHistory("TEST", {}, Object.assign(histOpts(h6div), { years: 6 }));
+  check("gap คำนวณใหม่ตามช่วงปี (2yr ≠ 6yr เมื่อราคาแยกจากธุรกิจ)", d2.metrics.gapPp !== d6.metrics.gapPp, [d2.metrics.gapPp, d6.metrics.gapPp]);
+  check("disclosure สะท้อนช่วงปีที่เลือก (2 ปี)", /2 ปี/.test(w2.disclosure), w2.disclosure.slice(0, 20));
 
   // ราคาปีฐานหาย → verdict = Not Measurable (ไม่แอบใช้ Well Aligned)
   const noP = TE.computeHistory("TEST", {}, histOpts(hist(G, E10, M30, FCF, [null, 110, 121, 133, 146])));

@@ -460,10 +460,17 @@
       if (!H || !Array.isArray(H.years) || H.years.length < 5) {
         return { available: false, reason: "no-history", thai: "ยังไม่มีข้อมูลการเงิน 5 ปีของ " + T + " — สั่ง /thesis-update " + T + " ใน Claude Code เพื่อเพิ่มชุดข้อมูล 5 ปี" };
       }
-      var Y = H.years.slice(-5).map(function (y) { // ใช้ 5 ปีล่าสุดเสมอ แม้ KB จะสะสมปีเพิ่ม
+      // ---- ช่วงปีเลือกได้ (opts.years) — default 5 ปี, clamp [2, min(6, ที่มีจริง)] ----
+      var avail = H.years.length;
+      var maxWin = Math.min(6, avail);
+      var minWin = Math.min(2, avail); // ต้อง ≥2 จุดถึงจะเทียบ growth vs price ได้
+      var reqWin = opts.years != null ? Math.round(Number(opts.years)) : 5;
+      var win = clamp(Number.isFinite(reqWin) ? reqWin : 5, minWin, maxWin);
+      var Y = H.years.slice(-win).map(function (y) { // ใช้ N ปีล่าสุด (เลือกได้) แม้ KB สะสมปีเพิ่ม
         return { fy: y.fy, endYm: y.endYm, rev: num(y.revenueB), eps: num(y.epsAdj), margin: num(y.opMarginPct), fcf: num(y.fcfB), price: num(y.priceFYEnd) };
       });
       var n = Y.length, first = Y[0], last = Y[n - 1];
+      var winTxt = n + " ปี";
       var spanMonths = monthsBetweenYm(first.endYm, last.endYm);
       var spanYears = spanMonths != null && spanMonths > 0 ? spanMonths / 12 : n - 1;
 
@@ -533,9 +540,17 @@
       var posEps = epsComputable.filter(function (x) { return x > 0; }).length;
       var profitableYears = Y.filter(function (y) { return y.eps != null && y.eps > 0; }).length;
       var fcfMargin = last.fcf != null && last.rev > 0 ? last.fcf / last.rev : null;
-      var accRecent = avg([revYoys[2], revYoys[3]]), accBase = avg([revYoys[0], revYoys[1]]);
+      // acceleration = ครึ่งหลัง − ครึ่งแรกของ YoY (generalize ให้ทำงานทุกช่วงปี n≥2)
+      var rHalf = Math.floor(revYoys.length / 2);
+      var accBase = rHalf >= 1 ? avg(revYoys.slice(0, rHalf)) : null;
+      var accRecent = rHalf >= 1 ? avg(revYoys.slice(revYoys.length - rHalf)) : null;
       var revAccel = accRecent != null && accBase != null ? accRecent - accBase : null;
-      var epsAccel = epsComputable.length >= 4 ? avg([epsYoys[2], epsYoys[3]]) - avg([epsYoys[0], epsYoys[1]]) : null;
+      var eHalf = Math.floor(epsYoys.length / 2);
+      var epsAccel = null;
+      if (eHalf >= 1) {
+        var epsBase = avg(epsYoys.slice(0, eHalf)), epsRecent = avg(epsYoys.slice(epsYoys.length - eHalf));
+        if (epsBase != null && epsRecent != null) epsAccel = epsRecent - epsBase;
+      }
       var accelScore = revAccel != null ? clamp(Math.round(50 + revAccel * 150), 0, 100) : null;
       if (accelScore != null && epsAccel != null) accelScore = Math.round((accelScore + clamp(Math.round(50 + epsAccel * 150), 0, 100)) / 2);
       var qualityParts = [
@@ -575,7 +590,7 @@
           totalPp: priceCagr != null ? round(priceCagr * 100, 1) : null,
           mainDriver: { key: "inflection", label: "การพลิกจากขาดทุนเป็นกำไร", pp: null },
           note: epsTurnaround
-            ? "EPS พลิกจากขาดทุน (" + first.eps + ") เป็นกำไร (" + last.eps + ") ในช่วง 5 ปี — การแยก contribution เป็น %/ปี ไม่มีความหมายเชิงเลข: แรงขับหลักของราคาคือการพลิกกำไร บวกการขยายตัวของ multiple"
+            ? "EPS พลิกจากขาดทุน (" + first.eps + ") เป็นกำไร (" + last.eps + ") ในช่วง " + winTxt + " — การแยก contribution เป็น %/ปี ไม่มีความหมายเชิงเลข: แรงขับหลักของราคาคือการพลิกกำไร บวกการขยายตัวของ multiple"
             : "ข้อมูล EPS ไม่พอสำหรับแยก contribution เชิงเลข — ใช้การเติบโตรายได้เป็นแกนอ่านแทน"
         };
       }
@@ -599,9 +614,9 @@
       why.push("ราคา: ผลตอบแทน " + (priceCagr != null ? "~" + round(priceCagr * 100, 1) + "%/ปี" : "—") +
         (priceBasis === "live" ? " (ถึงราคาล่าสุด)" : " (ถึงสิ้นปีบัญชีล่าสุด)") +
         (gapPp != null ? " → " + (gapPp >= 0 ? "นำหน้า" : "ตามหลัง") + "การเติบโตพื้นฐาน ~" + round(Math.abs(gapPp), 1) + "pp/ปี" : ""));
-      if (marginDelta != null) why.push("ความสามารถทำกำไร: operating margin " + first.margin + "% → " + last.margin + "% (" + (marginDelta >= 0 ? "+" : "") + round(marginDelta, 1) + "pp ใน 5 ปี)");
+      if (marginDelta != null) why.push("ความสามารถทำกำไร: operating margin " + first.margin + "% → " + last.margin + "% (" + (marginDelta >= 0 ? "+" : "") + round(marginDelta, 1) + "pp ใน " + winTxt + ")");
       var curSym = H.currency || "$"; // หุ้นไทยใช้ "฿" — กำหนดใน history.currency
-      if (last.fcf != null) why.push("กระแสเงินสด: FCF " + (first.fcf != null ? "~" + curSym + first.fcf + "B → " : "") + "~" + curSym + last.fcf + "B · เป็นบวก " + fcfPos + "/5 ปี");
+      if (last.fcf != null) why.push("กระแสเงินสด: FCF " + (first.fcf != null ? "~" + curSym + first.fcf + "B → " : "") + "~" + curSym + last.fcf + "B · เป็นบวก " + fcfPos + "/" + n + " ปี");
       if (opts.thesisScore != null) why.push("Investment thesis: คะแนน " + opts.thesisScore + "/100 — ข้อสรุปนี้อ่านคู่กับ thesis เสมอ ไม่แทนกัน");
       why.push("สรุปจากการรวม การเติบโตธุรกิจ + ราคาหุ้น + ความสามารถทำกำไร + กระแสเงินสด — ไม่ตัดสินจาก valuation ratio ตัวเดียว และไม่มีการพยากรณ์/ราคาเป้าหมาย");
 
@@ -646,7 +661,8 @@
         attribution: attribution,
         verdict: { key: verdict.key, label: verdict.label, thai: verdict.thai, tone: verdict.tone, why: why },
         indexed: indexed,
-        disclosure: "ตัวเลข 5 ปีเป็นค่าประมาณ curated จากรายงานประจำปี (ประทับ asOf " + (cfg.asOf || "-") + ") · ราคาปัจจุบันเป็น live จาก snapshot · การแบ่ง contribution เป็นสูตรคณิตศาสตร์ ไม่ใช่การพยากรณ์ และไม่มีราคาเป้าหมาย"
+        window: { years: n, available: avail, minYears: minWin, maxYears: maxWin },
+        disclosure: "ตัวเลข " + winTxt + "เป็นค่าประมาณ curated จากรายงานประจำปี (ประทับ asOf " + (cfg.asOf || "-") + ") · ราคาปัจจุบันเป็น live จาก snapshot · การแบ่ง contribution เป็นสูตรคณิตศาสตร์ ไม่ใช่การพยากรณ์ และไม่มีราคาเป้าหมาย"
       };
     } catch (e) {
       return { available: false, reason: "error", error: String(e && e.message || e) };

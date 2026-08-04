@@ -27,6 +27,22 @@
 .th-chipbtn { font-family: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: 0.02em; color: var(--mc-text-2); background: var(--th-chip-bg); border: 1px solid var(--mc-border); border-radius: 999px; padding: 6px 14px; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
 .th-chipbtn:hover { border-color: var(--mc-border-active); transform: translateY(-1px); }
 .th-chipbtn-on { color: var(--th-blue); border-color: rgba(56, 189, 248, 0.55); background: rgba(56, 189, 248, 0.10); }
+.th-yrsel { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
+.th-yrsel-lbl { font-size: 12px; color: var(--mc-text-2); margin-right: 2px; }
+.th-yrsel-note { font-size: 11px; color: var(--mc-text-2); opacity: 0.7; margin-left: 2px; }
+.th-yrbtn { font-family: inherit; font-size: 12px; font-weight: 700; color: var(--mc-text-2); background: var(--th-chip-bg); border: 1px solid var(--mc-border); border-radius: 8px; padding: 4px 11px; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
+.th-yrbtn:hover { border-color: var(--mc-border-active); transform: translateY(-1px); }
+.th-yrbtn-on { color: var(--th-blue); border-color: rgba(56, 189, 248, 0.55); background: rgba(56, 189, 248, 0.12); }
+.th-sticky { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 10px; padding: 8px 14px; margin: 0 0 14px; background: var(--mc-card, #101827); border: 1px solid var(--mc-border); border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28); }
+.th-sticky-sym { font-weight: 800; font-size: 15px; letter-spacing: 0.02em; color: var(--th-blue); }
+.th-sticky-name { font-size: 12.5px; color: var(--mc-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.th-sticky-score { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--mc-text-2); white-space: nowrap; }
+.th-sticky-ans { font-weight: 800; font-size: 12px; border-radius: 6px; padding: 2px 9px; }
+.th-sticky-score + .th-sticky-ans { margin-left: 0; }
+.th-sticky-ans:first-of-type { margin-left: auto; }
+.th-sticky-ans-yes { color: #34d399; background: rgba(52, 211, 153, 0.15); }
+.th-sticky-ans-wait { color: #f59e0b; background: rgba(245, 158, 11, 0.15); }
+.th-sticky-ans-no { color: #f43f5e; background: rgba(244, 63, 94, 0.15); }
 .th-datanote { margin-top: 10px; font-size: 11.5px; color: var(--th-watch); border: 1px dashed rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 7px 11px; line-height: 1.55; max-width: 780px; }
 .th-datanote b { font-variant-numeric: tabular-nums; }
 

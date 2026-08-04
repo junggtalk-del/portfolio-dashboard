@@ -14,15 +14,15 @@
   //  - หุ้นที่ไม่มี thesis ไม่ถูกจัดอันดับ (หลักการ: ไม่มีพื้นฐาน = ไม่แนะนำสะสม)
   //
   // Accumulation Score (renormalized เมื่อบางส่วนไม่มีข้อมูล):
-  //   Thesis 35 · Mega Trend 25 · Macro 10 · Rates 10 · Timing 10 · Valuation 10
+  //   Thesis 50 · Business Growth vs ราคา (เฉลี่ย 2/3/4 ปีล่าสุด) 30 · Timing 10 · Valuation 10
   // Recommendation แสดงได้ 4 แบบเท่านั้น: Aggressive Accumulation ·
   // Gradual Accumulation · Wait · Review Thesis (ไม่มี Buy/Sell)
   // ============================================================
 
   var ROOT_ID = "accRoot";
-  var VAL_SCORE = { cheap: 85, fair: 70, premium: 50, expensive: 30 };
-  var VAL_TH = { cheap: "ถูก", fair: "สมเหตุสมผล", premium: "พรีเมียม", expensive: "แพง" };
   var MAX_BUCKET_PCT = 10; // เพดานสะสมต่อ bucket — เดียวกับ Action Center
+  // สูตรกลาง (Accumulation Score / dip timing / why checklist / quarterly buckets)
+  // อยู่ใน portfolio-manager-engine.js — หน้านี้ delegate ไม่คำนวณซ้ำ
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
   function fin(v) { var n = Number(v); return Number.isFinite(n) ? n : null; }
@@ -52,23 +52,6 @@
   }
 
   // ---------------- exposure (เพดานสะสม — ฐาน Quarterly bucket แบบ Action Center) ----------------
-  function quarterlyBuckets(snapshot) {
-    var totals = {};
-    try {
-      var ps = snapshot && snapshot.portfolioStatus;
-      var data = ps && (ps.data || (ps.quarters ? ps : null));
-      if (!data || !data.quarters) return totals;
-      var keys = Object.keys(data.quarters).sort();
-      var key = (data.currentQuarter && data.quarters[data.currentQuarter]) ? data.currentQuarter : keys[keys.length - 1];
-      var assets = (data.quarters[key] && data.quarters[key].assets) || [];
-      assets.forEach(function (a) {
-        var m = Number(a && a.manualValue), s = Number(a && a.snapshotValue);
-        var gross = Number.isFinite(m) ? m : (Number.isFinite(s) ? s : 0);
-        if (gross > 0) totals[a.type || "custom"] = (totals[a.type || "custom"] || 0) + gross;
-      });
-    } catch (e) { /* graceful */ }
-    return totals;
-  }
   function exposureOf(ticker, uni, buckets) {
     var key = canonical(ticker);
     var rec = uni.holdings.find(function (h) { return canonical(h.canonicalSymbol) === key && h.isHolding; });
@@ -80,61 +63,21 @@
     return { held: true, pct: null, basis: labels[bucket] || bucket, quarterly: false };
   }
 
-  // ---------------- dip-timing subscore (เครื่องมือจับจังหวะ — น้ำหนักแค่ 10%) ----------------
-  function techFor(ticker, snapshot) {
-    var keys = ticker === "GOOG" ? ["GOOG", "GOOGL"] : [ticker];
-    for (var i = 0; i < keys.length; i++) {
-      var t = snapshot && snapshot.technicalSignals && snapshot.technicalSignals[keys[i]];
-      var r = snapshot && snapshot.rsiSignals && snapshot.rsiSignals[keys[i]];
-      if (t || r) return { tech: t || {}, rsi: fin(r && r.rsi14) != null ? fin(r.rsi14) : fin(t && t.rsi14) };
-    }
-    return { tech: {}, rsi: null };
-  }
-  function dipTiming(o, tr) {
-    var dd = o.falling && fin(o.falling.drawdownPct) != null ? Math.abs(Math.min(o.falling.drawdownPct, 0)) : null;
-    var s = 40, notes = [];
-    if (dd != null) {
-      if (dd >= 5) { s += 20; notes.push("ย่อแล้ว " + dd.toFixed(1) + "% จาก high 90 วัน"); }
-      else notes.push("ย่อเพียง " + dd.toFixed(1) + "% — ยังไม่ถึงเกณฑ์ ≥5%");
-      if (dd >= 10) s += 10;
-    }
-    if (tr.rsi != null) {
-      if (tr.rsi < 30) { s += 15; notes.push("RSI oversold (" + tr.rsi.toFixed(0) + ")"); }
-      else if (tr.rsi < 40) { s += 8; notes.push("RSI เริ่มต่ำ (" + tr.rsi.toFixed(0) + ")"); }
-    }
-    var price = fin(tr.tech.latestClose), sma = fin(tr.tech.sma200);
-    if (price != null && sma != null && sma > 0) {
-      var dist = price / sma - 1;
-      if (Math.abs(dist) <= 0.03) { s += 10; notes.push("ราคาใกล้ SMA200 (" + (dist * 100).toFixed(1) + "%)"); }
-      else if (dist > 0) s += 5;
-    }
-    return { score: clamp(Math.round(s), 0, 100), dd: dd, notes: notes };
-  }
-
   // ---------------- ประเมินรายตัว (เฉพาะที่มี thesis — ครบ 8 ปัจจัย) ----------------
   function evaluate(ticker, name, snapshot, uni, buckets) {
-    var TE = window.ThesisEngine;
+    var TE = window.ThesisEngine, PM = window.PMEngine;
     var o;
     try { o = TE.compute(ticker, snapshot, {}); } catch (e) { return null; }
     if (!o || !o.available) return null;
-    var tr = techFor(ticker, snapshot);
-    var timing = dipTiming(o, tr);
-    var mega = o.inputs && o.inputs.megaTrend;
-    var regime = o.inputs && o.inputs.regime;
-    var rates = o.inputs && o.inputs.rates;
-    var valLevel = o.valuationView ? o.valuationView.level : null;
-
-    var parts = [
-      { key: "thesis", label: "Investment Thesis", value: fin(o.thesis.score), weight: 35 },
-      { key: "mega", label: "Mega Trend", value: mega ? fin(mega.score) : null, weight: 25 },
-      { key: "macro", label: "Macro Regime", value: regime ? fin(regime.score) : null, weight: 10 },
-      { key: "rates", label: "Interest Rate", value: rates ? fin(rates.score) : null, weight: 10 },
-      { key: "timing", label: "Technical Timing", value: timing.score, weight: 10 },
-      { key: "valuation", label: "Valuation", value: valLevel ? VAL_SCORE[valLevel] : null, weight: 10 }
-    ];
-    var w = 0, acc = 0;
-    parts.forEach(function (p) { if (p.value != null) { w += p.weight; acc += p.value * p.weight; } });
-    var score = w ? Math.round(acc / w) : null;
+    var tr = PM.techOf(snapshot, ticker);
+    // Business Growth vs ราคา = เฉลี่ย 3 ช่วงปีล่าสุด (2/3/4 ปี) — สูตรกลางใน PM engine
+    var histories = (PM.GROWTH_WINDOWS || [2, 3, 4]).map(function (y) {
+      try { return TE.computeHistory ? TE.computeHistory(ticker, snapshot, { years: y }) : null; } catch (e3) { return null; }
+    });
+    var growth = PM.growthSummary(histories);
+    var sc = PM.accumulationScore(o, tr, growth); // Thesis 50 / Growth-vs-ราคา 2-4ปี 30 / Timing 10 / Valuation 10
+    var timing = sc.timing, parts = sc.parts, score = sc.score;
+    var valLevel = sc.valLevel;
 
     // dip classification (4 ระดับตามสเปก) — จาก thesis engine โดยตรง
     var dk = o.dipClass ? o.dipClass.key : null;
@@ -161,17 +104,8 @@
       recWhy = "เข้าเกณฑ์สะสมแต่ถือครบเพดาน " + MAX_BUCKET_PCT + "% ของ" + exp.basis + " แล้ว (" + exp.pct.toFixed(1) + "%)";
     }
 
-    // "ทำไมถึงเป็นจังหวะย่อที่ดี" — checklist ✓/✗
-    var why = [];
-    var push = function (ok, txt) { why.push({ ok: ok, txt: txt }); };
-    if (o.revenueQuality && o.revenueQuality.acceleration === "accelerating") push(true, "รายได้กำลังเร่งตัว");
-    else if (o.revenueQuality && o.revenueQuality.acceleration === "decelerating") push(false, "รายได้กำลังชะลอ");
-    if (fin(o.aiExecution && o.aiExecution.score) != null) push(o.aiExecution.score >= 75, "AI execution " + o.aiExecution.score + "/100" + (o.aiExecution.score >= 75 ? " — แข็งแรง" : " — กลาง ๆ"));
-    if (mega) push(mega.gateOpen === true, "Mega Trend " + (mega.gateOpen ? "ยืน (เกตเปิด · " + mega.score + ")" : "เกตปิด (" + mega.score + ")"));
-    if (rates) push(!rates.severe && rates.score > 40, "ลมต้านดอกเบี้ย" + (!rates.severe && rates.score > 40 ? "รับได้ (" + rates.score + ")" : "แรง (" + rates.score + ")"));
-    timing.notes.slice(0, 2).forEach(function (n) { push(!/ยังไม่ถึงเกณฑ์/.test(n), n); });
-    if (valLevel) push(valLevel === "cheap" || valLevel === "fair", "Valuation " + (VAL_TH[valLevel] || valLevel));
-    if (o.thesis.trend && o.thesis.trend.key === "deteriorating") push(false, "ผลประกอบการล่าสุดแผ่วลง");
+    // "ทำไมถึงเป็นจังหวะย่อที่ดี" — checklist ✓/✗ (สูตรกลาง)
+    var why = PM.whyChecklist(o, timing, valLevel, growth);
 
     return {
       ticker: ticker, name: o.name || name, score: score, parts: parts,
@@ -222,11 +156,11 @@
     if (!root) return;
     var snapshot = readSnapshot();
     var TE = window.ThesisEngine, TD = window.ThesisData;
-    if (!TE || !TD) { root.innerHTML = '<div class="mc-empty"><strong>Thesis Engine ไม่พร้อม</strong> — refresh หน้านี้</div>'; return; }
+    if (!TE || !TD || !window.PMEngine) { root.innerHTML = '<div class="mc-empty"><strong>Thesis/PM Engine ไม่พร้อม</strong> — refresh หน้านี้</div>'; return; }
     if (!snapshot) { root.innerHTML = header(null) + '<div class="mc-empty"><strong>ยังไม่มี Data Snapshot</strong><br>กด Load Latest Data ก่อน — คะแนน Mega Trend/Macro/Timing ต้องใช้ราคาจริง</div>'; return; }
 
     var uni = universePool(snapshot);
-    var buckets = quarterlyBuckets(snapshot);
+    var buckets = window.PMEngine.quarterlyBuckets(snapshot);
     var covered = TE.companiesFrom(TD).map(function (c) { return c.ticker; });
     var coveredSet = new Set(covered.map(canonical));
     var entries = covered
@@ -241,14 +175,14 @@
     var top = entries.slice(0, 10);
     var rest = entries.slice(10);
     root.innerHTML = header(counts) +
-      '<section class="acc-sec"><h2>🏆 Top 10 Accumulation Opportunities</h2><p>จัดอันดับด้วย Accumulation Score — Thesis 35% · Mega Trend 25% · Macro 10% · ดอกเบี้ย 10% · Timing 10% · Valuation 10% (เทคนิคเป็นเครื่องมือจับจังหวะ ไม่ใช่ตัวตัดสิน)</p>' +
+      '<section class="acc-sec"><h2>🏆 Top 10 Accumulation Opportunities</h2><p>จัดอันดับด้วย Accumulation Score — น้ำหนัก Thesis 50 · Business Growth vs ราคา (เฉลี่ย 2/3/4 ปีล่าสุด) 30 · Timing 10 · Valuation 10 (ถอด Macro/ดอกเบี้ย/Mega Trend คำนวณออก — มุมมอง AI Megatrend คุณตัดสินใจเองที่หน้า AI Portfolio Manager · เทคนิคเป็นเครื่องมือจับจังหวะ ไม่ใช่ตัวตัดสิน)</p>' +
       (top.length ? '<div class="acc-grid">' + top.map(function (e, i) { return card(e, i + 1); }).join("") + "</div>"
         : '<div class="mc-empty">ยังไม่มีตัวที่ประเมินได้ — กด Load Latest Data</div>') + "</section>" +
       (rest.length ? '<section class="acc-sec"><h2>อันดับที่เหลือ</h2><div class="acc-grid">' + rest.map(function (e, i) { return card(e, i + 11); }).join("") + "</div></section>" : "") +
       '<section class="acc-sec acc-uncovered"><h2>ยังไม่จัดอันดับ (' + uncovered.length + ' ตัว — ไม่มี Investment Thesis)</h2>' +
       '<p>หลักการของหน้านี้: <b>ไม่แนะนำสะสมจากเทคนิคเดี่ยว ๆ</b> — ตัวที่ยังไม่มี thesis จึงไม่ถูกจัดอันดับ · เพิ่มด้วย <code>/thesis-update TICKER</code> ใน Claude Code</p>' +
       '<div class="acc-chips">' + uncovered.map(function (u) { return '<a class="acc-chip" href="/asset/' + encodeURIComponent(u.ticker) + '">' + esc(u.ticker) + "</a>"; }).join("") + "</div></section>" +
-      '<footer class="acc-foot">📎 Universe เดียวกับ Action Center (store เดียวกัน — sync เสมอ) · engine: Thesis / Adaptive Position / Market Regime / Rate Headwind · deterministic ไม่มี LLM · ไม่ใช่คำแนะนำการลงทุน</footer>';
+      '<footer class="acc-foot">📎 Universe เดียวกับ Action Center (store เดียวกัน — sync เสมอ) · engine: Thesis / Market Regime / Rate Headwind (สูตรกลางใน PM engine) · deterministic ไม่มี LLM · ไม่ใช่คำแนะนำการลงทุน</footer>';
   }
 
   function header(counts) {
@@ -258,7 +192,7 @@
       '<span class="acc-pill">🟠 Wait <b>' + counts.wait + "</b></span>" +
       '<span class="acc-pill">🔴 Review <b>' + counts.review + "</b></span></div>" : "";
     return '<header class="acc-header"><h1>🧺 Accumulation Center</h1>' +
-      '<p>จังหวะย่อตัวไหนควรค่าแก่การสะสมวันนี้ — ทุกคำแนะนำรวม Thesis · Mega Trend · Macro · ดอกเบี้ย · พื้นฐาน · Timing · Valuation · สัดส่วนพอร์ต ครบ 8 ปัจจัย</p>' + strip + "</header>";
+      '<p>จังหวะย่อตัวไหนควรค่าแก่การสะสมวันนี้ — ทุกคำแนะนำรวม Thesis · Business Growth vs ราคา (2/3/4 ปีล่าสุด) · พื้นฐาน · Timing · Valuation · สัดส่วนพอร์ต</p>' + strip + "</header>";
   }
 
   window.addEventListener("portfolio-data-snapshot", render);

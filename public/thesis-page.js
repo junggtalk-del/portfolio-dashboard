@@ -13,6 +13,7 @@
   var ROOT_ID = "thRoot";
   var STORE_KEY = "thesis_selected_v1";
   var DEFAULT_TICKER = "GOOG";
+  var historyYears = null; // §6 ช่วงปีที่เลือก (null = default 5) — คงไว้ข้ามการสลับหุ้น
   var TONE = { bull: "#34d399", watch: "#f59e0b", bear: "#f43f5e", blue: "#38bdf8" };
   var FALLBACK_COMPANIES = ["GOOG", "NVDA", "MSFT", "META", "AMZN", "TSM", "AVGO", "AMD"]
     .map(function (t) { return { ticker: t, name: t }; });
@@ -108,9 +109,10 @@
       return;
     }
     if (!R || !R.available) { root.innerHTML = headerSection(null) + emptyState(R); return; }
-    if (R.lite) { root.innerHTML = headerSection(R) + liteSection(R); return; }
+    if (R.lite) { root.innerHTML = headerSection(R) + stickyBar(R) + liteSection(R); return; }
     root.innerHTML =
       headerSection(R) +
+      stickyBar(R) +
       heroSection(R) +
       thesisSection(R) +
       fallingSection(R) +
@@ -197,6 +199,21 @@
       "</div>" +
       (causes ? '<div class="th-lite-causes"><h3>เจาะสาเหตุการย่อ (จากราคาจริง)</h3><ul>' + causes + "</ul></div>" : "") +
       '<div class="th-lite-cta">ต้องการมุมมองเต็ม (thesis score · dip classification · YES/NO)? → สั่ง <code>/thesis-update ' + esc(R.ticker) + '</code> ใน Claude Code เพื่อสร้างข้อมูล curated ของตัวนี้ (ใช้เวลาไม่กี่นาที)</div>';
+  }
+
+  // ---- sticky bar: บอกว่ากำลังดูหุ้นอะไรอยู่ (ค้างบนสุดเวลาเลื่อนลง) ----
+  function stickyBar(R) {
+    if (!R) return "";
+    var th = R.thesis || {};
+    var scoreTxt = th.score != null ? (th.status && th.status.label ? esc(th.status.label) + " " : "") + th.score + "/100" : "";
+    var ans = R.finalVerdict ? (R.finalVerdict.answer === "YES" ? "YES" : R.finalVerdict.answer === "NO" ? "NO" : "WAIT") : null;
+    return '<div class="th-sticky">' +
+      '<span class="th-sticky-sym">' + esc(R.ticker || "") + "</span>" +
+      (R.name ? '<span class="th-sticky-name">' + esc(R.name) + "</span>" : "") +
+      (scoreTxt ? '<span class="th-sticky-score">' + scoreTxt + "</span>" : "") +
+      (ans ? '<span class="th-sticky-ans th-sticky-ans-' + ans.toLowerCase() + '">' + ans + "</span>"
+        : (R.lite ? '<span class="th-sticky-ans th-muted">Lite</span>' : "")) +
+      "</div>";
   }
 
   // ---- §1 · FINAL VERDICT hero ----
@@ -347,14 +364,26 @@
     return '<div class="th-bp-panel"><div class="th-bp-ptitle">' + esc(title) + "</div>" + out + '<div class="th-bp-legend">' + legend + "</div></div>";
   }
   function fmtPct(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + v + "%"; }
+  function yearSelector(W) {
+    if (!W || W.maxYears < W.minYears) return "";
+    var btns = "";
+    for (var y = W.minYears; y <= W.maxYears; y++) {
+      btns += '<button type="button" class="th-yrbtn' + (y === W.years ? " th-yrbtn-on" : "") + '" data-th-hyears="' + y + '">' + y + " ปี</button>";
+    }
+    return '<div class="th-yrsel"><span class="th-yrsel-lbl">ช่วงปีที่ดู</span>' + btns +
+      (W.years >= W.available ? '<span class="th-yrsel-note">(ครบทุกปีที่มีใน KB)</span>' : "") + "</div>";
+  }
   function historySection(R) {
     var TE = window.ThesisEngine;
     if (!TE || typeof TE.computeHistory !== "function") return "";
-    var Hy = TE.computeHistory(R.ticker, readSnapshot() || {}, { thesisScore: R.thesis ? R.thesis.score : null });
-    var sub = "ราคาหุ้น 5 ปีที่ผ่านมาถูกหนุนด้วยพื้นฐานธุรกิจจริงไหม — เทียบธุรกิจกับราคา ไม่ใช่การแสดงงบการเงิน";
+    var Hy = TE.computeHistory(R.ticker, readSnapshot() || {}, { thesisScore: R.thesis ? R.thesis.score : null, years: historyYears });
+    var W = Hy && Hy.window ? Hy.window : null;
+    var yrs = W ? W.years : 5;
+    var title = "Business Growth vs Stock Price (" + yrs + " ปี)";
+    var sub = "ราคาหุ้น " + yrs + " ปีที่ผ่านมาถูกหนุนด้วยพื้นฐานธุรกิจจริงไหม — เทียบธุรกิจกับราคา ไม่ใช่การแสดงงบการเงิน";
     if (!Hy || !Hy.available) {
-      return sec(6, "Business Growth vs Stock Price (5 ปี)", sub,
-        '<div class="th-muted-box">' + esc((Hy && Hy.thai) || "ยังไม่มีข้อมูลการเงิน 5 ปี") + "</div>");
+      return sec(6, "Business Growth vs Stock Price", sub,
+        '<div class="th-muted-box">' + esc((Hy && Hy.thai) || "ยังไม่มีข้อมูลการเงินย้อนหลัง") + "</div>");
     }
     var M = Hy.metrics || {}, V = Hy.verdict || {}, A = Hy.alignment || {}, Q = Hy.quality || {}, AT = Hy.attribution || {};
     var IX = Hy.indexed || {};
@@ -456,8 +485,8 @@
     var why = '<div class="th-bp-why"><h3 class="th-h3">ทำไมถึงสรุปแบบนี้</h3>' + list(V.why) + "</div>";
     var disc = Hy.disclosure ? '<div class="th-method">📎 ' + esc(Hy.disclosure) + (Hy.notes ? " · " + esc(Hy.notes) : "") + "</div>" : "";
 
-    return sec(6, "Business Growth vs Stock Price (5 ปี)", sub,
-      banner + '<div class="th-qchips">' + gapChip + "</div>" + charts + strip + epsNote + chips + table + cards + attr + why + disc);
+    return sec(6, title, sub,
+      yearSelector(W) + banner + '<div class="th-qchips">' + gapChip + "</div>" + charts + strip + epsNote + chips + table + cards + attr + why + disc);
   }
 
   // ---- §7 · Revenue quality ----
@@ -567,6 +596,8 @@
   }
   function onRootClick(e) {
     if (e.target && e.target.id === "thLiteGo") { goLite(); return; }
+    var yb = e.target && e.target.closest ? e.target.closest("[data-th-hyears]") : null;
+    if (yb) { historyYears = Math.round(Number(yb.getAttribute("data-th-hyears"))) || null; render(); return; }
     var el = e.target && e.target.closest ? e.target.closest("[data-th-ticker]") : null;
     if (el) setTicker(el.getAttribute("data-th-ticker"));
   }

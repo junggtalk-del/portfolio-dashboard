@@ -93,6 +93,10 @@
       "destination": "/accumulation-center.html"
     },
     {
+      "source": "/portfolio-manager",
+      "destination": "/portfolio-manager.html"
+    },
+    {
       "source": "/wave3",
       "destination": "/wave3.html"
     },
