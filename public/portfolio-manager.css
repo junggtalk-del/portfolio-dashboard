@@ -84,6 +84,19 @@
 .pm-card-zone { display: flex; align-items: center; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
 .pm-card-zone small { color: var(--mc-dim, #94a3b8); font-size: 11.5px; }
 .pm-card-zonewhy { font-size: 11.5px; color: var(--mc-dim, #94a3b8); margin-bottom: 8px; }
+.pm-scoreline { font-size: 11.5px; color: var(--mc-dim, #94a3b8); margin-bottom: 8px; font-variant-numeric: tabular-nums; line-height: 1.5; }
+.pm-scoreline b { color: var(--mc-text, #e2e8f0); font-size: 13px; }
+.pm-scorebars { margin: 4px 0 10px; display: flex; flex-direction: column; gap: 5px; padding-bottom: 8px; border-bottom: 1px solid rgba(148, 163, 184, .12); }
+.pm-sp-head { font-size: 11.5px; color: var(--mc-dim, #94a3b8); margin-bottom: 2px; }
+.pm-sp-head b { color: var(--mc-text, #e2e8f0); }
+.pm-sp-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.pm-sp-lbl { flex: 0 0 128px; }
+.pm-sp-lbl em { color: var(--mc-dim, #94a3b8); font-style: normal; font-size: 10.5px; }
+.pm-sp-bar { flex: 1; height: 7px; background: rgba(148, 163, 184, .12); border-radius: 5px; overflow: hidden; }
+.pm-sp-bar i { display: block; height: 100%; border-radius: 5px; }
+.pm-sp-v { flex: 0 0 24px; text-align: right; font-variant-numeric: tabular-nums; }
+.pm-sp-c { flex: 0 0 42px; text-align: right; font-style: normal; font-size: 11px; color: #6ee7b7; font-variant-numeric: tabular-nums; }
+.pm-sp-none { color: var(--mc-dim, #94a3b8); font-size: 11px; }
 .pm-lads { display: flex; gap: 6px; margin-bottom: 8px; }
 .pm-lad { font-size: 10.5px; font-weight: 800; border-radius: 6px; padding: 2px 7px; border: 1px solid; }
 .pm-lad-done { background: rgba(52, 211, 153, .18); border-color: rgba(52, 211, 153, .5); color: #6ee7b7; }

@@ -217,12 +217,15 @@
         '<div class="pm-tbar"><i class="pm-tbar-cur" style="width:' + Math.min(100, curW / maxT * 100) + '%"></i>' +
         '<i class="pm-tbar-target" style="left:' + Math.min(100, tgt / maxT * 100) + '%"></i></div>';
       var note = p.notes[r.ticker.toUpperCase()] || "";
+      // เป้าจริงมาจาก policy (index % / แบ่งโควตา / ชนเพดาน) — conviction เป็นแค่ตัวถ่วง
+      // น้ำหนักตอนแบ่ง จึงโชว์แค่บรรทัดสรุปเดียว (รายละเอียดคะแนนไปดูที่ Accumulation Opportunities)
+      var capped = !r.isIndex && r.covered && fin(r.target) != null && Math.abs(r.target - p.maxSinglePct) < 0.05;
       var whyBlock = r.isIndex
         ? '<div class="pm-why pm-ok">· ' + esc(note) + "</div>"
         : !r.covered
           ? '<div class="pm-why pm-no">· ยังไม่มี Investment Thesis — <code>/thesis-update ' + esc(r.ticker) + "</code> เพื่อให้ conviction แม่นขึ้น</div>"
           : '<div class="pm-why pm-ok">· ' + esc(note) + "</div>" +
-            (r.targetInfo && r.targetInfo.why ? r.targetInfo.why.map(function (w) { return '<div class="pm-why pm-ok">· น้ำหนัก conviction: ' + esc(w) + "</div>"; }).join("") : "");
+            (capped ? '<div class="pm-why pm-dim">· ชนเพดานรายตัว ' + p.maxSinglePct + "% แล้ว — conviction ที่สูงกว่านี้ไม่ดันเป้าเพิ่ม (ดูที่มาของคะแนนที่ Accumulation Opportunities)</div>" : "");
       return '<div class="pm-target-row' + (r.isIndex ? " pm-target-index" : "") + '">' +
         '<div class="pm-target-head">' + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">Index ' + p.indexPct + '%</span>' : (!r.covered ? ' <span class="pm-dim">ไม่มี thesis</span>' : "")) +
         '<span class="pm-num">' + (r.weightPct == null ? "—" : pct(r.weightPct)) + ' → <b>' + tgt + '%</b> <span class="' + (diff != null && diff > 0 ? "pm-pos" : "pm-dim") + '">(' + diffTxt + ")</span></span>" +
@@ -254,6 +257,25 @@
   }
 
   // ---------------- S4: Accumulation Opportunities (Zone นำ Score รอง) ----------------
+  var SCORE_SHORT = { thesis: "Thesis", growthPrice: "Growth", timing: "Timing", valuation: "Val" };
+  function scoreFormula(parts, score) {
+    var terms = (parts || []).filter(function (p) { return p.value != null; })
+      .map(function (p) { return (SCORE_SHORT[p.key] || p.key) + " " + p.value + "·" + p.weight + "%"; });
+    return terms.join(" + ") + " = <b>" + (score == null ? "—" : score) + "</b>";
+  }
+  function scoreBars(parts, score) {
+    var avail = (parts || []).filter(function (p) { return p.value != null; });
+    var wsum = avail.reduce(function (s, p) { return s + p.weight; }, 0) || 1;
+    var rows = (parts || []).map(function (p) {
+      if (p.value == null) return '<div class="pm-sp-row pm-dim"><span class="pm-sp-lbl">' + esc(p.label) + ' <em>' + p.weight + '%</em></span><span class="pm-sp-none">— ไม่มีข้อมูล (เกลี่ยน้ำหนักให้ตัวอื่น)</span></div>';
+      var contrib = Math.round(p.value * p.weight / wsum * 10) / 10;
+      var col = p.value >= 70 ? "#34d399" : p.value >= 40 ? "#f59e0b" : "#f43f5e";
+      return '<div class="pm-sp-row"><span class="pm-sp-lbl">' + esc(p.label) + ' <em>' + p.weight + '%</em></span>' +
+        '<div class="pm-sp-bar"><i style="width:' + Math.min(100, p.value) + '%;background:' + col + '"></i></div>' +
+        '<b class="pm-sp-v">' + p.value + '</b><i class="pm-sp-c" title="ส่วนที่สมทบเข้าคะแนนรวม">+' + contrib + "</i></div>";
+    }).join("");
+    return '<div class="pm-sp-head">Accumulation Score = ผลรวมถ่วงน้ำหนัก (renormalize เมื่อบางปัจจัยไม่มีข้อมูล) = <b>' + (score == null ? "—" : score) + "/100</b></div>" + rows;
+  }
   function sectionZones(out) {
     var all = out.rows.filter(function (r) { return r.covered; })
       .sort(function (a, b) { return a.zone.rank - b.zone.rank || (b.accScore || 0) - (a.accScore || 0); });
@@ -269,8 +291,11 @@
         '<span class="pm-score"><b>' + (r.accScore == null ? "—" : r.accScore) + "</b>/100</span></div>" +
         '<div class="pm-card-zone">' + zoneChip(r.zone) + "<small>" + esc(r.zone.thai) + "</small></div>" +
         '<div class="pm-card-zonewhy">' + r.zoneWhy.map(function (w) { return esc(w); }).join(" · ") + "</div>" +
+        '<div class="pm-scoreline">📊 ' + scoreFormula(r.acc.parts, r.accScore) + "</div>" +
         '<div class="pm-lads">' + ladderMini + "</div>" +
-        '<details class="pm-details"><summary>ทำไม (explainability)</summary><div class="pm-whywrap">' + whyList(r.why) + "</div></details>" +
+        '<details class="pm-details"><summary>ที่มาของคะแนน + เหตุผล</summary>' +
+        '<div class="pm-scorebars">' + scoreBars(r.acc.parts, r.accScore) + "</div>" +
+        '<div class="pm-whywrap">' + whyList(r.why) + "</div></details>" +
         (r.stale ? '<div class="pm-stale">⚠ thesis เก่า — /thesis-update ' + esc(r.ticker) + "</div>" : "") +
         "</article>";
     }).join("");
@@ -281,7 +306,7 @@
       return '<span class="pm-pill">' + z.icon + " " + k + " <b>" + (counts[k] || 0) + "</b></span>";
     }).join("");
     return '<section class="pm-sec"><h2>🧲 Accumulation Opportunities</h2>' +
-      "<p>ตำแหน่งไหน \"ควรค่าแก่เงินก้อนถัดไป\" — Zone คือตัวตัดสินหลัก คะแนนเป็นรอง · น้ำหนัก: Thesis 50 · Business Growth vs ราคา (เฉลี่ย 2/3/4 ปีล่าสุด) 30 · Timing 10 · Valuation 10 (ถอด Macro/ดอกเบี้ยออกจากคะแนนแล้ว · มุมมอง AI Megatrend คุณตั้งเองเป็นเกต · EMA/SMA200/RSI เป็นแค่เครื่องมือจับจังหวะ)</p>" +
+      "<p>ตำแหน่งไหน \"ควรค่าแก่เงินก้อนถัดไป\" — Zone คือตัวตัดสินหลัก คะแนนเป็นรอง · น้ำหนัก: Thesis 40 · Business Growth vs ราคา (ถ่วงน้ำหนัก 2-5 ปี · ปีล่าสุดมากกว่า) 25 · Timing 20 · Valuation 15 (ถอด Macro/ดอกเบี้ยออกจากคะแนนแล้ว · มุมมอง AI Megatrend คุณตั้งเองเป็นเกต · EMA/SMA200/RSI เป็นแค่เครื่องมือจับจังหวะ)</p>" +
       '<div class="pm-strip">' + strip + "</div>" +
       '<div class="pm-grid">' + cards + "</div></section>";
   }

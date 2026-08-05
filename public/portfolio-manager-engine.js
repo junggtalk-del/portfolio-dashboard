@@ -49,7 +49,8 @@
     var s = GROWTH_SCORE[history.verdict.key];
     return s != null ? s : null;
   }
-  var GROWTH_WINDOWS = [2, 3, 4]; // ช่วงปีล่าสุดที่ใช้เฉลี่ยเป็นปัจจัย (ผู้ใช้สั่ง Aug 2026)
+  // ทุกช่วงปีที่คำนวณได้ (KB = 5 ปีบัญชี · window = จำนวนจุด FY · 1 จุดวัด growth ไม่ได้ จึงเริ่ม 2)
+  var GROWTH_WINDOWS = [2, 3, 4, 5];
   function growthLabelFromScore(s) {
     if (s == null) return "ไม่มีข้อมูล";
     if (s >= 82) return "ธุรกิจโตนำราคา";
@@ -57,17 +58,27 @@
     if (s >= 47) return "ราคานำเล็กน้อย";
     return "ราคานำธุรกิจมาก";
   }
-  // รวมผล computeHistory หลาย window (2/3/4 ปี) → เฉลี่ยคะแนน verdict ที่มีจริง
+  // น้ำหนักถ่วงปีล่าสุด: ช่วงสั้น (ล่าสุด) น้ำหนักมากกว่า — [2,3,4,5] → [4,3,2,1]
+  function windowWeight(years, windows) {
+    var sorted = (windows || GROWTH_WINDOWS).slice().sort(function (a, b) { return a - b; });
+    var idx = sorted.indexOf(years);
+    return idx < 0 ? 1 : sorted.length - idx;
+  }
+  // รวมผล computeHistory หลาย window → ค่าเฉลี่ยถ่วงน้ำหนัก (ปีล่าสุดมากกว่า) เฉพาะ window ที่ available
   function growthSummary(histories, windows) {
     windows = windows || GROWTH_WINDOWS;
-    var scores = [], parts = [];
+    var wsum = 0, acc = 0, parts = [];
     (histories || []).forEach(function (h, i) {
       if (h && h.available && h.verdict) {
         var s = GROWTH_SCORE[h.verdict.key];
-        if (s != null) { scores.push(s); parts.push({ years: windows[i], key: h.verdict.key, score: s, gapPp: h.metrics ? h.metrics.gapPp : null }); }
+        if (s != null) {
+          var w = windowWeight(windows[i], windows);
+          wsum += w; acc += s * w;
+          parts.push({ years: windows[i], key: h.verdict.key, score: s, weight: w, gapPp: h.metrics ? h.metrics.gapPp : null });
+        }
       }
     });
-    var avg = scores.length ? Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length) : null;
+    var avg = wsum ? Math.round(acc / wsum) : null;
     return { score: avg, label: growthLabelFromScore(avg), windows: parts };
   }
   // รับได้ทั้ง growth summary (มี .score) หรือ history เดี่ยว (มี .verdict) — คืนคะแนน 0-100 หรือ null
@@ -134,6 +145,8 @@
       if (dd >= 5) { s += 20; notes.push("ย่อแล้ว " + dd.toFixed(1) + "% จาก high 90 วัน"); }
       else notes.push("ย่อเพียง " + dd.toFixed(1) + "% — ยังไม่ถึงเกณฑ์ ≥5%");
       if (dd >= 10) s += 10;
+      if (dd >= 20) { s += 10; notes.push("ย่อลึก ≥20% จาก high 90 วัน"); }
+      if (dd >= 30) { s += 10; notes.push("ย่อลึกมาก ≥30% — โซนสะสมเชิงรุก"); }
     }
     if (tr.rsi != null) {
       if (tr.rsi < 30) { s += 15; notes.push("RSI oversold (" + tr.rsi.toFixed(0) + ")"); }
@@ -151,17 +164,17 @@
   // Thesis 35 · Macro 10 · Rates 10 · Timing 10 · Valuation 10 (renormalize
   // เมื่อบางส่วนไม่มีข้อมูล) — Mega Trend ถูกถอดออกตามคำสั่งผู้ใช้ (Aug 2026):
   // มุมมอง AI Megatrend ผู้ใช้ตัดสินใจเองเป็น "เกต" ไม่ใช่ส่วนหนึ่งของคะแนน
-  // Accumulation Score (ผู้ใช้สั่ง Aug 2026): ตัด Macro ออก · Thesis 50 · Business
-  // Growth vs ราคา (เฉลี่ย 2/3/4 ปีล่าสุด) 30 · Timing 10 · Valuation 10 · ไม่มีดอกเบี้ย
+  // Accumulation Score (ผู้ใช้สั่ง Aug 2026): ไม่มี Macro/ดอกเบี้ย · Thesis 40 · Business
+  // Growth vs ราคา (ถ่วง 2-5 ปี) 25 · Timing 20 · Valuation 15
   // growth = growth summary จาก growthSummary() (หรือ history เดี่ยว backward-compat)
   function accumulationScore(o, tr, growth) {
     var timing = dipTiming(o, tr);
     var valLevel = o.valuationView ? o.valuationView.level : null;
     var parts = [
-      { key: "thesis", label: "Investment Thesis", value: fin(o.thesis.score), weight: 50 },
-      { key: "growthPrice", label: "Business Growth vs ราคา (2-4 ปี)", value: growthScoreOf(growth), weight: 30 },
-      { key: "timing", label: "Technical Timing", value: timing.score, weight: 10 },
-      { key: "valuation", label: "Valuation", value: valLevel ? VAL_SCORE[valLevel] : null, weight: 10 }
+      { key: "thesis", label: "Investment Thesis", value: fin(o.thesis.score), weight: 40 },
+      { key: "growthPrice", label: "Business Growth vs ราคา (2-5 ปี)", value: growthScoreOf(growth), weight: 25 },
+      { key: "timing", label: "Technical Timing", value: timing.score, weight: 20 },
+      { key: "valuation", label: "Valuation", value: valLevel ? VAL_SCORE[valLevel] : null, weight: 15 }
     ];
     var w = 0, acc = 0;
     parts.forEach(function (p) { if (p.value != null) { w += p.weight; acc += p.value * p.weight; } });
@@ -645,7 +658,7 @@
     VAL_SCORE: VAL_SCORE, VAL_TH: VAL_TH, GROWTH_SCORE: GROWTH_SCORE, GROWTH_TH: GROWTH_TH,
     GROWTH_WINDOWS: GROWTH_WINDOWS, ZONES: ZONES, ACTIONS: ACTIONS, RULES: RULES,
     techOf: techOf, smaDistPct: smaDistPct, emaBullish: emaBullish,
-    growthPriceScore: growthPriceScore, growthSummary: growthSummary, growthScoreOf: growthScoreOf, growthLabelFromScore: growthLabelFromScore,
+    growthPriceScore: growthPriceScore, growthSummary: growthSummary, growthScoreOf: growthScoreOf, growthLabelFromScore: growthLabelFromScore, windowWeight: windowWeight,
     dipTiming: dipTiming, accumulationScore: accumulationScore, whyChecklist: whyChecklist,
     quarterlyBuckets: quarterlyBuckets,
     zoneOf: zoneOf, entryLadder: entryLadder, targetFor: targetFor,

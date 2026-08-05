@@ -14,7 +14,7 @@
   //  - หุ้นที่ไม่มี thesis ไม่ถูกจัดอันดับ (หลักการ: ไม่มีพื้นฐาน = ไม่แนะนำสะสม)
   //
   // Accumulation Score (renormalized เมื่อบางส่วนไม่มีข้อมูล):
-  //   Thesis 50 · Business Growth vs ราคา (เฉลี่ย 2/3/4 ปีล่าสุด) 30 · Timing 10 · Valuation 10
+  //   Thesis 40 · Business Growth vs ราคา (ถ่วงน้ำหนัก 2-5 ปี · ปีล่าสุดมากกว่า) 25 · Timing 20 · Valuation 15
   // Recommendation แสดงได้ 4 แบบเท่านั้น: Aggressive Accumulation ·
   // Gradual Accumulation · Wait · Review Thesis (ไม่มี Buy/Sell)
   // ============================================================
@@ -75,7 +75,7 @@
       try { return TE.computeHistory ? TE.computeHistory(ticker, snapshot, { years: y }) : null; } catch (e3) { return null; }
     });
     var growth = PM.growthSummary(histories);
-    var sc = PM.accumulationScore(o, tr, growth); // Thesis 50 / Growth-vs-ราคา 2-4ปี 30 / Timing 10 / Valuation 10
+    var sc = PM.accumulationScore(o, tr, growth); // Thesis 40 / Growth-vs-ราคา 2-5ปี 25 / Timing 20 / Valuation 15
     var timing = sc.timing, parts = sc.parts, score = sc.score;
     var valLevel = sc.valLevel;
 
@@ -175,7 +175,7 @@
     var top = entries.slice(0, 10);
     var rest = entries.slice(10);
     root.innerHTML = header(counts) +
-      '<section class="acc-sec"><h2>🏆 Top 10 Accumulation Opportunities</h2><p>จัดอันดับด้วย Accumulation Score — น้ำหนัก Thesis 50 · Business Growth vs ราคา (เฉลี่ย 2/3/4 ปีล่าสุด) 30 · Timing 10 · Valuation 10 (ถอด Macro/ดอกเบี้ย/Mega Trend คำนวณออก — มุมมอง AI Megatrend คุณตัดสินใจเองที่หน้า AI Portfolio Manager · เทคนิคเป็นเครื่องมือจับจังหวะ ไม่ใช่ตัวตัดสิน)</p>' +
+      '<section class="acc-sec"><h2>🏆 Top 10 Accumulation Opportunities</h2><p>จัดอันดับด้วย Accumulation Score — น้ำหนัก Thesis 40 · Business Growth vs ราคา (ถ่วงน้ำหนัก 2-5 ปี · ปีล่าสุดมากกว่า) 25 · Timing 20 · Valuation 15 (ถอด Macro/ดอกเบี้ย/Mega Trend คำนวณออก — มุมมอง AI Megatrend คุณตัดสินใจเองที่หน้า AI Portfolio Manager · เทคนิคเป็นเครื่องมือจับจังหวะ ไม่ใช่ตัวตัดสิน)</p>' +
       (top.length ? '<div class="acc-grid">' + top.map(function (e, i) { return card(e, i + 1); }).join("") + "</div>"
         : '<div class="mc-empty">ยังไม่มีตัวที่ประเมินได้ — กด Load Latest Data</div>') + "</section>" +
       (rest.length ? '<section class="acc-sec"><h2>อันดับที่เหลือ</h2><div class="acc-grid">' + rest.map(function (e, i) { return card(e, i + 11); }).join("") + "</div></section>" : "") +
@@ -192,7 +192,7 @@
       '<span class="acc-pill">🟠 Wait <b>' + counts.wait + "</b></span>" +
       '<span class="acc-pill">🔴 Review <b>' + counts.review + "</b></span></div>" : "";
     return '<header class="acc-header"><h1>🧺 Accumulation Center</h1>' +
-      '<p>จังหวะย่อตัวไหนควรค่าแก่การสะสมวันนี้ — ทุกคำแนะนำรวม Thesis · Business Growth vs ราคา (2/3/4 ปีล่าสุด) · พื้นฐาน · Timing · Valuation · สัดส่วนพอร์ต</p>' + strip + "</header>";
+      '<p>จังหวะย่อตัวไหนควรค่าแก่การสะสมวันนี้ — ทุกคำแนะนำรวม Thesis · Business Growth vs ราคา (ถ่วงน้ำหนัก 2-5 ปี) · พื้นฐาน · Timing · Valuation · สัดส่วนพอร์ต</p>' + strip + "</header>";
   }
 
   window.addEventListener("portfolio-data-snapshot", render);

@@ -37,19 +37,24 @@ const TR = (price, sma, rsi, e12, e26) => ({ tech: { latestClose: price, sma200:
   t("dipTiming: deep dip 40+20+10+15+10=95", d2.score === 95);
   const d3 = PM.dipTiming(mockO({ falling: null }), { tech: {}, rsi: null });
   t("dipTiming: headless base 40", d3.score === 40 && d3.dd === null && d3.dist === null);
+  // ชั้นย่อลึกใหม่ (dd≥20 +10, dd≥30 +10) — วัดจาก drawdown ล้วน (ไม่มี rsi/sma)
+  const bare = { tech: {}, rsi: null };
+  t("dipTiming: dd15 → 70 (ไม่แตะชั้นใหม่)", PM.dipTiming(mockO({ falling: { drawdownPct: -15 } }), bare).score === 70);
+  t("dipTiming: dd25 → 80 (+ชั้น ≥20)", PM.dipTiming(mockO({ falling: { drawdownPct: -25 } }), bare).score === 80);
+  t("dipTiming: dd32 → 90 (+ชั้น ≥20 และ ≥30)", PM.dipTiming(mockO({ falling: { drawdownPct: -32 } }), bare).score === 90);
 }
 
 // ---------- accumulationScore (renormalize) ----------
 {
   const a = PM.accumulationScore(mockO({ inputs: {}, valuationView: null }), { tech: {}, rsi: null });
-  // เหลือ thesis(86×50) + timing(dd8 → 60 ×10) จากน้ำหนัก 60
-  t("accScore: renormalized (thesis+timing only)", a.score === Math.round((86 * 50 + 60 * 10) / 60));
+  // เหลือ thesis(86×40) + timing(dd8 → 60 ×20) จากน้ำหนัก 60
+  t("accScore: renormalized (thesis+timing only)", a.score === Math.round((86 * 40 + 60 * 20) / 60));
   const full = PM.accumulationScore(mockO(), TR(100, 100, 33));
   t("accScore: full parts = 4 (ตัด Macro/Mega/Rates ออก)", full.parts.length === 4 && full.parts.every(p => p.weight > 0));
-  t("accScore: weights = 50/30/10/10", full.parts.map(p => p.weight).join(",") === "50,30,10,10");
+  t("accScore: weights = 40/25/20/15 (รวม 100)", full.parts.map(p => p.weight).join(",") === "40,25,20,15" && full.parts.reduce((s, p) => s + p.weight, 0) === 100);
   t("accScore: ไม่มี part mega/rates/macro", !full.parts.some(p => p.key === "mega" || p.key === "rates" || p.key === "macro"));
-  t("accScore: growthPrice weight = 30", (full.parts.find(p => p.key === "growthPrice") || {}).weight === 30);
-  t("accScore: thesis weight = 50", (full.parts.find(p => p.key === "thesis") || {}).weight === 50);
+  t("accScore: growthPrice weight = 25", (full.parts.find(p => p.key === "growthPrice") || {}).weight === 25);
+  t("accScore: thesis weight = 40", (full.parts.find(p => p.key === "thesis") || {}).weight === 40);
 }
 
 // ---------- growthPriceScore (§6 Business Growth vs Stock Price) ----------
@@ -78,22 +83,27 @@ const TR = (price, sma, rsi, e12, e26) => ({ tech: { latestClose: price, sma200:
   t("growth: whyChecklist ไม่มีคำ ดอกเบี้ย/Macro", !why.some(w => /ดอกเบี้ย|Macro/.test(w.txt)));
 }
 
-// ---------- growthSummary (เฉลี่ย 2/3/4 ปีล่าสุด) ----------
+// ---------- growthSummary (ถ่วงน้ำหนัก 2-5 ปี · ปีล่าสุดมากกว่า) ----------
 {
   const H = (key) => ({ available: true, verdict: { key: key, label: key }, metrics: { gapPp: 0 } });
-  // 3 windows: business-ahead(90), aligned(74), slightly-ahead(55) → เฉลี่ย 73
-  const g = PM.growthSummary([H("business-ahead"), H("aligned"), H("slightly-ahead")], [2, 3, 4]);
-  t("growthSummary: เฉลี่ย 3 window = 73", g.score === Math.round((90 + 74 + 55) / 3) && g.windows.length === 3);
-  t("growthSummary: label จากคะแนนเฉลี่ย", g.label === PM.growthLabelFromScore(g.score));
-  // บาง window ไม่มีข้อมูล → เฉลี่ยเฉพาะที่มี
-  const g2 = PM.growthSummary([H("business-ahead"), null, { available: false }], [2, 3, 4]);
-  t("growthSummary: ข้าม window ที่ไม่มี → เฉลี่ยเฉพาะที่มี (90)", g2.score === 90 && g2.windows.length === 1);
+  const W = [2, 3, 4, 5];
+  // windowWeight: ช่วงสั้น (ล่าสุด) น้ำหนักมากกว่า → [2,3,4,5] = [4,3,2,1]
+  t("windowWeight: 2→4 · 3→3 · 4→2 · 5→1", PM.windowWeight(2, W) === 4 && PM.windowWeight(3, W) === 3 && PM.windowWeight(4, W) === 2 && PM.windowWeight(5, W) === 1);
+  // 4 windows ถ่วง [4,3,2,1]: business-ahead(90)/sig(38)/sig(38)/aligned(74)
+  const g = PM.growthSummary([H("business-ahead"), H("significantly-ahead"), H("significantly-ahead"), H("aligned")], W);
+  const expW = Math.round((90 * 4 + 38 * 3 + 38 * 2 + 74 * 1) / 10); // = 62
+  t("growthSummary: ถ่วงน้ำหนัก = 62 (≠ เฉลี่ยเท่ากัน 60)", g.score === expW && g.score !== Math.round((90 + 38 + 38 + 74) / 4));
+  t("growthSummary: 4 window + มี weight ใน parts", g.windows.length === 4 && g.windows[0].weight === 4 && g.windows[3].weight === 1);
+  t("growthSummary: label จากคะแนนถ่วงน้ำหนัก", g.label === PM.growthLabelFromScore(g.score));
+  // บาง window ไม่มีข้อมูล → renormalize เฉพาะ weight ที่มี (2y=90×4 + 5y=74×1)/(4+1) = 87
+  const g2 = PM.growthSummary([H("business-ahead"), null, { available: false }, H("aligned")], W);
+  t("growthSummary: window ไม่ครบ → renormalize weight (87)", g2.score === Math.round((90 * 4 + 74 * 1) / 5) && g2.windows.length === 2);
   // ทุก window ไม่มี → null (renormalize)
-  const g0 = PM.growthSummary([null, null, null], [2, 3, 4]);
+  const g0 = PM.growthSummary([null, null, null, null], W);
   t("growthSummary: ทุก window ว่าง → score null", g0.score === null);
   // เข้า accumulationScore เป็น factor value
   const sc = PM.accumulationScore(mockO(), TR(100, 100, 33), g);
-  t("growthSummary: accScore ใช้ค่าเฉลี่ย 73", (sc.parts.find(p => p.key === "growthPrice") || {}).value === 73);
+  t("growthSummary: accScore ใช้ค่าถ่วงน้ำหนัก", (sc.parts.find(p => p.key === "growthPrice") || {}).value === expW);
   const scNull = PM.accumulationScore(mockO(), TR(100, 100, 33), g0);
   t("growthSummary: null → factor null (renormalize)", (scNull.parts.find(p => p.key === "growthPrice") || {}).value === null);
 }
