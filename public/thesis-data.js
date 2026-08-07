@@ -334,7 +334,7 @@
         "Regulatory tail — คดี antitrust ผ่านจุดเลวร้ายสุดแต่ remedies ยังมีเงื่อนไขติดตาม + ความเสี่ยง EU/AI regulation",
         "ฐานเปรียบเทียบสูง — Cloud +82% สร้างฐานที่โหดมากสำหรับปี 2027"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดเดือนธันวาคม (ตรงกับปีปฏิทิน) — FY2025 สิ้นสุด ธ.ค. 2025 รายงานผลครบแล้วเมื่อต้นปี 2026",
         "epsBasis": "diluted GAAP, split-adjusted (หลัง stock split 20:1 เดือน ก.ค. 2022)",
@@ -392,6 +392,116 @@
           "https://www.statmuse.com/money/ask/googl-stock-price-on-december-31-2025",
           "https://www.macrotrends.net/stocks/charts/GOOGL/alphabet/stock-price-history",
           "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm"
+        ],
+        "quarters": [
+          {
+            "q": "Q3'23",
+            "endYm": "2023-09",
+            "revenueB": 76.69,
+            "epsAdj": 1.55,
+            "opMarginPct": 27.8,
+            "fcfB": 22.6,
+            "priceQEnd": 131
+          },
+          {
+            "q": "Q4'23",
+            "endYm": "2023-12",
+            "revenueB": 86.31,
+            "epsAdj": 1.64,
+            "opMarginPct": 27.5,
+            "fcfB": 7.9,
+            "priceQEnd": 140
+          },
+          {
+            "q": "Q1'24",
+            "endYm": "2024-03",
+            "revenueB": 80.54,
+            "epsAdj": 1.89,
+            "opMarginPct": 31.6,
+            "fcfB": 16.8,
+            "priceQEnd": 151
+          },
+          {
+            "q": "Q2'24",
+            "endYm": "2024-06",
+            "revenueB": 84.74,
+            "epsAdj": 1.89,
+            "opMarginPct": 32.4,
+            "fcfB": 13.5,
+            "priceQEnd": 183
+          },
+          {
+            "q": "Q3'24",
+            "endYm": "2024-09",
+            "revenueB": 88.27,
+            "epsAdj": 2.12,
+            "opMarginPct": 32.3,
+            "fcfB": 17.6,
+            "priceQEnd": 166
+          },
+          {
+            "q": "Q4'24",
+            "endYm": "2024-12",
+            "revenueB": 96.47,
+            "epsAdj": 2.15,
+            "opMarginPct": 32.1,
+            "fcfB": 24.8,
+            "priceQEnd": 189
+          },
+          {
+            "q": "Q1'25",
+            "endYm": "2025-03",
+            "revenueB": 90.23,
+            "epsAdj": 2.81,
+            "opMarginPct": 33.9,
+            "fcfB": 19,
+            "priceQEnd": 155
+          },
+          {
+            "q": "Q2'25",
+            "endYm": "2025-06",
+            "revenueB": 96.43,
+            "epsAdj": 2.31,
+            "opMarginPct": 32.4,
+            "fcfB": 5.3,
+            "priceQEnd": 176
+          },
+          {
+            "q": "Q3'25",
+            "endYm": "2025-09",
+            "revenueB": 102.35,
+            "epsAdj": 2.87,
+            "opMarginPct": 30.5,
+            "fcfB": 24.5,
+            "priceQEnd": 243
+          },
+          {
+            "q": "Q4'25",
+            "endYm": "2025-12",
+            "revenueB": 113.83,
+            "epsAdj": 2.82,
+            "opMarginPct": 31.6,
+            "fcfB": 24.6,
+            "priceQEnd": 313
+          },
+          {
+            "q": "Q1'26",
+            "endYm": "2026-03",
+            "revenueB": 109.9,
+            "epsAdj": 5.11,
+            "opMarginPct": 36.1,
+            "fcfB": 10.1,
+            "priceQEnd": 300
+          },
+          {
+            "q": "Q2'26",
+            "endYm": "2026-06",
+            "revenueB": 119.8,
+            "epsAdj": 9.11,
+            "opMarginPct": 34,
+            "fcfB": -5.9,
+            "priceQEnd": 353
+          }
         ]
       },
       "nextEarnings": "2026-10"
@@ -714,7 +824,7 @@
         "Circular revenue: การลงทุนขนาดใหญ่ในลูกค้าอย่าง OpenAI/Anthropic ทำให้ตลาดตั้งคำถามว่า backlog สะท้อนดีมานด์แท้จริงแค่ไหน — เป็นความเสี่ยงต่อ multiple มากกว่าต่อธุรกิจทันที",
         "Supply chain กระจุกตัว: พึ่งพา TSMC (ไต้หวัน) และ HBM จากผู้ผลิตไม่กี่ราย — ความตึงเครียดภูมิรัฐศาสตร์ช่องแคบไต้หวันคือ tail risk ที่ใหญ่ที่สุดของทั้ง thesis"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีของ NVIDIA สิ้นสุดปลายเดือนมกราคม (เช่น FY2026 สิ้นสุด 25 ม.ค. 2026 รายงานผลปลาย ก.พ. 2026) — FY2026 คือปีบัญชีล่าสุดที่ปิดงบและรายงานแล้ว ณ ก.ค. 2026",
         "epsBasis": "diluted GAAP, split-adjusted (ปรับผลของ split 10:1 มิ.ย. 2024 และ 4:1 ก.ค. 2021 ครบทุกปี)",
@@ -772,6 +882,116 @@
           "https://stockanalysis.com/stocks/nvda/financials/",
           "https://query1.finance.yahoo.com/v8/finance/chart/NVDA (daily closes at fiscal year-ends)",
           "https://www.sec.gov/Archives/edgar/data/1045810/000104581024000028/q4fy24pr.htm"
+        ],
+        "quarters": [
+          {
+            "q": "Q2 FY24",
+            "endYm": "2023-07",
+            "revenueB": 13.5,
+            "epsAdj": 0.25,
+            "opMarginPct": 50.3,
+            "fcfB": 6.1,
+            "priceQEnd": 46.7
+          },
+          {
+            "q": "Q3 FY24",
+            "endYm": "2023-10",
+            "revenueB": 18.1,
+            "epsAdj": 0.37,
+            "opMarginPct": 57.5,
+            "fcfB": 7.1,
+            "priceQEnd": 40.8
+          },
+          {
+            "q": "Q4 FY24",
+            "endYm": "2024-01",
+            "revenueB": 22.1,
+            "epsAdj": 0.49,
+            "opMarginPct": 61.6,
+            "fcfB": 11.2,
+            "priceQEnd": 61
+          },
+          {
+            "q": "Q1 FY25",
+            "endYm": "2024-04",
+            "revenueB": 26,
+            "epsAdj": 0.6,
+            "opMarginPct": 64.9,
+            "fcfB": 15,
+            "priceQEnd": 86
+          },
+          {
+            "q": "Q2 FY25",
+            "endYm": "2024-07",
+            "revenueB": 30,
+            "epsAdj": 0.67,
+            "opMarginPct": 62.1,
+            "fcfB": 13.5,
+            "priceQEnd": 117
+          },
+          {
+            "q": "Q3 FY25",
+            "endYm": "2024-10",
+            "revenueB": 35.1,
+            "epsAdj": 0.78,
+            "opMarginPct": 62.3,
+            "fcfB": 16.8,
+            "priceQEnd": 132
+          },
+          {
+            "q": "Q4 FY25",
+            "endYm": "2025-01",
+            "revenueB": 39.3,
+            "epsAdj": 0.89,
+            "opMarginPct": 61.1,
+            "fcfB": 15.6,
+            "priceQEnd": 142.6
+          },
+          {
+            "q": "Q1 FY26",
+            "endYm": "2025-04",
+            "revenueB": 44.1,
+            "epsAdj": 0.76,
+            "opMarginPct": 49.1,
+            "fcfB": 26.2,
+            "priceQEnd": 109
+          },
+          {
+            "q": "Q2 FY26",
+            "endYm": "2025-07",
+            "revenueB": 46.7,
+            "epsAdj": 1.08,
+            "opMarginPct": 60.8,
+            "fcfB": 13.5,
+            "priceQEnd": 177
+          },
+          {
+            "q": "Q3 FY26",
+            "endYm": "2025-10",
+            "revenueB": 57,
+            "epsAdj": 1.3,
+            "opMarginPct": 63.2,
+            "fcfB": 22.1,
+            "priceQEnd": 207
+          },
+          {
+            "q": "Q4 FY26",
+            "endYm": "2026-01",
+            "revenueB": 68.1,
+            "epsAdj": 1.76,
+            "opMarginPct": 65,
+            "fcfB": 34.9,
+            "priceQEnd": 187.7
+          },
+          {
+            "q": "Q1 FY27",
+            "endYm": "2026-04",
+            "revenueB": 81.6,
+            "epsAdj": 2.39,
+            "opMarginPct": 65.6,
+            "fcfB": 48.6,
+            "priceQEnd": 180
+          }
         ]
       },
       "nextEarnings": "2026-08"
@@ -1088,7 +1308,7 @@
         "การแข่งขันรุนแรงขึ้นทุกชั้น — Google Cloud/Gemini เร่งแรงและมี TPU ได้เปรียบด้านต้นทุน, AWS ยังใหญ่กว่า, ส่วน AI coding tools รุ่นใหม่กัดกิน GitHub Copilot ในกลุ่ม power developer",
         "แรงกดดันด้านกฎระเบียบและโครงสร้างดีลวนในอุตสาหกรรม AI (circular deals) — หากมูลค่าห่วงโซ่ AI ถูกตั้งคำถามทั้งระบบ หุ้นที่ multiple ระดับ premium อย่าง MSFT จะโดน de-rate ไปด้วยแม้พื้นฐานไม่เปลี่ยน"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีของ Microsoft สิ้นสุด 30 มิ.ย. (เช่น FY2025 = ก.ค. 2024 – มิ.ย. 2025) — FY2026 สิ้นสุดแล้วแต่จะประกาศผลวันที่ 29 ก.ค. 2026 จึงยังไม่นับรวม ใช้ FY2021–FY2025",
         "epsBasis": "diluted GAAP, split-adjusted (ไม่มี split ตั้งแต่ปี 2003 — ตัวเลขตามงบจริงคือฐานหุ้นปัจจุบันอยู่แล้ว)",
@@ -1146,6 +1366,116 @@
           "https://query1.finance.yahoo.com/v8/finance/chart/MSFT (raw daily closes)",
           "https://news.microsoft.com/source/2026/07/08/microsoft-announces-quarterly-earnings-release-date-68/",
           "https://www.statmuse.com/money/ask/msft-closing-price-on-june-30-2021 (cross-check, dividend-adjusted)"
+        ],
+        "quarters": [
+          {
+            "q": "Q1 FY24",
+            "endYm": "2023-09",
+            "revenueB": 56.52,
+            "epsAdj": 2.99,
+            "opMarginPct": 47.6,
+            "fcfB": 20.67,
+            "priceQEnd": 315
+          },
+          {
+            "q": "Q2 FY24",
+            "endYm": "2023-12",
+            "revenueB": 62.02,
+            "epsAdj": 2.93,
+            "opMarginPct": 43.6,
+            "fcfB": 9.12,
+            "priceQEnd": 376
+          },
+          {
+            "q": "Q3 FY24",
+            "endYm": "2024-03",
+            "revenueB": 61.86,
+            "epsAdj": 2.94,
+            "opMarginPct": 44.6,
+            "fcfB": 20.97,
+            "priceQEnd": 421
+          },
+          {
+            "q": "Q4 FY24",
+            "endYm": "2024-06",
+            "revenueB": 64.73,
+            "epsAdj": 2.95,
+            "opMarginPct": 43.1,
+            "fcfB": 23.32,
+            "priceQEnd": 447
+          },
+          {
+            "q": "Q1 FY25",
+            "endYm": "2024-09",
+            "revenueB": 65.59,
+            "epsAdj": 3.3,
+            "opMarginPct": 46.6,
+            "fcfB": 19.26,
+            "priceQEnd": 430
+          },
+          {
+            "q": "Q2 FY25",
+            "endYm": "2024-12",
+            "revenueB": 69.63,
+            "epsAdj": 3.23,
+            "opMarginPct": 45.5,
+            "fcfB": 6.49,
+            "priceQEnd": 421
+          },
+          {
+            "q": "Q3 FY25",
+            "endYm": "2025-03",
+            "revenueB": 70.07,
+            "epsAdj": 3.46,
+            "opMarginPct": 45.7,
+            "fcfB": 20.3,
+            "priceQEnd": 375
+          },
+          {
+            "q": "Q4 FY25",
+            "endYm": "2025-06",
+            "revenueB": 76.44,
+            "epsAdj": 3.65,
+            "opMarginPct": 44.9,
+            "fcfB": 25.57,
+            "priceQEnd": 497
+          },
+          {
+            "q": "Q1 FY26",
+            "endYm": "2025-09",
+            "revenueB": 77.67,
+            "epsAdj": 3.72,
+            "opMarginPct": 48.9,
+            "fcfB": 25.66,
+            "priceQEnd": 515
+          },
+          {
+            "q": "Q2 FY26",
+            "endYm": "2025-12",
+            "revenueB": 81.27,
+            "epsAdj": 5.16,
+            "opMarginPct": 47.1,
+            "fcfB": 5.88,
+            "priceQEnd": 470
+          },
+          {
+            "q": "Q3 FY26",
+            "endYm": "2026-03",
+            "revenueB": 82.89,
+            "epsAdj": 4.27,
+            "opMarginPct": 46.3,
+            "fcfB": 15.8,
+            "priceQEnd": 455
+          },
+          {
+            "q": "Q4 FY26",
+            "endYm": "2026-06",
+            "revenueB": 90.01,
+            "epsAdj": 4.81,
+            "opMarginPct": 45.1,
+            "fcfB": 19.64,
+            "priceQEnd": 470
+          }
         ]
       },
       "nextEarnings": "2026-10"
@@ -1462,7 +1792,7 @@
         "กฎระเบียบ: EU (DMA, โฆษณา less-personalized) กดรายได้ยุโรป + คดีความปลอดภัยเยาวชนในสหรัฐยังเป็น overhang",
         "รายได้กระจุกในโฆษณา ~98%: อ่อนไหวต่อเศรษฐกิจถดถอย และ engagement เสี่ยงถูกดึงโดยแอป AI-native รุ่นใหม่ (เช่นผลิตภัณฑ์ consumer ของ OpenAI)"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดเดือนธันวาคม (ตรงกับปีปฏิทิน) — FY2021 ถึง FY2025 (สิ้นสุด ธ.ค. 2025) คือ 5 ปีบัญชีล่าสุดที่ปิดงบและรายงานครบแล้ว ณ ก.ค. 2026",
         "epsBasis": "diluted GAAP; META ไม่เคยแตกหุ้น ตัวเลขที่รายงานจึงเท่ากับฐานหุ้นปัจจุบันทุกปี (no split adjustment needed)",
@@ -1521,6 +1851,116 @@
           "https://query1.finance.yahoo.com/v8/finance/chart/META (unadjusted year-end closes)",
           "https://mlq.ai/stocks/META/free-cash-flow/",
           "https://www.statmuse.com/money/ask/meta-closing-price-dec-31-2025"
+        ],
+        "quarters": [
+          {
+            "q": "Q3'23",
+            "endYm": "2023-09",
+            "revenueB": 34.15,
+            "epsAdj": 4.39,
+            "opMarginPct": 40.3,
+            "fcfB": 13.91,
+            "priceQEnd": 298
+          },
+          {
+            "q": "Q4'23",
+            "endYm": "2023-12",
+            "revenueB": 40.11,
+            "epsAdj": 5.33,
+            "opMarginPct": 40.9,
+            "fcfB": 11.81,
+            "priceQEnd": 351
+          },
+          {
+            "q": "Q1'24",
+            "endYm": "2024-03",
+            "revenueB": 36.46,
+            "epsAdj": 4.71,
+            "opMarginPct": 37.9,
+            "fcfB": 12.85,
+            "priceQEnd": 482
+          },
+          {
+            "q": "Q2'24",
+            "endYm": "2024-06",
+            "revenueB": 39.07,
+            "epsAdj": 5.16,
+            "opMarginPct": 38,
+            "fcfB": 11.2,
+            "priceQEnd": 502
+          },
+          {
+            "q": "Q3'24",
+            "endYm": "2024-09",
+            "revenueB": 40.59,
+            "epsAdj": 6.03,
+            "opMarginPct": 42.8,
+            "fcfB": 16.47,
+            "priceQEnd": 569
+          },
+          {
+            "q": "Q4'24",
+            "endYm": "2024-12",
+            "revenueB": 48.39,
+            "epsAdj": 8.02,
+            "opMarginPct": 48.3,
+            "fcfB": 13.56,
+            "priceQEnd": 583
+          },
+          {
+            "q": "Q1'25",
+            "endYm": "2025-03",
+            "revenueB": 42.31,
+            "epsAdj": 6.43,
+            "opMarginPct": 41.5,
+            "fcfB": 11.09,
+            "priceQEnd": 574
+          },
+          {
+            "q": "Q2'25",
+            "endYm": "2025-06",
+            "revenueB": 47.52,
+            "epsAdj": 7.14,
+            "opMarginPct": 43,
+            "fcfB": 9.02,
+            "priceQEnd": 736
+          },
+          {
+            "q": "Q3'25",
+            "endYm": "2025-09",
+            "revenueB": 51.24,
+            "epsAdj": 1.05,
+            "opMarginPct": 40.1,
+            "fcfB": 11.17,
+            "priceQEnd": 732
+          },
+          {
+            "q": "Q4'25",
+            "endYm": "2025-12",
+            "revenueB": 59.89,
+            "epsAdj": 8.88,
+            "opMarginPct": 41.3,
+            "fcfB": 14.83,
+            "priceQEnd": 659
+          },
+          {
+            "q": "Q1'26",
+            "endYm": "2026-03",
+            "revenueB": 56.31,
+            "epsAdj": 10.44,
+            "opMarginPct": 40.6,
+            "fcfB": 13.23,
+            "priceQEnd": 572
+          },
+          {
+            "q": "Q2'26",
+            "endYm": "2026-06",
+            "revenueB": 60.8,
+            "epsAdj": 6.18,
+            "opMarginPct": 30.9,
+            "fcfB": 1.75,
+            "priceQEnd": 563
+          }
         ]
       },
       "nextEarnings": "2026-10"
@@ -1855,7 +2295,7 @@
         "คดี antitrust FTC เรื่องผูกขาด marketplace ยังเดินหน้า — ผลเลวร้ายสุดกระทบโครงสร้าง flywheel ค้าปลีก/โฆษณา",
         "ค้าปลีกอ่อนไหวต่อกำลังซื้อผู้บริโภคและภาษีนำเข้า/ภูมิรัฐศาสตร์ — กระทบทั้ง volume และต้นทุนสินค้าจากผู้ขายจีน"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดเดือนธันวาคม (ปีปฏิทิน) — FY2025 สิ้นสุด ธ.ค. 2025 รายงานผลเมื่อ 5 ก.พ. 2026",
         "epsBasis": "diluted GAAP, split-adjusted (ปรับ 20:1 split มิ.ย. 2022 ทุกปี)",
@@ -1913,6 +2353,116 @@
           "https://www.statmuse.com/money/ask/amazon-stock-price-december-31st-2025",
           "https://www.statmuse.com/money/ask/amazon-stock-price-from-2023-to-2024",
           "https://www.macrotrends.net/stocks/charts/AMZN/amazon/stock-price-history"
+        ],
+        "quarters": [
+          {
+            "q": "Q3'23",
+            "endYm": "2023-09",
+            "revenueB": 143.08,
+            "epsAdj": 0.94,
+            "opMarginPct": 7.8,
+            "fcfB": 8.74,
+            "priceQEnd": 127.12
+          },
+          {
+            "q": "Q4'23",
+            "endYm": "2023-12",
+            "revenueB": 169.96,
+            "epsAdj": 1,
+            "opMarginPct": 7.8,
+            "fcfB": 27.88,
+            "priceQEnd": 151.94
+          },
+          {
+            "q": "Q1'24",
+            "endYm": "2024-03",
+            "revenueB": 143.31,
+            "epsAdj": 0.98,
+            "opMarginPct": 10.7,
+            "fcfB": 4.06,
+            "priceQEnd": 180.38
+          },
+          {
+            "q": "Q2'24",
+            "endYm": "2024-06",
+            "revenueB": 147.98,
+            "epsAdj": 1.26,
+            "opMarginPct": 9.9,
+            "fcfB": 7.66,
+            "priceQEnd": 193.25
+          },
+          {
+            "q": "Q3'24",
+            "endYm": "2024-09",
+            "revenueB": 158.88,
+            "epsAdj": 1.43,
+            "opMarginPct": 11,
+            "fcfB": 3.35,
+            "priceQEnd": 186.33
+          },
+          {
+            "q": "Q4'24",
+            "endYm": "2024-12",
+            "revenueB": 187.79,
+            "epsAdj": 1.86,
+            "opMarginPct": 11.3,
+            "fcfB": 17.8,
+            "priceQEnd": 219.39
+          },
+          {
+            "q": "Q1'25",
+            "endYm": "2025-03",
+            "revenueB": 155.67,
+            "epsAdj": 1.59,
+            "opMarginPct": 11.8,
+            "fcfB": -8,
+            "priceQEnd": 190.26
+          },
+          {
+            "q": "Q2'25",
+            "endYm": "2025-06",
+            "revenueB": 167.7,
+            "epsAdj": 1.68,
+            "opMarginPct": 11.4,
+            "fcfB": 0.33,
+            "priceQEnd": 219.39
+          },
+          {
+            "q": "Q3'25",
+            "endYm": "2025-09",
+            "revenueB": 180.17,
+            "epsAdj": 1.95,
+            "opMarginPct": 9.7,
+            "fcfB": 0.43,
+            "priceQEnd": 219.57
+          },
+          {
+            "q": "Q4'25",
+            "endYm": "2025-12",
+            "revenueB": 213.39,
+            "epsAdj": 1.95,
+            "opMarginPct": 11.7,
+            "fcfB": 14.94,
+            "priceQEnd": 230.82
+          },
+          {
+            "q": "Q1'26",
+            "endYm": "2026-03",
+            "revenueB": 181.52,
+            "epsAdj": 2.78,
+            "opMarginPct": 13.1,
+            "fcfB": -18.17,
+            "priceQEnd": 208.27
+          },
+          {
+            "q": "Q2'26",
+            "endYm": "2026-06",
+            "revenueB": 200.61,
+            "epsAdj": 5.75,
+            "opMarginPct": 13.7,
+            "fcfB": -8.82,
+            "priceQEnd": 238.34
+          }
         ]
       },
       "nextEarnings": "2026-10"
@@ -2236,7 +2786,7 @@
         "การกระจุกตัวของลูกค้า: Apple และ Nvidia รวมกันคิดเป็นสัดส่วนรายได้ที่สูงมาก อำนาจต่อรองและชะตากรรมผูกกันแน่น",
         "ค่าเงิน NT$ แข็งและ margin dilution จาก fab ต่างประเทศ กัด gross margin ต่อเนื่องราว 2-4 จุดในปีข้างหน้า"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีตรงกับปีปฏิทิน สิ้นสุดเดือนธันวาคม (FY2025 = ม.ค.–ธ.ค. 2025 รายงานผลครบแล้วเมื่อ ม.ค. 2026)",
         "epsBasis": "diluted EPS ต่อ 1 ADR ในสกุล USD (1 ADR = 5 หุ้นสามัญ), ADR ไม่เคยแตกหุ้น จึงไม่มี split adjustment",
@@ -2296,6 +2846,116 @@
           "https://www.macrotrends.net/stocks/charts/TSM/taiwan-semiconductor-manufacturing/free-cash-flow",
           "https://www.statmuse.com/money/ask/tsm-stock-closing-price-december-31-2025",
           "https://query1.finance.yahoo.com/v8/finance/chart/TSM (year-end unadjusted closes)"
+        ],
+        "quarters": [
+          {
+            "q": "Q3'23",
+            "endYm": "2023-09",
+            "revenueB": 17.52,
+            "epsAdj": 1.29,
+            "opMarginPct": 41.7,
+            "fcfB": 2.18,
+            "priceQEnd": 88
+          },
+          {
+            "q": "Q4'23",
+            "endYm": "2023-12",
+            "revenueB": 20.05,
+            "epsAdj": 1.44,
+            "opMarginPct": 41.6,
+            "fcfB": 7.2,
+            "priceQEnd": 104
+          },
+          {
+            "q": "Q1'24",
+            "endYm": "2024-03",
+            "revenueB": 18.46,
+            "epsAdj": 1.35,
+            "opMarginPct": 42,
+            "fcfB": 7.94,
+            "priceQEnd": 138
+          },
+          {
+            "q": "Q2'24",
+            "endYm": "2024-06",
+            "revenueB": 20.98,
+            "epsAdj": 1.49,
+            "opMarginPct": 42.6,
+            "fcfB": 5.36,
+            "priceQEnd": 174
+          },
+          {
+            "q": "Q3'24",
+            "endYm": "2024-09",
+            "revenueB": 23.67,
+            "epsAdj": 1.95,
+            "opMarginPct": 47.5,
+            "fcfB": 5.76,
+            "priceQEnd": 173
+          },
+          {
+            "q": "Q4'24",
+            "endYm": "2024-12",
+            "revenueB": 27.06,
+            "epsAdj": 2.25,
+            "opMarginPct": 49,
+            "fcfB": 8.05,
+            "priceQEnd": 197.5
+          },
+          {
+            "q": "Q1'25",
+            "endYm": "2025-03",
+            "revenueB": 26.99,
+            "epsAdj": 2.24,
+            "opMarginPct": 48.5,
+            "fcfB": 9.48,
+            "priceQEnd": 168
+          },
+          {
+            "q": "Q2'25",
+            "endYm": "2025-06",
+            "revenueB": 30.03,
+            "epsAdj": 2.47,
+            "opMarginPct": 49.6,
+            "fcfB": 6.42,
+            "priceQEnd": 229
+          },
+          {
+            "q": "Q3'25",
+            "endYm": "2025-09",
+            "revenueB": 31.83,
+            "epsAdj": 2.8,
+            "opMarginPct": 50.6,
+            "fcfB": 4.48,
+            "priceQEnd": 280
+          },
+          {
+            "q": "Q4'25",
+            "endYm": "2025-12",
+            "revenueB": 33.64,
+            "epsAdj": 3.14,
+            "opMarginPct": 54,
+            "fcfB": 11.85,
+            "priceQEnd": 303.9
+          },
+          {
+            "q": "Q1'26",
+            "endYm": "2026-03",
+            "revenueB": 36.58,
+            "epsAdj": 3.4,
+            "opMarginPct": 58.1,
+            "fcfB": 11.23,
+            "priceQEnd": 260
+          },
+          {
+            "q": "Q2'26",
+            "endYm": "2026-06",
+            "revenueB": 40.98,
+            "epsAdj": 4.2,
+            "opMarginPct": 60.3,
+            "fcfB": 9.27,
+            "priceQEnd": 330
+          }
         ]
       },
       "nextEarnings": "2026-10"
@@ -2607,7 +3267,7 @@
         "Valuation แพงบนความคาดหวังสูง — หาก AI CapEx cycle ของทั้งอุตสาหกรรมชะลอแม้ชั่วคราว หุ้นที่เทรด ~40x+ จะถูก de-rate แรงกว่าพื้นฐานที่แย่ลงจริง",
         "หนี้สูงจากดีล VMware บวกความเสี่ยง key-man — Hock Tan อายุ 70+ ปี และ thesis ส่วนใหญ่ผูกกับฝีมือการจัดสรรทุนของเขาโดยตรง"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีของ Broadcom สิ้นสุดราวสัปดาห์แรกของเดือน พ.ย. (52/53 สัปดาห์) — FY2021 สิ้นสุด 31 ต.ค. 2021, FY2022 สิ้นสุด 30 ต.ค. 2022, FY2023 สิ้นสุด 29 ต.ค. 2023, FY2024 สิ้นสุด 3 พ.ย. 2024, FY2025 สิ้นสุด 2 พ.ย. 2025 (รายงานผลเดือน ธ.ค. 2025)",
         "epsBasis": "diluted GAAP, split-adjusted (ปรับ 10:1 split ก.ค. 2024 ทุกปี)",
@@ -2666,6 +3326,116 @@
           "https://www.prnewswire.com/news-releases/broadcom-inc-announces-fourth-quarter-and-fiscal-year-2023-financial-results-and-quarterly-dividend-302009464.html",
           "https://www.prnewswire.com/news-releases/broadcom-inc-announces-fourth-quarter-and-fiscal-year-2025-financial-results-and-quarterly-dividend-302639606.html",
           "https://query1.finance.yahoo.com/v8/finance/chart/AVGO (historical daily closes, split-adjusted)"
+        ],
+        "quarters": [
+          {
+            "q": "Q3 FY23",
+            "endYm": "2023-07",
+            "revenueB": 8.88,
+            "epsAdj": 0.77,
+            "opMarginPct": 43.4,
+            "fcfB": 4.6,
+            "priceQEnd": 86.67
+          },
+          {
+            "q": "Q4 FY23",
+            "endYm": "2023-10",
+            "revenueB": 9.3,
+            "epsAdj": 0.83,
+            "opMarginPct": 45.6,
+            "fcfB": 4.72,
+            "priceQEnd": 81.59
+          },
+          {
+            "q": "Q1 FY24",
+            "endYm": "2024-02",
+            "revenueB": 11.96,
+            "epsAdj": 0.28,
+            "opMarginPct": 17.4,
+            "fcfB": 4.69,
+            "priceQEnd": 119.27
+          },
+          {
+            "q": "Q2 FY24",
+            "endYm": "2024-05",
+            "revenueB": 12.49,
+            "epsAdj": 0.44,
+            "opMarginPct": 23.7,
+            "fcfB": 4.45,
+            "priceQEnd": 129.98
+          },
+          {
+            "q": "Q3 FY24",
+            "endYm": "2024-08",
+            "revenueB": 13.07,
+            "epsAdj": -0.4,
+            "opMarginPct": 29,
+            "fcfB": 4.79,
+            "priceQEnd": 141.15
+          },
+          {
+            "q": "Q4 FY24",
+            "endYm": "2024-11",
+            "revenueB": 14.05,
+            "epsAdj": 0.9,
+            "opMarginPct": 32.9,
+            "fcfB": 5.48,
+            "priceQEnd": 159.6
+          },
+          {
+            "q": "Q1 FY25",
+            "endYm": "2025-02",
+            "revenueB": 14.92,
+            "epsAdj": 1.14,
+            "opMarginPct": 42,
+            "fcfB": 6.01,
+            "priceQEnd": 218.46
+          },
+          {
+            "q": "Q2 FY25",
+            "endYm": "2025-05",
+            "revenueB": 15,
+            "epsAdj": 1.03,
+            "opMarginPct": 38.9,
+            "fcfB": 6.41,
+            "priceQEnd": 239.72
+          },
+          {
+            "q": "Q3 FY25",
+            "endYm": "2025-08",
+            "revenueB": 15.95,
+            "epsAdj": 0.85,
+            "opMarginPct": 36.9,
+            "fcfB": 7.02,
+            "priceQEnd": 297.39
+          },
+          {
+            "q": "Q4 FY25",
+            "endYm": "2025-11",
+            "revenueB": 18.02,
+            "epsAdj": 1.74,
+            "opMarginPct": 41.7,
+            "fcfB": 7.47,
+            "priceQEnd": 401.02
+          },
+          {
+            "q": "Q1 FY26",
+            "endYm": "2026-02",
+            "revenueB": 19.31,
+            "epsAdj": 1.5,
+            "opMarginPct": 44.3,
+            "fcfB": 8.01,
+            "priceQEnd": 331.17
+          },
+          {
+            "q": "Q2 FY26",
+            "endYm": "2026-05",
+            "revenueB": 22.19,
+            "epsAdj": 1.91,
+            "opMarginPct": 48.6,
+            "fcfB": 10.26,
+            "priceQEnd": 220
+          }
         ]
       },
       "nextEarnings": "2026-09-03"
@@ -2688,20 +3458,20 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+38% YoY (Q1 2026 — $10.3B สถิติใหม่) · Data Center +57% · guide Q2 ~$11.2B (+46% YoY)",
+          "current": "~+50% YoY (Q2 2026 — $11.5B สถิติใหม่) · Data Center $6.7B +107% (58% ของรายได้) · Client & Gaming/Embedded ประคอง",
           "trend": "up",
-          "score": 88,
+          "score": 90,
           "impact": "positive",
-          "why": "เร่งแรงจากทั้ง Data Center (EPYC + Instinct) และ Client · guidance Q2 สูงกว่าคาด ~7% — ดีมานด์ AI + การชิงส่วนแบ่ง server CPU จาก Intel ทำงานพร้อมกัน"
+          "why": "การเติบโตเร่งขึ้นอีก (Q1 +38% → Q2 +50%) นำโดย Data Center ที่เกือบเท่าตัว YoY — EPYC ชิงส่วนแบ่ง server + Instinct GPU ramp เป็นของจริงระดับพันล้าน"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "non-GAAP EPS $1.37 (Q1 2026) ชนะคาด ~$1.28 · GAAP EPS $0.84 (ต่างจาก amortization/SBC)",
+          "current": "non-GAAP EPS $1.66 (Q2 2026) ชนะคาด ~$1.62 · GAAP EPS $1.38 · net income non-GAAP $2.8B",
           "trend": "up",
-          "score": 80,
+          "score": 83,
           "impact": "positive",
-          "why": "กำไรโตตามรายได้และ margin ที่ฟื้น — ช่องว่าง GAAP vs non-GAAP ยังกว้างจาก amortization ดีล Xilinx และ SBC/warrant"
+          "why": "กำไรโตเร็วตามรายได้ Data Center — ช่องว่าง GAAP/non-GAAP ยังกว้างจาก amortization (Xilinx/ZT) และ SBC แต่แนวโน้มกำไรจริงชัดขึ้นทุกไตรมาส"
         },
         {
           "key": "fcf",
@@ -2715,20 +3485,20 @@
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "non-GAAP gross margin ~55% · operating margin ~25% (Q1 2026) — ฟื้นจากผลกระทบ MI308 ปีก่อน",
+          "current": "non-GAAP gross margin ~54% (Q2 2026) · guide Q3 ~56% — ไต่ขึ้นตาม mix Data Center/GPU",
           "trend": "up",
-          "score": 70,
+          "score": 72,
           "impact": "neutral",
-          "why": "margin ฟื้นและขยายจาก mix ที่ดีขึ้น (Data Center/EPYC สัดส่วนสูง) — แต่ยังต่ำกว่า NVIDIA มาก และไวต่อ mix ของ GPU ราคาสูง"
+          "why": "margin ฟื้นและขยายตามสัดส่วน Data Center ที่ margin สูงกว่า — แต่ยังต่ำกว่า NVIDIA มากเพราะ mix ยังมี Client/console ปนและ GPU ยังไล่ตามด้านต้นทุน"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
           "current": "ไต่ขึ้นตามกำไร แต่ยังถูกกดด้วย amortization จากดีล Xilinx",
           "trend": "up",
-          "score": 63,
+          "score": 65,
           "impact": "neutral",
-          "why": "ผลตอบแทนต่อทุนดีขึ้นตาม margin/กำไร — จะเด่นชัดเมื่อ MI400 ramp เต็มปีและ amortization Xilinx ทยอยหมด"
+          "why": "ไต่ขึ้นตามกำไรที่โตเร็ว แต่ยังถูกกดด้วย amortization/goodwill จากดีล Xilinx และ ZT Systems"
         },
         {
           "key": "cash",
@@ -2769,71 +3539,66 @@
         {
           "key": "valuation",
           "label": "มูลค่าหุ้น",
-          "current": "forward P/E ~65-75x (ราคา ~$540 · mcap ~$861B, ก.ค. 2026) — แพงขึ้นอีกจาก ~40-50x",
-          "trend": "down",
-          "score": 32,
+          "current": "forward P/E ~55-65x (หลังงบ Q2 หุ้นร่วง ~8% + EPS โตไล่ทัน) · ยังแพงสาย AI compute",
+          "trend": "flat",
+          "score": 36,
           "impact": "negative",
-          "why": "หุ้นวิ่งต่อจนราคาฝัง 'ความสำเร็จของ MI450/OpenAI ในปี 2026-2027' ไว้เกือบเต็ม — แพงกว่าค่าเฉลี่ยตัวเองและแพงกว่า NVIDIA ในมุมกำไรปัจจุบัน margin of safety บางมาก"
+          "why": "แพงแต่กำไรเริ่มโตไล่ทัน multiple เร็วขึ้น (Q3 guide +41%, DC เท่าตัว) — ตลาดหักคะแนนหลังงบทั้งที่ beat เพราะคาดสูงเกินและกังวล margin/inventory · margin of safety ยังบาง"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
         "consistency": 68,
         "recurringPct": null,
-        "note": "รายได้เร่งตัวและกระจายหลายขา (Data Center, Client, Gaming, Embedded) — Data Center (+57%, $5.8B) เป็นเครื่องยนต์ AI หลัก แต่คุณภาพยังผูกกับ 'execution ของ MI400/Helios' ในครึ่งหลังปี 2026 (จุดพิสูจน์ใหญ่) · Client แข็งจากการชิงส่วนแบ่ง Intel แต่เป็นตลาดวัฏจักร · consistency ปานกลางเพราะพึ่งการ ramp GPU รุ่นใหม่และดีลลูกค้าไม่กี่ราย",
+        "note": "คุณภาพรายได้ดีขึ้นเชิงโครงสร้าง — สัดส่วน Data Center พุ่งเป็น 58% ของรายได้ (จาก GPU/EPYC ที่ margin สูงและ recurring จากลูกค้า hyperscaler) · Client/Gaming เป็นวัฏจักรและ Embedded ทยอยฟื้น — mix กำลังเอียงไปทาง AI compute มากขึ้นเรื่อย ๆ",
         "segments": [
           {
             "name": "Data Center (EPYC + Instinct GPU)",
-            "sharePct": 56,
-            "growthNote": "+57% YoY ($5.8B) — MI350/MI355X volume + EPYC ชิงส่วนแบ่ง · MI400/Helios ramp ครึ่งหลังปี 2026",
+            "sharePct": 58,
+            "growthNote": "$6.7B (+107% YoY) — เครื่องยนต์หลัก, EPYC ชิงแชร์ server + Instinct GPU ramp",
             "trend": "up"
           },
           {
             "name": "Client & Gaming (Ryzen, Radeon, คอนโซล)",
-            "sharePct": 36,
-            "growthNote": "โตแรงจาก Ryzen ชิงส่วนแบ่ง desktop/notebook จาก Intel + AI PC — แต่เป็นตลาดวัฏจักร",
-            "trend": "up"
+            "sharePct": 34,
+            "growthNote": "ประคองตัว — Ryzen แข็ง, gaming/คอนโซลชะลอตามวัฏจักร",
+            "trend": "flat"
           },
           {
             "name": "Embedded (Xilinx FPGA)",
             "sharePct": 8,
-            "growthNote": "ฟื้นช้า ๆ จากปลายรอบระบายสต๊อก industrial/comms",
-            "trend": "flat"
+            "growthNote": "ทยอยฟื้นจากช่วง destocking",
+            "trend": "up"
           }
         ]
       },
       "aiExecution": {
-        "score": 72,
+        "score": 76,
         "items": [
           {
-            "item": "Ramp Instinct MI350/MI355X (CDNA 4)",
+            "item": "Instinct MI350 series (เปิดตัว มิ.ย. 2026)",
             "status": "executing",
-            "evidence": "MI350/MI355X ส่งมอบ volume ให้ hyperscaler หลายราย — หนุน Data Center Q1 2026 เป็น $5.8B (+57%) เป็นฐานก่อนส่งไม้ต่อให้ MI400"
+            "evidence": "เคลม ~4x AI compute และ ~35x inference เทียบ MI300 — Data Center GPU ramp ดันรายได้ DC เกือบเท่าตัว YoY"
           },
           {
-            "item": "MI400 series + Helios rack-scale ปี 2026",
+            "item": "Instinct MI400 / Helios rack-scale (2026+)",
             "status": "on-track",
-            "evidence": "MI400/Helios rack-scale (CDNA Next, TSMC 2nm — GPU ตัวแรกบน 2nm) · ลูกค้า: Oracle ~50,000 MI450, OpenAI anchor 6GW, และ Meta เข้าร่วม — ยังไม่ถึงกำหนดส่งมอบ จึงเป็นความเสี่ยง execution ใหญ่สุดของปี 2026"
+            "evidence": "โรดแมป rack-scale ชน NVIDIA rubin/GB — เป็นตัวพิสูจน์ว่า AMD แข่งระดับระบบได้ ไม่ใช่แค่ชิปเดี่ยว"
           },
           {
-            "item": "พันธมิตรเชิงยุทธศาสตร์ OpenAI 6GW",
+            "item": "ดีล OpenAI (warrant สูงสุด ~160M หุ้น)",
             "status": "on-track",
-            "evidence": "ประกาศ ต.ค. 2025 — deployment แรก ~1GW ด้วย MI450 ครึ่งหลังปี 2026 พร้อม warrant ผูก incentive ระยะยาว เป็นหลักฐานว่าผู้ใช้ compute รายใหญ่สุดของโลกต้องการซัพพลายเออร์รายที่สองจริงจัง"
+            "evidence": "ลูกค้า AI ระดับ frontier ยืนยันดีมานด์ Instinct — แลกกับ dilution ที่ต้องจับตา"
           },
           {
-            "item": "ROCm software ecosystem ไล่ CUDA",
-            "status": "on-track",
-            "evidence": "ROCm 7 รองรับโมเดลหลัก (Llama, DeepSeek ฯลฯ) แบบ day-0 และ vLLM/frameworks หลักทำงานบน Instinct ได้ดีขึ้นมาก — แต่ยอมรับตรง ๆ ว่ายังตามหลัง CUDA หลายปีในความกว้างของ ecosystem โดยเฉพาะฝั่ง training"
-          },
-          {
-            "item": "EPYC ยึดหัวหาด server CPU ในยุค AI",
+            "item": "EPYC ชิงส่วนแบ่ง server CPU",
             "status": "executing",
-            "evidence": "guide server CPU +70% YoY ใน Q2 · ส่วนแบ่งรายได้ server CPU เกิน ~40% และไต่ขึ้น — ทุก AI cluster ต้องมี head-node CPU และเป็นประตูขาย Instinct พ่วง"
+            "evidence": "server CPU โตแรง (แชร์เพิ่มต่อเนื่องจาก Intel) — ฐานกำไร Data Center ที่มั่นคงหนุน GPU ramp"
           },
           {
-            "item": "Networking / มาตรฐานเปิด (UALink, Pensando)",
+            "item": "ROCm software stack",
             "status": "on-track",
-            "evidence": "ผลัก UALink/Ultra Ethernet เป็นทางเลือกเปิดแทน NVLink/InfiniBand ร่วมกับ Broadcom และพันธมิตร — จำเป็นต่อการขาย rack-scale แต่ยังอ่อนกว่าสแต็ค networking ของ NVIDIA ชัดเจน"
+            "evidence": "ยังตามหลัง CUDA มาก — เป็นคอขวดสำคัญของการแข่งฝั่ง GPU ที่ต้องเร่ง"
           }
         ]
       },
@@ -2935,43 +3700,37 @@
       },
       "valuationView": {
         "level": "expensive",
-        "note": "forward P/E ~65-75x (ราคา ~$540, mcap ~$861B) — แพงมาก แพงกว่า NVIDIA ในมุมกำไรปัจจุบันด้วยซ้ำ ตลาดจ่ายล่วงหน้าให้ 'สิ่งที่ยังต้องพิสูจน์': MI450/Helios ramp + ดีล OpenAI · ถ้าเชื่อเป้า EPS ระยะยาว (~$20 ใน 3-5 ปี) ยังพอมีเหตุผล แต่ margin of safety บางและหุ้นจะเหวี่ยงแรงตามข่าว execution รายไตรมาส — ความเสี่ยง valuation สูงที่สุดในกลุ่มสาย AI compute"
+        "note": "forward P/E ~55-65x (หลังงบ Q2 2026 หุ้นร่วง ~8% แม้ beat) — ยังแพงในกลุ่ม AI compute แต่กำไรกำลังโตไล่ทัน multiple เร็วขึ้น (Data Center เกือบเท่าตัว YoY, Q3 guide +41%) · เดิมพันที่ตลาดจ่ายล่วงหน้าคือ MI350/MI400 ramp + ดีล OpenAI · ถ้า execution รายไตรมาสสะดุด หุ้นเหวี่ยงแรง — ความเสี่ยง valuation ยังสูงสุดในสาย AI compute"
       },
       "whatChanged": [
         {
-          "metric": "รายได้รวม (Q1 2026)",
-          "prev": "Q4'25 ~$9.7B",
-          "now": "$10.3B (+38% YoY) — สถิติใหม่",
+          "metric": "รายได้รวม (Q2 2026)",
+          "prev": "Q1'26 $10.3B (+38%)",
+          "now": "$11.5B (+50% YoY) — สถิติใหม่",
           "direction": "positive"
         },
         {
-          "metric": "Data Center (Q4'25 → Q1'26)",
-          "prev": "$5.4B",
-          "now": "$5.8B (+57% YoY)",
+          "metric": "Data Center",
+          "prev": "Q1'26 $5.8B (+57%)",
+          "now": "$6.7B (+107% YoY, 58% ของรายได้)",
           "direction": "positive"
         },
         {
           "metric": "non-GAAP EPS",
-          "prev": "โตต่อเนื่อง",
-          "now": "$1.37 — ชนะคาด ~$1.28",
+          "prev": "$1.37",
+          "now": "$1.66 (ชนะคาด ~$1.62)",
           "direction": "positive"
         },
         {
-          "metric": "Guidance Q2 2026",
+          "metric": "Guidance ไตรมาสถัดไป (Q3)",
+          "prev": "Q2 guide ~$11.2B",
+          "now": "$12.7-13.3B (+~41% YoY, เหนือคาด $12.5B)",
+          "direction": "positive"
+        },
+        {
+          "metric": "ปฏิกิริยาราคาหลังงบ",
           "prev": "—",
-          "now": "~$11.2B (+46% YoY, ~7% เหนือคาด · server CPU +70%)",
-          "direction": "positive"
-        },
-        {
-          "metric": "Free cash flow",
-          "prev": "โตต่อเนื่อง",
-          "now": "สถิติ $2.6B (Q1, FCF margin ~25%)",
-          "direction": "positive"
-        },
-        {
-          "metric": "Valuation",
-          "prev": "fwd P/E ~40-50x",
-          "now": "~65-75x — แพงขึ้นหลังหุ้นวิ่งต่อ",
+          "now": "ร่วง ~8% แม้ beat (ตลาดคาดสูงเกิน · กังวล margin/inventory)",
           "direction": "negative"
         }
       ],
@@ -2982,7 +3741,7 @@
         "การกระจุกตัวของ upside ที่ OpenAI — ดีล 6GW + warrant ~160M หุ้น (~10%) ผูกกับลูกค้ารายเดียวที่ยังขาดทุนหนักและพึ่งการระดมทุน (ความเสี่ยง circular financing ของทั้งอุตสาหกรรม AI)",
         "โดนบีบสองทาง: NVIDIA Rubin จากด้านบน + custom ASIC ของ hyperscaler (TPU, Trainium, MTIA) กินงาน inference ปริมาณมาก · และพึ่ง TSMC/ไต้หวันเกือบ 100% + ข้อจำกัดส่งออกจีน (บทเรียน MI308)"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดปลายเดือนธันวาคม (สัปดาห์สุดท้ายของ ธ.ค.) — FY2025 สิ้นสุด ธ.ค. 2025 รายงานผลเมื่อ 3 ก.พ. 2026",
         "epsBasis": "diluted GAAP (ไม่เคยแตกหุ้นในช่วงนี้ จึงเป็น current share basis อยู่แล้ว)",
@@ -3042,9 +3801,119 @@
           "https://stockanalysis.com/stocks/amd/financials/cash-flow-statement/",
           "https://www.macrotrends.net/stocks/charts/AMD/amd/free-cash-flow",
           "https://www.statmuse.com/money/ask/amd-stock-price-on-december-31-2025"
+        ],
+        "quarters": [
+          {
+            "q": "Q3'23",
+            "endYm": "2023-09",
+            "revenueB": 5.8,
+            "epsAdj": 0.18,
+            "opMarginPct": 3.9,
+            "fcfB": 0.3,
+            "priceQEnd": 102
+          },
+          {
+            "q": "Q4'23",
+            "endYm": "2023-12",
+            "revenueB": 6.17,
+            "epsAdj": 0.41,
+            "opMarginPct": 5.5,
+            "fcfB": 1.1,
+            "priceQEnd": 147
+          },
+          {
+            "q": "Q1'24",
+            "endYm": "2024-03",
+            "revenueB": 5.47,
+            "epsAdj": 0.07,
+            "opMarginPct": 0.7,
+            "fcfB": 0.4,
+            "priceQEnd": 180
+          },
+          {
+            "q": "Q2'24",
+            "endYm": "2024-06",
+            "revenueB": 5.84,
+            "epsAdj": 0.16,
+            "opMarginPct": 4.6,
+            "fcfB": 0.44,
+            "priceQEnd": 162
+          },
+          {
+            "q": "Q3'24",
+            "endYm": "2024-09",
+            "revenueB": 6.82,
+            "epsAdj": 0.47,
+            "opMarginPct": 10.6,
+            "fcfB": 0.5,
+            "priceQEnd": 164
+          },
+          {
+            "q": "Q4'24",
+            "endYm": "2024-12",
+            "revenueB": 7.66,
+            "epsAdj": 0.3,
+            "opMarginPct": 11.4,
+            "fcfB": 1.09,
+            "priceQEnd": 121
+          },
+          {
+            "q": "Q1'25",
+            "endYm": "2025-03",
+            "revenueB": 7.44,
+            "epsAdj": 0.44,
+            "opMarginPct": 10.8,
+            "fcfB": 0.73,
+            "priceQEnd": 102
+          },
+          {
+            "q": "Q2'25",
+            "endYm": "2025-06",
+            "revenueB": 7.69,
+            "epsAdj": 0.54,
+            "opMarginPct": -1.7,
+            "fcfB": 0.27,
+            "priceQEnd": 142
+          },
+          {
+            "q": "Q3'25",
+            "endYm": "2025-09",
+            "revenueB": 9.25,
+            "epsAdj": 0.77,
+            "opMarginPct": 13.7,
+            "fcfB": 1.9,
+            "priceQEnd": 160
+          },
+          {
+            "q": "Q4'25",
+            "endYm": "2025-12",
+            "revenueB": 10.27,
+            "epsAdj": 0.92,
+            "opMarginPct": 17.1,
+            "fcfB": 2.38,
+            "priceQEnd": 214
+          },
+          {
+            "q": "Q1'26",
+            "endYm": "2026-03",
+            "revenueB": 10.25,
+            "epsAdj": 0.84,
+            "opMarginPct": 14.4,
+            "fcfB": 2.57,
+            "priceQEnd": 202
+          },
+          {
+            "q": "Q2'26",
+            "endYm": "2026-06",
+            "revenueB": 11.54,
+            "epsAdj": 1.38,
+            "opMarginPct": 17.3,
+            "fcfB": 1.56,
+            "priceQEnd": 570
+          }
         ]
       },
-      "nextEarnings": "2026-08-04"
+      "nextEarnings": "2026-11"
     },
     "HOOD": {
       "ticker": "HOOD",
@@ -3359,7 +4228,7 @@
         "Regulatory หลายแนวพร้อมกัน: PFOF, prediction markets (CFTC), crypto, banking — กติกาเปลี่ยนได้ทุกไตรมาส",
         "งบ Q2 2026 ออก 29 ก.ค. 2026 (หนึ่งวันหลังอัปเดตข้อมูลนี้) — ควรรัน /thesis-update HOOD ซ้ำหลังงบเพื่อ refresh ทันที"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดเดือนธันวาคม (ปีปฏิทิน) — ข้อมูล 5 ปีล่าสุดที่รายงานแล้วคือ FY2021 ถึง FY2025 (IPO ก.ค. 2021 แต่มีงบเต็มปี 2021)",
         "epsBasis": "diluted GAAP; HOOD ไม่เคยแตกหุ้น จึงเป็น basis ปัจจุบันอยู่แล้ว (split factor = 1 ทุกปี)",
@@ -3421,6 +4290,116 @@
           "https://www.statmuse.com/money/ask/hood-stock-price-on-december-29-2023",
           "https://www.statmuse.com/money/ask/hood-stock-price-on-december-31-2024",
           "https://www.statmuse.com/money/ask/hood-stock-price-on-december-31-2025"
+        ],
+        "quarters": [
+          {
+            "q": "Q3'23",
+            "endYm": "2023-09",
+            "revenueB": 0.47,
+            "epsAdj": -0.09,
+            "opMarginPct": -15.6,
+            "fcfB": null,
+            "priceQEnd": 10.5
+          },
+          {
+            "q": "Q4'23",
+            "endYm": "2023-12",
+            "revenueB": 0.47,
+            "epsAdj": 0.03,
+            "opMarginPct": 14.6,
+            "fcfB": null,
+            "priceQEnd": 13
+          },
+          {
+            "q": "Q1'24",
+            "endYm": "2024-03",
+            "revenueB": 0.62,
+            "epsAdj": 0.18,
+            "opMarginPct": 25.6,
+            "fcfB": null,
+            "priceQEnd": 19
+          },
+          {
+            "q": "Q2'24",
+            "endYm": "2024-06",
+            "revenueB": 0.68,
+            "epsAdj": 0.21,
+            "opMarginPct": 27.7,
+            "fcfB": 0.05,
+            "priceQEnd": 21.5
+          },
+          {
+            "q": "Q3'24",
+            "endYm": "2024-09",
+            "revenueB": 0.64,
+            "epsAdj": 0.17,
+            "opMarginPct": 23.7,
+            "fcfB": 1.81,
+            "priceQEnd": 24.5
+          },
+          {
+            "q": "Q4'24",
+            "endYm": "2024-12",
+            "revenueB": 1.01,
+            "epsAdj": 1.01,
+            "opMarginPct": 54.8,
+            "fcfB": -1.4,
+            "priceQEnd": 40.5
+          },
+          {
+            "q": "Q1'25",
+            "endYm": "2025-03",
+            "revenueB": 0.93,
+            "epsAdj": 0.37,
+            "opMarginPct": 39.9,
+            "fcfB": 0.64,
+            "priceQEnd": 45
+          },
+          {
+            "q": "Q2'25",
+            "endYm": "2025-06",
+            "revenueB": 0.99,
+            "epsAdj": 0.42,
+            "opMarginPct": 44.4,
+            "fcfB": 3.5,
+            "priceQEnd": 93.5
+          },
+          {
+            "q": "Q3'25",
+            "endYm": "2025-09",
+            "revenueB": 1.27,
+            "epsAdj": 0.61,
+            "opMarginPct": 49.8,
+            "fcfB": -1.58,
+            "priceQEnd": 130
+          },
+          {
+            "q": "Q4'25",
+            "endYm": "2025-12",
+            "revenueB": 1.28,
+            "epsAdj": 0.66,
+            "opMarginPct": 50.7,
+            "fcfB": -0.94,
+            "priceQEnd": 115
+          },
+          {
+            "q": "Q1'26",
+            "endYm": "2026-03",
+            "revenueB": 1.07,
+            "epsAdj": 0.38,
+            "opMarginPct": 38.5,
+            "fcfB": 2.03,
+            "priceQEnd": 100
+          },
+          {
+            "q": "Q2'26",
+            "endYm": "2026-06",
+            "revenueB": 1.31,
+            "epsAdj": 0.62,
+            "opMarginPct": 43.9,
+            "fcfB": 0.71,
+            "priceQEnd": 91
+          }
         ]
       },
       "nextEarnings": "2026-07-29"
@@ -3443,20 +4422,20 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "+56% YoY (Q1 2026 — $19.8B) เร่งตัวจาก +43% (Q4 2025) · guide FY2026 $82-85B",
+          "current": "+48% YoY (Q2 2026 — $23.0B, เหนือคาด ~$20.8B) · Mounjaro $9.9B (+91%) · Zepbound US $4.9B (+44%)",
           "trend": "up",
-          "score": 93,
+          "score": 92,
           "impact": "positive",
-          "why": "โตเร็วผิดปกติสำหรับบริษัทขนาด $1T+ — Mounjaro +125%, Zepbound +80% ยังเร่งตัว และ guidance ถูกปรับขึ้นทุกไตรมาส เป็นการเติบโตที่หายากมากในกลุ่ม pharma"
+          "why": "ยังโตแรงมากบนฐานที่ใหญ่ขึ้น (Q1 +56% → Q2 +48% YoY แต่รายได้เพิ่ม $19.8B → $23.0B) — Mounjaro ต่างประเทศระเบิด + Zepbound demand ชดเชยราคาที่ลด · ยา GLP-1 ยังเป็นคลื่นดีมานด์ที่ supply ตามไม่ทัน"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "Q1 2026 adjusted EPS $8.55 (ชนะคาด $6.66) · guide FY2026 adj EPS $35.50-37.00 (ปรับขึ้นจาก $33.50-35)",
+          "current": "adjusted EPS $8.38 (Q2 2026, ชนะคาด ~$6.01) · non-GAAP net income $7.5B (จาก EPS $6.31 ใน Q2'25)",
           "trend": "up",
           "score": 90,
           "impact": "positive",
-          "why": "กำไรโตเร็วกว่ารายได้จาก operating leverage — margin ขยายแรง ทำให้ EPS เร่งกว่ายอดขาย บริษัทปรับ guidance EPS ขึ้นต่อเนื่อง"
+          "why": "กำไรแกนโตเร็วตามรายได้ + operating leverage — Q2 beat ชัด แม้ guidance EPS ทั้งปีถูกหักด้วย deal charges ก้อนใหญ่ในไตรมาส (underlying โตต่อ)"
         },
         {
           "key": "fcf",
@@ -3524,11 +4503,11 @@
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "forward P/E ~31-34x (ราคา ~$1,196 · mcap ~$1.15T, ก.ค. 2026)",
-          "trend": "down",
-          "score": 38,
+          "current": "forward P/E ~32-35x (หุ้นขึ้นหลัง Q2 beat) — แพงแต่กำไรโต ~40%+/ปี ไล่ทัน multiple (PEG ต่ำกว่า 1)",
+          "trend": "flat",
+          "score": 40,
           "impact": "negative",
-          "why": "แพงมากเทียบ pharma ดั้งเดิม (~15x) — ตลาดจ่ายพรีเมียมให้การเติบโต GLP-1 ราคาระดับนี้แทบไม่เผื่อพลาด ถ้าโตช้าลงหรือคู่แข่งเข้ามา multiple หดได้แรง"
+          "why": "แพงในเชิงสัมบูรณ์และเทียบกลุ่มยา แต่การเติบโตระดับ 40%+ ทำให้ PEG ต่ำกว่า 1 — ความเสี่ยงหลักคือแรงกดด้านราคา (Zepbound net price ลด) และการแข่งขัน oral GLP-1 ที่จะกดดัน multiple ระยะถัดไป"
         }
       ],
       "revenueQuality": {
@@ -3539,32 +4518,32 @@
         "segments": [
           {
             "name": "Mounjaro (tirzepatide — เบาหวาน)",
-            "sharePct": 44,
-            "growthNote": "$8.66B Q1 2026 (+125% YoY) — เครื่องยนต์ใหญ่สุด US $4.2B + ต่างประเทศ $4.4B ที่ระเบิดจากฐานต่ำ",
+            "sharePct": 43,
+            "growthNote": "$9.9B (+91% YoY) — US $4.8B + ต่างประเทศ $5.2B ที่ระเบิด",
             "trend": "up"
           },
           {
             "name": "Zepbound (tirzepatide — โรคอ้วน)",
-            "sharePct": 21,
-            "growthNote": "US ~$4.16B (+80% YoY) — ยาลดน้ำหนักเบอร์หนึ่งของตลาด",
+            "sharePct": 22,
+            "growthNote": "US $4.9B (+44% YoY) — demand แรงชดเชย net price ที่ลด",
             "trend": "up"
           },
           {
             "name": "เบาหวาน/cardiometabolic เดิม (Trulicity, Jardiance, Humalog)",
-            "sharePct": 15,
-            "growthNote": "แผ่วลง — Trulicity ถูกแทนที่ด้วย Mounjaro, Jardiance ยังทรงตัว",
-            "trend": "down"
+            "sharePct": 12,
+            "growthNote": "โตช้า/ทรงตัว — ฐานเก่าที่ถูกแทนด้วย tirzepatide",
+            "trend": "flat"
           },
           {
             "name": "Oncology (Verzenio, Jaypirca)",
             "sharePct": 8,
-            "growthNote": "Verzenio ยังโต · Jaypirca ~$165M กำลัง ramp",
+            "growthNote": "โตสม่ำเสมอ — Verzenio ยังขยายข้อบ่งใช้",
             "trend": "up"
           },
           {
             "name": "ภูมิคุ้มกัน+ประสาท+ยาใหม่ (Taltz, Ebglyss, Omvoh, Kisunla, Foundayo)",
-            "sharePct": 12,
-            "growthNote": "คลื่นยาใหม่ — Kisunla (อัลไซเมอร์) ~$124M, Ebglyss ~$145M, Foundayo เพิ่งเปิดตัว",
+            "sharePct": 15,
+            "growthNote": "Foundayo (orforglipron) เริ่มมียอดขายไตรมาสแรก — ยาเม็ด GLP-1 ขยายตลาด",
             "trend": "up"
           }
         ]
@@ -3573,29 +4552,29 @@
         "score": 86,
         "items": [
           {
-            "item": "Oral GLP-1 (Foundayo/orforglipron)",
+            "item": "Foundayo (orforglipron) — ยาเม็ด GLP-1 ตัวแรก",
             "status": "executing",
-            "evidence": "FDA อนุมัติ เม.ย. 2026 — ยา GLP-1 เม็ดกินตัวแรก ผลิต/ขยายสเกลได้กว่ายาฉีดมาก เปิดตลาดคนไข้ที่ไม่อยากฉีด นับเป็น catalyst ใหญ่สุดของปี"
+            "evidence": "อนุมัติ FDA เม.ย. 2026 · Q2 เป็นไตรมาสแรกที่มียอดขาย — เปิดตลาดผู้ป่วยที่ไม่อยากฉีดเข็ม (TAM ใหญ่ขึ้นมาก)"
           },
           {
-            "item": "ขยายกำลังการผลิต (manufacturing capex)",
+            "item": "ขยายกำลังผลิต tirzepatide (capex มหาศาล)",
             "status": "executing",
-            "evidence": "ทุ่มลงทุนหลายหมื่นล้าน$ สร้างโรงงานทั่วโลก — เป็นตัวปลดล็อกอุปสงค์ที่ล้นและเป็นคูเมืองจริงที่คู่แข่งตามช้า"
+            "evidence": "ลงทุนโรงงานทั่วโลกเพื่อแก้คอขวด supply — ยอด Mounjaro/Zepbound ยังถูกจำกัดด้วยกำลังผลิต ไม่ใช่ดีมานด์"
           },
           {
-            "item": "ขยาย label ยา tirzepatide",
-            "status": "executing",
-            "evidence": "เดินหน้าข้อบ่งใช้ใหม่ (หยุดหายใจขณะหลับ, หัวใจ HFpEF, MASH) — ต่อยอดฐานยาเดิมให้ครอบคลุมโรคร่วมของคนไข้อ้วน"
-          },
-          {
-            "item": "ท่อยารุ่นถัดไป (retatrutide, Kisunla)",
+            "item": "Pipeline รุ่นถัดไป (retatrutide, orforglipron ข้อบ่งใช้ใหม่)",
             "status": "on-track",
-            "evidence": "retatrutide (triple agonist) ในการทดลองระยะท้าย ประสิทธิภาพลดน้ำหนักสูงกว่าเดิม · Kisunla เปิดตลาดอัลไซเมอร์"
+            "evidence": "ยา GLP-1/GIP รุ่นใหม่ที่ลดน้ำหนักได้มากขึ้น — ต่อคูเมืองการเติบโตไปอีกหลายปี"
           },
           {
-            "item": "AI/ML ในการค้นพบยา + LillyDirect DTC",
-            "status": "on-track",
-            "evidence": "ใช้ AI เร่ง drug discovery และแพลตฟอร์มขายตรงถึงผู้ป่วย (LillyDirect) ลดตัวกลาง — ยังเป็นตัวเสริม ไม่ใช่แกนรายได้"
+            "item": "ขยายข้อบ่งใช้ tirzepatide (OSA, หัวใจ, ตับ)",
+            "status": "executing",
+            "evidence": "ข้อบ่งใช้ใหม่ = เพิ่มกลุ่มผู้ป่วยและการคุ้มครองประกัน — ขยายมูลค่าตลาดต่อเนื่อง"
+          },
+          {
+            "item": "แรงกดด้านราคา/การเข้าถึง",
+            "status": "at-risk",
+            "evidence": "net price Zepbound ลดลง + แรงกดจากประกัน/นโยบายราคายา US — เป็นความเสี่ยงต่อ margin ระยะยาว"
           }
         ]
       },
@@ -3691,44 +4670,44 @@
       },
       "valuationView": {
         "level": "expensive",
-        "note": "forward P/E ~31-34x (ราคา ~$1,196, mcap ~$1.15T) — แพงกว่า pharma peer หลายเท่า (~15x) ตลาดจ่ายให้การเติบโต GLP-1 และ optionality ของ oral/pipeline ราคาระดับนี้ทำให้หุ้นเหวี่ยงแรงตามข่าว clinical/คู่แข่ง และมีความเสี่ยง de-rating สูงถ้าการเติบโตชะลอ"
+        "note": "forward P/E ~32-35x (หลัง Q2 2026 beat หุ้นขึ้น) — แพงเชิงสัมบูรณ์และเทียบกลุ่มยา (peers ~15-18x) แต่การเติบโต ~40%+/ปี ทำให้ PEG ต่ำกว่า 1 · เดิมพันคือคลื่น GLP-1/obesity ยังยาว + orforglipron (ยาเม็ด) ขยายตลาด — ความเสี่ยง valuation มาจากแรงกดราคา (net price Zepbound ลด) และคู่แข่ง oral GLP-1 ที่อาจกด multiple มากกว่าตัวธุรกิจเอง"
       },
       "whatChanged": [
         {
-          "metric": "รายได้รวม (Q4 2025 → Q1 2026)",
-          "prev": "$19.3B (+43% YoY)",
-          "now": "$19.8B (+56% YoY) — เร่งตัว",
+          "metric": "รายได้รวม (Q2 2026)",
+          "prev": "Q1'26 $19.8B (+56%)",
+          "now": "$23.0B (+48% YoY) — เหนือคาด ~$20.8B",
           "direction": "positive"
         },
         {
           "metric": "Mounjaro",
-          "prev": "$7.4B (+110% YoY)",
-          "now": "$8.66B (+125% YoY) — ต่างประเทศระเบิด",
+          "prev": "Q1 $8.66B (+125%)",
+          "now": "$9.9B (+91% YoY) — ต่างประเทศ $5.2B",
           "direction": "positive"
         },
         {
-          "metric": "Oral GLP-1 (Foundayo/orforglipron)",
-          "prev": "รออนุมัติ",
-          "now": "FDA อนุมัติ 1 เม.ย. 2026 — ยาเม็ดตัวแรก",
-          "direction": "positive"
-        },
-        {
-          "metric": "Guidance FY2026",
-          "prev": "รายได้ $80-83B",
-          "now": "ปรับขึ้น $82-85B · adj EPS $35.50-37.00",
-          "direction": "positive"
-        },
-        {
-          "metric": "Operating margin",
-          "prev": "~29% (2024)",
-          "now": "~40% (2025) — operating leverage",
-          "direction": "positive"
-        },
-        {
-          "metric": "Realized price (US)",
+          "metric": "Zepbound (US)",
           "prev": "—",
-          "now": "ราคาที่รับจริง -13% ใน Q1 — แรงกดด้านราคาเริ่มเห็น",
-          "direction": "negative"
+          "now": "$4.9B (+44% YoY) — demand ชดเชย net price ที่ลด",
+          "direction": "positive"
+        },
+        {
+          "metric": "adj EPS",
+          "prev": "คาด ~$6.01",
+          "now": "$8.38 (ชนะคาดชัด)",
+          "direction": "positive"
+        },
+        {
+          "metric": "Guidance FY2026 รายได้",
+          "prev": "$82-85B",
+          "now": "$85-87B (ยกขึ้น)",
+          "direction": "positive"
+        },
+        {
+          "metric": "Guidance adj EPS FY2026",
+          "prev": "$35.50-37.00",
+          "now": "$35.50-36.50 (underlying +$2.78 แต่โดน deal charges $3.03 หักกลบ)",
+          "direction": "neutral"
         }
       ],
       "risks": [
@@ -3739,7 +4718,7 @@
         "capex มหาศาลกด FCF — ถ้าอุปสงค์ normalize เร็วกว่าคาด โรงงานที่สร้างไว้จะกลายเป็นภาระและ ROIC หด",
         "หมายเหตุ layer: LLY จัดใน enterprise แบบหลวม ๆ — ไม่ใช่หุ้นสาย AI infrastructure การเทียบ peer ในกลุ่มนี้จึงเป็นแบบหยาบ"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุด ธ.ค. (ตรงปีปฏิทิน) — FY2021-FY2025 คือ 5 ปีล่าสุดที่ปิดงบแล้ว",
         "epsBasis": "diluted GAAP (as-reported — LLY ไม่เคยแตกหุ้น จึงไม่ต้องปรับ split)",
@@ -3795,9 +4774,119 @@
           "https://stockanalysis.com/stocks/lly/financials/",
           "https://www.prnewswire.com/news-releases/lilly-reports-fourth-quarter-2025-financial-results-and-provides-2026-guidance-302678376.html",
           "https://www.sec.gov/Archives/edgar/data/59478/000005947826000013/lly-20251231.htm"
+        ],
+        "quarters": [
+          {
+            "q": "Q3'23",
+            "endYm": "2023-09",
+            "revenueB": 9.5,
+            "epsAdj": -0.06,
+            "opMarginPct": 4.7,
+            "fcfB": 1.22,
+            "priceQEnd": 538
+          },
+          {
+            "q": "Q4'23",
+            "endYm": "2023-12",
+            "revenueB": 9.35,
+            "epsAdj": 2.42,
+            "opMarginPct": 25.5,
+            "fcfB": -1.38,
+            "priceQEnd": 573
+          },
+          {
+            "q": "Q1'24",
+            "endYm": "2024-03",
+            "revenueB": 8.77,
+            "epsAdj": 2.48,
+            "opMarginPct": 28.6,
+            "fcfB": 0.18,
+            "priceQEnd": 778
+          },
+          {
+            "q": "Q2'24",
+            "endYm": "2024-06",
+            "revenueB": 11.3,
+            "epsAdj": 3.28,
+            "opMarginPct": 32.9,
+            "fcfB": 0.24,
+            "priceQEnd": 905
+          },
+          {
+            "q": "Q3'24",
+            "endYm": "2024-09",
+            "revenueB": 11.44,
+            "epsAdj": 1.07,
+            "opMarginPct": 13.3,
+            "fcfB": 2.36,
+            "priceQEnd": 885
+          },
+          {
+            "q": "Q4'24",
+            "endYm": "2024-12",
+            "revenueB": 13.53,
+            "epsAdj": 4.88,
+            "opMarginPct": 38.1,
+            "fcfB": 0.98,
+            "priceQEnd": 764
+          },
+          {
+            "q": "Q1'25",
+            "endYm": "2025-03",
+            "revenueB": 12.73,
+            "epsAdj": 3.06,
+            "opMarginPct": 29,
+            "fcfB": 0.16,
+            "priceQEnd": 826
+          },
+          {
+            "q": "Q2'25",
+            "endYm": "2025-06",
+            "revenueB": 15.56,
+            "epsAdj": 6.29,
+            "opMarginPct": 44.1,
+            "fcfB": 1.39,
+            "priceQEnd": 779
+          },
+          {
+            "q": "Q3'25",
+            "endYm": "2025-09",
+            "revenueB": 17.6,
+            "epsAdj": 6.21,
+            "opMarginPct": 41.9,
+            "fcfB": 6.75,
+            "priceQEnd": 830
+          },
+          {
+            "q": "Q4'25",
+            "endYm": "2025-12",
+            "revenueB": 19.29,
+            "epsAdj": 7.39,
+            "opMarginPct": 43.4,
+            "fcfB": 0.68,
+            "priceQEnd": 1071
+          },
+          {
+            "q": "Q1'26",
+            "endYm": "2026-03",
+            "revenueB": 19.8,
+            "epsAdj": 8.26,
+            "opMarginPct": 45,
+            "fcfB": 3.01,
+            "priceQEnd": 920
+          },
+          {
+            "q": "Q2'26",
+            "endYm": "2026-06",
+            "revenueB": 22.97,
+            "epsAdj": 7.94,
+            "opMarginPct": 39.1,
+            "fcfB": 7.76,
+            "priceQEnd": 1100
+          }
         ]
       },
-      "nextEarnings": "2026-08-05"
+      "nextEarnings": "2026-10-29"
     },
     "ASML": {
       "ticker": "ASML",
@@ -4099,7 +5188,7 @@
         "Valuation ~40x: แพงเทียบประวัติตัวเอง — หุ้นไวมากต่อทุกสัญญาณ order/guidance และจุดกลับของวัฏจักร แม้พื้นฐานผูกขาดไม่เปลี่ยน",
         "High-NA adoption: เครื่องรุ่นถัดไปแพงมาก (~€350M/เครื่อง) — ถ้าลูกค้าชะลอรับ High-NA หรือ node ถัดไปสะดุดทางเทคนิค การเติบโตระยะยาวจะช้าลง"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "nextEarnings": "2026-10",
       "history": {
         "fyNote": "ปีบัญชี = ปีปฏิทิน (สิ้นสุด ธ.ค.) — FY2021-FY2025 · ตัวเลขแปลงเป็น USD (ADR)",
@@ -4155,6 +5244,116 @@
         "sources": [
           "https://stockanalysis.com/stocks/asml/financials/",
           "https://www.asml.com/en/news/press-releases/2026/q2-2026-financial-results"
+        ],
+        "quarters": [
+          {
+            "q": "Q3'23",
+            "endYm": "2023-09",
+            "revenueB": 6.67,
+            "epsAdj": 4.81,
+            "opMarginPct": 32.7,
+            "fcfB": 0.63,
+            "priceQEnd": 580
+          },
+          {
+            "q": "Q4'23",
+            "endYm": "2023-12",
+            "revenueB": 7.24,
+            "epsAdj": 5.2,
+            "opMarginPct": 33.1,
+            "fcfB": 2.61,
+            "priceQEnd": 755
+          },
+          {
+            "q": "Q1'24",
+            "endYm": "2024-03",
+            "revenueB": 5.29,
+            "epsAdj": 3.11,
+            "opMarginPct": 26.3,
+            "fcfB": -0.67,
+            "priceQEnd": 1020
+          },
+          {
+            "q": "Q2'24",
+            "endYm": "2024-06",
+            "revenueB": 6.24,
+            "epsAdj": 4.01,
+            "opMarginPct": 29.4,
+            "fcfB": 0.39,
+            "priceQEnd": 1035
+          },
+          {
+            "q": "Q3'24",
+            "endYm": "2024-09",
+            "revenueB": 7.47,
+            "epsAdj": 5.28,
+            "opMarginPct": 32.7,
+            "fcfB": 0.54,
+            "priceQEnd": 845
+          },
+          {
+            "q": "Q4'24",
+            "endYm": "2024-12",
+            "revenueB": 9.26,
+            "epsAdj": 6.84,
+            "opMarginPct": 36.2,
+            "fcfB": 8.84,
+            "priceQEnd": 683
+          },
+          {
+            "q": "Q1'25",
+            "endYm": "2025-03",
+            "revenueB": 7.74,
+            "epsAdj": 5.99,
+            "opMarginPct": 35.4,
+            "fcfB": -0.47,
+            "priceQEnd": 690
+          },
+          {
+            "q": "Q2'25",
+            "endYm": "2025-06",
+            "revenueB": 7.69,
+            "epsAdj": 5.9,
+            "opMarginPct": 34.6,
+            "fcfB": 0.33,
+            "priceQEnd": 785
+          },
+          {
+            "q": "Q3'25",
+            "endYm": "2025-09",
+            "revenueB": 7.52,
+            "epsAdj": 5.48,
+            "opMarginPct": 32.8,
+            "fcfB": 0.26,
+            "priceQEnd": 960
+          },
+          {
+            "q": "Q4'25",
+            "endYm": "2025-12",
+            "revenueB": 9.72,
+            "epsAdj": 7.34,
+            "opMarginPct": 35.3,
+            "fcfB": 10.96,
+            "priceQEnd": 1080
+          },
+          {
+            "q": "Q1'26",
+            "endYm": "2026-03",
+            "revenueB": 8.77,
+            "epsAdj": 7.15,
+            "opMarginPct": 36,
+            "fcfB": -2.59,
+            "priceQEnd": 1250
+          },
+          {
+            "q": "Q2'26",
+            "endYm": "2026-06",
+            "revenueB": 9.33,
+            "epsAdj": 7.58,
+            "opMarginPct": 37.1,
+            "fcfB": 1.4,
+            "priceQEnd": 1987
+          }
         ]
       }
     },
@@ -4767,7 +5966,7 @@
         "Valuation premium ~25-30x บนหุ้น SET ที่สภาพคล่อง/flow ต่างชาติผันผวน — ถ้า DC story สะดุด multiple หดแรง",
         "การพึ่งพา AIS เป็นสัดส่วนกำไรใหญ่ — การแข่งขัน telecom ไทย (TRUE) หรือ regulation ค่าบริการกระทบ GULF ทางตรง"
       ],
-      "asOf": "2026-07",
+      "asOf": "2026-08",
       "nextEarnings": "2026-08-11",
       "history": {
         "currency": "฿",
@@ -4825,6 +6024,573 @@
           "https://www.gulf.co.th/en/newsroom/ (FY2021-2025 + Q1/2026 press releases)",
           "https://stockanalysis.com/quote/bkk/GULF/",
           "https://www.digrin.com/stocks/detail/GULF.BK/price"
+        ],
+        "quarters": [
+          {
+            "q": "Q2'23",
+            "endYm": "2023-06",
+            "revenueB": 32.56,
+            "epsAdj": 0.25,
+            "opMarginPct": 15,
+            "fcfB": -0.32,
+            "priceQEnd": 48
+          },
+          {
+            "q": "Q3'23",
+            "endYm": "2023-09",
+            "revenueB": 27.42,
+            "epsAdj": 0.29,
+            "opMarginPct": 17.8,
+            "fcfB": 3.64,
+            "priceQEnd": 46
+          },
+          {
+            "q": "Q4'23",
+            "endYm": "2023-12",
+            "revenueB": 27.67,
+            "epsAdj": 0.41,
+            "opMarginPct": 15.7,
+            "fcfB": -6.17,
+            "priceQEnd": 41
+          },
+          {
+            "q": "Q1'24",
+            "endYm": "2024-03",
+            "revenueB": 31.6,
+            "epsAdj": 0.3,
+            "opMarginPct": 16.1,
+            "fcfB": -0.95,
+            "priceQEnd": 43
+          },
+          {
+            "q": "Q2'24",
+            "endYm": "2024-06",
+            "revenueB": 31.59,
+            "epsAdj": 0.4,
+            "opMarginPct": 16.5,
+            "fcfB": 0.27,
+            "priceQEnd": 46
+          },
+          {
+            "q": "Q3'24",
+            "endYm": "2024-09",
+            "revenueB": 30.45,
+            "epsAdj": 0.51,
+            "opMarginPct": 16.2,
+            "fcfB": -2.27,
+            "priceQEnd": 62
+          },
+          {
+            "q": "Q4'24",
+            "endYm": "2024-12",
+            "revenueB": 27.25,
+            "epsAdj": 0.33,
+            "opMarginPct": 20.2,
+            "fcfB": -4.8,
+            "priceQEnd": 55
+          },
+          {
+            "q": "Q1'25",
+            "endYm": "2025-03",
+            "revenueB": 30.78,
+            "epsAdj": 0.46,
+            "opMarginPct": 20.1,
+            "fcfB": -1.13,
+            "priceQEnd": 47
+          },
+          {
+            "q": "Q2'25",
+            "endYm": "2025-06",
+            "revenueB": 38.52,
+            "epsAdj": 4.28,
+            "opMarginPct": 14.5,
+            "fcfB": 1.72,
+            "priceQEnd": 52
+          },
+          {
+            "q": "Q3'25",
+            "endYm": "2025-09",
+            "revenueB": 29.04,
+            "epsAdj": 0.49,
+            "opMarginPct": 19.4,
+            "fcfB": 6.13,
+            "priceQEnd": 48
+          },
+          {
+            "q": "Q4'25",
+            "endYm": "2025-12",
+            "revenueB": 62.11,
+            "epsAdj": 0.95,
+            "opMarginPct": 18.3,
+            "fcfB": -1.42,
+            "priceQEnd": 41
+          },
+          {
+            "q": "Q1'26",
+            "endYm": "2026-03",
+            "revenueB": 37.64,
+            "epsAdj": 0.61,
+            "opMarginPct": 20.6,
+            "fcfB": -5.37,
+            "priceQEnd": 55
+          }
+        ]
+      }
+    },
+    "PLTR": {
+      "ticker": "PLTR",
+      "name": "Palantir Technologies",
+      "layer": "enterprise",
+      "thesis": {
+        "statement": "PLTR คือผู้นำซอฟต์แวร์ AI สำหรับองค์กรและภาครัฐ — Gotham (รัฐบาล/กลาโหม) + Foundry (พาณิชย์) + AIP (Artificial Intelligence Platform) ที่จุดการเติบโตรอบใหม่ · มุม AI ของ thesis คือ 'จาก POC สู่ production': AIP bootcamp เปลี่ยนการทดลองเป็นระบบใช้งานจริงได้เร็ว ทำให้ US commercial โตระเบิด (+149% YoY) ขณะฐานรัฐบาลยังโตแข็ง (+90%) · คูเมืองคือ ontology + การผูกข้อมูล/เวิร์กโฟลว์ลูกค้าลึกจน switching cost สูงมาก · เดิมพันจริงคือ valuation สุดขั้ว (forward P/E ~80x) — การเติบโตต้องแรงและยาวพอที่จะ justify multiple ไม่งั้นเสี่ยง multiple compression รุนแรง",
+        "pillars": [
+          "AIP = เครื่องยนต์การเติบโต — bootcamp เปลี่ยน POC เป็น production เร็ว ดัน US commercial +149% YoY (Q2 2026)",
+          "ฐานรัฐบาล/กลาโหมมั่นคงและโตต่อ (+90% US gov) — สัญญาระยะยาว entrenchment สูง ผู้เล่นใหม่เข้าแทนยาก",
+          "Ontology + data integration = คูเมือง — ผูกข้อมูลและเวิร์กโฟลว์ลูกค้าลึก switching cost สูงมากเมื่อขึ้น production",
+          "Rule of 40 = 155% (ดีที่สุดในกลุ่มซอฟต์แวร์) — โต 93% พร้อม adj operating margin 62% และ FCF แรงในเวลาเดียวกัน",
+          "Land-and-expand: remaining US commercial deal value >$6.24B (>2x YoY) · ปิดดีล ≥$1M ถึง 220 ดีลใน Q2"
+        ]
+      },
+      "fundamentals": [
+        {
+          "key": "revenueGrowth",
+          "label": "การเติบโตของรายได้",
+          "current": "~+93% YoY (Q2 2026 — $1.94B) · US commercial +149% · US gov +90% — เร่งตัวต่อเนื่อง",
+          "trend": "up",
+          "score": 92,
+          "impact": "positive",
+          "why": "การเติบโตเร่งขึ้นจริงและกระจายทั้งพาณิชย์และรัฐ — US commercial เกือบ 2.5 เท่า YoY จาก AIP ที่เปลี่ยนดีมานด์ AI เป็นสัญญาจริง · FY26 guide ยกเป็น $8.15B (+82%)"
+        },
+        {
+          "key": "epsGrowth",
+          "label": "การเติบโตของกำไร",
+          "current": "adj EPS $0.41 (Q2 2026, ชนะคาด ~$0.28) · GAAP กำไรต่อเนื่อง",
+          "trend": "up",
+          "score": 88,
+          "impact": "positive",
+          "why": "กำไรโตเร็วกว่ารายได้เพราะ operating leverage สูง — margin ขยายพร้อมการโต (ต่างจากบริษัทโตเร็วทั่วไปที่ต้องเผาเงิน)"
+        },
+        {
+          "key": "fcf",
+          "label": "กระแสเงินสดอิสระ",
+          "current": "adj FCF guide FY26 ~$4.5-4.7B (FCF margin ~55%)",
+          "trend": "up",
+          "score": 90,
+          "impact": "positive",
+          "why": "เครื่องผลิตเงินสดชั้นดี — โมเดล asset-light + prepay จากลูกค้ารัฐ ทำให้ FCF margin สูงผิดปกติสำหรับบริษัทโตเร็ว"
+        },
+        {
+          "key": "margin",
+          "label": "อัตรากำไร",
+          "current": "adj operating margin ~62% (Q2 2026) · Rule of 40 = 155%",
+          "trend": "up",
+          "score": 90,
+          "impact": "positive",
+          "why": "margin ระดับท็อปของอุตสาหกรรมและยังขยาย — operating leverage ของแพลตฟอร์มซอฟต์แวร์ที่ scale แล้ว (หมายเหตุ: เป็น adjusted ที่บวก SBC กลับ)"
+        },
+        {
+          "key": "roic",
+          "label": "ผลตอบแทนต่อเงินลงทุน",
+          "current": "สูง — asset-light, กำไรจริง, ไม่ต้องลงทุน capex หนัก",
+          "trend": "up",
+          "score": 75,
+          "impact": "positive",
+          "why": "ธุรกิจซอฟต์แวร์ที่ไม่ต้องใช้ทุนหนัก + กำไรจริงเป็นบวก → ROIC สูงเชิงโครงสร้าง แต่ถ้าคิดรวม SBC เป็นต้นทุนจริงจะลดทอนลง"
+        },
+        {
+          "key": "cash",
+          "label": "สภาพคล่อง",
+          "current": "เงินสด + เงินลงทุน ~$6B+ · ไม่มีหนี้",
+          "trend": "up",
+          "score": 86,
+          "impact": "positive",
+          "why": "งบดุลแข็งมาก เงินสดหนา ไม่มีภาระหนี้ — ยืดหยุ่นสูงและทน downturn ได้ดี"
+        },
+        {
+          "key": "debt",
+          "label": "หนี้สิน",
+          "current": "ไม่มีหนี้ระยะยาว — net cash เต็มตัว",
+          "trend": "flat",
+          "score": 92,
+          "impact": "positive",
+          "why": "ปลอดหนี้ ไม่มีความเสี่ยงจากดอกเบี้ย/refinance — จุดแข็งด้านความมั่นคงทางการเงิน"
+        },
+        {
+          "key": "dilution",
+          "label": "การเจือจางของหุ้น",
+          "current": "SBC สูงตามสไตล์บริษัทซอฟต์แวร์โตเร็ว — เจือจางต่อเนื่องแม้อัตราเริ่มดีขึ้น",
+          "trend": "flat",
+          "score": 45,
+          "impact": "negative",
+          "why": "จุดอ่อนหลัก — margin/EPS ที่โชว์เป็น adjusted บวก SBC กลับ ทำให้ 'กำไรจริง' ต่อหุ้นถูกเจือจาง · ต้องดูว่าอัตรา dilution ลดลงตามการ scale ไหม"
+        },
+        {
+          "key": "capitalAllocation",
+          "label": "การจัดสรรเงินทุน",
+          "current": "มีโครงการ buyback + ลงทุนหนักใน R&D/AIP · ไม่มีปันผล (ยังโตเร็ว)",
+          "trend": "up",
+          "score": 68,
+          "impact": "neutral",
+          "why": "ทีมบริหารเน้นการเติบโตเป็นหลัก การซื้อหุ้นคืนบางส่วนช่วยชดเชย dilution — ยังพิสูจน์วินัยการจัดสรรทุนระยะยาวไม่นานพอ"
+        },
+        {
+          "key": "valuation",
+          "label": "ความน่าสนใจของราคา",
+          "current": "forward P/E ~80x (สูงกว่ามัธยฐานซอฟต์แวร์ ~4 เท่า) — แพงสุดขั้ว",
+          "trend": "down",
+          "score": 18,
+          "impact": "negative",
+          "why": "ตลาดจ่ายล่วงหน้าให้การเติบโตหลายปี — แม้ธุรกิจดีเยี่ยม แต่ margin of safety แทบไม่มี ความเสี่ยง multiple compression สูงที่สุดในพอร์ต AI · ราคาแพงคือความเสี่ยงหลัก ไม่ใช่คุณภาพธุรกิจ"
+        }
+      ],
+      "revenueQuality": {
+        "acceleration": "accelerating",
+        "consistency": 85,
+        "recurringPct": 80,
+        "note": "คุณภาพรายได้สูงและเร่งตัว — US commercial ขับด้วย AIP (land-and-expand, remaining deal value >$6.24B) และฐานรัฐบาลที่เหนียวและคาดการณ์ได้ · รายได้ส่วนใหญ่เป็น subscription/สัญญาต่อเนื่อง แต่ฝั่งรัฐมี lumpiness จากสัญญาก้อนใหญ่เป็นครั้งคราว",
+        "segments": [
+          {
+            "name": "US Government (Gotham/กลาโหม)",
+            "sharePct": 42,
+            "growthNote": "$809M (+90% YoY) — ฐานเหนียว entrenchment สูง โตเร็วขึ้นจาก AI defense",
+            "trend": "up"
+          },
+          {
+            "name": "US Commercial (AIP/Foundry)",
+            "sharePct": 39,
+            "growthNote": "$764M (+149% YoY) — เครื่องยนต์การเติบโต land-and-expand จาก AIP bootcamp",
+            "trend": "up"
+          },
+          {
+            "name": "International (commercial + government)",
+            "sharePct": 19,
+            "growthNote": "โตช้ากว่า US — ยุโรปยังอืด แต่ตะวันออกกลาง/พันธมิตรกลาโหมเริ่มขยับ",
+            "trend": "flat"
+          }
+        ]
+      },
+      "aiExecution": {
+        "score": 92,
+        "items": [
+          {
+            "item": "AIP (Artificial Intelligence Platform) → production",
+            "status": "executing",
+            "evidence": "bootcamp เปลี่ยน POC เป็นระบบใช้จริงเร็ว — US commercial +149% YoY คือหลักฐานว่าเปลี่ยนดีมานด์ AI เป็นรายได้จริงได้"
+          },
+          {
+            "item": "AI ด้านกลาโหม/รัฐ (Gotham, Warp Speed)",
+            "status": "executing",
+            "evidence": "US gov +90% YoY — สัญญากลาโหม/หน่วยงานความมั่นคงที่ผู้เล่นใหม่เข้าแทนยากมาก"
+          },
+          {
+            "item": "Ontology + Apollo (deployment layer)",
+            "status": "executing",
+            "evidence": "โครงสร้างผูกข้อมูล/เวิร์กโฟลว์ลูกค้า = คูเมืองจริง — ทำให้ AIP ต่างจากแชตบอต/copilot ทั่วไป"
+          },
+          {
+            "item": "โมเมนตัมดีลใหญ่",
+            "status": "executing",
+            "evidence": "ปิดดีล ≥$1M ถึง 220 ดีล (98 ดีล ≥$5M, 70 ดีล ≥$10M) ใน Q2 · remaining US commercial deal value >$6.24B"
+          },
+          {
+            "item": "ขยายสู่ verticals ใหม่ (manufacturing, healthcare, การเงิน)",
+            "status": "on-track",
+            "evidence": "AIP กระจายอุตสาหกรรมกว้างขึ้น — เพิ่ม TAM แต่ยังต้องพิสูจน์ความลึกเทียบฐานรัฐ"
+          }
+        ]
+      },
+      "competitive": {
+        "overall": "strengthening",
+        "moat": "คูเมืองของ PLTR ไม่ใช่โมเดล AI แต่คือชั้นที่อยู่ 'ใต้' โมเดล — ontology ที่ผูกข้อมูลจริงขององค์กร/รัฐเข้ากับเวิร์กโฟลว์และการตัดสินใจ · เมื่อขึ้น production แล้วการถอดออกแทบเป็นไปไม่ได้ (switching cost สูงมาก) · ฝั่งรัฐยังมี entrenchment + security clearance + track record หลายปีที่ผู้เล่นใหม่เลียนแบบไม่ทัน — เป็นคูเมืองแบบ 'ฝังลึก' มากกว่า 'เทคโนโลยีล้ำ' และทนต่อการมาของ foundation model ใหม่ ๆ ได้",
+        "factors": [
+          {
+            "key": "marketLeadership",
+            "label": "ผู้นำตลาด",
+            "status": "strengthening",
+            "note": "ผู้นำซอฟต์แวร์ AI สำหรับองค์กร/รัฐที่ขึ้น production จริง — นำหน้าคู่แข่งด้าน 'ใช้งานได้จริงในสเกลใหญ่'"
+          },
+          {
+            "key": "techLeadership",
+            "label": "ผู้นำเทคโนโลยี",
+            "status": "strengthening",
+            "note": "ontology/AIP เป็นสถาปัตยกรรมเฉพาะตัว — ไม่ได้แข่งสร้างโมเดล แต่แข่งที่ชั้นเชื่อมโมเดลกับข้อมูล/การทำงานจริง"
+          },
+          {
+            "key": "executionSpeed",
+            "label": "ความเร็วในการ execute",
+            "status": "strengthening",
+            "note": "bootcamp ปิดดีลและขึ้น production เร็วผิดปกติ — เปลี่ยนวงจรขายองค์กรที่เคยยาวให้สั้นลง"
+          },
+          {
+            "key": "switchingCost",
+            "label": "ต้นทุนการเปลี่ยน",
+            "status": "strengthening",
+            "note": "เมื่อข้อมูล/เวิร์กโฟลว์ผูกกับ ontology แล้ว การย้ายออกกระทบทั้งองค์กร — lock-in สูงมาก"
+          },
+          {
+            "key": "ecosystem",
+            "label": "ระบบนิเวศ",
+            "status": "stable",
+            "note": "partner + Apollo + AIP builder — กำลังก่อตัว ยังไม่กว้างเท่า hyperscaler แต่เติบโต"
+          },
+          {
+            "key": "developerAdoption",
+            "label": "การยอมรับของนักพัฒนา",
+            "status": "strengthening",
+            "note": "AIP bootcamp สร้างชุมชน builder ในองค์กร — การยอมรับเพิ่มจากผู้ใช้จริงในงาน ไม่ใช่แค่ทดลอง"
+          },
+          {
+            "key": "customerLockin",
+            "label": "การผูกลูกค้า",
+            "status": "strengthening",
+            "note": "ขึ้น production = embed ลึกในการตัดสินใจประจำวัน · net expansion สูง (land-and-expand)"
+          },
+          {
+            "key": "moat",
+            "label": "คูเมืองโดยรวม",
+            "status": "strengthening",
+            "note": "data integration + gov entrenchment — คูเมืองฝังลึก ทนการมาของโมเดล AI ใหม่ ๆ ได้ดี"
+          }
+        ]
+      },
+      "capitalAllocation": {
+        "score": 68,
+        "verdict": "เน้นการเติบโตเป็นหลัก + เริ่มซื้อหุ้นคืนบางส่วนเพื่อชดเชย dilution · วินัยการจัดสรรทุนระยะยาวยังพิสูจน์ไม่นานพอ แต่งบดุลปลอดหนี้ให้ความยืดหยุ่นสูง",
+        "items": [
+          {
+            "label": "โครงการซื้อหุ้นคืน",
+            "current": "มี buyback authorization เพื่อชดเชย SBC บางส่วน",
+            "assessment": "neutral",
+            "why": "ช่วยลดแรงเจือจาง แต่ยังไม่มากพอกลบ SBC ทั้งหมด — เป็นสัญญาณเริ่มใส่ใจ dilution"
+          },
+          {
+            "label": "ลงทุน R&D / AIP",
+            "current": "ลงทุนหนักต่อเนื่องในแพลตฟอร์ม AIP และ ontology",
+            "assessment": "good",
+            "why": "เป็นหัวใจของคูเมืองและการเติบโต — ROI ปรากฏชัดใน US commercial ที่โตระเบิด"
+          },
+          {
+            "label": "การลงทุนเชิงกลยุทธ์",
+            "current": "ลงทุนในบริษัทพันธมิตร/ลูกค้าบางราย",
+            "assessment": "neutral",
+            "why": "เพิ่มการผูกลูกค้า แต่ต้องระวังการลงทุนที่วนกลับมาเป็นรายได้ตัวเอง (round-tripping)"
+          },
+          {
+            "label": "เงินปันผล",
+            "current": "ไม่มี — เก็บกระแสเงินสดไว้ลงทุน/ซื้อหุ้นคืน",
+            "assessment": "neutral",
+            "why": "เหมาะกับช่วงเติบโตเร็ว — คืนทุนผ่าน buyback มากกว่าปันผล"
+          }
+        ]
+      },
+      "valuationView": {
+        "level": "expensive",
+        "note": "forward P/E ~80x (แพงกว่ามัธยฐานซอฟต์แวร์ ~4 เท่า) — แพงที่สุดในบรรดาหุ้น AI ขนาดใหญ่ · ธุรกิจคุณภาพเยี่ยม (Rule of 40 = 155%, FCF margin ~55%) แต่ราคาสะท้อนการเติบโตหลายปีล่วงหน้าไปแล้ว margin of safety แทบไม่มี · ความเสี่ยงหลักไม่ใช่คุณภาพธุรกิจ แต่คือ multiple compression — ถ้าการเติบโตชะลอแม้เล็กน้อย หุ้นเหวี่ยงลงแรง · เป็นตัวที่ 'ธุรกิจนำหน้าคู่แข่ง แต่ราคานำหน้าธุรกิจ' ชัดที่สุดในพอร์ต"
+      },
+      "whatChanged": [
+        {
+          "metric": "รายได้เติบโต YoY (Q2 2026)",
+          "prev": "Q1'26 ~+72%",
+          "now": "+93% YoY ($1.94B) — เร่งตัว",
+          "direction": "positive"
+        },
+        {
+          "metric": "US Commercial YoY",
+          "prev": "~+120%",
+          "now": "+149% YoY ($764M)",
+          "direction": "positive"
+        },
+        {
+          "metric": "FY 2026 guidance",
+          "prev": "$7.65-7.66B",
+          "now": "$8.15-8.16B (+82% YoY) — ยกขึ้น",
+          "direction": "positive"
+        },
+        {
+          "metric": "adj EPS",
+          "prev": "คาด ~$0.28",
+          "now": "$0.41 (ชนะคาดชัด)",
+          "direction": "positive"
+        },
+        {
+          "metric": "Rule of 40",
+          "prev": "~145%",
+          "now": "155% (12 ไตรมาสติดที่ขยายตัว)",
+          "direction": "positive"
+        },
+        {
+          "metric": "Remaining US commercial deal value",
+          "prev": "~$3B",
+          "now": ">$6.24B (>2x YoY)",
+          "direction": "positive"
+        }
+      ],
+      "risks": [
+        "Valuation สุดขั้ว (forward P/E ~80x) — ความเสี่ยง multiple compression สูงที่สุดในพอร์ต หุ้นเหวี่ยงแรงตามข่าว/โมเมนตัม",
+        "SBC/dilution สูง — margin และ EPS ที่โชว์เป็น adjusted บวก SBC กลับ 'กำไรจริง' ต่อหุ้นถูกเจือจาง",
+        "พึ่งรัฐบาล/สัญญาก้อนใหญ่ — รายได้ฝั่งรัฐ lumpy และอ่อนไหวต่อการเมือง/งบประมาณ",
+        "Key-man risk (Alex Karp) + วัฒนธรรมองค์กรเฉพาะตัวที่ผูกกับผู้นำ",
+        "คู่แข่ง hyperscaler / foundation model providers ขยับเข้าพื้นที่ AI application ระดับองค์กร"
+      ],
+      "asOf": "2026-08",
+      "nextEarnings": "2026-11",
+      "history": {
+        "years": [
+          {
+            "fy": "FY2021",
+            "endYm": "2021-12",
+            "revenueB": 1.54,
+            "epsAdj": 0.04,
+            "opMarginPct": 27,
+            "fcfB": 0.32,
+            "priceFYEnd": 18.2
+          },
+          {
+            "fy": "FY2022",
+            "endYm": "2022-12",
+            "revenueB": 1.91,
+            "epsAdj": 0.06,
+            "opMarginPct": 22,
+            "fcfB": 0.18,
+            "priceFYEnd": 6.4
+          },
+          {
+            "fy": "FY2023",
+            "endYm": "2023-12",
+            "revenueB": 2.23,
+            "epsAdj": 0.25,
+            "opMarginPct": 28,
+            "fcfB": 0.7,
+            "priceFYEnd": 17.2
+          },
+          {
+            "fy": "FY2024",
+            "endYm": "2024-12",
+            "revenueB": 2.87,
+            "epsAdj": 0.41,
+            "opMarginPct": 38,
+            "fcfB": 1.14,
+            "priceFYEnd": 75.6
+          },
+          {
+            "fy": "FY2025",
+            "endYm": "2025-12",
+            "revenueB": 4.4,
+            "epsAdj": 0.7,
+            "opMarginPct": 45,
+            "fcfB": 1.9,
+            "priceFYEnd": 170
+          }
+        ],
+        "quarters": [
+          {
+            "q": "Q3'23",
+            "endYm": "2023-09",
+            "revenueB": 0.558,
+            "epsAdj": 0.03,
+            "opMarginPct": 7.2,
+            "fcfB": 0.132,
+            "priceQEnd": 16
+          },
+          {
+            "q": "Q4'23",
+            "endYm": "2023-12",
+            "revenueB": 0.608,
+            "epsAdj": 0.04,
+            "opMarginPct": 10.8,
+            "fcfB": 0.296,
+            "priceQEnd": 17
+          },
+          {
+            "q": "Q1'24",
+            "endYm": "2024-03",
+            "revenueB": 0.634,
+            "epsAdj": 0.04,
+            "opMarginPct": 12.8,
+            "fcfB": 0.127,
+            "priceQEnd": 23
+          },
+          {
+            "q": "Q2'24",
+            "endYm": "2024-06",
+            "revenueB": 0.678,
+            "epsAdj": 0.06,
+            "opMarginPct": 15.5,
+            "fcfB": 0.141,
+            "priceQEnd": 25
+          },
+          {
+            "q": "Q3'24",
+            "endYm": "2024-09",
+            "revenueB": 0.726,
+            "epsAdj": 0.06,
+            "opMarginPct": 15.6,
+            "fcfB": 0.416,
+            "priceQEnd": 37
+          },
+          {
+            "q": "Q4'24",
+            "endYm": "2024-12",
+            "revenueB": 0.828,
+            "epsAdj": 0.03,
+            "opMarginPct": 1.3,
+            "fcfB": 0.457,
+            "priceQEnd": 76
+          },
+          {
+            "q": "Q1'25",
+            "endYm": "2025-03",
+            "revenueB": 0.884,
+            "epsAdj": 0.08,
+            "opMarginPct": 19.9,
+            "fcfB": 0.304,
+            "priceQEnd": 88
+          },
+          {
+            "q": "Q2'25",
+            "endYm": "2025-06",
+            "revenueB": 1.004,
+            "epsAdj": 0.13,
+            "opMarginPct": 26.8,
+            "fcfB": 0.532,
+            "priceQEnd": 137
+          },
+          {
+            "q": "Q3'25",
+            "endYm": "2025-09",
+            "revenueB": 1.181,
+            "epsAdj": 0.18,
+            "opMarginPct": 33.3,
+            "fcfB": 0.501,
+            "priceQEnd": 180
+          },
+          {
+            "q": "Q4'25",
+            "endYm": "2025-12",
+            "revenueB": 1.407,
+            "epsAdj": 0.24,
+            "opMarginPct": 40.9,
+            "fcfB": 0.764,
+            "priceQEnd": 170
+          },
+          {
+            "q": "Q1'26",
+            "endYm": "2026-03",
+            "revenueB": 1.633,
+            "epsAdj": 0.34,
+            "opMarginPct": 46.2,
+            "fcfB": 0.892,
+            "priceQEnd": 140
+          },
+          {
+            "q": "Q2'26",
+            "endYm": "2026-06",
+            "revenueB": 1.935,
+            "epsAdj": 0.41,
+            "opMarginPct": 47.1,
+            "fcfB": 1.202,
+            "priceQEnd": 155
+          }
         ]
       }
     }

@@ -126,6 +126,27 @@
     }
     return null;
   }
+  // historicalData ของ ticker (มี dates+closes เรียงเวลา) — ใช้ ALIAS เดียวกับ closesFor
+  function histFor(ticker, snapshot) {
+    var hist = (snapshot && snapshot.historicalData) || {};
+    var keys = ALIAS[ticker] || [ticker];
+    for (var i = 0; i < keys.length; i++) {
+      var h = hist[keys[i]];
+      if (h && Array.isArray(h.closes) && Array.isArray(h.dates) && h.dates.length === h.closes.length && h.closes.length > 30) return h;
+    }
+    return null;
+  }
+  // ราคาปิดวันทำการสุดท้ายในเดือน endYm (YYYY-MM) จากข้อมูลจริง — null ถ้าไม่มีในช่วง
+  function closeAtYm(h, endYm) {
+    if (!h || !endYm) return null;
+    var best = null;
+    for (var i = 0; i < h.dates.length; i++) {
+      var ym = String(h.dates[i]).slice(0, 7);
+      if (ym <= endYm) { var c = Number(h.closes[i]); if (isFinite(c)) best = c; }
+      else break; // dates เรียงจากเก่าไปใหม่ — เลยเดือนเป้าหมายแล้วหยุด
+    }
+    return best;
+  }
   function drawdownPct(closes, lookback) {
     if (!closes || closes.length < 5) return null;
     var lb = Math.min(lookback || 90, closes.length);
@@ -203,7 +224,8 @@
 
       // ---- §7 why is the stock falling (drawdown decomposition, live) ----
       var closes = closesFor(T, snapshot);
-      var dd = closes ? drawdownPct(closes, 90) : null;
+      var dd = closes ? drawdownPct(closes, 90) : null; // 90 วัน — ใช้จำแนก "ทำไมย่อตอนนี้"
+      var dd1y = closes ? drawdownPct(closes, 252) : null; // 1 ปี (52 สัปดาห์) — สำหรับ Technical Timing
       var ddAbs = dd != null ? Math.abs(Math.min(dd, 0)) : null;
       var mkt = drawdownPct(closesFor("^GSPC", snapshot) || (snapshot.historicalData && snapshot.historicalData["^GSPC"] && snapshot.historicalData["^GSPC"].closes) || null, 90);
       var ndq = drawdownPct((snapshot.historicalData && snapshot.historicalData["^IXIC"] && snapshot.historicalData["^IXIC"].closes) || null, 90);
@@ -236,7 +258,7 @@
         causes.sort(function (a, b) { return b.magnitude - a.magnitude; });
       }
       var falling = {
-        drawdownPct: dd, hasData: closes != null,
+        drawdownPct: dd, drawdown1yPct: dd1y, hasData: closes != null,
         causes: causes,
         primary: causes[0] || null,
         secondary: causes[1] && causes[1].magnitude >= 1 ? causes[1] : null
@@ -639,6 +661,7 @@
             fy: y.fy, endYm: y.endYm, revenueB: y.rev, epsAdj: y.eps, opMarginPct: y.margin, fcfB: y.fcf, priceFYEnd: y.price,
             revYoyPct: idx > 0 && revYoys[idx - 1] != null ? round(revYoys[idx - 1] * 100, 1) : null,
             epsYoyPct: idx > 0 && epsYoys[idx - 1] != null ? round(epsYoys[idx - 1] * 100, 1) : null,
+            priceYoyPct: idx > 0 && Y[idx - 1].price > 0 && y.price != null ? round((y.price / Y[idx - 1].price - 1) * 100, 1) : null,
             epsTurn: idx > 0 && epsYoys[idx - 1] == null && Y[idx - 1].eps != null && Y[idx - 1].eps <= 0 && y.eps > 0
           };
         }),
@@ -669,6 +692,78 @@
     }
   }
 
+  // ---------------- §6 มุมมองรายไตรมาส (เสริมจากรายปี) ----------------
+  // อ่าน cfg.history.quarters[] (curated) — แต่ละไตรมาส { q, endYm, revenueB, epsAdj,
+  // opMarginPct, fcfB, priceQEnd } · YoY คิดเทียบไตรมาสเดียวกันปีก่อน (i-4) เพื่อตัด
+  // ฤดูกาล · default โชว์ 12 ไตรมาสล่าสุด
+  function computeQuarters(ticker, snapshot, opts) {
+    opts = opts || {};
+    try {
+      var T = String(ticker || "").toUpperCase();
+      var data = opts.data || (typeof window !== "undefined" ? window.ThesisData : null);
+      var cfg = data && data.companies && data.companies[T];
+      if (!cfg) return { available: false, reason: "no-config", thai: "ยังไม่มีข้อมูล thesis ของ " + T };
+      var H = cfg.history;
+      var Q = H && Array.isArray(H.quarters) ? H.quarters : null;
+      if (!Q || Q.length < 4) {
+        return { available: false, reason: "no-quarters", thai: "ยังไม่มีข้อมูลรายไตรมาสของ " + T + " — สั่ง /thesis-update " + T + " เพื่อเพิ่มชุดข้อมูลไตรมาส" };
+      }
+      var want = clamp(opts.count != null ? Math.round(opts.count) : 12, 4, Q.length);
+      // ราคาสิ้นไตรมาส: ใช้ราคาจริงจาก snapshot (Load Latest Data) ถ้ามีในช่วง — ไม่งั้น fallback ค่า curated (~)
+      var hLive = histFor(T, snapshot);
+      var liveCount = 0;
+      var full = Q.map(function (q) {
+        var lv = closeAtYm(hLive, q.endYm);
+        if (lv != null) liveCount++;
+        return { q: q.q, endYm: q.endYm, rev: num(q.revenueB), eps: num(q.epsAdj), margin: num(q.opMarginPct), fcf: num(q.fcfB),
+          price: lv != null ? round(lv, 2) : num(q.priceQEnd), priceLive: lv != null };
+      });
+      var startAll = full.length - want;
+      var rows = [];
+      for (var i = startAll; i < full.length; i++) {
+        var c = full[i], p = i >= 4 ? full[i - 4] : null; // ไตรมาสเดียวกันปีก่อน
+        rows.push({
+          q: c.q, endYm: c.endYm,
+          revenueB: c.rev, epsAdj: c.eps, opMarginPct: c.margin, fcfB: c.fcf, priceQEnd: c.price, priceLive: c.priceLive,
+          revYoyPct: p && p.rev > 0 && c.rev != null ? round((c.rev / p.rev - 1) * 100, 1) : null,
+          epsYoyPct: p && p.eps > 0 && c.eps != null ? round((c.eps / p.eps - 1) * 100, 1) : null,
+          epsTurn: p && p.eps != null && p.eps <= 0 && c.eps != null && c.eps > 0,
+          priceYoyPct: p && p.price > 0 && c.price != null ? round((c.price / p.price - 1) * 100, 1) : null
+        });
+      }
+      // indexed series (ไตรมาสแรกของช่วง = 100) — สำหรับกราฟคู่สเกลเดียวกัน
+      var idxOf = function (arr) {
+        if (!arr.length || arr.some(function (v) { return v == null; })) return null;
+        var base = arr[0];
+        if (!(base > 0)) return null;
+        return arr.map(function (v) { return round(v / base * 100, 1); });
+      };
+      // EPS: ถ้ามีไตรมาสขาดทุน/ข้อมูลขาดในช่วง → rebase จากไตรมาสแรกของช่วงท้าย
+      // ที่กำไรต่อเนื่อง (จุดนั้น = 100, ก่อนหน้าเป็น null — เส้นเริ่มวาดตรงนั้น)
+      var epsArr = rows.map(function (r) { return r.epsAdj; });
+      var epsStart = epsArr.length;
+      for (var k = epsArr.length - 1; k >= 0; k--) {
+        if (epsArr[k] != null && epsArr[k] > 0) epsStart = k; else break;
+      }
+      var epsIdx = null, epsStartQ = null;
+      if (epsArr.length - epsStart >= 2) {
+        var epsBase = epsArr[epsStart];
+        epsIdx = epsArr.map(function (v, j) { return j < epsStart ? null : round(v / epsBase * 100, 1); });
+        if (epsStart > 0) epsStartQ = rows[epsStart].q; // rebase กลางช่วง — บอกหน้าเว็บให้ติดป้าย
+      }
+      var indexed = {
+        labels: rows.map(function (r) { return r.q; }),
+        revenue: idxOf(rows.map(function (r) { return r.revenueB; })),
+        eps: epsIdx, epsStartQ: epsStartQ,
+        price: idxOf(rows.map(function (r) { return r.priceQEnd; }))
+      };
+      var liveShown = rows.filter(function (r) { return r.priceLive; }).length;
+      return { available: true, ticker: T, currency: (H.currency || "$"), count: rows.length, totalAvailable: Q.length, liveShown: liveShown, quarters: rows, indexed: indexed };
+    } catch (e) {
+      return { available: false, reason: "error", error: String(e && e.message || e) };
+    }
+  }
+
   var ThesisEngine = {
     VERSION: VERSION,
     COMPANIES: COMPANIES,
@@ -682,7 +777,8 @@
     drawdownPct: drawdownPct,
     compute: compute,
     computeLite: computeLite,
-    computeHistory: computeHistory
+    computeHistory: computeHistory,
+    computeQuarters: computeQuarters
   };
 
   if (typeof window !== "undefined") window.ThesisEngine = ThesisEngine;

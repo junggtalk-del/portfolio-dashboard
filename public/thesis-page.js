@@ -14,6 +14,8 @@
   var STORE_KEY = "thesis_selected_v1";
   var DEFAULT_TICKER = "GOOG";
   var historyYears = null; // §6 ช่วงปีที่เลือก (null = default 5) — คงไว้ข้ามการสลับหุ้น
+  var historyMode = "year"; // §6 มุมมอง: "year" (รายปี) หรือ "quarter" (รายไตรมาส)
+  var historyQuarters = 12; // §6 โหมดไตรมาส: จำนวนไตรมาสที่ดู (4/8/12 = 1/2/3 ปี)
   var TONE = { bull: "#34d399", watch: "#f59e0b", bear: "#f43f5e", blue: "#38bdf8" };
   var FALLBACK_COMPANIES = ["GOOG", "NVDA", "MSFT", "META", "AMZN", "TSM", "AVGO", "AMD"]
     .map(function (t) { return { ticker: t, name: t }; });
@@ -373,13 +375,61 @@
     return '<div class="th-yrsel"><span class="th-yrsel-lbl">ช่วงปีที่ดู</span>' + btns +
       (W.years >= W.available ? '<span class="th-yrsel-note">(ครบทุกปีที่มีใน KB)</span>' : "") + "</div>";
   }
+  function modeToggle() {
+    return '<div class="th-yrsel"><span class="th-yrsel-lbl">มุมมอง</span>' +
+      '<button type="button" class="th-yrbtn' + (historyMode !== "quarter" ? " th-yrbtn-on" : "") + '" data-th-hmode="year">รายปี</button>' +
+      '<button type="button" class="th-yrbtn' + (historyMode === "quarter" ? " th-yrbtn-on" : "") + '" data-th-hmode="quarter">รายไตรมาส</button></div>';
+  }
+  function quarterRangeSelector(Q) {
+    var opts = [4, 8, 12].filter(function (n) { return !Q || n <= Math.max(4, Q.totalAvailable || 12); });
+    var btns = opts.map(function (n) {
+      return '<button type="button" class="th-yrbtn' + (n === historyQuarters ? " th-yrbtn-on" : "") + '" data-th-hquarters="' + n + '">' + (n / 4) + " ปี</button>";
+    }).join("");
+    return '<div class="th-yrsel"><span class="th-yrsel-lbl">ช่วงที่ดู</span>' + btns + '<span class="th-yrsel-note">(' + historyQuarters + " ไตรมาสล่าสุด)</span></div>";
+  }
+  // กราฟคู่รายไตรมาส (indexed ไตรมาสแรก = 100 · สเกลแกนตั้งเท่ากันทั้งสองฝั่ง)
+  function quarterCharts(Q) {
+    var IQ = Q.indexed || {};
+    var thin = function (l, i) { return (IQ.labels || []).length > 8 && i % 2 === 1 ? "" : String(l).replace(/^Q(\d)'(\d\d)$/, "Q$1'$2"); };
+    var labels = (IQ.labels || []).map(thin);
+    var all = [].concat(IQ.revenue || [], IQ.eps || [], IQ.price || []).filter(function (v) { return v != null; });
+    if (!all.length || !IQ.price) return "";
+    var yMax = Math.max.apply(null, all) * 1.06;
+    var yMin = Math.min(90, Math.floor(Math.min.apply(null, all)));
+    var lines = [];
+    if (IQ.revenue) lines.push({ name: "Revenue", color: "#38bdf8", values: IQ.revenue });
+    if (IQ.eps) lines.push({ name: "EPS" + (IQ.epsStartQ ? " (เริ่ม " + IQ.epsStartQ + " = 100)" : ""), color: "#34d399", values: IQ.eps });
+    if (!lines.length) return "";
+    return '<div class="th-bp-charts">' +
+      bpPanel("ธุรกิจ (Indexed ไตรมาสแรก = 100)", labels, lines, yMin, yMax) +
+      bpPanel("ราคาหุ้น (Indexed ไตรมาสแรก = 100)", labels, [{ name: "Price (ราคาสิ้นไตรมาส)", color: "#f59e0b", values: IQ.price }], yMin, yMax) +
+      "</div>";
+  }
+  // ตารางรายไตรมาส (YoY เทียบไตรมาสเดียวกันปีก่อน)
+  function quarterTableHtml(Q) {
+    var CUR = Q.currency || "$";
+    var rows = Q.quarters.map(function (y) {
+      var yoyR = y.revYoyPct != null ? ' <small class="th-bp-yoy">(' + fmtPct(y.revYoyPct) + ")</small>" : "";
+      var yoyE = y.epsYoyPct != null ? ' <small class="th-bp-yoy">(' + fmtPct(y.epsYoyPct) + ")</small>" : (y.epsTurn ? ' <small class="th-bp-yoy">(พลิกกำไร)</small>' : "");
+      var yoyP = y.priceYoyPct != null ? ' <small class="th-bp-yoy">(' + fmtPct(y.priceYoyPct) + ")</small>" : "";
+      var pPre = y.priceLive ? CUR : "~" + CUR; // ราคาจริงจาก snapshot = ไม่มี ~ · curated = ~
+      return "<tr><td>" + esc(y.q) + "</td><td>~" + CUR + esc(fmt(y.revenueB)) + "B" + yoyR + "</td><td>~" + CUR + esc(fmt(y.epsAdj)) + yoyE + "</td><td>~" + esc(fmt(y.opMarginPct)) + "%</td><td>~" + CUR + esc(fmt(y.fcfB)) + "B</td><td>" + pPre + esc(fmt(y.priceQEnd)) + yoyP + "</td></tr>";
+    }).join("");
+    var priceNote = Q.liveShown > 0
+      ? Q.liveShown + " ไตรมาสล่าสุดใช้ราคาจริงจาก snapshot (Load Latest Data)" + (Q.liveShown < Q.count ? " · ที่เหลือเป็นราคา ~ประมาณ (curated)" : "")
+      : "ราคาสิ้นไตรมาสเป็น ~ประมาณ (curated) — กด Load Latest Data เพื่อใช้ราคาจริง ~2 ปีล่าสุด";
+    return '<div class="th-table-wrap"><table class="th-table th-bp-table"><thead><tr><th>ไตรมาส</th><th>Revenue (YoY)</th><th>EPS (YoY)</th><th>Op. Margin</th><th>FCF</th><th>ราคาสิ้นไตรมาส (YoY)</th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
+      '<div class="th-hint">YoY = เทียบไตรมาสเดียวกันปีก่อน (ตัดฤดูกาล) · ' + Q.count + " ไตรมาสล่าสุด · " + priceNote + " · verdict/คะแนนยังอิงการวิเคราะห์รายปี · ตัวเลขการเงินเป็น ~curated (ผลรวม 4 ไตรมาส = ทั้งปี)</div>";
+  }
   function historySection(R) {
     var TE = window.ThesisEngine;
     if (!TE || typeof TE.computeHistory !== "function") return "";
     var Hy = TE.computeHistory(R.ticker, readSnapshot() || {}, { thesisScore: R.thesis ? R.thesis.score : null, years: historyYears });
     var W = Hy && Hy.window ? Hy.window : null;
     var yrs = W ? W.years : 5;
-    var title = "Business Growth vs Stock Price (" + yrs + " ปี)";
+    var title = historyMode === "quarter"
+      ? "Business Growth vs Stock Price (รายไตรมาส " + (historyQuarters / 4) + " ปี)"
+      : "Business Growth vs Stock Price (" + yrs + " ปี)";
     var sub = "ราคาหุ้น " + yrs + " ปีที่ผ่านมาถูกหนุนด้วยพื้นฐานธุรกิจจริงไหม — เทียบธุรกิจกับราคา ไม่ใช่การแสดงงบการเงิน";
     if (!Hy || !Hy.available) {
       return sec(6, "Business Growth vs Stock Price", sub,
@@ -436,12 +486,27 @@
     var rows = (Hy.years || []).map(function (y) {
       var yoyR = y.revYoyPct != null ? ' <small class="th-bp-yoy">(' + fmtPct(y.revYoyPct) + ")</small>" : "";
       var yoyE = y.epsYoyPct != null ? ' <small class="th-bp-yoy">(' + fmtPct(y.epsYoyPct) + ")</small>" : (y.epsTurn ? ' <small class="th-bp-yoy">(พลิกกำไร)</small>' : "");
-      return "<tr><td>" + esc(y.fy) + "</td><td>~" + CUR + esc(fmt(y.revenueB)) + "B" + yoyR + "</td><td>~" + CUR + esc(fmt(y.epsAdj)) + yoyE + "</td><td>~" + esc(fmt(y.opMarginPct)) + "%</td><td>~" + CUR + esc(fmt(y.fcfB)) + "B</td><td>~" + CUR + esc(fmt(y.priceFYEnd)) + "</td></tr>";
+      var yoyP = y.priceYoyPct != null ? ' <small class="th-bp-yoy">(' + fmtPct(y.priceYoyPct) + ")</small>" : "";
+      return "<tr><td>" + esc(y.fy) + "</td><td>~" + CUR + esc(fmt(y.revenueB)) + "B" + yoyR + "</td><td>~" + CUR + esc(fmt(y.epsAdj)) + yoyE + "</td><td>~" + esc(fmt(y.opMarginPct)) + "%</td><td>~" + CUR + esc(fmt(y.fcfB)) + "B</td><td>~" + CUR + esc(fmt(y.priceFYEnd)) + yoyP + "</td></tr>";
     }).join("");
     var foot = "<tr class=\"th-bp-cagr\"><td>CAGR</td><td>~" + esc(fmt(M.revCagrPct)) + "%</td><td>" + (M.epsCagrPct != null ? "~" + esc(fmt(M.epsCagrPct)) + "%" : (M.epsTurnaround ? "พลิกกำไร" : "—")) + "</td><td>" + (M.marginDeltaPp != null ? (M.marginDeltaPp >= 0 ? "+" : "") + esc(fmt(M.marginDeltaPp)) + "pp" : "—") + "</td><td>" + (M.fcfCagrPct != null ? "~" + esc(fmt(M.fcfCagrPct)) + "%" : "—") + "</td><td>~" + esc(fmt(M.priceCagr5FYPct)) + "%/ปี</td></tr>";
-    var table = rows
-      ? '<div class="th-table-wrap"><table class="th-table th-bp-table"><thead><tr><th>ปีบัญชี</th><th>Revenue (YoY)</th><th>EPS (YoY)</th><th>Op. Margin</th><th>FCF</th><th>ราคาสิ้นปีบัญชี</th></tr></thead><tbody>' + rows + foot + "</tbody></table></div>"
+    var annualTable = rows
+      ? '<div class="th-table-wrap"><table class="th-table th-bp-table"><thead><tr><th>ปีบัญชี</th><th>Revenue (YoY)</th><th>EPS (YoY)</th><th>Op. Margin</th><th>FCF</th><th>ราคาสิ้นปีบัญชี (YoY)</th></tr></thead><tbody>' + rows + foot + "</tbody></table></div>"
       : "";
+    // toggle รายปี ⇄ รายไตรมาส — quarter mode สลับ "กราฟ + ตาราง" (verdict/คะแนนยังอิงรายปี)
+    var isQuarter = historyMode === "quarter";
+    var qBlock = "";
+    if (isQuarter) {
+      var QD = TE.computeQuarters ? TE.computeQuarters(R.ticker, readSnapshot() || {}, { count: historyQuarters }) : null;
+      if (!QD || !QD.available) {
+        qBlock = '<div class="th-muted-box">' + esc((QD && QD.thai) || "ยังไม่มีข้อมูลรายไตรมาส") + "</div>";
+      } else {
+        var qEpsNote = QD.indexed && QD.indexed.eps
+          ? (QD.indexed.epsStartQ ? '<div class="th-hint">เส้น EPS เริ่มที่ ' + esc(QD.indexed.epsStartQ) + ' (= 100) — ไตรมาสก่อนหน้านั้นขาดทุน/ฐานติดลบ index ไม่ได้ ดูค่าจริงในตาราง</div>' : "")
+          : '<div class="th-hint">เส้น indexed ของ EPS รายไตรมาสแสดงไม่ได้ (มีไตรมาสขาดทุน/ข้อมูลไม่ครบ) — ดูค่าจริงในตาราง</div>';
+        qBlock = quarterRangeSelector(QD) + quarterCharts(QD) + qEpsNote + quarterTableHtml(QD);
+      }
+    }
 
     // ---- score cards: Fundamental Alignment + Growth Quality ----
     var partRows = function (parts) {
@@ -485,8 +550,9 @@
     var why = '<div class="th-bp-why"><h3 class="th-h3">ทำไมถึงสรุปแบบนี้</h3>' + list(V.why) + "</div>";
     var disc = Hy.disclosure ? '<div class="th-method">📎 ' + esc(Hy.disclosure) + (Hy.notes ? " · " + esc(Hy.notes) : "") + "</div>" : "";
 
+    var annualBlock = yearSelector(W) + charts + strip + epsNote + chips + annualTable;
     return sec(6, title, sub,
-      yearSelector(W) + banner + '<div class="th-qchips">' + gapChip + "</div>" + charts + strip + epsNote + chips + table + cards + attr + why + disc);
+      modeToggle() + banner + '<div class="th-qchips">' + gapChip + "</div>" + (isQuarter ? qBlock : annualBlock) + cards + attr + why + disc);
   }
 
   // ---- §7 · Revenue quality ----
@@ -596,6 +662,10 @@
   }
   function onRootClick(e) {
     if (e.target && e.target.id === "thLiteGo") { goLite(); return; }
+    var mb = e.target && e.target.closest ? e.target.closest("[data-th-hmode]") : null;
+    if (mb) { historyMode = mb.getAttribute("data-th-hmode") === "quarter" ? "quarter" : "year"; render(); return; }
+    var qb = e.target && e.target.closest ? e.target.closest("[data-th-hquarters]") : null;
+    if (qb) { historyQuarters = Math.round(Number(qb.getAttribute("data-th-hquarters"))) || 12; render(); return; }
     var yb = e.target && e.target.closest ? e.target.closest("[data-th-hyears]") : null;
     if (yb) { historyYears = Math.round(Number(yb.getAttribute("data-th-hyears"))) || null; render(); return; }
     var el = e.target && e.target.closest ? e.target.closest("[data-th-ticker]") : null;

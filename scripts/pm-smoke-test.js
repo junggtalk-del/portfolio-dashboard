@@ -42,6 +42,9 @@ const TR = (price, sma, rsi, e12, e26) => ({ tech: { latestClose: price, sma200:
   t("dipTiming: dd15 → 70 (ไม่แตะชั้นใหม่)", PM.dipTiming(mockO({ falling: { drawdownPct: -15 } }), bare).score === 70);
   t("dipTiming: dd25 → 80 (+ชั้น ≥20)", PM.dipTiming(mockO({ falling: { drawdownPct: -25 } }), bare).score === 80);
   t("dipTiming: dd32 → 90 (+ชั้น ≥20 และ ≥30)", PM.dipTiming(mockO({ falling: { drawdownPct: -32 } }), bare).score === 90);
+  // ใช้ drawdown1yPct (high 1 ปี) เป็นหลัก · fallback 90 วันถ้าไม่มี
+  t("dipTiming: ใช้ drawdown1yPct เป็นหลัก (1yr −22 → 80 แม้ 90d −8)", PM.dipTiming(mockO({ falling: { drawdownPct: -8, drawdown1yPct: -22 } }), bare).score === 80);
+  t("dipTiming: fallback 90 วันเมื่อไม่มี 1yr", PM.dipTiming(mockO({ falling: { drawdownPct: -12 } }), bare).score === 70);
 }
 
 // ---------- accumulationScore (renormalize) ----------
@@ -335,17 +338,17 @@ function allocSum(out) {
     { ticker: "QQQM", held: true, weightPct: 30, tierKey: "B" },
     { ticker: "NVDA", held: true, weightPct: 8, tierKey: "A" },
     { ticker: "HOOD", held: true, weightPct: 2, tierKey: "C" },
-    { ticker: "PLTR", held: true, weightPct: 1, tierKey: "C" } // ถือธงแดงแต่ไม่มี thesis (uncovered)
+    { ticker: "ZZUNCOV", held: true, weightPct: 1, tierKey: "C" } // ถือธงแดงแต่ไม่มี thesis (uncovered — ticker ปลอมกัน KB ชน)
   ];
   const out = PM.compute({}, { TE: TE, positions: positions, cashPct: 25, teOpts: { data: TD }, indexTicker: "QQQM", indexPct: 50 });
   t("integration: available", out.available === true);
-  const qqqm = out.rows[0], nvda = out.rows[1], hood = out.rows[2], pltr = out.rows[3];
+  const qqqm = out.rows[0], nvda = out.rows[1], hood = out.rows[2], unc = out.rows[3];
   t("integration: NVDA covered + zone A-E", nvda.covered && "ABCDE".includes(nvda.zone.key));
   t("integration: NVDA ladder 4 + why checklist", nvda.ladder.length === 4 && nvda.why.length > 0);
   t("integration: QQQM = index core target 50%", qqqm.isIndex === true && qqqm.target === 50);
   t("integration: NVDA เป็น satellite (target 0-50, ไม่ผูก tier max)", nvda.target > 0 && nvda.target <= 50 && !nvda.isIndex);
   t("integration: HOOD (thesis<70) → Zone E + Review", hood.zone.key === "E" && hood.action.key === "review");
-  t("integration: PLTR (held uncovered) อยู่ใน allocationRows + มี target", pltr.covered === false && out.allocationRows.indexOf(pltr) !== -1 && pltr.target > 0);
+  t("integration: uncovered (held) อยู่ใน allocationRows + มี target", unc.covered === false && out.allocationRows.indexOf(unc) !== -1 && unc.target > 0);
   t("integration: allocationRows = index + ธงแดงทุกตัว (รวม uncovered) = 4", out.allocationRows.length === 4);
   t("integration: ★ เป้ารวม = 100% เป๊ะ (invariant)", allocSum(out) === 100);
   t("integration: policy.indexTicker/indexPct", out.policy.indexTicker === "QQQM" && out.policy.indexPct === 50);

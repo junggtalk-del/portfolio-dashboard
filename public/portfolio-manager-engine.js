@@ -137,15 +137,17 @@
     return null;
   }
 
-  // ---------------- dip-timing subscore (น้ำหนักแค่ 10% — ห้าม dominate) ----------------
+  // ---------------- dip-timing subscore (น้ำหนัก 20% · drawdown วัดจาก high 1 ปี) ----------------
+  // ใช้ falling.drawdown1yPct (จุดสูงสุด 52 สัปดาห์) เป็นหลัก — fallback 90 วันถ้าไม่มี
   function dipTiming(o, tr) {
-    var dd = o.falling && fin(o.falling.drawdownPct) != null ? Math.abs(Math.min(o.falling.drawdownPct, 0)) : null;
+    var raw = o.falling ? (fin(o.falling.drawdown1yPct) != null ? o.falling.drawdown1yPct : o.falling.drawdownPct) : null;
+    var dd = fin(raw) != null ? Math.abs(Math.min(raw, 0)) : null;
     var s = 40, notes = [];
     if (dd != null) {
-      if (dd >= 5) { s += 20; notes.push("ย่อแล้ว " + dd.toFixed(1) + "% จาก high 90 วัน"); }
-      else notes.push("ย่อเพียง " + dd.toFixed(1) + "% — ยังไม่ถึงเกณฑ์ ≥5%");
+      if (dd >= 5) { s += 20; notes.push("ย่อแล้ว " + dd.toFixed(1) + "% จาก high 1 ปี"); }
+      else notes.push("ย่อเพียง " + dd.toFixed(1) + "% (จาก high 1 ปี) — ยังไม่ถึงเกณฑ์ ≥5%");
       if (dd >= 10) s += 10;
-      if (dd >= 20) { s += 10; notes.push("ย่อลึก ≥20% จาก high 90 วัน"); }
+      if (dd >= 20) { s += 10; notes.push("ย่อลึก ≥20% จาก high 1 ปี"); }
       if (dd >= 30) { s += 10; notes.push("ย่อลึกมาก ≥30% — โซนสะสมเชิงรุก"); }
     }
     if (tr.rsi != null) {

@@ -253,6 +253,21 @@
 
   // ---- Action Queue data (reads existing snapshot.scoring + watchlist; no new calc) ----
   const MACRO_RE = /^\^|^DX-Y|^GLD$|^IAU$|^SPY$|^QQQM$|^XLK$/;
+  // Accumulation Score (เดียวกับหน้า AI Portfolio Manager → Accumulation Opportunities)
+  // Thesis 40 / Business Growth 25 / Timing 20 / Valuation 15 · null ถ้าไม่ covered
+  function accumScore(sym, snap) {
+    const PM = window.PMEngine, TE = window.ThesisEngine;
+    if (!PM || !TE || typeof PM.accumulationScore !== "function") return null;
+    if (sym === "GOOGL") sym = "GOOG"; // KB ใช้ GOOG (dual-class) — map ให้ Alphabet ได้ Acc score
+    try {
+      const o = TE.compute(sym, snap || {}, {});
+      if (!o || !o.available) return null;
+      const tr = PM.techOf(snap || {}, sym);
+      const histories = (PM.GROWTH_WINDOWS || [2, 3, 4, 5]).map((y) => { try { return TE.computeHistory(sym, snap || {}, { years: y }); } catch (_e) { return null; } });
+      const acc = PM.accumulationScore(o, tr, PM.growthSummary(histories));
+      return acc ? acc.score : null;
+    } catch (_e) { return null; }
+  }
   function buildActionQueue(R, defensive) {
     const snap = snapshot();
     const items = [], seen = {};
@@ -264,14 +279,32 @@
     const sc = (snap && snap.scoring && snap.scoring.bySymbol) || {};
     Object.keys(sc).forEach((k) => {
       if (MACRO_RE.test(k) || seen[k]) return;
-      const e = sc[k] || {}; const tag = String(e.actionCategory || "") + " " + String(e.action || "") + " " + String(e.thaiAction || "");
-      let verb = null, tone = "neutral";
-      if (/BUY|ADD|ACCUMULAT|ซื้อ|สะสม|เพิ่ม/i.test(tag)) { verb = e.isHolding ? "ADD" : "BUY"; tone = "bull"; }
-      else if (/SELL|TRIM|REDUCE|EXIT|ขาย|ลด/i.test(tag)) { verb = "TRIM"; tone = "bear"; }
-      else if (/WATCH|จับตา|เฝ้า/i.test(tag)) { verb = "WATCH"; tone = "watch-bull"; }
+      const e = sc[k] || {};
+      let verb = null, tone = "neutral", reason = null;
+      // Thesis reconcile — ให้ทั้งเว็บล้อ thesis เดียวกัน (ไม่โชว์ "ขายหมด" ดิบสวนพื้นฐาน
+      // เหมือน Action Center / Asset 360). ใช้เฉพาะหุ้นที่ถือ + covered ใน thesis KB
+      let rec = null;
+      if (window.ThesisReconcile && e.isHolding && e.actionKey) {
+        rec = window.ThesisReconcile.forAsset(k, snap, { key: e.actionKey, action: e.action, thaiAction: e.thaiAction, thaiReason: e.thaiReason || e.thaiAction }, true);
+        if (!rec || !rec.thesis) rec = null; // ไม่ covered → ใช้เทคนิคดิบ
+      }
+      if (rec && rec.action && rec.action.key && rec.action.key !== e.actionKey) {
+        const rk = rec.action.key; // reconcile เปลี่ยนคำสั่ง — map เป็น verb ตรง ๆ (ไม่ผ่าน regex tag)
+        if (/BUY_DIP|BUY_MORE|HOLD_ADD/.test(rk)) { verb = "ADD"; tone = "bull"; }
+        else if (/HOLD_CORE|HOLD_LIMIT/.test(rk)) { verb = "HOLD"; tone = "watch-bull"; }
+        else if (/REVIEW/.test(rk)) { verb = "REVIEW"; tone = "bear"; }
+        else { verb = "TRIM"; tone = "bear"; } // SELL_FIRST (ลดบางส่วน)
+        reason = rec.action.thaiAction || rec.action.thaiReason;
+      } else {
+        const tag = String(e.actionCategory || "") + " " + String(e.action || "") + " " + String(e.thaiAction || "");
+        if (/BUY|ADD|ACCUMULAT|ซื้อ|สะสม|เพิ่ม/i.test(tag)) { verb = e.isHolding ? "ADD" : "BUY"; tone = "bull"; }
+        else if (/SELL|TRIM|REDUCE|EXIT|ขาย|ลด/i.test(tag)) { verb = "TRIM"; tone = "bear"; }
+        else if (/WATCH|จับตา|เฝ้า/i.test(tag)) { verb = "WATCH"; tone = "watch-bull"; }
+        reason = e.thaiAction || e.action;
+      }
       if (!verb) return; seen[k] = 1;
       const ts = fin(e.timingScore);
-      items.push({ verb, sym: k, reason: e.thaiAction || e.action || (ts != null ? "Timing Score " + ts : "สัญญาณรายตัว"), score: ts, prio: (fin(e.actionPriority) || 0) * 10 + (ts != null ? ts / 10 : 0), tone });
+      items.push({ verb, sym: k, reason: reason || (ts != null ? "Timing Score " + ts : "สัญญาณรายตัว"), score: ts, prio: (fin(e.actionPriority) || 0) * 10 + (ts != null ? ts / 10 : 0), tone });
     });
     const H = readHoldings();
     if (H && R) {
@@ -284,8 +317,12 @@
     }
     items.sort((a, b) => (b.prio || 0) - (a.prio || 0));
     // defensive regime: bring TRIM/WATCH to the front BEFORE truncating to top-5 (else a TRIM can be dropped)
-    if (defensive) items.sort((x, y) => { const w = (v) => v === "TRIM" ? 0 : v === "WATCH" ? 1 : 2; return w(x.verb) - w(y.verb) || (y.prio || 0) - (x.prio || 0); });
-    return items.slice(0, 5);
+    if (defensive) items.sort((x, y) => { const w = (v) => (v === "TRIM" || v === "REVIEW") ? 0 : (v === "WATCH" || v === "HOLD") ? 1 : 2; return w(x.verb) - w(y.verb) || (y.prio || 0) - (x.prio || 0); });
+    const top = items.slice(0, 5);
+    // Score ที่แสดง = Accumulation Score (เดียวกับหน้า AI Portfolio Manager) สำหรับหุ้นที่ covered
+    // ตัวไม่ covered (กองทุนไทย/บั๊กเก็ต macro) → คง timingScore เดิม
+    top.forEach((it) => { const a = accumScore(it.sym, snap); if (a != null) { it.score = a; it.scoreKind = "acc"; } });
+    return top;
   }
   // ---- Regime trend strip (Today / Yesterday / Last Week / Last Month) ----
   let histRange = "1Y";
@@ -333,7 +370,7 @@
     const reasons = (R.reasons.length ? R.reasons : ["ยังไม่มีสัญญาณเด่นพอ"]).slice(0, 3);
     const defensive = a.tone === "bear" || a.tone === "warn"; // แนวทางหลัก = ลดเสี่ยง/ระวัง
     const q = buildActionQueue(R, defensive); // defensive → TRIM/WATCH ranked before the top-5 cut
-    const verbCls = { BUY: "bull", ADD: "bull", TRIM: "bear", WATCH: "warn" };
+    const verbCls = { BUY: "bull", ADD: "bull", TRIM: "bear", REVIEW: "bear", HOLD: "warn", WATCH: "warn" };
     const hasCounterBuy = defensive && q.some((it) => it.verb === "BUY" || it.verb === "ADD");
     const qBody = q.length ? q.map((it) => {
       const counter = defensive && (it.verb === "BUY" || it.verb === "ADD");
@@ -341,7 +378,7 @@
       <span class="mcx-q-verb mcx-q-${verbCls[it.verb] || "muted"}">${esc(it.verb)}</span>
       <span class="mcx-q-sym">${esc(it.sym)}</span>
       <span class="mcx-q-reason">${counter ? '<b class="mcx-q-counter">⚠ สวนแนวทางหลัก — ถ้าซื้อให้ไม้เล็ก</b> ' : ""}${esc(it.reason)}</span>
-      ${it.score != null ? `<span class="mcx-q-score">Score ${Math.round(it.score)}</span>` : '<span class="mcx-q-score"></span>'}
+      ${it.score != null ? `<span class="mcx-q-score" title="${it.scoreKind === "acc" ? "Accumulation Score (Thesis 40 / Business Growth 25 / Timing 20 / Valuation 15) — เดียวกับหน้า AI Portfolio Manager" : "Timing Score (เทคนิค)"}">${it.scoreKind === "acc" ? "Acc" : "Score"} ${Math.round(it.score)}</span>` : '<span class="mcx-q-score"></span>'}
     </div>`;
     }).join("") : `<div class="mcx-q-none">ไม่มีรายการเร่งด่วนรายตัววันนี้ — ทำตามแนวทางหลักด้านบนพอ</div>`;
     const note = hasCounterBuy ? `<div class="mcx-q-note">💡 แนวทางหลักมาจาก "ภาพรวมตลาด" (macro) แต่รายการด้านล่างมาจาก "สัญญาณรายตัว" (timing) — สองมุมนี้ขัดกันได้ เมื่อตลาดโหมดลดเสี่ยง รายการ BUY = หุ้นที่แข็งกว่าตลาด ควรรอจังหวะ/ใช้ไม้เล็กเท่านั้น</div>` : "";
@@ -355,7 +392,7 @@
         </div>
         <div class="mcx-reason-chips mcx-act-reasons">${reasons.map((r) => `<span class="mcx-reason-chip">✓ ${esc(r)}</span>`).join("")}</div>
       </div>
-      <div class="mcx-act-qhead">สัญญาณรายตัว (สูงสุด 5${defensive ? " · โหมดลดเสี่ยง: เรียง TRIM/WATCH ก่อน" : " · เรียงตามความเร่งด่วน"})</div>
+      <div class="mcx-act-qhead">สัญญาณรายตัว (สูงสุด 5${defensive ? " · โหมดลดเสี่ยง: เรียง TRIM/WATCH ก่อน" : " · เรียงตามความเร่งด่วน"}) · <b>Acc</b> = Accumulation Score จากหน้า AI Portfolio Manager</div>
       <div class="mcx-queue">${qBody}</div>
       ${note}
     </section>`;
