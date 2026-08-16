@@ -155,3 +155,22 @@
   .pm-rule { padding-left: 14px; padding-top: 26px; }
   .pm-rule-badge { top: 8px; transform: none; }
 }
+
+/* เงินก้อนถัดไป — headline ของ Cash Deployment */
+.pm-dep-next { font-size: 14px; font-weight: 700; color: var(--mc-text); border: 1px solid rgba(34,197,94,.45); background: rgba(34,197,94,.08); border-radius: 12px; padding: 11px 14px; margin: 4px 0 12px; line-height: 1.6; }
+.pm-dep-next-wait { border-color: var(--mc-border); background: rgba(148,163,184,.07); }
+.pm-row-cash td { background: rgba(148,163,184,.05); border-top: 1px dashed var(--mc-border); }
+
+/* จัดการหุ้นในพอร์ต (ย้ายจาก Action Center) */
+.pm-mv-inp { width: 110px; background: rgba(15,23,42,.6); border: 1px solid var(--mc-border); border-radius: 8px; color: var(--mc-text); font-size: 12px; padding: 4px 8px; font-variant-numeric: tabular-nums; text-align: right; }
+.pm-mv-inp:focus { border-color: #38bdf8; outline: none; }
+.pm-rm-btn { background: none; border: 1px solid var(--mc-border); color: var(--mc-muted); border-radius: 7px; font-size: 11px; padding: 3px 7px; cursor: pointer; margin-left: 5px; }
+.pm-rm-btn:hover { color: #f43f5e; border-color: rgba(244,63,94,.55); }
+.pm-addquick { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.4); color: #22c55e; border-radius: 8px; font-size: 11px; padding: 3px 9px; cursor: pointer; white-space: nowrap; }
+.pm-addquick:hover { background: rgba(34,197,94,.2); }
+.pm-addform { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-top: 12px; border: 1px dashed var(--mc-border); border-radius: 12px; padding: 11px 14px; font-size: 13px; }
+.pm-addform input { background: rgba(15,23,42,.6); border: 1px solid var(--mc-border); border-radius: 8px; color: var(--mc-text); font-size: 12.5px; padding: 6px 10px; }
+#pmAddTicker { width: 130px; text-transform: uppercase; }
+#pmAddAmount { width: 140px; text-align: right; font-variant-numeric: tabular-nums; }
+.pm-add-btn { background: rgba(56,189,248,.15); border: 1px solid rgba(56,189,248,.5); color: #38bdf8; border-radius: 8px; font-size: 12.5px; font-weight: 700; padding: 6px 16px; cursor: pointer; }
+.pm-add-btn:hover { background: rgba(56,189,248,.28); }

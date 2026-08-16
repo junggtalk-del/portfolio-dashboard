@@ -932,20 +932,26 @@
       " · FCF Yield / PEG / 10Y Median: — (Data unavailable)" +
       " · As Of " + esc(V.asOf.valuation) + " · engine " + esc(V.methodologyVersion) + "</div>";
 
-    // ---- แถวเชื่อมกับ curated valuation score (ถูก = คะแนนสูง) — แสดงคู่ ไม่เลือกข้าง ----
-    var valF = null;
-    ((D && D.fundamentals) || []).forEach(function (f) { if (f && f.key === "valuation") valF = f; });
+    // ---- แถวเชื่อมกับ curated valuation — เทียบ "ทิศทาง" จาก valuationView.level (ตัวที่เข้าสูตรคะแนนจริง)
+    // กับ classification ของ Valuation Engine · แสดงคู่ ไม่เลือกข้าง (audit: เทียบจาก fundamentals score จับ conflict ได้แค่ 1/4)
     var link = "";
-    if (valF && valF.score != null) {
-      var s = Number(valF.score);
-      var conflict = pct != null && ((s >= 60 && pct >= 70) || (s <= 40 && pct <= 30));
+    (function () {
+      var lvl = D && D.valuationView ? D.valuationView.level : null; // cheap/fair/premium/expensive
+      if (!lvl) return;
+      var LVL_TH = { cheap: "ถูก", fair: "สมเหตุสมผล", premium: "แพงพรีเมียม", expensive: "แพง" };
+      var curDir = lvl === "cheap" || lvl === "fair" ? "cheap" : "exp";
+      var veDir = V.classification === "ATTRACTIVE" || V.classification === "FAIR" ? "cheap"
+        : (V.classification === "PREMIUM" || V.classification === "EXPENSIVE") ? "exp" : null;
+      var conflict = veDir != null && curDir !== veDir;
       link = '<div class="th-vx-link' + (conflict ? " th-vx-conflict" : "") + '">' +
         (conflict ? "⚠ " : "✓ ") +
-        "curated valuation score <b>" + s + "/100</b> (ถูก=สูง)" +
-        (pctLabel != null ? " · P/E เทียบอดีตตัวเอง: <b>" + pctLabel + "</b> (ต่ำ=ถูกเทียบอดีต)" : " · percentile คำนวณไม่ได้ (ช่วงข้อมูลสั้น)") +
-        (conflict ? " — ทิศทางขัดกัน อาจเกิดจากช่วงข้อมูลอ้างอิงต่างกัน (curated มองหลายมิติ/ไปข้างหน้า ส่วน percentile ใช้ P/E ย้อนหลัง " + n + " ปี)" : (pctLabel != null ? " — ทิศทางสอดคล้องกัน" : "")) +
+        "มุมมอง curated (ไปข้างหน้า): <b>" + esc(LVL_TH[lvl] || lvl) + "</b>" +
+        " · P/E เทียบอดีตตัวเอง: <b>" + (veDir != null ? esc(V.classification.replace(/_/g, " ")) + (pctLabel ? " · " + pctLabel : "") : "ข้อมูลไม่พอ") + "</b>" +
+        (conflict
+          ? " — <b>สองมุมมองขัดกัน</b>: curated มองอนาคต (กำไรข้างหน้า/คุณภาพ) ส่วน P/E เทียบเฉพาะอดีตตัวเอง " + n + " ปี — ขัดกันได้โดยไม่มีใครผิด ใช้ประกอบกัน"
+          : (veDir != null ? " — ทิศทางสอดคล้องกัน" : "")) +
         "</div>";
-    }
+    })();
 
     return sec(14, "บริบทมูลค่า (Valuation)", "P/E ปัจจุบันเทียบอดีตตัวเอง — จาก Valuation Engine (ราคาจริง + งบ curated) · เป็นบริบท ไม่ใช่คำสั่ง",
       banners + summary + cards + band + qual + link);

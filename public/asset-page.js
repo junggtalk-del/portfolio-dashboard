@@ -409,7 +409,7 @@
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
           ${cell("Thesis Score", `<b style="font-size:16px;color:${scoreColor};">${th.score}/100</b><em style="font-style:normal;font-size:11px;color:var(--mc-muted,#94a3b8);">${esc(th.statusLabel)} · ${esc(th.trendThai || "")}</em>`)}
           ${cell("Decision · Should I Buy This Dip?", `<b style="font-size:13px;">${esc(th.decisionLabel)} <span style="color:${ansColor};">· ${esc(th.answer)}</span></b><em style="font-style:normal;font-size:11px;color:var(--mc-muted,#94a3b8);">${esc(th.decisionThai)}</em>`)}
-          ${cell("Valuation", `<b style="font-size:13px;">${esc(VAL[th.valLevel] || th.valLevel || "—")}</b>`)}
+          ${cell("Valuation (curated)", `<b style="font-size:13px;">${esc(VAL[th.valLevel] || th.valLevel || "—")}</b><em style="font-style:normal;font-size:10.5px;color:var(--mc-muted,#94a3b8);">P/E เทียบอดีตตัวเอง → หน้า Thesis §14</em>`)}
           ${cell("ประเภทการย่อ (dip class)", `<b style="font-size:13px;">${esc(th.dipClassLabel || "—")}</b>`)}
         </div>
         ${note ? `<div style="margin-top:10px;font-size:11.5px;color:var(--app-warn,#f59e0b);border:1px dashed color-mix(in srgb,var(--app-border,#334155),var(--app-warn,#f59e0b) 50%);border-radius:10px;padding:7px 11px;line-height:1.55;">⚠ ${esc(note)}</div>` : ""}
@@ -611,7 +611,7 @@
       return panel("Signal History", "ประวัติสัญญาณ", `<div class="mc-empty"><strong>ยังไม่มีประวัติสัญญาณของสินทรัพย์นี้</strong>ระบบยังไม่ได้เก็บ event log ย้อนหลัง</div>`);
     }
     return panel("Signal History", "ประวัติสัญญาณ (ปัจจุบัน)", `<table class="a360-table">
-      <thead><tr><th>วันที่</th><th>สัญญาณ</th><th>รายละเอียด</th><th>Action</th><th class="num">Timing</th></tr></thead>
+      <thead><tr><th>วันที่</th><th>สัญญาณ</th><th>รายละเอียด</th><th>Action</th><th class="num">Signal Score</th></tr></thead>
       <tbody>${rows.map((r) => `<tr><td>${esc(r.date || "—")}</td><td>${esc(r.signal)}</td><td>${esc(r.detail)}</td><td>${esc(r.action || "—")}</td><td class="num">${esc(String(r.score || "—"))}</td></tr>`).join("")}</tbody>
     </table>`);
   }

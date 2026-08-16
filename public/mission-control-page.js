@@ -60,7 +60,8 @@
     const quarter = data.quarters[key];
     const assets = (quarter && Array.isArray(quarter.assets)) ? quarter.assets : [];
     const rows = assets.map((a) => {
-      const gross = fin(a.snapshotValue) != null ? fin(a.snapshotValue) : (fin(a.manualValue) || 0);
+      // manual-first — ให้ตรงกับ PMEngine.quarterlyBuckets และ Portfolio Position (แหล่งความจริงเดียวกัน)
+      const gross = fin(a.manualValue) != null ? fin(a.manualValue) : (fin(a.snapshotValue) || 0);
       const t = Q_TYPES[a.type] || { label: a.type || "อื่นๆ", color: "#64748b" };
       const inv = a.type === "cash" ? 0 : Math.max(0, Math.min(100, fin(a.investedPercent) || 0));
       return { name: a.name || t.label, type: a.type, typeLabel: t.label, color: t.color, gross: gross || 0, invested: inv };
@@ -85,6 +86,13 @@
     return { key, rows, byType, total, count: rows.length, cashSum, investedSum };
   }
   function categorize(h) {
+    // portfolioBucket (ผู้ใช้ตั้งเอง) ชนะ regex เสมอ — นิยามเดียวกับหน้าอื่นทั้งแอป
+    const pb = String(h.portfolioBucket || "");
+    if (pb === "bitcoin") return "Bitcoin";
+    if (pb === "gold") return "Gold";
+    if (pb === "cash") return "Cash";
+    if (pb === "foreign-stock") return "US Tech";
+    if (pb === "thai-stock") return "Defensive";
     const s = String(h.canonicalSymbol || h.symbol || "").toUpperCase();
     const n = String(h.assetName || h.name || "").toUpperCase();
     const t = String(h.assetType || "").toUpperCase();
@@ -92,8 +100,8 @@
     if (/BTC|BITCOIN|CRYPTO|ETH|DIGITAL ASSET/.test(blob)) return "Bitcoin";
     if (/GLD|IAU|\bGOLD\b|ทอง|XAU|GC=F/.test(blob)) return "Gold";
     if (/CASH|เงินสด|MONEY MARKET|T-?BILL|TREASURY BILL|กองทุนตลาดเงิน/.test(blob)) return "Cash";
-    if (/AI|ARTIFICIAL|SEMICONDUCT|ROBOT|NVDA|NVIDIA|CHIP|GTECH|GENOMIC/.test(blob)) return "AI";
-    if (/NASDAQ|NDQ|QQ|XLK|USXNDQ|TECH|SOFTWARE|^IXIC|^NDX/.test(blob)) return "US Tech";
+    if (/AI|ARTIFICIAL|SEMICONDUCT|ROBOT|NVDA|NVIDIA|CHIP|GTECH|GENOMIC|AMD|AVGO|TSM|PLTR|ASML/.test(blob)) return "AI";
+    if (/NASDAQ|NDQ|QQ|XLK|USXNDQ|TECH|SOFTWARE|\^IXIC|\^NDX|GOOGL?|MSFT|META|AMZN|AAPL|HOOD/.test(blob)) return "US Tech";
     if (/HEALTH|XLV|PHARMA|BIOTECH|MEDICAL|สุขภาพ/.test(blob)) return "Healthcare";
     if (/UTILIT|XLU|สาธารณูปโภค|INFRA/.test(blob)) return "Utilities";
     if (/BOND|พันธบัตร|FIXED INCOME|DEFENS|VALUE|DIVIDEND/.test(blob)) return "Defensive";
@@ -295,6 +303,14 @@
         else if (/REVIEW/.test(rk)) { verb = "REVIEW"; tone = "bear"; }
         else { verb = "TRIM"; tone = "bear"; } // SELL_FIRST (ลดบางส่วน)
         reason = rec.action.thaiAction || rec.action.thaiReason;
+      } else if (rec && rec.action) {
+        // key ไม่เปลี่ยน แต่ reconcile ปรับ "เหตุผล" (เช่นแนบบริบท thesis) — ใช้เหตุผลนั้น
+        // ให้ตรงกับ Action Center ที่ apply res.reason เสมอ · verb ยัง map จาก tag ปกติ
+        const tag = String(e.actionCategory || "") + " " + String(e.action || "") + " " + String(e.thaiAction || "");
+        if (/BUY|ADD|ACCUMULAT|ซื้อ|สะสม|เพิ่ม/i.test(tag)) { verb = e.isHolding ? "ADD" : "BUY"; tone = "bull"; }
+        else if (/SELL|TRIM|REDUCE|EXIT|ขาย|ลด/i.test(tag)) { verb = "TRIM"; tone = "bear"; }
+        else if (/WATCH|จับตา|เฝ้า|HOLD|ถือ/i.test(tag)) { verb = "WATCH"; tone = "watch-bull"; }
+        reason = rec.action.thaiReason || rec.action.thaiAction || e.thaiReason || e.thaiAction;
       } else {
         const tag = String(e.actionCategory || "") + " " + String(e.action || "") + " " + String(e.thaiAction || "");
         if (/BUY|ADD|ACCUMULAT|ซื้อ|สะสม|เพิ่ม/i.test(tag)) { verb = e.isHolding ? "ADD" : "BUY"; tone = "bull"; }
@@ -378,7 +394,7 @@
       <span class="mcx-q-verb mcx-q-${verbCls[it.verb] || "muted"}">${esc(it.verb)}</span>
       <span class="mcx-q-sym">${esc(it.sym)}</span>
       <span class="mcx-q-reason">${counter ? '<b class="mcx-q-counter">⚠ สวนแนวทางหลัก — ถ้าซื้อให้ไม้เล็ก</b> ' : ""}${esc(it.reason)}</span>
-      ${it.score != null ? `<span class="mcx-q-score" title="${it.scoreKind === "acc" ? "Accumulation Score (Thesis 40 / Business Growth 25 / Timing 20 / Valuation 15) — เดียวกับหน้า AI Portfolio Manager" : "Timing Score (เทคนิค)"}">${it.scoreKind === "acc" ? "Acc" : "Score"} ${Math.round(it.score)}</span>` : '<span class="mcx-q-score"></span>'}
+      ${it.score != null ? `<span class="mcx-q-score" title="${it.scoreKind === "acc" ? "Accumulation Score (Thesis 40 / Business Growth 25 / Timing 20 / Valuation 15) — เดียวกับหน้า AI Portfolio Manager" : "Timing Score (เทคนิคล้วน) — คนละสูตรกับ Acc เทียบข้ามแถวไม่ได้"}">${it.scoreKind === "acc" ? "Acc" : "Tech"} ${Math.round(it.score)}</span>` : '<span class="mcx-q-score"></span>'}
     </div>`;
     }).join("") : `<div class="mcx-q-none">ไม่มีรายการเร่งด่วนรายตัววันนี้ — ทำตามแนวทางหลักด้านบนพอ</div>`;
     const note = hasCounterBuy ? `<div class="mcx-q-note">💡 แนวทางหลักมาจาก "ภาพรวมตลาด" (macro) แต่รายการด้านล่างมาจาก "สัญญาณรายตัว" (timing) — สองมุมนี้ขัดกันได้ เมื่อตลาดโหมดลดเสี่ยง รายการ BUY = หุ้นที่แข็งกว่าตลาด ควรรอจังหวะ/ใช้ไม้เล็กเท่านั้น</div>` : "";
@@ -392,7 +408,7 @@
         </div>
         <div class="mcx-reason-chips mcx-act-reasons">${reasons.map((r) => `<span class="mcx-reason-chip">✓ ${esc(r)}</span>`).join("")}</div>
       </div>
-      <div class="mcx-act-qhead">สัญญาณรายตัว (สูงสุด 5${defensive ? " · โหมดลดเสี่ยง: เรียง TRIM/WATCH ก่อน" : " · เรียงตามความเร่งด่วน"}) · <b>Acc</b> = Accumulation Score จากหน้า AI Portfolio Manager</div>
+      <div class="mcx-act-qhead">สัญญาณรายตัว (สูงสุด 5${defensive ? " · โหมดลดเสี่ยง: เรียง TRIM/WATCH ก่อน" : " · เรียงตามความเร่งด่วน"}) · <b>Acc</b> = Accumulation Score (หน้า AI Portfolio Manager) · <b>Tech</b> = Timing Score เทคนิค (คนละสูตร เทียบข้ามกันไม่ได้)</div>
       <div class="mcx-queue">${qBody}</div>
       ${note}
     </section>`;
@@ -449,7 +465,7 @@
     const total = P.total || 1;
     const items = [
       { key: "btc", label: "Bitcoin", color: "#f7931a", v: B.btc },
-      { key: "qqqm", label: "QQQM / หุ้นตปท.", color: "#38bdf8", v: B.qqqm },
+      { key: "qqqm", label: "หุ้น+กองทุน ตปท. (ส่วนลงทุน)", color: "#38bdf8", v: B.qqqm },
       { key: "thai", label: "หุ้นไทย", color: "#a855f7", v: B.thai },
       { key: "other", label: "อื่นๆ", color: "#94a3b8", v: B.other },
       { key: "cash", label: "เงินสด", color: "#64748b", v: B.cash }

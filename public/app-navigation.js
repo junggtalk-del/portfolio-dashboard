@@ -324,6 +324,28 @@
                 portfolioWeight: holding ? holding.targetWeight : null,
                 marketValue: holding ? holding.marketValue : null
               });
+              // action ต้องมาจาก pipeline เดียวกับที่ Action Center/Asset 360 คำนวณสด
+              // (classifySignal + actionFromSignal) — ไม่ใช่ recommendAction ซึ่งกติกาคนละชุด
+              // ไม่งั้นหุ้นตัวเดียวกันโชว์คำแนะนำสวนกันข้ามหน้า (audit 2026-08)
+              let sigAct = null;
+              try {
+                if (typeof window.Scoring.classifySignal === "function" && typeof window.Scoring.actionFromSignal === "function") {
+                  const actInput = {
+                    canonicalSymbol: key, latestPrice: sig.latestClose, latestDate: sig.latestDate,
+                    ema12: sig.ema12, ema26: sig.ema26, sma200: sig.sma200, rsi14: sig.rsi14,
+                    emaTrendStatus: sig.emaStatus, sma200Status: sig.sma200Status,
+                    volumeRatio: sig.volumeRatio,
+                    daysSinceEmaBullishCross: sig.daysSinceEmaBullishCross,
+                    daysSinceEmaBearishCross: sig.daysSinceEmaBearishCross,
+                    daysSinceSma200Reclaim: sig.daysSinceSma200Reclaim,
+                    daysSinceSma200Break: sig.daysSinceSma200Break,
+                    isHolding: holding ? !!holding.isHolding : false,
+                    marketRiskLevel: riskLevel
+                  };
+                  sigAct = window.Scoring.actionFromSignal(window.Scoring.classifySignal(actInput), actInput);
+                }
+              } catch (_actError) { sigAct = null; }
+              const sectionPrio = { urgent: 9, sell: 9, buy: 7, watch: 5, avoid: 3 };
               snapshot.scoring.bySymbol[key] = {
                 timingScore: result.timing.score,
                 timingGrade: result.timing.grade,
@@ -331,12 +353,13 @@
                 thaiTimingLabel: result.timing.thaiLabel,
                 color: result.timing.color,
                 quadrant: result.quadrant.quadrant,
-                action: result.recommendation.action,
-                actionKey: result.recommendation.key,
-                thaiAction: result.recommendation.thaiAction,
-                thaiReason: result.recommendation.thaiReason,
-                actionCategory: result.recommendation.actionCategory,
-                actionPriority: result.recommendation.priority,
+                action: sigAct ? sigAct.action : result.recommendation.action,
+                actionKey: sigAct ? sigAct.key : result.recommendation.key,
+                thaiAction: sigAct ? sigAct.thaiAction : result.recommendation.thaiAction,
+                thaiReason: sigAct ? sigAct.thaiReason : result.recommendation.thaiReason,
+                actionSection: sigAct ? sigAct.section : undefined,
+                actionCategory: sigAct ? sigAct.section : result.recommendation.actionCategory,
+                actionPriority: sigAct ? (sectionPrio[sigAct.section] || 5) : result.recommendation.priority,
                 isHolding: !!(holding && holding.isHolding),
                 reasons: result.timing.reasons,
                 warnings: result.timing.warnings,

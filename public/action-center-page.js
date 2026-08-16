@@ -479,6 +479,19 @@
     const conflicts = row.conflicts || (row.conflicts = []);
     const held = Boolean(row.portfolio?.isHolding);
 
+    // ---------- weak-thesis REVIEW ต้องมาก่อน SELL — ลำดับเดียวกับ forAsset (thesis-reconcile) ----------
+    // เดิมเช็ค SELL ก่อนแล้ว return ทำให้หุ้น thesis อ่อน+สัญญาณขาย โชว์ "ขายหมด" ที่นี่
+    // แต่ Home/Asset 360 โชว์ REVIEW_THESIS — คำแนะนำสวนกันข้ามหน้า (audit 2026-08)
+    if (held && window.ThesisReconcile && window.ThesisReconcile.reviewOverride && window.ThesisReconcile.reviewOverride(th)) {
+      d.section = "urgent";
+      d.actionKey = "REVIEW_THESIS";
+      d.action = "review";
+      d.actionThai = `ทบทวนการถือ — Thesis อ่อน (${th.score}/100)`;
+      d.reason = `Investment Thesis อ่อน (${th.score}/100 · ${th.decisionLabel}) — ทบทวนเหตุผลการถือก่อนตัดสินใจใด ๆ · ${d.reason || ""}`;
+      conflicts.push({ label: "THESIS", severity: "high", reason: `Thesis ${th.score}/100 (${th.statusLabel}) — ${th.decisionThai}` });
+      return row;
+    }
+
     // ---------- SELL-side reconciliation (กัน "ขายหมด" สวน thesis ที่แข็ง) ----------
     // กฎอยู่ใน SHARED module (public/thesis-reconcile.js) — Asset 360 ใช้ชุดเดียวกัน
     if (held && (d.actionKey === "SELL_ALL" || d.actionKey === "SELL_FIRST") && window.ThesisReconcile) {
@@ -496,17 +509,8 @@
       return row;
     }
 
-    // ---------- BUY-side / weak-thesis rules (เดิม) ----------
-    if (held && (th.decisionKey === "review-thesis" || th.score < 55) && d.section !== "urgent") {
-      // ถือจริง + thesis อ่อน/ต้องทบทวน → ดันขึ้น Urgent (เปลี่ยน actionKey ด้วย
-      // เพื่อให้ verdict บนการ์ดเป็นเสียงเดียว — ไม่ใช่ 🟢 ถือต่อ ทับเหตุผลทบทวน)
-      d.section = "urgent";
-      d.actionKey = "REVIEW_THESIS";
-      d.action = "review";
-      d.actionThai = `ทบทวนการถือ — Thesis อ่อน (${th.score}/100)`;
-      d.reason = `Investment Thesis อ่อน (${th.score}/100 · ${th.decisionLabel}) — ทบทวนเหตุผลการถือก่อนตัดสินใจใด ๆ · ${d.reason || ""}`;
-      conflicts.push({ label: "THESIS", severity: "high", reason: `Thesis ${th.score}/100 (${th.statusLabel}) — ${th.decisionThai}` });
-    } else if (d.section === "buy" && th.answer === "NO") {
+    // ---------- BUY-side rules (weak-thesis ย้ายขึ้นไปเช็คก่อน SELL แล้ว) ----------
+    if (d.section === "buy" && th.answer === "NO") {
       // สัญญาณเทคนิคชวนซื้อ แต่ thesis ปฏิเสธ → ลดลง watch + conflict แรง
       d.section = "watch";
       d.reason = `Thesis ไม่สนับสนุน (${th.decisionLabel} · ${th.score}/100) — เทคนิคบวกแต่โครงสร้างไม่หนุน · ${d.reason || ""}`;
@@ -1115,14 +1119,14 @@
     return zones;
   }
 
-  // dual flags on every asset everywhere: ⚑ แดง = ถืออยู่ (amount modal),
-  // ⚑ เหลือง = Watchlist toggle (hidden while held — a position outranks watch)
+  // ⚑ เหลือง = Watchlist toggle เท่านั้น — การเพิ่ม/แก้เงินหุ้นในพอร์ตย้ายไปหน้า
+  // AI Portfolio Manager แล้ว (ผู้ใช้สั่ง 2026-08) · หุ้นที่ถือแสดงลิงก์ 💼 ไปจัดการที่นั่น
   function flagButtons(row) {
     const held = Boolean(row.portfolio?.isHolding);
     const watch = !held && isWatchTicker(row.symbol);
-    const red = `<button type="button" class="ac-flagbtn ac-flag-held${held ? " is-on" : ""}" data-ac-flag="${escapeHtml(row.symbol)}" title="${held ? "ถืออยู่ — แก้ไขจำนวน / เลิกถือ" : "ปักธงแดง: ถืออยู่ + ใส่จำนวนเงิน"}">⚑</button>`;
+    const manage = held ? `<a class="ac-flagbtn ac-flag-held is-on" href="/portfolio-manager" title="ถืออยู่ — แก้จำนวน/เอาออก ที่หน้า AI Portfolio Manager">💼</a>` : "";
     const yellow = held ? "" : `<button type="button" class="ac-flagbtn ac-flag-watch${watch ? " is-on" : ""}" data-ac-watch="${escapeHtml(row.symbol)}" title="${watch ? "เอาออกจาก Watchlist" : "ปักธงเหลือง: เฝ้าดู (เข้า Watchlist)"}">⚑</button>`;
-    return `<span class="ac-flags">${red}${yellow}</span>`;
+    return `<span class="ac-flags">${manage}${yellow}</span>`;
   }
 
   function renderFreshCard(card, sizeClass) {
@@ -1479,7 +1483,7 @@
             <span>/100</span>
           </div>
         </div>
-        <div class="quality-line">${escapeHtml(row.scoreLabel.label)} · ${escapeHtml(row.scoreLabel.thai)}</div>
+        <div class="quality-line">Signal Score · ${escapeHtml(row.scoreLabel.label)} · ${escapeHtml(row.scoreLabel.thai)} <small style="opacity:.7">(เทคนิค — คนละสูตรกับ Accumulation Score)</small></div>
         <p class="decision-reason">${escapeHtml(row.decision.reason)}</p>
         <div class="badge-row">
           ${signals.map((signal) => `<span class="badge ${badgeTone(signal)}">${escapeHtml(signal)}</span>`).join("")}
@@ -1700,83 +1704,8 @@
     return `${formatPrice(a.value)} THB · ${a.pct.toFixed(1)}% ของ${a.basis}`;
   }
 
-  // ---- V2: flag-as-held + amount, straight from the Action Center. Persists
-  // through PortfolioCore.saveHoldings (server + snapshot + event) — the same
-  // record Portfolio Position reads. Unflag keeps the record as watchlist-only.
-  async function saveHoldingFlag(symbol, amount, hold, bucket) {
-    const key = canonical(symbol);
-    const row = (state.rows || []).find((r) => r.symbol === key) || null;
-    const holdings = core.readLocalHoldings ? core.readLocalHoldings() : holdingsFromSnapshot(state.snapshot).slice();
-    const idx = holdings.findIndex((h) => h.canonicalSymbol === key);
-    const base = idx >= 0 ? holdings[idx] : core.normalizeHolding({
-      symbol: key,
-      assetName: row?.name || key,
-      assetType: row?.assetType || ""
-    });
-    const next = {
-      ...base,
-      isHolding: hold,
-      watchlistOnly: !hold,
-      marketValue: hold ? Math.max(0, Number(amount) || 0) : 0,
-      portfolioBucket: base.portfolioBucket || bucket || "foreign-stock",
-      updatedAt: new Date().toISOString()
-    };
-    if (idx >= 0) holdings[idx] = next; else holdings.push(next);
-    holdingCachesDirty = true;
-    try {
-      await core.saveHoldings(holdings); // → snapshot update + "portfolio-holdings-updated" → render()
-      return { ok: true, message: hold ? `บันทึก ${key} เป็นถืออยู่แล้ว` : `เอา ${key} ออกจากพอร์ตแล้ว (ยังอยู่ใน watchlist)` };
-    } catch (err) {
-      // local + snapshot already updated by writeLocalHoldings — sync later
-      return { ok: true, message: "บันทึกในเครื่องแล้ว · เซิร์ฟเวอร์ไม่ตอบ จะ sync อัตโนมัติครั้งถัดไป" };
-    }
-  }
-
-  function openFlagModal(symbol) {
-    const key = canonical(symbol);
-    const rec = holdingRecOf(key);
-    const row = (state.rows || []).find((r) => r.symbol === key) || null;
-    const isHeld = Boolean(rec && rec.isHolding);
-    const bucket = (rec && rec.portfolioBucket) || (row ? defaultBucketFor(row) : "foreign-stock");
-    const bucketLabel = BUCKET_LABELS[bucket] || bucket;
-    const prev = document.getElementById("acFlagModal");
-    if (prev) prev.remove();
-    const back = document.createElement("div");
-    back.id = "acFlagModal";
-    back.className = "ac-modal-back";
-    back.setAttribute("data-pv-skip", "1"); // privacy: ให้แก้ตัวเลขได้ขณะล็อก
-    back.innerHTML = `
-      <div class="ac-modal" role="dialog" aria-modal="true">
-        <h3>🚩 ${escapeHtml(row?.displaySymbol || key)} · ${isHeld ? "แก้ไขจำนวนในพอร์ต" : "ปักธงว่าถืออยู่"}</h3>
-        <label>จำนวนเงินในพอร์ต (บาท)
-          <input id="acFlagAmount" type="number" min="0" step="any" inputmode="decimal" placeholder="เช่น 250000" value="${isHeld && Number(rec.marketValue) > 0 ? Number(rec.marketValue) : ""}" />
-        </label>
-        <p class="ac-modal-note">คิดสัดส่วนเป็น % ของ <strong>${escapeHtml(bucketLabel)}</strong> (จาก Portfolio Position) · บันทึกลงชุดข้อมูลเดียวกับหน้า Portfolio</p>
-        <div class="ac-modal-actions">
-          ${isHeld ? '<button type="button" id="acFlagRemove" class="ac-flag-remove">เลิกถือ</button>' : ""}
-          <button type="button" id="acFlagCancel">ยกเลิก</button>
-          <button type="button" id="acFlagSave" class="ac-primary">${isHeld ? "บันทึก" : "ปักธง + บันทึก"}</button>
-        </div>
-        <p class="ac-modal-msg" id="acFlagMsg"></p>
-      </div>`;
-    document.body.appendChild(back);
-    const close = () => back.remove();
-    back.addEventListener("click", (e) => { if (e.target === back) close(); });
-    back.querySelector("#acFlagCancel").addEventListener("click", close);
-    const amountInput = back.querySelector("#acFlagAmount");
-    amountInput.focus();
-    const finish = (result) => {
-      const msg = back.querySelector("#acFlagMsg");
-      msg.textContent = result.message;
-      msg.className = "ac-modal-msg " + (result.ok ? "ok" : "err");
-      if (result.ok) window.setTimeout(close, 800);
-    };
-    const save = async () => finish(await saveHoldingFlag(key, amountInput.value, true, bucket));
-    back.querySelector("#acFlagSave").addEventListener("click", save);
-    amountInput.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
-    const removeBtn = back.querySelector("#acFlagRemove");
-    if (removeBtn) removeBtn.addEventListener("click", async () => finish(await saveHoldingFlag(key, 0, false, bucket)));
-  }
+  // (saveHoldingFlag + openFlagModal ถูกถอดออก 2026-08 — การเพิ่ม/แก้เงินหุ้นในพอร์ต
+  //  ย้ายไปหน้า AI Portfolio Manager ซึ่งเขียนผ่าน PortfolioCore.saveHoldings เหมือนเดิม)
 
   function formatPrice(value) {
     const number = Number(value);
@@ -1917,10 +1846,7 @@
       render();
       return;
     }
-    const btn = event.target.closest?.("[data-ac-flag]");
-    if (!btn) return;
-    event.preventDefault();
-    openFlagModal(btn.getAttribute("data-ac-flag"));
+    // (ปุ่มธงแดง data-ac-flag ถูกถอดแล้ว — เพิ่ม/แก้เงินหุ้นในพอร์ตทำที่หน้า AI Portfolio Manager)
   });
 
   window.addEventListener("portfolio-data-snapshot", render);

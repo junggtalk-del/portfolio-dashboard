@@ -101,21 +101,28 @@
       if (!h || !h.isHolding) return;
       var raw = canonical(h.canonicalSymbol);
       var key = raw === "GOOGL" ? "GOOG" : raw; // thesis KB ใช้ GOOG (เหมือน thesis-reconcile)
-      var bucket = h.portfolioBucket || (raw.endsWith(".BK") ? "thai-stock" : (raw.indexOf("BTC") >= 0 ? "bitcoin" : "foreign-stock"));
+      // กองทุนไทย (RMF/SSF/กองทุนรวม) ที่ยังไม่ตั้ง bucket ต้องไม่หลุดเข้า foreign-stock
+      // — ไม่งั้น K-GTECHRMF โดนนับเป็นหุ้นธงแดงแล้วฐาน % เพี้ยนทั้งตาราง (audit 2026-08)
+      var isThaiFund = /RMF|SSF/i.test(raw) || /THAI_MUTUAL_FUND|MUTUAL/i.test(String(h.assetType || ""));
+      var bucket = h.portfolioBucket || (raw.endsWith(".BK") ? "thai-stock" : (raw.indexOf("BTC") >= 0 ? "bitcoin" : (isThaiFund ? "thai-fund" : "foreign-stock")));
       if (bucket !== "foreign-stock") return; // GULF.BK/BTC อยู่ sleeve อื่น — คนละฐาน %
       var mv = fin(h.marketValue) || 0;
       flagSum += mv;
       if (flagIdx.has(key)) { // ถือทั้ง GOOG+GOOGL (สอง class) → รวมมูลค่าเข้าตัวแรก ไม่ทิ้ง
-        var f = flagged[flagIdx.get(key)]; f.mv += mv; if (f.avgCost == null) f.avgCost = fin(h.averageCost);
+        var f = flagged[flagIdx.get(key)]; f.mv += mv; f.dual = true; if (f.avgCost == null) f.avgCost = fin(h.averageCost);
       } else {
         flagIdx.set(key, flagged.length); heldSet.add(key);
         flagged.push({ key: key, name: h.assetName || key, mv: mv, avgCost: fin(h.averageCost) });
       }
     });
+    // ฐาน % = Portfolio Value หุ้นต่างประเทศทั้งก้อน (Quarterly Editor รวมเงินสดใน sleeve)
+    // — ให้ฐานเดียวกับคอลัมน์ "เป้า" (เดิมใช้ผลรวมหุ้นธงแดง → QQQM 2M/5M โชว์ 56.6% แทน 40%)
+    // ไม่มี gross (ยังไม่ตั้ง Quarterly) → fallback ฐานผลรวมธงแดงแบบเดิม
+    var wBase = gross > 0 ? Math.max(gross, flagSum) : flagSum;
     var positions = flagged.map(function (f) {
       return {
-        ticker: f.key, name: f.name, held: true,
-        weightPct: flagSum > 0 ? (f.mv / flagSum) * 100 : null, // ฐาน = ผลรวมหุ้นธงแดง
+        ticker: f.key, name: f.name, held: true, dual: !!f.dual,
+        weightPct: wBase > 0 ? (f.mv / wBase) * 100 : null,
         marketValue: f.mv, avgCost: f.avgCost,
         tierKey: tierKeyFor(f.key), entryDone: progress[f.key] || {}
       };
@@ -140,8 +147,47 @@
       });
     }
     var cashPct = gross > 0 ? Math.max(0, ((gross - flagSum) / gross) * 100) : null;
+    var cashBaht = gross > 0 ? Math.max(0, gross - flagSum) : null; // เงินสดพร้อมวางใน sleeve (฿)
+    var investedPct = cashPct != null ? Math.max(0, 100 - cashPct) : null;
     return { positions: positions, candidates: candidates, cashPct: cashPct,
+      cashBaht: cashBaht, investedPct: investedPct,
       flagSum: flagSum > 0 ? flagSum : null, flagCount: flagged.length, gross: gross > 0 ? gross : null };
+  }
+
+  // ---------------- จัดการหุ้นในพอร์ต (ย้ายมาจาก Action Center — path เขียนเดิม: PortfolioCore.saveHoldings) ----------------
+  function holdingsNow() {
+    var core = window.PortfolioCore;
+    if (core && core.readLocalHoldings) { try { return core.readLocalHoldings() || []; } catch (e) { } }
+    var snap = readSnapshot();
+    return ((snap && snap.portfolioHoldings && snap.portfolioHoldings.data) || []).slice();
+  }
+  // hold=true → ตั้ง/แก้มูลค่า · hold=false → เอาออกจากพอร์ต (เก็บเป็น watchlist เหมือนพฤติกรรมเดิมของ AC)
+  function saveHoldingAmount(symbol, amount, hold) {
+    var core = window.PortfolioCore;
+    if (!core || !core.saveHoldings) { alert("PortfolioCore ไม่พร้อม — refresh หน้าก่อน"); return; }
+    var key = canonical(symbol);
+    var holdings = holdingsNow();
+    var idx = -1;
+    holdings.forEach(function (h, i) { if (idx < 0 && canonical(h.canonicalSymbol || h.ticker) === key) idx = i; });
+    if (idx < 0 && key === "GOOG") holdings.forEach(function (h, i) { if (idx < 0 && canonical(h.canonicalSymbol || h.ticker) === "GOOGL") idx = i; });
+    var base = idx >= 0 ? holdings[idx]
+      : (core.normalizeHolding ? core.normalizeHolding({ symbol: key, assetName: key, assetType: "" }) : { canonicalSymbol: key, assetName: key });
+    var next = Object.assign({}, base, {
+      isHolding: !!hold,
+      watchlistOnly: !hold,
+      marketValue: hold ? Math.max(0, fin(amount) || 0) : 0,
+      portfolioBucket: base.portfolioBucket || "foreign-stock",
+      updatedAt: new Date().toISOString()
+    });
+    if (idx >= 0) holdings[idx] = next; else holdings.push(next);
+    try { core.saveHoldings(holdings); } catch (e) { /* local เขียนแล้ว sync server ทีหลัง — core จัดการเอง */ }
+    // core ยิง "portfolio-holdings-updated" → หน้า re-render อัตโนมัติ
+  }
+  function kbTickersNotHeld(heldRows) {
+    var held = {};
+    (heldRows || []).forEach(function (r) { if (r.held) held[r.ticker] = 1; });
+    var D = window.ThesisData && window.ThesisData.companies ? window.ThesisData.companies : {};
+    return Object.keys(D).filter(function (t) { return !held[t] && t.indexOf(".BK") < 0; });
   }
 
   // ---------------- UI helpers ----------------
@@ -169,8 +215,13 @@
       "</div>" +
       '<div class="pm-hero-grid">' +
       stat("Portfolio Value (หุ้นต่างประเทศ)", inp.gross != null ? baht(inp.gross) : (inp.flagSum != null ? baht(inp.flagSum) : "ยังไม่ตั้งค่า"), inp.gross != null ? "จาก Portfolio Position → หุ้นต่างประเทศ (Quarterly Editor)" : "ตั้งค่าที่ Portfolio Position → หุ้นต่างประเทศ (ตอนนี้ใช้ผลรวมหุ้นธงแดงชั่วคราว)") +
+      stat("ลงทุนแล้ว · เงินสดพร้อมวาง",
+        inp.investedPct != null ? pct(inp.investedPct, 1) + " · " + pct(inp.cashPct, 1) : "—",
+        inp.cashBaht != null
+          ? "ลงทุน " + baht(inp.flagSum || 0) + " · เงินสดใน sleeve " + baht(inp.cashBaht) + " (ฐาน = หุ้นตปท.ทั้งก้อน)"
+          : "ตั้งมูลค่า sleeve ที่ Portfolio Position ก่อน จึงจะคำนวณส่วนเงินสดได้") +
       stat("Allocation Policy", esc(p.indexTicker) + " " + p.indexPct + "% + " + p.satelliteCount + " หุ้น", "Index core " + p.indexPct + "% · หุ้นรายตัวแบ่ง " + p.satellitePool + "% (" + (p.splitMethod === "equal" ? "เท่ากัน" : "ถ่วง conviction") + " · เพดานตัวละ " + p.maxSinglePct + "%)") +
-      stat("AI Portfolio Score", ov.score == null ? "—" : ov.score + "/100", "ค่าเฉลี่ย Investment Thesis ถ่วงน้ำหนักตามสัดส่วนถือจริง") +
+      stat("Portfolio Thesis Score", ov.score == null ? "—" : ov.score + "/100", "ค่าเฉลี่ย Investment Thesis ถ่วงน้ำหนักตามสัดส่วนถือจริง (คนละตัวกับ Accumulation Score)") +
       stat("Portfolio Health", esc(ov.health.label), esc(ov.health.why)) +
       stat("Portfolio Alignment", ov.alignment.score != null ? esc(ov.alignment.label) + " (" + ov.alignment.score + ")" : esc(ov.alignment.label), esc(ov.alignment.why)) +
       "</div></div></section>";
@@ -179,8 +230,8 @@
     return '<div class="pm-stat"><small>' + t + "</small><b>" + v + "</b><span>" + sub + "</span></div>";
   }
 
-  // ---------------- S2: Current Portfolio (ธงแดง + index core) ----------------
-  function sectionCurrent(out) {
+  // ---------------- S2: Current Portfolio (ธงแดง + index core + เงินสด) ----------------
+  function sectionCurrent(out, inp) {
     var rows = out.allocationRows;
     if (!rows.length) return '<section class="pm-sec"><h2>💼 Current Portfolio</h2><div class="mc-empty">ยังไม่มีหุ้นธงแดงในกลุ่มหุ้นต่างประเทศ — ปักธงแดง + ใส่มูลค่าได้ที่ Action Center</div></section>';
     var tierSel = function (r) {
@@ -188,19 +239,49 @@
       return '<select class="pm-tier-sel" data-pm-tier="' + esc(r.ticker) + '">' +
         ["A", "B", "C"].map(function (k) { return '<option value="' + k + '"' + (r.tier.key === k ? " selected" : "") + ">" + k + "</option>"; }).join("") + "</select>";
     };
+    // map มูลค่า/dual จาก positions (engine ไม่ pass-through marketValue)
+    var posByTicker = {};
+    ((inp && inp.positions) || []).forEach(function (p) { posByTicker[p.ticker] = p; });
+    var mvCell = function (r) {
+      var p = posByTicker[r.ticker];
+      if (!r.held || !p) return '<td class="pm-num"><button type="button" class="pm-addquick" data-pm-addquick="' + esc(r.ticker) + '" title="เพิ่ม ' + esc(r.ticker) + ' เข้าพอร์ต">➕ เพิ่ม</button></td>';
+      if (p.dual) return '<td class="pm-num" title="ถือสองคลาส (GOOG+GOOGL) — มูลค่ารวม แก้แยกคลาสที่หน้า Portfolio">' + baht(p.marketValue) + ' <span class="pm-dim">🔒</span></td>';
+      return '<td class="pm-num" data-pv-skip="1"><input class="pm-mv-inp" type="number" min="0" step="any" inputmode="decimal" value="' + (p.marketValue || 0) + '" data-pm-mv="' + esc(r.ticker) + '" title="แก้มูลค่า (฿) แล้ว Enter/คลิกออก เพื่อบันทึก">' +
+        '<button type="button" class="pm-rm-btn" data-pm-remove="' + esc(r.ticker) + '" title="เอาออกจากพอร์ต (เก็บเป็น watchlist)">✕</button></td>';
+    };
     var tr = rows.map(function (r) {
-      var wcell = r.weightPct == null ? '<span class="pm-dim" title="ใส่มูลค่า (฿) ที่ธงแดงเพื่อคิดสัดส่วน">—</span>' : pct(r.weightPct);
+      var wcell = r.weightPct == null ? '<span class="pm-dim" title="ใส่มูลค่า (฿) เพื่อคิดสัดส่วน">—</span>' : pct(r.weightPct);
       return "<tr" + (r.isIndex ? ' class="pm-row-index"' : "") + ">" +
         "<td>" + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">core</span>' : "") + '<small class="pm-dim"> ' + esc(r.name) + (r.held ? "" : " · ยังไม่ถือ") + "</small></td>" +
         "<td>" + tierSel(r) + "</td>" +
+        mvCell(r) +
         '<td class="pm-num">' + wcell + "</td>" +
         '<td class="pm-num">' + (r.covered && r.target != null ? "<b>" + r.target + "%</b>" : "—") + "</td>" +
         "<td>" + (r.covered ? zoneChip(r.zone) : '<span class="pm-dim">ไม่มี thesis</span>') + "</td>" +
         "<td>" + (r.covered ? actionChip(r.action) : '<a class="pm-dim" href="/thesis">/thesis-update ' + esc(r.ticker) + "</a>") + "</td></tr>";
     }).join("");
-    return '<section class="pm-sec"><h2>💼 Current Portfolio <small>(หุ้นธงแดง + index core — ฐาน 100% ของหุ้นต่างประเทศ)</small></h2>' +
-      '<div class="pm-tablewrap"><table class="pm-table"><thead><tr><th>Ticker</th><th>Tier</th><th>น้ำหนักปัจจุบัน</th><th>เป้า</th><th>Accumulation Zone</th><th>Position Status</th></tr></thead><tbody>' +
-      tr + "</tbody></table></div></section>";
+    // แถวเงินสด = Portfolio Value (หุ้นต่างประเทศ) − ผลรวมมูลค่าหุ้นที่ลงทุน — ให้ครบ 100%
+    if (inp && inp.cashBaht != null && inp.gross != null) {
+      var cashW = inp.gross > 0 ? (inp.cashBaht / Math.max(inp.gross, inp.flagSum || 0)) * 100 : null;
+      tr += '<tr class="pm-row-cash">' +
+        '<td>💵 <b>เงินสดใน sleeve</b><small class="pm-dim"> Portfolio Value − หุ้นที่ลงทุน</small></td>' +
+        "<td><span class='pm-idxtag'>Cash</span></td>" +
+        '<td class="pm-num">' + baht(inp.cashBaht) + "</td>" +
+        '<td class="pm-num"><b>' + (cashW == null ? "—" : pct(cashW)) + "</b></td>" +
+        '<td class="pm-num pm-dim">reserve</td>' +
+        '<td><span class="pm-dim">รอ deploy ตาม Cash Deployment Plan ด้านล่าง</span></td>' +
+        '<td><span class="pm-action pm-neutral">Reserve</span></td></tr>';
+    }
+    // ฟอร์มเพิ่มหุ้นเข้าพอร์ต (ย้ายมาจาก Action Center) — เขียนลง store เดียวกับทั้งแอป
+    var dl = kbTickersNotHeld(rows).map(function (t) { return '<option value="' + esc(t) + '">'; }).join("");
+    var addForm = '<div class="pm-addform" data-pv-skip="1">➕ <b>เพิ่มหุ้นเข้าพอร์ต:</b> ' +
+      '<input id="pmAddTicker" list="pmKbList" placeholder="TICKER เช่น MSFT" maxlength="12" autocomplete="off"><datalist id="pmKbList">' + dl + "</datalist>" +
+      '<input id="pmAddAmount" type="number" min="0" step="any" inputmode="decimal" placeholder="มูลค่า (฿)">' +
+      '<button type="button" id="pmAddBtn" class="pm-add-btn">เพิ่ม</button>' +
+      '<small class="pm-dim">bucket: หุ้นต่างประเทศ · บันทึกชุดข้อมูลเดียวกับหน้า Portfolio/ทั้งแอป · พิมพ์ ticker นอก list ได้</small></div>';
+    return '<section class="pm-sec"><h2>💼 Current Portfolio <small>(หุ้นธงแดง + index core + เงินสด — ฐาน 100% = Portfolio Value หุ้นต่างประเทศ · แก้มูลค่า/เพิ่ม/เอาออก ได้ที่นี่)</small></h2>' +
+      '<div class="pm-tablewrap"><table class="pm-table"><thead><tr><th>Ticker</th><th>Tier</th><th>มูลค่า (฿)</th><th>น้ำหนักปัจจุบัน</th><th>เป้า</th><th>Accumulation Zone</th><th>Position Status</th></tr></thead><tbody>' +
+      tr + "</tbody></table></div>" + addForm + "</section>";
   }
 
   // ---------------- S3: Target Allocation (Core-Satellite policy) ----------------
@@ -257,7 +338,8 @@
   }
 
   // ---------------- S4: Accumulation Opportunities (Zone นำ Score รอง) ----------------
-  var SCORE_SHORT = { thesis: "Thesis", growthPrice: "Growth", timing: "Timing", valuation: "Val" };
+  // "Dip" = dipTiming ของ PMEngine (ยิ่งย่อยิ่งได้แต้ม) — คนละสูตรกับ Timing Score เทคนิคหน้าอื่น
+  var SCORE_SHORT = { thesis: "Thesis", growthPrice: "Growth", timing: "Dip", valuation: "Val(curated)" };
   function scoreFormula(parts, score) {
     var terms = (parts || []).filter(function (p) { return p.value != null; })
       .map(function (p) { return (SCORE_SHORT[p.key] || p.key) + " " + p.value + "·" + p.weight + "%"; });
@@ -314,14 +396,31 @@
   // ---------------- S5: Cash Deployment Plan ----------------
   function sectionDeployment(out, inp) {
     var d = out.deployment;
+    // ฿ ต่อรายการ = สัดส่วนของเงินสดจริงใน sleeve (คำนวณได้เมื่อตั้ง Quarterly Editor แล้ว)
+    var bahtOf = function (pctCash) { return inp.cashBaht != null ? baht(inp.cashBaht * pctCash / 100) : null; };
     var items = d.items.map(function (i) {
+      var amt = bahtOf(i.pctOfCash);
       return '<div class="pm-dep-row"><div class="pm-dep-head">' + assetLink(i.ticker) +
-        '<b>' + i.pctOfCash.toFixed(1) + "% ของเงินสด</b></div>" +
+        '<b>' + i.pctOfCash.toFixed(1) + "% ของเงินสด" + (amt ? " ≈ " + amt : "") + "</b></div>" +
         '<div class="pm-depbar"><i style="width:' + Math.min(100, i.pctOfCash) + '%"></i></div>' +
         '<small>' + esc(i.why) + (i.halved ? " · ถูกลดครึ่งจาก Macro Risk-Off (Rule 3)" : "") + "</small></div>";
     }).join("");
+    // headline: เงินก้อนถัดไปควรไปที่ไหน เท่าไหร่ — ตอบใน 1 บรรทัด ไม่ต้องไล่อ่านแผน
+    var top = d.items && d.items.length ? d.items[0] : null;
+    var headline;
+    if (top) {
+      var topAmt = bahtOf(top.pctOfCash);
+      headline = '<div class="pm-dep-next">🎯 เงินก้อนถัดไป → <b>' + esc(top.ticker) + "</b> " +
+        (topAmt ? "<b>≈ " + topAmt + "</b> (" + top.pctOfCash.toFixed(1) + "% ของเงินสด " + baht(inp.cashBaht) + ")" : top.pctOfCash.toFixed(1) + "% ของเงินก้อนที่จะวาง") +
+        (d.items.length > 1 ? " · ตัวถัดไป: " + d.items.slice(1, 3).map(function (i) { return esc(i.ticker); }).join(", ") : "") + "</div>";
+    } else {
+      headline = '<div class="pm-dep-next pm-dep-next-wait">🛡️ ตอนนี้ยังไม่มี entry ที่ trigger — <b>ถือเงินสดรอ 100%</b>' +
+        (inp.cashBaht != null ? " (เงินสดใน sleeve " + baht(inp.cashBaht) + " · " + pct(inp.cashPct, 1) + ")" : "") +
+        " · เป้าถัดไปดูจาก Zone ที่ดีสุดในตาราง Accumulation ด้านบน</div>";
+    }
     return '<section class="pm-sec"><h2>💵 Cash Deployment Plan <small>(เงินสดที่พร้อมวาง = 100%)</small></h2>' +
-      (inp.cashPct != null ? "<p>เงินสดจริงใน sleeve ตอนนี้ " + pct(inp.cashPct, 1) + " ของ sleeve — แผนด้านล่างคิดเป็นสัดส่วนของเงินสดก้อนนี้</p>"
+      headline +
+      (inp.cashPct != null ? "<p>เงินสดจริงใน sleeve ตอนนี้ " + pct(inp.cashPct, 1) + " (" + baht(inp.cashBaht) + ") ของ sleeve — แผนด้านล่างคิดเป็นสัดส่วนของเงินสดก้อนนี้</p>"
         : "<p>ยังไม่มีข้อมูลเงินสดจาก Quarterly Editor — แผนแสดงเป็นสัดส่วนสมมติของเงินก้อนที่จะวาง</p>") +
       (items || '<div class="mc-empty">วันนี้ยังไม่มี entry ที่ trigger ในตำแหน่งที่ถือ — เงินสดคงเป็น reserve 100%</div>') +
       '<div class="pm-dep-row pm-dep-reserve"><div class="pm-dep-head">🛡️ Cash Reserve<b>' + d.cashReserveFinal.toFixed(1) + "%</b></div>" +
@@ -409,7 +508,7 @@
     state.out = out;
     root.innerHTML = headerHtml() +
       sectionOverview(out, inp) +
-      sectionCurrent(out) +
+      sectionCurrent(out, inp) +
       sectionTargets(out) +
       sectionZones(out) +
       sectionDeployment(out, inp) +
@@ -425,6 +524,34 @@
   function bind(root) {
     root.querySelectorAll("[data-pm-tier]").forEach(function (el) {
       el.addEventListener("change", function () { setTier(el.getAttribute("data-pm-tier"), el.value); });
+    });
+    // จัดการพอร์ต: แก้มูลค่า / เอาออก / เพิ่มหุ้น (path เขียนเดียวกับทั้งแอป)
+    root.querySelectorAll("[data-pm-mv]").forEach(function (el) {
+      el.addEventListener("change", function () { saveHoldingAmount(el.getAttribute("data-pm-mv"), el.value, true); });
+      el.addEventListener("keydown", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); el.blur(); } });
+    });
+    root.querySelectorAll("[data-pm-remove]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var t = el.getAttribute("data-pm-remove");
+        if (confirm("เอา " + t + " ออกจากพอร์ต? (record ยังอยู่เป็น watchlist — เพิ่มกลับได้ตลอด)")) saveHoldingAmount(t, 0, false);
+      });
+    });
+    root.querySelectorAll("[data-pm-addquick]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var t = el.getAttribute("data-pm-addquick");
+        var ti = document.getElementById("pmAddTicker"), am = document.getElementById("pmAddAmount");
+        if (ti) ti.value = t;
+        if (am) { am.focus(); am.scrollIntoView({ block: "center", behavior: "smooth" }); }
+      });
+    });
+    var addBtn = document.getElementById("pmAddBtn");
+    if (addBtn) addBtn.addEventListener("click", function () {
+      var ti = document.getElementById("pmAddTicker"), am = document.getElementById("pmAddAmount");
+      var t = ti ? String(ti.value || "").trim().toUpperCase() : "";
+      var v = am ? fin(am.value) : null;
+      if (!t) { alert("ใส่ ticker ก่อน"); return; }
+      if (v == null || v < 0) { alert("ใส่มูลค่า (฿) เป็นตัวเลข"); return; }
+      saveHoldingAmount(t, v, true);
     });
     root.querySelectorAll("[data-pm-entry]").forEach(function (el) {
       el.addEventListener("change", function () { toggleEntry(el.getAttribute("data-pm-entry"), el.getAttribute("data-n"), el.checked); });

@@ -124,10 +124,52 @@
     } catch (_e) { return null; }
   }
 
+  // สัดส่วนตำแหน่ง (% ของ bucket) จาก snapshot — ให้ทุกหน้าใช้เพดาน 10% เดียวกัน
+  // (เดิม Action Center คิดเองหน้าเดียว → Asset 360/Home ไม่เคยติดเพดาน แนะนำสวนกัน)
+  // denominator: PMEngine.quarterlyBuckets ถ้ามี → fallback ผลรวมหุ้นธงแดง bucket เดียวกัน
+  function allocOf(symbol, snapshot) {
+    try {
+      var hs = snapshot && snapshot.portfolioHoldings && snapshot.portfolioHoldings.data;
+      if (!Array.isArray(hs) || !hs.length) return null;
+      var K = String(symbol || "").toUpperCase();
+      var match = function (c) { return c === K || (K === "GOOG" && c === "GOOGL") || (K === "GOOGL" && c === "GOOG"); };
+      var bucketOf = function (h, c) {
+        return h.portfolioBucket || (c.indexOf(".BK") >= 0 ? "thai-stock" : (c.indexOf("BTC") >= 0 ? "bitcoin" : "foreign-stock"));
+      };
+      var value = 0, bucket = null, bucketSum = 0;
+      hs.forEach(function (h) {
+        if (!h || !h.isHolding) return;
+        var c = String(h.canonicalSymbol || h.ticker || "").toUpperCase();
+        var mv = Number(h.marketValue); if (!isFinite(mv) || mv <= 0) mv = 0;
+        if (match(c)) { value += mv; if (!bucket) bucket = bucketOf(h, c); }
+      });
+      if (value <= 0 || !bucket) return null;
+      hs.forEach(function (h) {
+        if (!h || !h.isHolding) return;
+        var c = String(h.canonicalSymbol || h.ticker || "").toUpperCase();
+        var mv = Number(h.marketValue); if (!isFinite(mv) || mv <= 0) return;
+        if (bucketOf(h, c) === bucket) bucketSum += mv;
+      });
+      var PME = typeof window !== "undefined" ? window.PMEngine : null;
+      var denom = 0, basis = bucket, quarterly = false;
+      if (PME && typeof PME.quarterlyBuckets === "function") {
+        try {
+          var qb = PME.quarterlyBuckets(snapshot);
+          var g = qb && qb[bucket] != null ? Number(qb[bucket]) : (qb && qb.buckets && qb.buckets[bucket] != null ? Number(qb.buckets[bucket]) : NaN);
+          if (isFinite(g) && g > 0) { denom = g; quarterly = true; }
+        } catch (eq) { }
+      }
+      if (!denom && bucketSum > 0) { denom = bucketSum; basis = bucket + " (เฉพาะที่ปักธง)"; }
+      if (!denom) return null;
+      return { value: value, pct: (value / denom) * 100, basis: basis, quarterly: quarterly };
+    } catch (e) { return null; }
+  }
+
   // Asset 360 adapter: reconcile a raw Scoring action object for a symbol.
   // Returns { thesis, action (possibly replaced), note } — action keeps the
   // same shape the asset page renders ({key, action, thaiAction, thaiReason}).
-  function forAsset(symbol, snapshot, action, isHolding) {
+  // alloc: optional — ไม่ส่ง = คำนวณจาก snapshot อัตโนมัติ (เพดาน 10% ทำงานทุกหน้า)
+  function forAsset(symbol, snapshot, action, isHolding, alloc) {
     var th = summarize(symbol, snapshot);
     if (!th) return { thesis: null, action: action, note: null };
     if (isHolding && reviewOverride(th)) {
@@ -142,7 +184,8 @@
       };
     }
     if (isHolding && action && (action.key === "SELL_ALL" || action.key === "SELL_FIRST")) {
-      var res = reconcileSell(action.key, th, null, action.thaiReason || "");
+      if (alloc === undefined) alloc = allocOf(symbol, snapshot);
+      var res = reconcileSell(action.key, th, alloc || null, action.thaiReason || "");
       if (res && !res.unchanged) {
         return {
           thesis: th,
@@ -155,7 +198,7 @@
     return { thesis: th, action: action, note: null };
   }
 
-  var api = { BUY_DIP_MAX_PCT: BUY_DIP_MAX_PCT, VAL_TH: VAL_TH, reconcileSell: reconcileSell, reviewOverride: reviewOverride, summarize: summarize, forAsset: forAsset };
+  var api = { BUY_DIP_MAX_PCT: BUY_DIP_MAX_PCT, VAL_TH: VAL_TH, reconcileSell: reconcileSell, reviewOverride: reviewOverride, summarize: summarize, forAsset: forAsset, allocOf: allocOf };
   if (typeof window !== "undefined") window.ThesisReconcile = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

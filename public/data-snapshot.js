@@ -424,7 +424,22 @@
             };
             try {
               const t = window.Scoring.calculateTimingScore(input);
-              const action = window.Scoring.recommendAction(input, t);
+              // action จาก pipeline เดียวกับ Action Center/Asset 360 (classifySignal+actionFromSignal)
+              // — recommendAction เป็นกติกาคนละชุด ใช้เป็น fallback เท่านั้น (audit 2026-08)
+              let action = null;
+              try {
+                if (typeof window.Scoring.classifySignal === "function" && typeof window.Scoring.actionFromSignal === "function") {
+                  const sigAct = window.Scoring.actionFromSignal(window.Scoring.classifySignal(input), input);
+                  const sectionPrio = { urgent: 9, sell: 9, buy: 7, watch: 5, avoid: 3 };
+                  action = {
+                    key: sigAct.key, action: sigAct.action, thaiAction: sigAct.thaiAction,
+                    thaiReason: sigAct.thaiReason, section: sigAct.section,
+                    actionCategory: sigAct.section, priority: sectionPrio[sigAct.section] || 5,
+                    thaiExplanation: sigAct.thaiReason
+                  };
+                }
+              } catch (_sigActError) { action = null; }
+              if (!action) action = window.Scoring.recommendAction(input, t);
               const g = t.gates || {};
               const c = t.components || {};
               const thaiWarnings = (t.warnings || []).map((w) => w.thaiMessage || w.message || "").filter(Boolean);
@@ -442,6 +457,7 @@
                 finalAction: action.action,
                 thaiFinalAction: action.thaiAction,
                 actionKey: action.key,
+                thaiReason: action.thaiReason || null,
                 actionSection: action.section,
                 actionCategory: action.actionCategory,
                 actionPriority: action.priority,

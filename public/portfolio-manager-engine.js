@@ -175,8 +175,8 @@
     var parts = [
       { key: "thesis", label: "Investment Thesis", value: fin(o.thesis.score), weight: 40 },
       { key: "growthPrice", label: "Business Growth vs ราคา (2-5 ปี)", value: growthScoreOf(growth), weight: 25 },
-      { key: "timing", label: "Technical Timing", value: timing.score, weight: 20 },
-      { key: "valuation", label: "Valuation", value: valLevel ? VAL_SCORE[valLevel] : null, weight: 15 }
+      { key: "timing", label: "จังหวะย่อ (Dip Timing)", value: timing.score, weight: 20 },
+      { key: "valuation", label: "Valuation (curated · ถูก=สูง)", value: valLevel ? VAL_SCORE[valLevel] : null, weight: 15 }
     ];
     var w = 0, acc = 0;
     parts.forEach(function (p) { if (p.value != null) { w += p.weight; acc += p.value * p.weight; } });
@@ -454,7 +454,7 @@
         tier: tierDef, weightPct: fin(pos.weightPct), avgCost: fin(pos.avgCost) };
     }
     var tr = techOf(snapshot, pos.ticker);
-    // Business Growth vs ราคา = เฉลี่ยจาก 3 ช่วงปีล่าสุด (2/3/4 ปี) ผ่าน computeHistory
+    // Business Growth vs ราคา = ถ่วงน้ำหนัก 2-5 ปี (ปีล่าสุดหนักกว่า) ผ่าน computeHistory
     var histories = GROWTH_WINDOWS.map(function (y) {
       try {
         var ho = { years: y };

@@ -70,8 +70,8 @@
     try { o = TE.compute(ticker, snapshot, {}); } catch (e) { return null; }
     if (!o || !o.available) return null;
     var tr = PM.techOf(snapshot, ticker);
-    // Business Growth vs ราคา = เฉลี่ย 3 ช่วงปีล่าสุด (2/3/4 ปี) — สูตรกลางใน PM engine
-    var histories = (PM.GROWTH_WINDOWS || [2, 3, 4]).map(function (y) {
+    // Business Growth vs ราคา = ถ่วงน้ำหนัก 2-5 ปี (ปีล่าสุดหนักกว่า) — สูตรกลางใน PM engine
+    var histories = (PM.GROWTH_WINDOWS || [2, 3, 4, 5]).map(function (y) {
       try { return TE.computeHistory ? TE.computeHistory(ticker, snapshot, { years: y }) : null; } catch (e3) { return null; }
     });
     var growth = PM.growthSummary(histories);
@@ -138,7 +138,7 @@
     return '<article class="acc-card' + (rank <= 3 ? " acc-card-top" : "") + '">' +
       '<div class="acc-head"><span class="acc-rank">#' + rank + '</span>' +
       '<div class="acc-title"><a class="acc-sym" href="' + detail + '">' + esc(e.ticker) + "</a><small>" + esc(e.name) + "</small></div>" +
-      '<div class="acc-score"><b>' + (e.score == null ? "—" : e.score) + '</b><span>/100</span></div></div>' +
+      '<div class="acc-score" title="Accumulation Score — สูตรเดียวกับหน้า AI Portfolio Manager และป้าย Acc บน Home"><b>' + (e.score == null ? "—" : e.score) + '</b><span>/100 · Acc</span></div></div>' +
       '<div class="acc-line">' + e.dip.icon + ' <b>' + esc(e.dip.label) + "</b> — " + esc(e.dip.thai) +
       (e.dd != null ? ' · ย่อ ' + e.dd.toFixed(1) + '%' : "") + "</div>" +
       '<div class="acc-rec ' + recTone + '">' + esc(e.rec.label) + '<small>' + esc(e.recWhy || "") + "</small></div>" +

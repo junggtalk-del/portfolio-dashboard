@@ -3337,7 +3337,7 @@
           {
             "q": "Q3'23",
             "endYm": "2023-09",
-            "revenueB": 17.52,
+            "revenueB": 17.28,
             "epsAdj": 1.29,
             "opMarginPct": 41.7,
             "fcfB": 2.18,
@@ -3347,7 +3347,7 @@
           {
             "q": "Q4'23",
             "endYm": "2023-12",
-            "revenueB": 20.05,
+            "revenueB": 19.62,
             "epsAdj": 1.44,
             "opMarginPct": 41.6,
             "fcfB": 7.2,
@@ -3357,7 +3357,7 @@
           {
             "q": "Q1'24",
             "endYm": "2024-03",
-            "revenueB": 18.46,
+            "revenueB": 18.87,
             "epsAdj": 1.35,
             "opMarginPct": 42,
             "fcfB": 7.94,
@@ -3367,7 +3367,7 @@
           {
             "q": "Q2'24",
             "endYm": "2024-06",
-            "revenueB": 20.98,
+            "revenueB": 20.82,
             "epsAdj": 1.49,
             "opMarginPct": 42.6,
             "fcfB": 5.36,
@@ -3377,7 +3377,7 @@
           {
             "q": "Q3'24",
             "endYm": "2024-09",
-            "revenueB": 23.67,
+            "revenueB": 23.5,
             "epsAdj": 1.95,
             "opMarginPct": 47.5,
             "fcfB": 5.76,
@@ -3387,7 +3387,7 @@
           {
             "q": "Q4'24",
             "endYm": "2024-12",
-            "revenueB": 27.06,
+            "revenueB": 26.88,
             "epsAdj": 2.25,
             "opMarginPct": 49,
             "fcfB": 8.05,
@@ -3397,7 +3397,7 @@
           {
             "q": "Q1'25",
             "endYm": "2025-03",
-            "revenueB": 26.99,
+            "revenueB": 25.53,
             "epsAdj": 2.24,
             "opMarginPct": 48.5,
             "fcfB": 9.48,
@@ -3407,7 +3407,7 @@
           {
             "q": "Q2'25",
             "endYm": "2025-06",
-            "revenueB": 30.03,
+            "revenueB": 30.07,
             "epsAdj": 2.47,
             "opMarginPct": 49.6,
             "fcfB": 6.42,
@@ -3417,7 +3417,7 @@
           {
             "q": "Q3'25",
             "endYm": "2025-09",
-            "revenueB": 31.83,
+            "revenueB": 33.1,
             "epsAdj": 2.8,
             "opMarginPct": 50.6,
             "fcfB": 4.48,
@@ -3427,7 +3427,7 @@
           {
             "q": "Q4'25",
             "endYm": "2025-12",
-            "revenueB": 33.64,
+            "revenueB": 33.73,
             "epsAdj": 3.14,
             "opMarginPct": 54,
             "fcfB": 11.85,
@@ -3437,7 +3437,7 @@
           {
             "q": "Q1'26",
             "endYm": "2026-03",
-            "revenueB": 36.58,
+            "revenueB": 35.9,
             "epsAdj": 3.4,
             "opMarginPct": 58.1,
             "fcfB": 11.23,
@@ -3447,7 +3447,7 @@
           {
             "q": "Q2'26",
             "endYm": "2026-06",
-            "revenueB": 40.98,
+            "revenueB": 40.2,
             "epsAdj": 4.2,
             "opMarginPct": 60.3,
             "fcfB": 9.27,
@@ -3460,7 +3460,8 @@
           "adrRatio": 5,
           "currency": "USD",
           "note": "ราคาและ EPS ใน KB อยู่ฐาน ADR (US listing) ทั้งคู่ — ไม่ต้องแปลง"
-        }
+        },
+        "revenueBasis": "รายได้เป็นตัวเลข US$ ที่ TSMC รายงานอย่างเป็นทางการในตาราง guidance/actual ของแต่ละไตรมาส (investor.tsmc.com) — ไม่ใช่การแปลง NT$ ด้วยเรตตลาด · ตัวเลขรายปีอยู่ฐานเดียวกันอยู่แล้ว (ผลรวม 4 ไตรมาส ≈ ทั้งปี: FY2024 ~90.1 · FY2025 ~122.4)"
       },
       "nextEarnings": "2026-10",
       "forwardView": {
