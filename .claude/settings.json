@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check *)",
+      "Bash(node scripts/thesis-smoke-test.js)",
+      "Bash(node scripts/pm-smoke-test.js)",
+      "Bash(node scripts/valuation-smoke-test.js)",
+      "Bash(node scripts/kb-write.js *)",
+      "Bash(node scripts/kb-report.js *)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(curl -s \"http://localhost:*)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(node --check *)",
+      "PowerShell(git status *)",
+      "PowerShell(git log *)",
+      "PowerShell(Start-Process \"http://localhost:*)"
+    ]
+  }
+}

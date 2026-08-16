@@ -285,3 +285,123 @@
   .th-bp-cards { grid-template-columns: 1fr; }
   .th-bp-attr-row { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* ==== §14 · บริบทมูลค่า (valuation context) ==== */
+.th-vx-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 280px)); gap: 12px; margin: 4px 0 14px; }
+.th-vx-card { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.th-vx-card small { font-size: 11px; color: var(--mc-muted); font-weight: 700; letter-spacing: 0.3px; }
+.th-vx-card b { font-size: 22px; font-variant-numeric: tabular-nums; color: var(--mc-text); }
+.th-vx-card span { font-size: 11px; color: var(--mc-text-2); line-height: 1.5; }
+.th-vx-band { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 12px 14px; margin-bottom: 12px; }
+.th-vx-band.th-vx-off { opacity: 0.62; border-style: dashed; }
+.th-vx-bandhead { font-size: 12.5px; color: var(--mc-text); margin-bottom: 10px; line-height: 1.6; }
+.th-vx-track { position: relative; height: 10px; border-radius: 6px; background: linear-gradient(90deg, rgba(34,197,94,0.5), rgba(148,163,184,0.35), rgba(239,68,68,0.5)); }
+.th-vx-marker { position: absolute; top: -4px; width: 3px; height: 18px; border-radius: 2px; background: var(--mc-text); box-shadow: 0 0 0 2px rgba(15,23,42,0.55); transform: translateX(-50%); }
+.th-vx-scale { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10.5px; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
+.th-vx-link { font-size: 12px; color: var(--mc-text-2); border: 1px solid var(--mc-border); border-radius: 11px; padding: 9px 13px; line-height: 1.6; }
+.th-vx-link.th-vx-conflict { border-color: rgba(245,158,11,0.55); background: rgba(245,158,11,0.08); color: var(--mc-text); }
+
+/* ==== §15 · Forward View ==== */
+.th-fw-c1 { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 12px 14px; margin-bottom: 14px; }
+.th-fw-spark { width: 220px; height: 46px; flex: 0 0 auto; }
+.th-fw-c1txt { font-size: 12.5px; color: var(--mc-text-2); line-height: 1.6; }
+.th-fw-c1txt b { font-size: 15px; }
+.th-fw-track { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.th-fw-blk { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 40px; padding: 5px 6px 4px; border-radius: 8px; border: 1px solid var(--mc-border); cursor: default; }
+.th-fw-blk i { font-style: normal; font-size: 12px; line-height: 1; }
+.th-fw-blk small { font-size: 8.5px; color: var(--mc-muted); white-space: nowrap; }
+.th-fw-beat { background: rgba(34,197,94,0.16); border-color: rgba(34,197,94,0.45); }
+.th-fw-beat i { color: #22c55e; }
+.th-fw-inline { background: rgba(148,163,184,0.14); border-color: rgba(148,163,184,0.4); }
+.th-fw-inline i { color: #94a3b8; }
+.th-fw-miss { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.45); }
+.th-fw-miss i { color: #ef4444; }
+.th-fw-noGuidance { background: rgba(148,163,184,0.06); border-color: var(--mc-border); opacity: 0.65; }
+.th-fw-noGuidance i { color: var(--mc-muted); }
+.th-fw-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11px; color: var(--mc-text-2); margin-bottom: 12px; }
+.th-fw-legend .th-fw-lg { display: inline-block; width: 18px; text-align: center; border-radius: 5px; margin-right: 4px; font-style: normal; }
+.th-fw-interp { font-size: 12.5px; color: var(--mc-text); border: 1px dashed var(--mc-border); border-radius: 11px; padding: 9px 13px; margin-top: 2px; line-height: 1.6; }
+
+/* ==== Prompt C · Part 1 fixes ==== */
+.th-vx-summary { font-size: 15px; font-weight: 800; color: var(--mc-text); margin: 2px 0 12px; font-variant-numeric: tabular-nums; }
+.th-vx-marker-out { width: auto; height: auto; background: none; box-shadow: none; top: -5px; font-size: 13px; font-style: normal; color: var(--mc-text); line-height: 1; }
+.th-vx-refnote { margin-top: 7px; padding-top: 7px; border-top: 1px dashed var(--mc-border); font-size: 11.5px; color: var(--mc-muted); line-height: 1.5; }
+.th-vx-card-range { font-size: 15px; line-height: 1.4; }
+.th-fw-badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin-bottom: 12px; }
+.th-fw-badges .th-stale { margin: 0; }
+.th-fw-src { margin-top: 14px; border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 10px 14px; font-size: 12.5px; color: var(--mc-text-2); }
+.th-fw-src summary { cursor: pointer; font-weight: 700; color: var(--mc-text); font-size: 12.5px; }
+.th-fw-src ul { margin: 10px 0 4px; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; line-height: 1.65; }
+
+/* ==== §14/§15 กราฟ (นำเสนอแบบภาพ) ==== */
+.th-vx-pechart, .th-fw-gchart { width: 100%; height: auto; display: block; margin: 4px 0 2px; }
+.th-vx-linelbl { font-size: 9.5px; font-weight: 800; }
+.th-fw-gbarlbl { font-size: 8.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ==== §14 Valuation Engine UI ==== */
+.th-vx-cls { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; border: 1px solid var(--mc-border); border-radius: 999px; padding: 3px 12px; margin-left: 10px; vertical-align: middle; }
+.th-vx-cls-ATTRACTIVE { border-color: rgba(34,197,94,.5); background: rgba(34,197,94,.1); }
+.th-vx-cls-FAIR { border-color: rgba(56,189,248,.5); background: rgba(56,189,248,.1); }
+.th-vx-cls-PREMIUM { border-color: rgba(245,158,11,.55); background: rgba(245,158,11,.1); }
+.th-vx-cls-EXPENSIVE { border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.1); }
+.th-vx-cls-INSUFFICIENT_DATA { opacity: .7; }
+.th-vx-qual { margin-top: 12px; font-size: 11.5px; color: var(--mc-muted); border: 1px dashed var(--mc-border); border-radius: 11px; padding: 9px 13px; line-height: 1.7; }
+.th-vx-qual b { color: var(--mc-text-2); }
+
+/* ==== §6 ตารางไตรมาส: วันสิ้นงวด + ธงรายการพิเศษ ==== */
+.th-qdate { font-variant-numeric: tabular-nums; font-size: 11.5px; color: var(--mc-text-2); white-space: nowrap; }
+.th-qdate-approx { color: var(--mc-muted); font-style: italic; }
+.th-qflag { color: var(--mc-amber, #f59e0b); font-weight: 800; cursor: help; margin-left: 2px; }
+.th-qnotes { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; line-height: 1.6; font-size: 12px; }
+
+/* ==== §15 ตารางตัวเลข guidance vs ผลจริง ==== */
+.th-fw-table td { font-variant-numeric: tabular-nums; }
+.th-fw-metric { color: var(--mc-muted); font-size: 11.5px; }
+.th-fw-d-beat { color: #22c55e; }
+.th-fw-d-miss { color: #ef4444; }
+.th-fw-d-inline { color: var(--mc-text-2); }
+.th-fw-res { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+.th-fw-res.th-fw-beat { background: rgba(34,197,94,.16); color: #22c55e; }
+.th-fw-res.th-fw-inline { background: rgba(148,163,184,.16); color: var(--mc-text-2); }
+.th-fw-res.th-fw-miss { background: rgba(239,68,68,.15); color: #ef4444; }
+.th-fw-res.th-fw-noGuidance { background: rgba(148,163,184,.08); color: var(--mc-muted); }
+.th-fw-gnum { font-size: 7.6px; fill: var(--mc-muted); font-variant-numeric: tabular-nums; }
+.th-fw-gnum-act { font-weight: 800; }
+
+/* ==== Thesis Compare (โหมดเทียบหุ้น) ==== */
+.th-cmpbtn { border-style: dashed; }
+.th-chipdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.th-cmp-hint { font-size: 11.5px; color: var(--mc-muted); align-self: center; padding: 0 6px; }
+.thc-heads { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.thc-head { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 12px 14px; }
+.thc-head-t { display: flex; align-items: baseline; gap: 8px; }
+.thc-head-t b { font-size: 16px; }
+.thc-head-t span { font-size: 11px; color: var(--mc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thc-head-score { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.thc-head-score small { font-size: 13px; color: var(--mc-muted); font-weight: 600; }
+.thc-head-sub { font-size: 11.5px; color: var(--mc-text-2); margin-top: 2px; }
+.thc-head-dec { font-size: 11.5px; color: var(--mc-text); border-top: 1px dashed var(--mc-border); margin-top: 8px; padding-top: 7px; line-height: 1.5; }
+.thc-radarwrap { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 10px 14px; margin-bottom: 16px; }
+.thc-radar { width: 300px; max-width: 100%; height: auto; flex: 0 0 auto; }
+.thc-radar-lbl { font-size: 10px; fill: var(--mc-muted); }
+.thc-radar-legend { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--mc-text-2); min-width: 200px; flex: 1; }
+.thc-radar-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.thc-radar-legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.thc-table th { text-align: left; }
+.thc-table tr th:first-child { width: 210px; font-weight: 600; color: var(--mc-text-2); }
+.thc-table .thc-col { font-size: 13px; font-weight: 800; }
+.thc-group td { background: rgba(148,163,184,.07); font-weight: 800; font-size: 12px; color: var(--mc-text); padding: 7px 10px; border-top: 1px solid var(--mc-border); }
+.thc-table td { vertical-align: top; font-variant-numeric: tabular-nums; }
+.thc-table td.thc-best { box-shadow: inset 0 0 0 1.5px rgba(34,197,94,.55); border-radius: 8px; }
+.thc-bar { width: 54px; margin-right: 7px; }
+.thc-sub { display: block; font-size: 10.5px; color: var(--mc-muted); margin-top: 2px; line-height: 1.45; font-weight: 400; }
+.thc-trend { font-size: 10px; color: var(--mc-muted); }
+.thc-funds { margin-top: 14px; }
+.thc-empty { margin-top: 8px; }
+/* เทียบหลายตัว (5-7): ตารางเลื่อนแนวนอนแทนการบีบคอลัมน์ */
+.thc-table.thc-many { min-width: 900px; }
+.thc-table.thc-many tr th:first-child { width: 168px; }
+.thc-table.thc-many td { font-size: 12px; }
+.thc-table.thc-many .thc-bar { width: 40px; margin-right: 5px; }
+.th-cmp-clear { background: none; border: 1px solid var(--mc-border); color: var(--mc-muted); border-radius: 6px; font-size: 10.5px; padding: 1px 7px; cursor: pointer; margin-left: 4px; }
+.th-cmp-clear:hover { color: var(--mc-text); border-color: var(--mc-text-2); }

@@ -715,7 +715,8 @@
       var full = Q.map(function (q) {
         var lv = closeAtYm(hLive, q.endYm);
         if (lv != null) liveCount++;
-        return { q: q.q, endYm: q.endYm, rev: num(q.revenueB), eps: num(q.epsAdj), margin: num(q.opMarginPct), fcf: num(q.fcfB),
+        return { q: q.q, endYm: q.endYm, endDate: q.endDate || null, epsNote: q.epsNote || null,
+          rev: num(q.revenueB), eps: num(q.epsAdj), margin: num(q.opMarginPct), fcf: num(q.fcfB),
           price: lv != null ? round(lv, 2) : num(q.priceQEnd), priceLive: lv != null };
       });
       var startAll = full.length - want;
@@ -723,7 +724,7 @@
       for (var i = startAll; i < full.length; i++) {
         var c = full[i], p = i >= 4 ? full[i - 4] : null; // ไตรมาสเดียวกันปีก่อน
         rows.push({
-          q: c.q, endYm: c.endYm,
+          q: c.q, endYm: c.endYm, endDate: c.endDate, epsNote: c.epsNote,
           revenueB: c.rev, epsAdj: c.eps, opMarginPct: c.margin, fcfB: c.fcf, priceQEnd: c.price, priceLive: c.priceLive,
           revYoyPct: p && p.rev > 0 && c.rev != null ? round((c.rev / p.rev - 1) * 100, 1) : null,
           epsYoyPct: p && p.eps > 0 && c.eps != null ? round((c.eps / p.eps - 1) * 100, 1) : null,

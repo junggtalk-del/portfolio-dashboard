@@ -75,7 +75,61 @@
       "items": { "type": "object", "required": ["metric", "prev", "now", "direction"], "properties": { "metric": { "type": "string" }, "prev": { "type": "string" }, "now": { "type": "string" }, "direction": { "type": "string", "enum": ["positive", "negative", "neutral"] } } }
     },
     "risks": { "type": "array", "minItems": 3, "maxItems": 5, "items": { "type": "string" } },
+    "$quarterFields": {
+      "$comment": "history.quarters[] rows accept two OPTIONAL verification fields (added 2026-08): 'endDate' = exact period-end date YYYY-MM-DD (NEVER derive it from endYm — fiscal quarters do not always end on calendar month-end, e.g. NVDA ends Apr 26 / Jul 26); 'epsNote' = one-line Thai explanation when that quarter's EPS contains a one-time item (investment gain, impairment, tax settlement) so cross-quarter comparison is not misread. Both render in the §6 quarterly table; omit rather than guess."
+    },
     "asOf": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" },
-    "nextEarnings": { "type": "string", "pattern": "^\\d{4}-\\d{2}(-\\d{2})?$", "$comment": "OPTIONAL. Next expected quarterly report. YYYY-MM-DD = company-confirmed date; YYYY-MM = estimated month (shown with ~). Drives the earnings-aware reload reminder." }
+    "nextEarnings": { "type": "string", "pattern": "^\\d{4}-\\d{2}(-\\d{2})?$", "$comment": "OPTIONAL. Next expected quarterly report. YYYY-MM-DD = company-confirmed date; YYYY-MM = estimated month (shown with ~). Drives the earnings-aware reload reminder." },
+    "forwardView": {
+      "type": "object",
+      "$comment": "OPTIONAL top-level forward-looking layer (consensus + guidance track record). Tickers without it must keep working unchanged. Has its OWN asOf — consensus ages faster than structural data. Never guess numbers: unverifiable fields stay null / rows omitted. No Buy/Sell wording anywhere.",
+      "required": ["asOf", "estimateHistory", "guidanceTrack", "consensus", "note"],
+      "properties": {
+        "asOf": { "type": "string", "pattern": "^\\d{4}-\\d{2}$", "$comment": "asOf of THIS block — must be equal to or newer than the company-level asOf" },
+        "estimateHistory": {
+          "type": "array", "maxItems": 16,
+          "$comment": "APPEND-ONLY consensus revision trail. Refresh appends ONE row per run — never edit or delete existing rows. If the new row's asOf equals the latest row's asOf, replace that single row (same-month re-run guard). When consensus rolls to a new fy (e.g. FY2026 -> FY2027), start new fy rows appended at the end and KEEP all old-fy rows. Over 16 rows: drop the oldest. asOf ascending, no duplicate asOf.",
+          "items": {
+            "type": "object", "required": ["asOf", "fy", "eps", "revenue"],
+            "properties": {
+              "asOf": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" },
+              "fy": { "type": "string" },
+              "eps": { "type": ["number", "null"] },
+              "revenue": { "type": ["number", "null"], "$comment": "USD billions (keep the unit consistent per ticker)" }
+            }
+          }
+        },
+        "guidanceTrack": {
+          "type": "array", "maxItems": 12,
+          "$comment": "Newest quarter FIRST. Max 12 rows. No duplicate (quarter, metric) pair. magnitudePct = % distance of actual from the guidance-range midpoint (single-value guidance = that value); result must be consistent with magnitudePct — inline means within +/-1% of midpoint. Quarters where the company gave no guidance for that metric get result=noGuidance (record the row, do not skip it).",
+          "items": {
+            "type": "object", "required": ["quarter", "metric", "guided", "actual", "result"],
+            "properties": {
+              "quarter": { "type": "string", "$comment": "e.g. 2026Q2 (company fiscal labeling allowed, keep consistent per ticker)" },
+              "metric": { "type": "string", "enum": ["revenue", "eps", "opex", "capex", "margin"] },
+              "guided": { "type": "string", "$comment": "guidance text as announced, ~ prefix for approximations, e.g. ~$47-50B" },
+              "actual": { "type": "string" },
+              "result": { "type": "string", "enum": ["beat", "inline", "miss", "noGuidance"] },
+              "magnitudePct": { "type": ["number", "null"], "$comment": "REQUIRED as a number whenever result is not noGuidance" }
+            }
+          }
+        },
+        "consensus": {
+          "type": "array",
+          "$comment": "Forward fiscal years ONLY — fy must be newer than the latest fiscal year that already has actuals. Typically the next 2 FYs.",
+          "items": {
+            "type": "object", "required": ["fy", "revenue", "eps", "confidence"],
+            "properties": {
+              "fy": { "type": "string" },
+              "revenue": { "type": ["number", "null"] },
+              "eps": { "type": ["number", "null"] },
+              "confidence": { "type": "string", "enum": ["high", "medium", "low"], "$comment": "high = multiple analyst sources agree; medium = single source; low = derived from company guidance only" },
+              "basis": { "type": "string", "enum": ["GAAP", "non-GAAP", "unknown"], "$comment": "OPTIONAL. Accounting basis of the consensus EPS. Default when absent = unknown. NEVER guess — if the source does not state the basis, use unknown. UI joins the consensus EPS dash-line to actuals ONLY when basis matches the KB epsBasis; unknown/mismatch renders disconnected points." }
+            }
+          }
+        },
+        "note": { "type": "string", "$comment": "1-2 Thai sentences — e.g. why consensus was revised, or a change in how guidance is given" }
+      }
+    }
   }
 }

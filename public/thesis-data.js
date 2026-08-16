@@ -337,7 +337,7 @@
       "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดเดือนธันวาคม (ตรงกับปีปฏิทิน) — FY2025 สิ้นสุด ธ.ค. 2025 รายงานผลครบแล้วเมื่อต้นปี 2026",
-        "epsBasis": "diluted GAAP, split-adjusted (หลัง stock split 20:1 เดือน ก.ค. 2022)",
+        "epsBasis": "diluted GAAP, split-adjusted (หลัง stock split 20:1 เดือน ก.ค. 2022) · หมายเหตุ: Q1'26-Q2'26 มี unrealized mark-to-market gain จากหุ้น Anthropic/SpaceX (other income ~$37.7B ใน Q1'26) ดันกำไรสูงผิดปกติ — TTM EPS และ P/E ปัจจุบันจึงดูถูกกว่าฐานธุรกิจจริง",
         "years": [
           {
             "fy": "FY2021",
@@ -504,7 +504,77 @@
           }
         ]
       },
-      "nextEarnings": "2026-10"
+      "nextEarnings": "2026-10",
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2026",
+            "eps": 20.58,
+            "revenue": 497.7
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2'26",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance",
+            "actual": "~$119.8B (+24% YoY)",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q1'26",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance",
+            "actual": "~$109.9B (+22% YoY)",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q4'25",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance",
+            "actual": "~$113.8B",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q3'25",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance",
+            "actual": "~$102.4B",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q2'25",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance",
+            "actual": "~$96.4B",
+            "result": "noGuidance",
+            "magnitudePct": null
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": 497.7,
+            "eps": 20.58,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": null,
+            "eps": null,
+            "confidence": "low",
+            "basis": "unknown"
+          }
+        ],
+        "note": "Alphabet ไม่ให้ guidance รายได้รายไตรมาส (ให้เฉพาะ CapEx รายปี) — แถว guidance จึงเป็น noGuidance ตามจริง ไม่ใช่ข้อมูลขาด · CapEx 2026 ถูกยกขึ้น 3 รอบ: $175-185B → $180-190B (เม.ย.) → $195-205B (ก.ค.) · CapEx 2027 ตลาดคาด ~$250-257B (FactSet) สูงขึ้นอีกมาก — เป็นตัวเลขคาดการณ์ที่ควรจับตาแทน guidance รายได้ · consensus FY2026 EPS ~$20.58 (50 นักวิเคราะห์ · non-GAAP) พองจาก unrealized gain หุ้น Anthropic/SpaceX ไม่ใช่กำไรจากธุรกิจ — FY2027 แต่ละสำนักต่างกันมาก (~$11.5-14.7) เพราะโมเดล gain นี้ไม่เหมือนกัน และตัวเลข revenue FY2027 อยู่หลัง paywall ทุกแหล่งฟรี จึงเว้นไว้แทนการเดา"
+      }
     },
     "NVDA": {
       "ticker": "NVDA",
@@ -994,7 +1064,133 @@
           }
         ]
       },
-      "nextEarnings": "2026-08"
+      "nextEarnings": "2026-08-26",
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2027",
+            "eps": 8.96,
+            "revenue": 393.9
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q1 FY27",
+            "metric": "revenue",
+            "guided": "~$78.0B ±2%",
+            "actual": "~$81.6B",
+            "result": "beat",
+            "magnitudePct": 4.6
+          },
+          {
+            "quarter": "Q4 FY26",
+            "metric": "revenue",
+            "guided": "~$65.0B ±2%",
+            "actual": "~$68.1B",
+            "result": "beat",
+            "magnitudePct": 4.8
+          },
+          {
+            "quarter": "Q3 FY26",
+            "metric": "revenue",
+            "guided": "~$54.0B ±2%",
+            "actual": "~$57.0B",
+            "result": "beat",
+            "magnitudePct": 5.6
+          },
+          {
+            "quarter": "Q2 FY26",
+            "metric": "revenue",
+            "guided": "~$45.0B ±2%",
+            "actual": "~$46.7B",
+            "result": "beat",
+            "magnitudePct": 3.9
+          },
+          {
+            "quarter": "Q1 FY26",
+            "metric": "revenue",
+            "guided": "~$43.0B ±2%",
+            "actual": "~$44.1B",
+            "result": "beat",
+            "magnitudePct": 2.5
+          },
+          {
+            "quarter": "Q4 FY25",
+            "metric": "revenue",
+            "guided": "~$37.5B ±2%",
+            "actual": "~$39.3B",
+            "result": "beat",
+            "magnitudePct": 4.9
+          },
+          {
+            "quarter": "Q3 FY25",
+            "metric": "revenue",
+            "guided": "~$32.5B ±2%",
+            "actual": "~$35.1B",
+            "result": "beat",
+            "magnitudePct": 7.9
+          },
+          {
+            "quarter": "Q2 FY25",
+            "metric": "revenue",
+            "guided": "~$28.0B ±2%",
+            "actual": "~$30.0B",
+            "result": "beat",
+            "magnitudePct": 7.3
+          },
+          {
+            "quarter": "Q1 FY25",
+            "metric": "revenue",
+            "guided": "~$24.0B ±2%",
+            "actual": "~$26.0B",
+            "result": "beat",
+            "magnitudePct": 8.5
+          },
+          {
+            "quarter": "Q4 FY24",
+            "metric": "revenue",
+            "guided": "~$20.0B ±2%",
+            "actual": "~$22.1B",
+            "result": "beat",
+            "magnitudePct": 10.5
+          },
+          {
+            "quarter": "Q3 FY24",
+            "metric": "revenue",
+            "guided": "~$16.0B ±2%",
+            "actual": "~$18.1B",
+            "result": "beat",
+            "magnitudePct": 13.3
+          },
+          {
+            "quarter": "Q2 FY24",
+            "metric": "revenue",
+            "guided": "~$11.0B ±2%",
+            "actual": "~$13.5B",
+            "result": "beat",
+            "magnitudePct": 22.8
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2027",
+            "revenue": 393.9,
+            "eps": 8.96,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2028",
+            "revenue": null,
+            "eps": 12.12,
+            "confidence": "medium",
+            "basis": "unknown"
+          }
+        ],
+        "note": "consensus = non-GAAP ของสำนักวิเคราะห์ (ตั้งแต่ Q1 FY27 non-GAAP ของ NVIDIA รวม SBC — เปลี่ยนวิธีคำนวณ) ขณะที่ตาราง KB ใช้ GAAP เทียบข้ามฐานตรง ๆ ไม่ได้ · FY2027 EPS แต่ละสำนัก ~8.96-9.34 / revenue ~391-394B ใช้ StockAnalysis (53 นักวิเคราะห์) · FY2028 แหล่งเดียว ฐานไม่ระบุ · งบ Q2 FY27 ออก 26 ส.ค. 2026 — guidance ~$91.0B ±2% vs consensus ~$91.8B"
+      }
     },
     "MSFT": {
       "ticker": "MSFT",
@@ -1311,7 +1507,7 @@
       "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีของ Microsoft สิ้นสุด 30 มิ.ย. (เช่น FY2025 = ก.ค. 2024 – มิ.ย. 2025) — FY2026 สิ้นสุดแล้วแต่จะประกาศผลวันที่ 29 ก.ค. 2026 จึงยังไม่นับรวม ใช้ FY2021–FY2025",
-        "epsBasis": "diluted GAAP, split-adjusted (ไม่มี split ตั้งแต่ปี 2003 — ตัวเลขตามงบจริงคือฐานหุ้นปัจจุบันอยู่แล้ว)",
+        "epsBasis": "diluted GAAP, split-adjusted (ไม่มี split ตั้งแต่ปี 2003 — ตัวเลขตามงบจริงคือฐานหุ้นปัจจุบันอยู่แล้ว) · หมายเหตุ: Q2 FY26 GAAP EPS $5.16 รวมกำไรจากเงินลงทุนใน OpenAI ~$1.02/หุ้น (net income +$7.6B) — non-GAAP ไตรมาสนั้น $4.14 · ไตรมาสอื่นไม่มีรายการนี้",
         "years": [
           {
             "fy": "FY2021",
@@ -1357,6 +1553,15 @@
             "opMarginPct": 45.6,
             "fcfB": 71.6,
             "priceFYEnd": 497.41
+          },
+          {
+            "fy": "FY2026",
+            "endYm": "2026-06",
+            "revenueB": 331.8,
+            "epsAdj": 17.96,
+            "opMarginPct": 46.8,
+            "fcfB": 67,
+            "priceFYEnd": 470
           }
         ],
         "notes": "ตัวเลขงบตรงกับ 8-K/10-K ของ SEC และ stockanalysis.com; FCF = กระแสเงินสดจากการดำเนินงาน ลบ capex (PP&E) — FY2024–FY2025 capex พุ่งจากการลงทุน AI/data center ($44.5B → $64.6B) กด FCF ทั้งที่กำไรโต; ราคาปิดสิ้นปีบัญชีเป็นราคาปิดจริง (raw close) จาก Yahoo Finance ไม่ใช่ราคาปรับเงินปันผล (แหล่งอย่าง StatMuse แสดงราคาปรับปันผลซึ่งต่ำกว่า ~2-4%); จำนวนหุ้น diluted โดยนัยลดลงช้า ๆ จาก ~7.6B เหลือ ~7.5B ตาม buyback สอดคล้องทุกปี; ไม่มี stock split ในช่วงนี้",
@@ -1375,7 +1580,8 @@
             "epsAdj": 2.99,
             "opMarginPct": 47.6,
             "fcfB": 20.67,
-            "priceQEnd": 315
+            "priceQEnd": 315,
+            "endDate": "2023-09-30"
           },
           {
             "q": "Q2 FY24",
@@ -1384,7 +1590,8 @@
             "epsAdj": 2.93,
             "opMarginPct": 43.6,
             "fcfB": 9.12,
-            "priceQEnd": 376
+            "priceQEnd": 376,
+            "endDate": "2023-12-31"
           },
           {
             "q": "Q3 FY24",
@@ -1393,7 +1600,8 @@
             "epsAdj": 2.94,
             "opMarginPct": 44.6,
             "fcfB": 20.97,
-            "priceQEnd": 421
+            "priceQEnd": 421,
+            "endDate": "2024-03-31"
           },
           {
             "q": "Q4 FY24",
@@ -1402,7 +1610,8 @@
             "epsAdj": 2.95,
             "opMarginPct": 43.1,
             "fcfB": 23.32,
-            "priceQEnd": 447
+            "priceQEnd": 447,
+            "endDate": "2024-06-30"
           },
           {
             "q": "Q1 FY25",
@@ -1411,7 +1620,8 @@
             "epsAdj": 3.3,
             "opMarginPct": 46.6,
             "fcfB": 19.26,
-            "priceQEnd": 430
+            "priceQEnd": 430,
+            "endDate": "2024-09-30"
           },
           {
             "q": "Q2 FY25",
@@ -1420,7 +1630,8 @@
             "epsAdj": 3.23,
             "opMarginPct": 45.5,
             "fcfB": 6.49,
-            "priceQEnd": 421
+            "priceQEnd": 421,
+            "endDate": "2024-12-31"
           },
           {
             "q": "Q3 FY25",
@@ -1429,7 +1640,8 @@
             "epsAdj": 3.46,
             "opMarginPct": 45.7,
             "fcfB": 20.3,
-            "priceQEnd": 375
+            "priceQEnd": 375,
+            "endDate": "2025-03-31"
           },
           {
             "q": "Q4 FY25",
@@ -1438,7 +1650,8 @@
             "epsAdj": 3.65,
             "opMarginPct": 44.9,
             "fcfB": 25.57,
-            "priceQEnd": 497
+            "priceQEnd": 497,
+            "endDate": "2025-06-30"
           },
           {
             "q": "Q1 FY26",
@@ -1447,7 +1660,8 @@
             "epsAdj": 3.72,
             "opMarginPct": 48.9,
             "fcfB": 25.66,
-            "priceQEnd": 515
+            "priceQEnd": 515,
+            "endDate": "2025-09-30"
           },
           {
             "q": "Q2 FY26",
@@ -1456,7 +1670,9 @@
             "epsAdj": 5.16,
             "opMarginPct": 47.1,
             "fcfB": 5.88,
-            "priceQEnd": 470
+            "priceQEnd": 470,
+            "endDate": "2025-12-31",
+            "epsNote": "GAAP EPS $5.16 รวมกำไรจากเงินลงทุนใน OpenAI ~$1.02/หุ้น (net income +$7.6B) — ตัดรายการนี้ออกจะเหลือ ~$4.14 (non-GAAP ที่บริษัทรายงาน) จึงเทียบกับไตรมาสอื่นตรง ๆ ไม่ได้"
           },
           {
             "q": "Q3 FY26",
@@ -1465,7 +1681,8 @@
             "epsAdj": 4.27,
             "opMarginPct": 46.3,
             "fcfB": 15.8,
-            "priceQEnd": 455
+            "priceQEnd": 455,
+            "endDate": "2026-03-31"
           },
           {
             "q": "Q4 FY26",
@@ -1474,11 +1691,130 @@
             "epsAdj": 4.81,
             "opMarginPct": 45.1,
             "fcfB": 19.64,
-            "priceQEnd": 470
+            "priceQEnd": 470,
+            "endDate": "2026-06-30"
           }
         ]
       },
-      "nextEarnings": "2026-10"
+      "nextEarnings": "2026-10",
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2027",
+            "eps": 19.7,
+            "revenue": 391.2
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q4 FY26",
+            "metric": "revenue",
+            "guided": "~$86.7-87.8B",
+            "actual": "~$90.0B",
+            "result": "beat",
+            "magnitudePct": 3.2
+          },
+          {
+            "quarter": "Q3 FY26",
+            "metric": "revenue",
+            "guided": "~$80.65-81.75B",
+            "actual": "~$82.9B",
+            "result": "beat",
+            "magnitudePct": 2.1
+          },
+          {
+            "quarter": "Q2 FY26",
+            "metric": "revenue",
+            "guided": "~$79.5-80.6B",
+            "actual": "~$81.3B",
+            "result": "beat",
+            "magnitudePct": 1.5
+          },
+          {
+            "quarter": "Q4 FY25",
+            "metric": "revenue",
+            "guided": "~$73.15-74.25B",
+            "actual": "~$76.4B",
+            "result": "beat",
+            "magnitudePct": 3.7
+          },
+          {
+            "quarter": "Q3 FY25",
+            "metric": "revenue",
+            "guided": "~$67.7-68.7B",
+            "actual": "~$70.1B",
+            "result": "beat",
+            "magnitudePct": 2.7
+          },
+          {
+            "quarter": "Q2 FY25",
+            "metric": "revenue",
+            "guided": "~$68.1-69.1B",
+            "actual": "~$69.6B",
+            "result": "beat",
+            "magnitudePct": 1.5
+          },
+          {
+            "quarter": "Q1 FY25",
+            "metric": "revenue",
+            "guided": "~$63.8-64.8B",
+            "actual": "~$65.6B",
+            "result": "beat",
+            "magnitudePct": 2
+          },
+          {
+            "quarter": "Q4 FY24",
+            "metric": "revenue",
+            "guided": "~$63.5-64.5B",
+            "actual": "~$64.7B",
+            "result": "beat",
+            "magnitudePct": 1.1
+          },
+          {
+            "quarter": "Q3 FY24",
+            "metric": "revenue",
+            "guided": "~$60.0-61.0B",
+            "actual": "~$61.9B",
+            "result": "beat",
+            "magnitudePct": 2.2
+          },
+          {
+            "quarter": "Q2 FY24",
+            "metric": "revenue",
+            "guided": "~$60.4-61.4B",
+            "actual": "~$62.0B",
+            "result": "beat",
+            "magnitudePct": 1.8
+          },
+          {
+            "quarter": "Q1 FY24",
+            "metric": "revenue",
+            "guided": "~$53.8-54.8B",
+            "actual": "~$56.5B",
+            "result": "beat",
+            "magnitudePct": 4.1
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2027",
+            "revenue": 391.2,
+            "eps": 19.7,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2028",
+            "revenue": null,
+            "eps": 23.32,
+            "confidence": "medium",
+            "basis": "unknown"
+          }
+        ],
+        "note": "consensus FY2027 จาก 48 นักวิเคราะห์ (StockAnalysis ระบุฐาน non-GAAP adjusted) · FY2028 เฉลี่ย ~$23.32 ช่วงกว้าง ~18.6-27.2 ฐานไม่ระบุ · guidance ของ Microsoft ให้เป็นราย segment ในคอลล์ — ตัวเลขที่บันทึกคือ implied total ที่จุดกึ่งกลาง · Q1 FY26 มี guidance แต่ยืนยันตัวเลขไม่ได้จึงเว้นแถว (ไม่เดา) · งบถัดไป ~27 ต.ค. 2026 ยังไม่ยืนยันทางการจึงคง nextEarnings แบบเดือน"
+      }
     },
     "META": {
       "ticker": "META",
@@ -1860,7 +2196,8 @@
             "epsAdj": 4.39,
             "opMarginPct": 40.3,
             "fcfB": 13.91,
-            "priceQEnd": 298
+            "priceQEnd": 298,
+            "endDate": "2023-09-30"
           },
           {
             "q": "Q4'23",
@@ -1869,7 +2206,8 @@
             "epsAdj": 5.33,
             "opMarginPct": 40.9,
             "fcfB": 11.81,
-            "priceQEnd": 351
+            "priceQEnd": 351,
+            "endDate": "2023-12-31"
           },
           {
             "q": "Q1'24",
@@ -1878,7 +2216,8 @@
             "epsAdj": 4.71,
             "opMarginPct": 37.9,
             "fcfB": 12.85,
-            "priceQEnd": 482
+            "priceQEnd": 482,
+            "endDate": "2024-03-31"
           },
           {
             "q": "Q2'24",
@@ -1887,7 +2226,8 @@
             "epsAdj": 5.16,
             "opMarginPct": 38,
             "fcfB": 11.2,
-            "priceQEnd": 502
+            "priceQEnd": 502,
+            "endDate": "2024-06-30"
           },
           {
             "q": "Q3'24",
@@ -1896,7 +2236,8 @@
             "epsAdj": 6.03,
             "opMarginPct": 42.8,
             "fcfB": 16.47,
-            "priceQEnd": 569
+            "priceQEnd": 569,
+            "endDate": "2024-09-30"
           },
           {
             "q": "Q4'24",
@@ -1905,7 +2246,8 @@
             "epsAdj": 8.02,
             "opMarginPct": 48.3,
             "fcfB": 13.56,
-            "priceQEnd": 583
+            "priceQEnd": 583,
+            "endDate": "2024-12-31"
           },
           {
             "q": "Q1'25",
@@ -1914,7 +2256,8 @@
             "epsAdj": 6.43,
             "opMarginPct": 41.5,
             "fcfB": 11.09,
-            "priceQEnd": 574
+            "priceQEnd": 574,
+            "endDate": "2025-03-31"
           },
           {
             "q": "Q2'25",
@@ -1923,7 +2266,8 @@
             "epsAdj": 7.14,
             "opMarginPct": 43,
             "fcfB": 9.02,
-            "priceQEnd": 736
+            "priceQEnd": 736,
+            "endDate": "2025-06-30"
           },
           {
             "q": "Q3'25",
@@ -1932,7 +2276,8 @@
             "epsAdj": 1.05,
             "opMarginPct": 40.1,
             "fcfB": 11.17,
-            "priceQEnd": 732
+            "priceQEnd": 732,
+            "endDate": "2025-09-30"
           },
           {
             "q": "Q4'25",
@@ -1941,7 +2286,8 @@
             "epsAdj": 8.88,
             "opMarginPct": 41.3,
             "fcfB": 14.83,
-            "priceQEnd": 659
+            "priceQEnd": 659,
+            "endDate": "2025-12-31"
           },
           {
             "q": "Q1'26",
@@ -1950,7 +2296,8 @@
             "epsAdj": 10.44,
             "opMarginPct": 40.6,
             "fcfB": 13.23,
-            "priceQEnd": 572
+            "priceQEnd": 572,
+            "endDate": "2026-03-31"
           },
           {
             "q": "Q2'26",
@@ -1959,11 +2306,75 @@
             "epsAdj": 6.18,
             "opMarginPct": 30.9,
             "fcfB": 1.75,
-            "priceQEnd": 563
+            "priceQEnd": 563,
+            "endDate": "2026-06-30",
+            "epsNote": "GAAP EPS $6.18 พลาดคาด ~$7.22 เพราะค่าใช้จ่ายครั้งเดียว: ตั้งสำรองคดีความ ~$2.4B + ค่าชดเชยเลิกจ้าง ~$1.18B (ลดพนักงาน ~8,000 คน) — operating margin ตกจาก 43% เหลือ 31% ชั่วคราว · รายได้ยังโต +28% YoY ปกติ"
           }
         ]
       },
-      "nextEarnings": "2026-10"
+      "nextEarnings": "2026-10",
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2026",
+            "eps": 31.05,
+            "revenue": 254.3
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2 2026",
+            "metric": "revenue",
+            "guided": "~$58.0-61.0B",
+            "actual": "~$60.8B",
+            "result": "beat",
+            "magnitudePct": 2.2
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "revenue",
+            "guided": "~$53.5-56.5B",
+            "actual": "~$56.3B",
+            "result": "beat",
+            "magnitudePct": 2.4
+          },
+          {
+            "quarter": "Q4 2025",
+            "metric": "revenue",
+            "guided": "~$56.0-59.0B",
+            "actual": "~$59.9B",
+            "result": "beat",
+            "magnitudePct": 4.2
+          },
+          {
+            "quarter": "Q3 2025",
+            "metric": "revenue",
+            "guided": "~$47.5-50.5B",
+            "actual": "~$51.2B",
+            "result": "beat",
+            "magnitudePct": 4.5
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": 254.3,
+            "eps": 31.05,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": null,
+            "eps": null,
+            "confidence": "low",
+            "basis": "unknown"
+          }
+        ],
+        "note": "Meta ให้ guidance รายได้เป็นช่วงทุกไตรมาส (พร้อมสมมติฐานค่าเงิน) — ยืนยัน guidance→ผลจริงได้ 4 ไตรมาส · guidance Q3 2026 = ~$61-64B (สมมติค่าเงินเป็นลบ ~1%) · ค่าใช้จ่ายทั้งปี 2026 ~$165-169B · CapEx รวม finance lease ~$130-145B (แคบลงจาก $125-145B) · consensus FY2026 EPS ~$31.05 (55 นักวิเคราะห์ · non-GAAP) — ตัวเลข GAAP ปีนี้ต่ำกว่าเพราะรายการครั้งเดียวใน Q2 · FY2027 อยู่หลัง paywall จึงเว้นไว้"
+      }
     },
     "AMZN": {
       "ticker": "AMZN",
@@ -2298,7 +2709,7 @@
       "asOf": "2026-08",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดเดือนธันวาคม (ปีปฏิทิน) — FY2025 สิ้นสุด ธ.ค. 2025 รายงานผลเมื่อ 5 ก.พ. 2026",
-        "epsBasis": "diluted GAAP, split-adjusted (ปรับ 20:1 split มิ.ย. 2022 ทุกปี)",
+        "epsBasis": "diluted GAAP, split-adjusted (ปรับ 20:1 split มิ.ย. 2022 ทุกปี) · หมายเหตุ: Q2'26 GAAP EPS $5.75 รวมกำไรก่อนภาษี ~$53.4B จากการตีมูลค่าเงินลงทุนใน Anthropic (non-operating) — ไม่ใช่กำไรจากธุรกิจ · FY2022 ขาดทุน GAAP จึงถูกตัดออกจากชุด P/E ย้อนหลัง",
         "years": [
           {
             "fy": "FY2021",
@@ -2362,7 +2773,8 @@
             "epsAdj": 0.94,
             "opMarginPct": 7.8,
             "fcfB": 8.74,
-            "priceQEnd": 127.12
+            "priceQEnd": 127.12,
+            "endDate": "2023-09-30"
           },
           {
             "q": "Q4'23",
@@ -2371,7 +2783,8 @@
             "epsAdj": 1,
             "opMarginPct": 7.8,
             "fcfB": 27.88,
-            "priceQEnd": 151.94
+            "priceQEnd": 151.94,
+            "endDate": "2023-12-31"
           },
           {
             "q": "Q1'24",
@@ -2380,7 +2793,8 @@
             "epsAdj": 0.98,
             "opMarginPct": 10.7,
             "fcfB": 4.06,
-            "priceQEnd": 180.38
+            "priceQEnd": 180.38,
+            "endDate": "2024-03-31"
           },
           {
             "q": "Q2'24",
@@ -2389,7 +2803,8 @@
             "epsAdj": 1.26,
             "opMarginPct": 9.9,
             "fcfB": 7.66,
-            "priceQEnd": 193.25
+            "priceQEnd": 193.25,
+            "endDate": "2024-06-30"
           },
           {
             "q": "Q3'24",
@@ -2398,7 +2813,8 @@
             "epsAdj": 1.43,
             "opMarginPct": 11,
             "fcfB": 3.35,
-            "priceQEnd": 186.33
+            "priceQEnd": 186.33,
+            "endDate": "2024-09-30"
           },
           {
             "q": "Q4'24",
@@ -2407,7 +2823,8 @@
             "epsAdj": 1.86,
             "opMarginPct": 11.3,
             "fcfB": 17.8,
-            "priceQEnd": 219.39
+            "priceQEnd": 219.39,
+            "endDate": "2024-12-31"
           },
           {
             "q": "Q1'25",
@@ -2416,7 +2833,8 @@
             "epsAdj": 1.59,
             "opMarginPct": 11.8,
             "fcfB": -8,
-            "priceQEnd": 190.26
+            "priceQEnd": 190.26,
+            "endDate": "2025-03-31"
           },
           {
             "q": "Q2'25",
@@ -2425,7 +2843,8 @@
             "epsAdj": 1.68,
             "opMarginPct": 11.4,
             "fcfB": 0.33,
-            "priceQEnd": 219.39
+            "priceQEnd": 219.39,
+            "endDate": "2025-06-30"
           },
           {
             "q": "Q3'25",
@@ -2434,7 +2853,8 @@
             "epsAdj": 1.95,
             "opMarginPct": 9.7,
             "fcfB": 0.43,
-            "priceQEnd": 219.57
+            "priceQEnd": 219.57,
+            "endDate": "2025-09-30"
           },
           {
             "q": "Q4'25",
@@ -2443,7 +2863,8 @@
             "epsAdj": 1.95,
             "opMarginPct": 11.7,
             "fcfB": 14.94,
-            "priceQEnd": 230.82
+            "priceQEnd": 230.82,
+            "endDate": "2025-12-31"
           },
           {
             "q": "Q1'26",
@@ -2452,7 +2873,8 @@
             "epsAdj": 2.78,
             "opMarginPct": 13.1,
             "fcfB": -18.17,
-            "priceQEnd": 208.27
+            "priceQEnd": 208.27,
+            "endDate": "2026-03-31"
           },
           {
             "q": "Q2'26",
@@ -2461,11 +2883,75 @@
             "epsAdj": 5.75,
             "opMarginPct": 13.7,
             "fcfB": -8.82,
-            "priceQEnd": 238.34
+            "priceQEnd": 238.34,
+            "endDate": "2026-06-30",
+            "epsNote": "GAAP EPS $5.75 รวมกำไรก่อนภาษี ~$53.4B จากการตีมูลค่าเงินลงทุนใน Anthropic (other income นอกธุรกิจหลัก) — net income ไตรมาสนี้ $62.6B ขณะที่ operating income จริง $27.5B · consensus ก่อนงบคาด EPS ~$1.82 จึงเทียบกับไตรมาสอื่นตรง ๆ ไม่ได้"
           }
         ]
       },
-      "nextEarnings": "2026-10"
+      "nextEarnings": "2026-10",
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2026",
+            "eps": 12.46,
+            "revenue": 828.3
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2 2026",
+            "metric": "revenue",
+            "guided": "~$194.0-199.0B",
+            "actual": "~$200.6B",
+            "result": "beat",
+            "magnitudePct": 2.1
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "revenue",
+            "guided": "~$173.5-178.5B",
+            "actual": "~$181.5B",
+            "result": "beat",
+            "magnitudePct": 3.1
+          },
+          {
+            "quarter": "Q4 2025",
+            "metric": "revenue",
+            "guided": "~$206.0-213.0B",
+            "actual": "~$213.4B",
+            "result": "beat",
+            "magnitudePct": 1.9
+          },
+          {
+            "quarter": "Q2 2025",
+            "metric": "revenue",
+            "guided": "~$159.0-164.0B",
+            "actual": "~$167.7B",
+            "result": "beat",
+            "magnitudePct": 3.8
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": 828.3,
+            "eps": 12.46,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": null,
+            "eps": null,
+            "confidence": "low",
+            "basis": "unknown"
+          }
+        ],
+        "note": "Amazon ให้ guidance ทั้ง net sales และ operating income ทุกไตรมาส · ยืนยัน guidance→ผลจริงได้ 4 ไตรมาส (Q2'25, Q4'25, Q1'26, Q2'26) ส่วนไตรมาสอื่นเข้าถึง press release ไม่ได้ (SEC/PDF บล็อก) จึงไม่บันทึกแทนการเดา · guidance Q3 2026 = net sales ~$197-202B + operating income ~$22.5-26.5B (ยังไม่ประกาศผล) · consensus FY2026 EPS ~$12.46 (54 นักวิเคราะห์ · non-GAAP) — ตัวเลข GAAP ปีนี้จะสูงกว่ามากเพราะรวมกำไร Anthropic · FY2027 อยู่หลัง paywall ทุกแหล่งฟรี จึงเว้นไว้ · CapEx 2026 ถูกยกเป็น ~$220B (จากราคา memory)"
+      }
     },
     "TSM": {
       "ticker": "TSM",
@@ -2855,7 +3341,8 @@
             "epsAdj": 1.29,
             "opMarginPct": 41.7,
             "fcfB": 2.18,
-            "priceQEnd": 88
+            "priceQEnd": 88,
+            "endDate": "2023-09-30"
           },
           {
             "q": "Q4'23",
@@ -2864,7 +3351,8 @@
             "epsAdj": 1.44,
             "opMarginPct": 41.6,
             "fcfB": 7.2,
-            "priceQEnd": 104
+            "priceQEnd": 104,
+            "endDate": "2023-12-31"
           },
           {
             "q": "Q1'24",
@@ -2873,7 +3361,8 @@
             "epsAdj": 1.35,
             "opMarginPct": 42,
             "fcfB": 7.94,
-            "priceQEnd": 138
+            "priceQEnd": 138,
+            "endDate": "2024-03-31"
           },
           {
             "q": "Q2'24",
@@ -2882,7 +3371,8 @@
             "epsAdj": 1.49,
             "opMarginPct": 42.6,
             "fcfB": 5.36,
-            "priceQEnd": 174
+            "priceQEnd": 174,
+            "endDate": "2024-06-30"
           },
           {
             "q": "Q3'24",
@@ -2891,7 +3381,8 @@
             "epsAdj": 1.95,
             "opMarginPct": 47.5,
             "fcfB": 5.76,
-            "priceQEnd": 173
+            "priceQEnd": 173,
+            "endDate": "2024-09-30"
           },
           {
             "q": "Q4'24",
@@ -2900,7 +3391,8 @@
             "epsAdj": 2.25,
             "opMarginPct": 49,
             "fcfB": 8.05,
-            "priceQEnd": 197.5
+            "priceQEnd": 197.5,
+            "endDate": "2024-12-31"
           },
           {
             "q": "Q1'25",
@@ -2909,7 +3401,8 @@
             "epsAdj": 2.24,
             "opMarginPct": 48.5,
             "fcfB": 9.48,
-            "priceQEnd": 168
+            "priceQEnd": 168,
+            "endDate": "2025-03-31"
           },
           {
             "q": "Q2'25",
@@ -2918,7 +3411,8 @@
             "epsAdj": 2.47,
             "opMarginPct": 49.6,
             "fcfB": 6.42,
-            "priceQEnd": 229
+            "priceQEnd": 229,
+            "endDate": "2025-06-30"
           },
           {
             "q": "Q3'25",
@@ -2927,7 +3421,8 @@
             "epsAdj": 2.8,
             "opMarginPct": 50.6,
             "fcfB": 4.48,
-            "priceQEnd": 280
+            "priceQEnd": 280,
+            "endDate": "2025-09-30"
           },
           {
             "q": "Q4'25",
@@ -2936,7 +3431,8 @@
             "epsAdj": 3.14,
             "opMarginPct": 54,
             "fcfB": 11.85,
-            "priceQEnd": 303.9
+            "priceQEnd": 303.9,
+            "endDate": "2025-12-31"
           },
           {
             "q": "Q1'26",
@@ -2945,7 +3441,8 @@
             "epsAdj": 3.4,
             "opMarginPct": 58.1,
             "fcfB": 11.23,
-            "priceQEnd": 260
+            "priceQEnd": 260,
+            "endDate": "2026-03-31"
           },
           {
             "q": "Q2'26",
@@ -2954,11 +3451,58 @@
             "epsAdj": 4.2,
             "opMarginPct": 60.3,
             "fcfB": 9.27,
-            "priceQEnd": 330
+            "priceQEnd": 330,
+            "endDate": "2026-06-30"
           }
-        ]
+        ],
+        "instrument": {
+          "shareBasis": "ADR",
+          "adrRatio": 5,
+          "currency": "USD",
+          "note": "ราคาและ EPS ใน KB อยู่ฐาน ADR (US listing) ทั้งคู่ — ไม่ต้องแปลง"
+        }
       },
-      "nextEarnings": "2026-10"
+      "nextEarnings": "2026-10",
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2 2026",
+            "metric": "revenue",
+            "guided": "~$39.0-40.2B",
+            "actual": "~$40.2B",
+            "result": "beat",
+            "magnitudePct": 1.5
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "revenue",
+            "guided": "~$34.6-35.8B",
+            "actual": "~$35.9B",
+            "result": "beat",
+            "magnitudePct": 2
+          },
+          {
+            "quarter": "Q4 2025",
+            "metric": "revenue",
+            "guided": "~$32.2-33.4B",
+            "actual": "~$33.73B",
+            "result": "beat",
+            "magnitudePct": 2.8
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": null,
+            "eps": null,
+            "confidence": "low",
+            "basis": "unknown"
+          }
+        ],
+        "note": "TSMC ให้ guidance รายได้เป็นช่วง US$ ทุกไตรมาส — ยืนยันได้ 3 ไตรมาส (Q4'25, Q1'26, Q2'26) beat ทุกครั้งแต่ขนาดเล็กลงเรื่อย ๆ (2.8% → 2.0% → 1.5%) · guidance Q3 2026 = ~$44.6-45.8B (+37% YoY ที่จุดกึ่งกลาง) · ทั้งปี 2026 บริษัทยกเป้าโตเป็น 'สูงกว่า 40% เล็กน้อย' · CapEx 2026 ~$60-64B · consensus ที่หาได้เป็นสกุล TWD (5.43 ล้านล้าน TWD · EPS 107.39 · 38 นักวิเคราะห์) ซึ่งเป็นคนละฐานกับ ADR USD ใน KB จึงไม่บันทึกตัวเลข เพราะแปลงเองจะเป็นการเดา · หมายเหตุ: รายได้ Q2'26 ที่ TSMC รายงานอย่างเป็นทางการคือ US$40.20B ขณะที่ตาราง KB บันทึก 40.98 (น่าจะแปลงจาก NT$ ด้วยเรตตลาดคนละตัว) — ต้องเลือกฐานให้ตรงกันทั้งชุดก่อนแก้"
+      }
     },
     "AVGO": {
       "ticker": "AVGO",
@@ -3407,7 +3951,8 @@
             "epsAdj": 0.85,
             "opMarginPct": 36.9,
             "fcfB": 7.02,
-            "priceQEnd": 297.39
+            "priceQEnd": 297.39,
+            "endDate": "2025-08-03"
           },
           {
             "q": "Q4 FY25",
@@ -3425,7 +3970,8 @@
             "epsAdj": 1.5,
             "opMarginPct": 44.3,
             "fcfB": 8.01,
-            "priceQEnd": 331.17
+            "priceQEnd": 331.17,
+            "endDate": "2026-02-01"
           },
           {
             "q": "Q2 FY26",
@@ -3434,11 +3980,66 @@
             "epsAdj": 1.91,
             "opMarginPct": 48.6,
             "fcfB": 10.26,
-            "priceQEnd": 220
+            "priceQEnd": 220,
+            "endDate": "2026-05-03"
           }
         ]
       },
-      "nextEarnings": "2026-09-03"
+      "nextEarnings": "2026-09-03",
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2026",
+            "eps": 11.63,
+            "revenue": 106
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2 FY26",
+            "metric": "revenue",
+            "guided": "~$22.0B",
+            "actual": "~$22.2B",
+            "result": "beat",
+            "magnitudePct": 1.1
+          },
+          {
+            "quarter": "Q1 FY26",
+            "metric": "revenue",
+            "guided": "~$19.1B",
+            "actual": "~$19.31B",
+            "result": "beat",
+            "magnitudePct": 1.1
+          },
+          {
+            "quarter": "Q4 FY25",
+            "metric": "revenue",
+            "guided": "~$17.4B",
+            "actual": "~$18.0B",
+            "result": "beat",
+            "magnitudePct": 3.4
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": 106,
+            "eps": 11.63,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": null,
+            "eps": 19.53,
+            "confidence": "medium",
+            "basis": "non-GAAP"
+          }
+        ],
+        "note": "Broadcom ให้ guidance รายได้เป็นค่าเดี่ยว (ไม่ใช่ช่วง) + Adjusted EBITDA % ทุกไตรมาส — ยืนยันได้ 3 ไตรมาส beat ทุกครั้งแต่ขนาดเล็ก (1.1-3.4%) · guidance Q3 FY26 = ~$29.4B พร้อมรายได้ชิป AI ~$16.0B (+200% YoY) · เป้า AI ทั้งปี FY2026 ~$56B และย้ำเป้า FY2027 >$100B · consensus FY2026 EPS ~$11.63 / FY2027 ~$19.53 (43 นักวิเคราะห์ · non-GAAP — KB ใช้ GAAP จึงเป็นคนละฐาน) · วันสิ้นงวดใส่เฉพาะไตรมาสที่ยืนยันจาก SEC filing (Broadcom จบงวดไม่ตรงสิ้นเดือน เช่น 1 ก.พ. / 3 พ.ค.)"
+      }
     },
     "AMD": {
       "ticker": "AMD",
@@ -3913,7 +4514,61 @@
           }
         ]
       },
-      "nextEarnings": "2026-11"
+      "nextEarnings": "2026-11",
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2026",
+            "eps": 7.56,
+            "revenue": 50.8
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2 2026",
+            "metric": "revenue",
+            "guided": "~$11.2B ±$0.3B",
+            "actual": "~$11.5B",
+            "result": "beat",
+            "magnitudePct": 2.7
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "revenue",
+            "guided": "~$9.8B ±$0.3B",
+            "actual": "~$10.3B",
+            "result": "beat",
+            "magnitudePct": 5.1
+          },
+          {
+            "quarter": "Q4 2025",
+            "metric": "revenue",
+            "guided": "~$9.6B ±$0.3B",
+            "actual": "~$10.3B",
+            "result": "beat",
+            "magnitudePct": 7.3
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": 50.8,
+            "eps": 7.56,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": null,
+            "eps": 15.46,
+            "confidence": "medium",
+            "basis": "non-GAAP"
+          }
+        ],
+        "note": "AMD ให้ guidance รายได้เป็นค่ากลาง ±$300M ทุกไตรมาส — ยืนยันได้ 3 ไตรมาส beat ทุกครั้ง และขนาด beat แคบลงเรื่อย ๆ (7.3% → 5.1% → 2.7%) · guidance Q3 2026 = ~$13.0B ±$0.3B (+41% YoY) · consensus FY2026 EPS ~$7.56 / FY2027 ~$15.46 (44 นักวิเคราะห์ · non-GAAP ต่างจากตาราง KB ที่เป็น GAAP) · FY2027 revenue อยู่หลัง paywall จึงเว้นไว้ · ไม่ใส่ endDate เพราะ AMD จบงวดวันเสาร์ (ไม่ตรงสิ้นเดือน) และยังไม่ได้ยืนยันวันรายไตรมาส"
+      }
     },
     "HOOD": {
       "ticker": "HOOD",
@@ -4299,7 +4954,8 @@
             "epsAdj": -0.09,
             "opMarginPct": -15.6,
             "fcfB": null,
-            "priceQEnd": 10.5
+            "priceQEnd": 10.5,
+            "endDate": "2023-09-30"
           },
           {
             "q": "Q4'23",
@@ -4308,7 +4964,8 @@
             "epsAdj": 0.03,
             "opMarginPct": 14.6,
             "fcfB": null,
-            "priceQEnd": 13
+            "priceQEnd": 13,
+            "endDate": "2023-12-31"
           },
           {
             "q": "Q1'24",
@@ -4317,7 +4974,8 @@
             "epsAdj": 0.18,
             "opMarginPct": 25.6,
             "fcfB": null,
-            "priceQEnd": 19
+            "priceQEnd": 19,
+            "endDate": "2024-03-31"
           },
           {
             "q": "Q2'24",
@@ -4326,7 +4984,8 @@
             "epsAdj": 0.21,
             "opMarginPct": 27.7,
             "fcfB": 0.05,
-            "priceQEnd": 21.5
+            "priceQEnd": 21.5,
+            "endDate": "2024-06-30"
           },
           {
             "q": "Q3'24",
@@ -4335,7 +4994,8 @@
             "epsAdj": 0.17,
             "opMarginPct": 23.7,
             "fcfB": 1.81,
-            "priceQEnd": 24.5
+            "priceQEnd": 24.5,
+            "endDate": "2024-09-30"
           },
           {
             "q": "Q4'24",
@@ -4344,7 +5004,8 @@
             "epsAdj": 1.01,
             "opMarginPct": 54.8,
             "fcfB": -1.4,
-            "priceQEnd": 40.5
+            "priceQEnd": 40.5,
+            "endDate": "2024-12-31"
           },
           {
             "q": "Q1'25",
@@ -4353,7 +5014,8 @@
             "epsAdj": 0.37,
             "opMarginPct": 39.9,
             "fcfB": 0.64,
-            "priceQEnd": 45
+            "priceQEnd": 45,
+            "endDate": "2025-03-31"
           },
           {
             "q": "Q2'25",
@@ -4362,7 +5024,8 @@
             "epsAdj": 0.42,
             "opMarginPct": 44.4,
             "fcfB": 3.5,
-            "priceQEnd": 93.5
+            "priceQEnd": 93.5,
+            "endDate": "2025-06-30"
           },
           {
             "q": "Q3'25",
@@ -4371,7 +5034,8 @@
             "epsAdj": 0.61,
             "opMarginPct": 49.8,
             "fcfB": -1.58,
-            "priceQEnd": 130
+            "priceQEnd": 130,
+            "endDate": "2025-09-30"
           },
           {
             "q": "Q4'25",
@@ -4380,7 +5044,8 @@
             "epsAdj": 0.66,
             "opMarginPct": 50.7,
             "fcfB": -0.94,
-            "priceQEnd": 115
+            "priceQEnd": 115,
+            "endDate": "2025-12-31"
           },
           {
             "q": "Q1'26",
@@ -4389,7 +5054,8 @@
             "epsAdj": 0.38,
             "opMarginPct": 38.5,
             "fcfB": 2.03,
-            "priceQEnd": 100
+            "priceQEnd": 100,
+            "endDate": "2026-03-31"
           },
           {
             "q": "Q2'26",
@@ -4398,11 +5064,67 @@
             "epsAdj": 0.62,
             "opMarginPct": 43.9,
             "fcfB": 0.71,
-            "priceQEnd": 91
+            "priceQEnd": 91,
+            "endDate": "2026-06-30",
+            "epsNote": "EPS $0.62 รวม ~$0.14 จากการ deconsolidate กองทุน Robinhood Ventures Fund I (กำไร ~$129M ครั้งเดียว) — ตัดรายการนี้ออกจะเหลือ ~$0.48 · net income ไตรมาสนี้ $573M"
           }
         ]
       },
-      "nextEarnings": "2026-07-29"
+      "nextEarnings": "2026-11-04",
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2026",
+            "eps": 2.48,
+            "revenue": 5.16
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2 2026",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance",
+            "actual": "~$1.31B (+32% YoY)",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance",
+            "actual": "ตามงบไตรมาส",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q4 2025",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance",
+            "actual": "ตามงบไตรมาส",
+            "result": "noGuidance",
+            "magnitudePct": null
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": 5.16,
+            "eps": 2.48,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": null,
+            "eps": 3.2,
+            "confidence": "medium",
+            "basis": "non-GAAP"
+          }
+        ],
+        "note": "Robinhood ไม่ให้ guidance รายได้รายไตรมาส (ให้เป็นกรอบค่าใช้จ่าย adjusted opex+SBC รายปีแทน) — แถว guidance จึงเป็น noGuidance ตามจริง ไม่ใช่ข้อมูลขาด · Q2 2026: รายได้ $1.31B (+32% YoY) · net deposits $21.7B · platform assets $369B (+32% YoY) · adjusted EBITDA margin 57% · consensus FY2026 EPS ~$2.48 / FY2027 ~$3.20 (28 นักวิเคราะห์ · non-GAAP) — KB ใช้ GAAP จึงเป็นคนละฐาน · งบ Q3 ประกาศ 4 พ.ย. 2026"
+      }
     },
     "LLY": {
       "ticker": "LLY",
@@ -4783,7 +5505,8 @@
             "epsAdj": -0.06,
             "opMarginPct": 4.7,
             "fcfB": 1.22,
-            "priceQEnd": 538
+            "priceQEnd": 538,
+            "endDate": "2023-09-30"
           },
           {
             "q": "Q4'23",
@@ -4792,7 +5515,8 @@
             "epsAdj": 2.42,
             "opMarginPct": 25.5,
             "fcfB": -1.38,
-            "priceQEnd": 573
+            "priceQEnd": 573,
+            "endDate": "2023-12-31"
           },
           {
             "q": "Q1'24",
@@ -4801,7 +5525,8 @@
             "epsAdj": 2.48,
             "opMarginPct": 28.6,
             "fcfB": 0.18,
-            "priceQEnd": 778
+            "priceQEnd": 778,
+            "endDate": "2024-03-31"
           },
           {
             "q": "Q2'24",
@@ -4810,7 +5535,8 @@
             "epsAdj": 3.28,
             "opMarginPct": 32.9,
             "fcfB": 0.24,
-            "priceQEnd": 905
+            "priceQEnd": 905,
+            "endDate": "2024-06-30"
           },
           {
             "q": "Q3'24",
@@ -4819,7 +5545,8 @@
             "epsAdj": 1.07,
             "opMarginPct": 13.3,
             "fcfB": 2.36,
-            "priceQEnd": 885
+            "priceQEnd": 885,
+            "endDate": "2024-09-30"
           },
           {
             "q": "Q4'24",
@@ -4828,7 +5555,8 @@
             "epsAdj": 4.88,
             "opMarginPct": 38.1,
             "fcfB": 0.98,
-            "priceQEnd": 764
+            "priceQEnd": 764,
+            "endDate": "2024-12-31"
           },
           {
             "q": "Q1'25",
@@ -4837,7 +5565,8 @@
             "epsAdj": 3.06,
             "opMarginPct": 29,
             "fcfB": 0.16,
-            "priceQEnd": 826
+            "priceQEnd": 826,
+            "endDate": "2025-03-31"
           },
           {
             "q": "Q2'25",
@@ -4846,7 +5575,8 @@
             "epsAdj": 6.29,
             "opMarginPct": 44.1,
             "fcfB": 1.39,
-            "priceQEnd": 779
+            "priceQEnd": 779,
+            "endDate": "2025-06-30"
           },
           {
             "q": "Q3'25",
@@ -4855,7 +5585,8 @@
             "epsAdj": 6.21,
             "opMarginPct": 41.9,
             "fcfB": 6.75,
-            "priceQEnd": 830
+            "priceQEnd": 830,
+            "endDate": "2025-09-30"
           },
           {
             "q": "Q4'25",
@@ -4864,7 +5595,8 @@
             "epsAdj": 7.39,
             "opMarginPct": 43.4,
             "fcfB": 0.68,
-            "priceQEnd": 1071
+            "priceQEnd": 1071,
+            "endDate": "2025-12-31"
           },
           {
             "q": "Q1'26",
@@ -4873,7 +5605,8 @@
             "epsAdj": 8.26,
             "opMarginPct": 45,
             "fcfB": 3.01,
-            "priceQEnd": 920
+            "priceQEnd": 920,
+            "endDate": "2026-03-31"
           },
           {
             "q": "Q2'26",
@@ -4882,11 +5615,67 @@
             "epsAdj": 7.94,
             "opMarginPct": 39.1,
             "fcfB": 7.76,
-            "priceQEnd": 1100
+            "priceQEnd": 1100,
+            "endDate": "2026-06-30",
+            "epsNote": "EPS รายงาน (GAAP) $7.94 · non-GAAP $8.38 — ส่วนต่างหลักมาจากค่าใช้จ่าย acquired IPR&D จากดีล business development ในไตรมาสนี้ ซึ่งกดกำไรบัญชีลงแต่ไม่ใช่ต้นทุนดำเนินงานปกติ"
           }
         ]
       },
-      "nextEarnings": "2026-10-29"
+      "nextEarnings": "2026-10-29",
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2026",
+            "eps": 36.73,
+            "revenue": 88.18
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2 2026",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance รายไตรมาส",
+            "actual": "~$23.0B (+48% YoY)",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance รายไตรมาส",
+            "actual": "ตามงบไตรมาส",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q4 2025",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance รายไตรมาส",
+            "actual": "ตามงบไตรมาส",
+            "result": "noGuidance",
+            "magnitudePct": null
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": 88.18,
+            "eps": 36.73,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": null,
+            "eps": 47.33,
+            "confidence": "medium",
+            "basis": "non-GAAP"
+          }
+        ],
+        "note": "Lilly ให้ guidance เป็น 'รายปี' ไม่ใช่รายไตรมาส — แถว guidance จึงเป็น noGuidance ตามจริง · รอบ Q2 2026 บริษัท<b>ยกเป้าทั้งปี</b>: รายได้ $85-87B (เดิม $82-85B) และ non-GAAP EPS $35.50-36.50 (ยกฐานขึ้น +$2.78 ที่จุดกึ่งกลาง แต่ถูกหักกลบด้วยค่า acquired IPR&D $3.03 จากดีลในไตรมาส) · consensus FY2026 EPS ~$36.73 / FY2027 ~$47.33 (26 นักวิเคราะห์ · non-GAAP) สูงกว่ากรอบบริษัทเล็กน้อย · Q2 2026 ปริมาณขาย +60% แต่ราคาขายจริง −13%"
+      }
     },
     "ASML": {
       "ticker": "ASML",
@@ -5354,7 +6143,51 @@
             "fcfB": 1.4,
             "priceQEnd": 1987
           }
-        ]
+        ],
+        "instrument": {
+          "shareBasis": "ADR",
+          "adrRatio": 1,
+          "currency": "USD",
+          "note": "ADR 1:1 — ราคาและ EPS ฐานเดียวกัน"
+        }
+      },
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2026",
+            "eps": null,
+            "revenue": 43.21
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2 2026",
+            "metric": "revenue",
+            "guided": "~€8.4-9.0B",
+            "actual": "~€9.3B",
+            "result": "beat",
+            "magnitudePct": 6.9
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": 43.21,
+            "eps": null,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": 54.33,
+            "eps": null,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          }
+        ],
+        "note": "ASML ให้ guidance รายได้เป็นช่วง EUR ทุกไตรมาส + เป้าทั้งปี — ยืนยัน guidance→ผลจริงได้ 1 ไตรมาส (Q2 2026: คาด €8.4-9.0B ทำได้ €9.3B) ไตรมาสก่อนหน้ายังยืนยันตัวเลขไม่ได้จึงไม่บันทึก · <b>บริษัทยกเป้าทั้งปี 2026 สองรอบ: €36-40B → €43-45B</b> (gross margin 51-53% → 54-56%) · guidance Q3 2026 = €11.0-12.0B · ASML เลิกประกาศยอด bookings รายไตรมาสตั้งแต่ Q1 2026 · consensus 37 นักวิเคราะห์เป็นสกุล EUR (rev €43.21B/€54.33B · EPS €38.03/€51.42) — บันทึกเฉพาะ revenue เพราะฐานตรงกับตาราง KB ส่วน EPS เว้นไว้ เนื่องจาก KB ใช้ EPS สกุล USD (ADR) ถ้าใส่ตัวเลข EUR ลงไป Forward P/E จะคำนวณข้ามสกุลและผิด"
       }
     },
     "QQQM": {
@@ -5967,7 +6800,7 @@
         "การพึ่งพา AIS เป็นสัดส่วนกำไรใหญ่ — การแข่งขัน telecom ไทย (TRUE) หรือ regulation ค่าบริการกระทบ GULF ทางตรง"
       ],
       "asOf": "2026-08",
-      "nextEarnings": "2026-08-11",
+      "nextEarnings": "2026-11",
       "history": {
         "currency": "฿",
         "fyNote": "ปีบัญชี = ปีปฏิทิน (สิ้นสุด ธ.ค.) — หน่วยเป็นพันล้านบาท (฿B)",
@@ -6033,7 +6866,8 @@
             "epsAdj": 0.25,
             "opMarginPct": 15,
             "fcfB": -0.32,
-            "priceQEnd": 48
+            "priceQEnd": 48,
+            "endDate": "2023-06-30"
           },
           {
             "q": "Q3'23",
@@ -6042,7 +6876,8 @@
             "epsAdj": 0.29,
             "opMarginPct": 17.8,
             "fcfB": 3.64,
-            "priceQEnd": 46
+            "priceQEnd": 46,
+            "endDate": "2023-09-30"
           },
           {
             "q": "Q4'23",
@@ -6051,7 +6886,8 @@
             "epsAdj": 0.41,
             "opMarginPct": 15.7,
             "fcfB": -6.17,
-            "priceQEnd": 41
+            "priceQEnd": 41,
+            "endDate": "2023-12-31"
           },
           {
             "q": "Q1'24",
@@ -6060,7 +6896,8 @@
             "epsAdj": 0.3,
             "opMarginPct": 16.1,
             "fcfB": -0.95,
-            "priceQEnd": 43
+            "priceQEnd": 43,
+            "endDate": "2024-03-31"
           },
           {
             "q": "Q2'24",
@@ -6069,7 +6906,8 @@
             "epsAdj": 0.4,
             "opMarginPct": 16.5,
             "fcfB": 0.27,
-            "priceQEnd": 46
+            "priceQEnd": 46,
+            "endDate": "2024-06-30"
           },
           {
             "q": "Q3'24",
@@ -6078,7 +6916,8 @@
             "epsAdj": 0.51,
             "opMarginPct": 16.2,
             "fcfB": -2.27,
-            "priceQEnd": 62
+            "priceQEnd": 62,
+            "endDate": "2024-09-30"
           },
           {
             "q": "Q4'24",
@@ -6087,7 +6926,8 @@
             "epsAdj": 0.33,
             "opMarginPct": 20.2,
             "fcfB": -4.8,
-            "priceQEnd": 55
+            "priceQEnd": 55,
+            "endDate": "2024-12-31"
           },
           {
             "q": "Q1'25",
@@ -6096,7 +6936,8 @@
             "epsAdj": 0.46,
             "opMarginPct": 20.1,
             "fcfB": -1.13,
-            "priceQEnd": 47
+            "priceQEnd": 47,
+            "endDate": "2025-03-31"
           },
           {
             "q": "Q2'25",
@@ -6105,7 +6946,8 @@
             "epsAdj": 4.28,
             "opMarginPct": 14.5,
             "fcfB": 1.72,
-            "priceQEnd": 52
+            "priceQEnd": 52,
+            "endDate": "2025-06-30"
           },
           {
             "q": "Q3'25",
@@ -6114,7 +6956,8 @@
             "epsAdj": 0.49,
             "opMarginPct": 19.4,
             "fcfB": 6.13,
-            "priceQEnd": 48
+            "priceQEnd": 48,
+            "endDate": "2025-09-30"
           },
           {
             "q": "Q4'25",
@@ -6123,7 +6966,8 @@
             "epsAdj": 0.95,
             "opMarginPct": 18.3,
             "fcfB": -1.42,
-            "priceQEnd": 41
+            "priceQEnd": 41,
+            "endDate": "2025-12-31"
           },
           {
             "q": "Q1'26",
@@ -6132,9 +6976,47 @@
             "epsAdj": 0.61,
             "opMarginPct": 20.6,
             "fcfB": -5.37,
-            "priceQEnd": 55
+            "priceQEnd": 55,
+            "endDate": "2026-03-31"
           }
-        ]
+        ],
+        "instrument": {
+          "shareBasis": "common",
+          "currency": "THB",
+          "note": "หุ้นสามัญ SET สกุล ฿ ทั้งราคาและ EPS"
+        }
+      },
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2 2026",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance รายไตรมาส",
+            "actual": "~฿50,294M (+24% YoY)",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance รายไตรมาส",
+            "actual": "~฿37,640M",
+            "result": "noGuidance",
+            "magnitudePct": null
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": null,
+            "eps": null,
+            "confidence": "low",
+            "basis": "unknown"
+          }
+        ],
+        "note": "<b>งบ Q2/2569 ออกแล้ว (11 ส.ค. 2026) แต่ตาราง KB ยังมีถึง Q1'26 เท่านั้น</b> — ตัวเลขที่ยืนยันได้: รายได้รวม ~฿50,294M (+24% YoY) · Core Profit ~฿12,332M (+74% YoY นิวไฮ) · EBITDA ~฿18,997M (+41%) · กำไรสุทธิส่วนผู้ถือหุ้นใหญ่ ~฿12,446M (ลดจากปีก่อนเพราะ Q2/2568 มีกำไรพิเศษจากการควบรวม INTUCH ~฿56,120M) · <b>ยังเติมแถวไตรมาสไม่ได้เพราะหา EPS ต่อหุ้นที่ยืนยันได้ไม่เจอ</b> (ต้องดูงบจริงจาก SET) — ถ้าคำนวณจากจำนวนหุ้นที่เดาเองจะเป็นการมโน จึงเว้นไว้รอรอบหน้า · GULF ไม่ให้ guidance รายได้รายไตรมาส · ยังไม่พบ consensus รายปีที่อ้างอิงได้แบบสาธารณะ"
       }
     },
     "PLTR": {
@@ -6407,6 +7289,12 @@
           "direction": "positive"
         },
         {
+          "metric": "Q3 2026 guidance (ใหม่)",
+          "prev": "—",
+          "now": "$2.160-2.164B (~+83% YoY) — ทะลุ $2B ต่อไตรมาสครั้งแรก",
+          "direction": "positive"
+        },
+        {
           "metric": "adj EPS",
           "prev": "คาด ~$0.28",
           "now": "$0.41 (ชนะคาดชัด)",
@@ -6416,12 +7304,6 @@
           "metric": "Rule of 40",
           "prev": "~145%",
           "now": "155% (12 ไตรมาสติดที่ขยายตัว)",
-          "direction": "positive"
-        },
-        {
-          "metric": "Remaining US commercial deal value",
-          "prev": "~$3B",
-          "now": ">$6.24B (>2x YoY)",
           "direction": "positive"
         }
       ],
@@ -6591,7 +7473,102 @@
             "fcfB": 1.202,
             "priceQEnd": 155
           }
-        ]
+        ],
+        "epsBasis": "diluted adjusted (non-GAAP) EPS — PLTR ไม่เคยแตกหุ้น จึงเป็นฐานหุ้นปัจจุบันทุกปี · GAAP เพิ่งพลิกบวกปี 2023 ตัวเลขก่อนหน้าจึงใช้ฐาน adjusted เพื่อเทียบกันได้"
+      },
+      "forwardView": {
+        "asOf": "2026-08",
+        "estimateHistory": [
+          {
+            "asOf": "2026-08",
+            "fy": "FY2026",
+            "eps": 1.6,
+            "revenue": 8.19
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "Q2 2026",
+            "metric": "revenue",
+            "guided": "~$1.797-1.801B",
+            "actual": "~$1.935B",
+            "result": "beat",
+            "magnitudePct": 7.5
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "revenue",
+            "guided": "~$1.523-1.527B",
+            "actual": "~$1.633B",
+            "result": "beat",
+            "magnitudePct": 7.1
+          },
+          {
+            "quarter": "Q4 2025",
+            "metric": "revenue",
+            "guided": "~$1.327-1.331B",
+            "actual": "~$1.407B",
+            "result": "beat",
+            "magnitudePct": 5.9
+          },
+          {
+            "quarter": "Q3 2025",
+            "metric": "revenue",
+            "guided": "~$1.083-1.085B",
+            "actual": "~$1.181B",
+            "result": "beat",
+            "magnitudePct": 9
+          },
+          {
+            "quarter": "Q2 2025",
+            "metric": "revenue",
+            "guided": "~$934-938M",
+            "actual": "~$1.004B",
+            "result": "beat",
+            "magnitudePct": 7.3
+          },
+          {
+            "quarter": "Q1 2025",
+            "metric": "revenue",
+            "guided": "~$858-862M",
+            "actual": "~$884M",
+            "result": "beat",
+            "magnitudePct": 2.8
+          },
+          {
+            "quarter": "Q4 2024",
+            "metric": "revenue",
+            "guided": "~$767-771M",
+            "actual": "~$828M",
+            "result": "beat",
+            "magnitudePct": 7.7
+          },
+          {
+            "quarter": "Q3 2024",
+            "metric": "revenue",
+            "guided": "~$697-701M",
+            "actual": "~$726M",
+            "result": "beat",
+            "magnitudePct": 3.9
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": 8.19,
+            "eps": 1.6,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": 12.18,
+            "eps": 2.31,
+            "confidence": "high",
+            "basis": "non-GAAP"
+          }
+        ],
+        "note": "consensus จาก 28 นักวิเคราะห์ (StockAnalysis ระบุฐาน non-GAAP adjusted) · consensus FY2026 revenue ~$8.19B สูงกว่า guidance บริษัทเอง ~$8.15-8.16B เล็กน้อย (ตลาดคาด beat ต่อ) · guidance ของ PLTR เป็นช่วงแคบมาก (±$2-4M) magnitude จึงสะท้อน beat จริงล้วน · เก็บได้ 8 ไตรมาสที่ยืนยันตัวเลขได้ (Q1-Q2 2024 ยังหาช่วง guidance เดิมยืนยันไม่ได้ จึงไม่เติม)"
       }
     }
   }
