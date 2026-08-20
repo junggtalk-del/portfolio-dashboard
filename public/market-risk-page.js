@@ -101,7 +101,10 @@
     var cache = readCache(); var hit = cache[sym];
     if (!force && hit && hit.u === today() && Array.isArray(hit.c) && hit.c.length >= minBars) return { closes: hit.c, dates: hit.d || [] };
     try {
-      var res = await fetch("/api/ohlc?symbol=" + encodeURIComponent(sym) + "&days=300", { cache: "no-store" });
+      // force = ผู้ใช้สั่งโหลดใหม่ → ต่อ _ts เพื่อทะลุ CDN cache (/api/ohlc มี s-maxage=300)
+      // ไม่งั้นฝั่ง deploy อาจได้ข้อมูลเก่าถึง 5-10 นาที ขณะที่ localhost ยิงสด → เลขไม่ตรงกัน
+      var bust = force ? "&_ts=" + Date.now() : "";
+      var res = await fetch("/api/ohlc?symbol=" + encodeURIComponent(sym) + "&days=300" + bust, { cache: "no-store" });
       if (!res.ok) throw new Error("HTTP " + res.status);
       var j = await res.json(); var bars = (j && j.bars) || []; var closes = [], dates = [];
       bars.forEach(function (b) { var c = num(b.close); if (c != null) { closes.push(c); dates.push(String(b.date).slice(0, 10)); } });
@@ -406,11 +409,14 @@
   // 5-year history (same /api/ohlc endpoint, own daily cache) — used ONLY for percentile context
   var CACHE5Y_KEY = "macro_ohlc_5y_v1";
   function read5yCache() { try { return JSON.parse(localStorage.getItem(CACHE5Y_KEY) || "{}") || {}; } catch (e) { return {}; } }
-  async function fetch5y(sym) {
+  async function fetch5y(sym, force) {
     var cache = read5yCache(); var hit = cache[sym];
-    if (hit && hit.u === today() && Array.isArray(hit.c) && hit.c.length >= 200) return { closes: hit.c };
+    if (!force && hit && hit.u === today() && Array.isArray(hit.c) && hit.c.length >= 200) return { closes: hit.c };
     try {
-      var res = await fetch("/api/ohlc?symbol=" + encodeURIComponent(sym) + "&days=1825", { cache: "no-store" });
+      // ถ้าครั้งก่อนได้ <200 แท่ง histContext จะ fallback ไปช่วง ~12 เดือน (คนละฐาน percentile
+      // กับฝั่งที่ได้ 5 ปีครบ) — force ให้ลองใหม่ + ทะลุ CDN เพื่อให้สองเครื่องได้ฐานเดียวกัน
+      var bust = force ? "&_ts=" + Date.now() : "";
+      var res = await fetch("/api/ohlc?symbol=" + encodeURIComponent(sym) + "&days=1825" + bust, { cache: "no-store" });
       if (!res.ok) throw new Error("HTTP " + res.status);
       var j = await res.json(); var closes = [];
       ((j && j.bars) || []).forEach(function (b) { var c = num(b.close); if (c != null) closes.push(c); });
@@ -419,9 +425,9 @@
     if (hit && Array.isArray(hit.c)) return { closes: hit.c };
     return null;
   }
-  async function load5y() {
-    state.macro.tnx5y = await fetch5y("^TNX");
-    state.macro.tyx5y = await fetch5y("^TYX");
+  async function load5y(force) {
+    state.macro.tnx5y = await fetch5y("^TNX", force);
+    state.macro.tyx5y = await fetch5y("^TYX", force);
   }
   // percentile of current yield within a history series; falls back to the ~1Y series (honest label)
   function histContext(defKey, current) {
@@ -765,14 +771,19 @@
     try { var res = await fetch("/api/market-risk", { cache: "no-store" }); if (!res.ok) throw new Error("HTTP " + res.status); state.api = await res.json(); state.apiError = null; }
     catch (e) { state.apiError = String(e && e.message || e); var snap = readSnapshot(); if (snap && snap.marketRisk && snap.marketRisk.risk) state.api = snap.marketRisk; }
   }
+  var loadingAll = false;
   async function loadAll(force) {
+    if (loadingAll) return; // กันยิงซ้อนเมื่อ event snapshot มาถี่
+    loadingAll = true;
     if (riskStatus) riskStatus.textContent = "กำลังโหลดข้อมูล…";
     render();
-    await Promise.all([loadApi(), loadMacro(force)]);
-    render();
-    // 5-year context loads after the main view (same /api/ohlc endpoint, cached daily)
-    await load5y();
-    render();
+    try {
+      await Promise.all([loadApi(), loadMacro(force)]);
+      render();
+      // 5-year context loads after the main view (same /api/ohlc endpoint, cached daily)
+      await load5y(force);
+      render();
+    } finally { loadingAll = false; }
   }
 
   // ---------------------------------------------------------- explain popover
@@ -799,7 +810,12 @@
   });
 
   if (refreshButton) refreshButton.addEventListener("click", function () { loadAll(true); });
-  window.addEventListener("portfolio-data-snapshot", function () { render(); });
+  // Load Latest Data → ต้องคำนวณใหม่จริง ไม่ใช่วาดค่าเดิมซ้ำ
+  // (เดิมเรียกแค่ render() → state.macro/state.api ยังเป็นชุดเก่า เลขจึงไม่ขยับ
+  //  ทำให้สอง origin ที่โหลด snapshot เวลาเดียวกันยังแสดงไม่เท่ากัน — bug 2026-08)
+  // force=true: ^TYX/^IRX/HYG/^MOVE ไม่อยู่ใน snapshot symbols จึงติด day-cache
+  // ถ้าไม่ force ตัวเลข 30Y/เครดิต จะค้างค่าเดิมทั้งวัน แม้กด Load Latest Data
+  window.addEventListener("portfolio-data-snapshot", function () { loadAll(true); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { loadAll(false); });
   else loadAll(false);
 
