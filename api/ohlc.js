@@ -35,11 +35,15 @@ module.exports = async function handler(req, res) {
 
   try {
     const data = await getHistoricalBars(symbol, start, end, { includeError: true });
+    // fetchedAt/error ถูกส่งต่อด้วย — เมื่อ provider ตกไป SERVER_CACHED_DATA (Yahoo ล้ม)
+    // ผู้ใช้ต้องรู้ได้ว่าข้อมูลถูกดึงเมื่อไหร่และล้มเพราะอะไร ไม่ใช่เห็นเลขเก่าเป็นของสด
     send(res, 200, {
       symbol: data.symbol || symbol,
       providerSymbol: data.providerSymbol || symbol,
       source: data.source || null,
       sourceType: data.sourceType || null,
+      fetchedAt: data.fetchedAt || null,
+      error: data.error || null,
       bars: Array.isArray(data.bars) ? data.bars : []
     });
   } catch (error) {

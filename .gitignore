@@ -7,3 +7,12 @@ public/config.js
 .local-data/
 .vercel
 .env*
+
+# skills ที่ติดตั้งด้วย `npx skills add` — ไฟล์จริงอยู่ .agents/skills/ (commit)
+# ส่วนนี้เป็น symlink ที่ตัวติดตั้งสร้างให้ Claude Code ต่อเครื่อง (ไม่ commit — symlink พังบน Windows)
+/.claude/skills/debug-mantra
+/.claude/skills/management-talk
+/.claude/skills/post-mortem
+/.claude/skills/qwen-agent
+/.claude/skills/qwenchance
+/.claude/skills/scrutinize

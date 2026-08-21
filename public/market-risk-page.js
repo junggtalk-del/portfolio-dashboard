@@ -99,7 +99,7 @@
   async function fetchOhlc(sym, force, minBars) {
     minBars = minBars || 40;
     var cache = readCache(); var hit = cache[sym];
-    if (!force && hit && hit.u === today() && Array.isArray(hit.c) && hit.c.length >= minBars) return { closes: hit.c, dates: hit.d || [] };
+    if (!force && hit && hit.u === today() && Array.isArray(hit.c) && hit.c.length >= minBars) return { closes: hit.c, dates: hit.d || [], src: hit.s || null, fetchedAt: hit.f || null, srvError: hit.e || null };
     try {
       // force = ผู้ใช้สั่งโหลดใหม่ → ต่อ _ts เพื่อทะลุ CDN cache (/api/ohlc มี s-maxage=300)
       // ไม่งั้นฝั่ง deploy อาจได้ข้อมูลเก่าถึง 5-10 นาที ขณะที่ localhost ยิงสด → เลขไม่ตรงกัน
@@ -108,9 +108,12 @@
       if (!res.ok) throw new Error("HTTP " + res.status);
       var j = await res.json(); var bars = (j && j.bars) || []; var closes = [], dates = [];
       bars.forEach(function (b) { var c = num(b.close); if (c != null) { closes.push(c); dates.push(String(b.date).slice(0, 10)); } });
-      if (closes.length >= minBars) { cache[sym] = { u: today(), c: closes.slice(-260), d: dates.slice(-260) }; writeCache(cache); return { closes: closes, dates: dates }; }
+      // เก็บ sourceType ไว้ด้วย — API บอกได้ว่าเป็นข้อมูลสด (LIVE_MARKET_DATA) หรือ
+      // cache ฝั่งเซิร์ฟเวอร์ (SERVER_CACHED_DATA) ซึ่งบน Vercel แยกตาม lambda instance
+      var srcT = (j && j.sourceType) || null, fAt = (j && j.fetchedAt) || null, sErr = (j && j.error) || null;
+      if (closes.length >= minBars) { cache[sym] = { u: today(), c: closes.slice(-260), d: dates.slice(-260), s: srcT, f: fAt, e: sErr }; writeCache(cache); return { closes: closes, dates: dates, src: srcT, fetchedAt: fAt, srvError: sErr }; }
     } catch (_e) { /* keep stale */ }
-    if (hit && Array.isArray(hit.c)) return { closes: hit.c, dates: hit.d || [] };
+    if (hit && Array.isArray(hit.c)) return { closes: hit.c, dates: hit.d || [], src: hit.s || null, fetchedAt: hit.f || null, srvError: hit.e || null, staleFallback: true };
     return null;
   }
   async function loadMacro(force) {
@@ -525,6 +528,32 @@
     return out;
   }
 
+  // "ข้อมูล ณ <วันแท่งล่าสุด>" — ตัวชี้ขาดว่าสองเครื่องได้ข้อมูลชุดเดียวกันหรือไม่
+  // (ก่อนหน้านี้หน้าไม่แสดงวันของข้อมูลเลย จึงบอกไม่ได้ว่าฝั่งไหนค้าง)
+  function asOfLine(series) {
+    if (!series) return "";
+    var d = series.dates && series.dates.length ? series.dates[series.dates.length - 1] : null;
+    if (!d) return "";
+    var lagDays = null;
+    var t = Date.parse(d + "T00:00:00Z");
+    if (isFinite(t)) lagDays = Math.floor((Date.now() - t) / 86400000);
+    var warn = series.staleFallback || series.src === "SERVER_CACHED_DATA" || (lagDays != null && lagDays > 4);
+    // เวลาที่เซิร์ฟเวอร์ดึงข้อมูลจริง + เหตุผลที่ตกไป cache — หลักฐานตัดสินว่าเครื่องไหนสด
+    var fTxt = "";
+    if (series.fetchedAt) {
+      var ft = Date.parse(series.fetchedAt);
+      if (isFinite(ft)) {
+        var mins = Math.round((Date.now() - ft) / 60000);
+        fTxt = " · เซิร์ฟเวอร์ดึงเมื่อ " + (mins < 1 ? "เมื่อกี้" : mins < 60 ? mins + " นาทีก่อน" : Math.round(mins / 60) + " ชม.ก่อน");
+      }
+    }
+    var note = series.staleFallback ? " · ดึงใหม่ไม่สำเร็จ ใช้ค่าที่เก็บไว้"
+      : series.src === "SERVER_CACHED_DATA" ? " · เซิร์ฟเวอร์ตอบจาก cache (ไม่ใช่ข้อมูลสด)" + (series.srvError ? " เหตุ: " + series.srvError : "")
+        : (lagDays != null && lagDays > 4) ? " · เก่ากว่าปกติ" : "";
+    note += fTxt;
+    return '<div class="mr-asof' + (warn ? " mr-asof-warn" : "") + '">' + (warn ? "⚠ " : "") +
+      "ข้อมูล ณ <b>" + esc(d) + "</b>" + (lagDays != null ? " (" + (lagDays <= 0 ? "วันนี้" : lagDays + " วันก่อน") + ")" : "") + esc(note) + "</div>";
+  }
   function rateCard(def) {
     var c = yieldSeries(def), y = c ? last(c) : null, st = rateStatus(def, y), tone = rateTone(st);
     var tr = rateTrend(c), msg = st === "alert" ? def.msgAlert : st === "caution" ? def.msgCaution : null;
@@ -546,6 +575,9 @@
         "</div>" +
       "</div>" +
       spark(c, tone) +
+      // ส่ง series ดิบ (def.get()) ไม่ใช่ c — เพราะ c = yieldSeries(def) เป็น array ของตัวเลข
+      // ที่ไม่มี .dates/.fetchedAt แล้ว (asOfLine จะคืนค่าว่างเงียบ ๆ)
+      asOfLine(def.get()) +
       (hist ? '<div class="mr-rate-hist">Historical: สูงกว่า ~<b>' + hist.pctile + "%</b> ของช่วง " + esc(hist.span) + " (กรอบ " + fmt(hist.min, 2) + "–" + fmt(hist.max, 2) + "%) <button class=\"mr-info\" type=\"button\" data-explain=\"rateHist\" aria-label=\"คำอธิบาย Historical Context\">i</button></div>" : "") +
       '<div class="mr-rate-thresh">เกณฑ์: ' + esc(thresh) + "</div>" +
       (msg ? '<div class="mr-rate-msg mr-rate-msg-' + tone + '">' + esc(msg) + "</div>" : "") +

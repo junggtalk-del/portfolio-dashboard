@@ -13,7 +13,8 @@
       "PowerShell(node --check *)",
       "PowerShell(git status *)",
       "PowerShell(git log *)",
-      "PowerShell(Start-Process \"http://localhost:*)"
+      "PowerShell(Start-Process \"http://localhost:*)",
+      "Bash(node scripts/market-risk-stale-test.js)"
     ]
   }
 }
