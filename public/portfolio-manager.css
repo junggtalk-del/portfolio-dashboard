@@ -174,3 +174,24 @@
 #pmAddAmount { width: 140px; text-align: right; font-variant-numeric: tabular-nums; }
 .pm-add-btn { background: rgba(56,189,248,.15); border: 1px solid rgba(56,189,248,.5); color: #38bdf8; border-radius: 8px; font-size: 12.5px; font-weight: 700; padding: 6px 16px; cursor: pointer; }
 .pm-add-btn:hover { background: rgba(56,189,248,.28); }
+
+/* ---- Current Portfolio: สลับ 2 มุม (ทั้งพอร์ต / เฉพาะหุ้นรายตัว) ---- */
+.pm-viewsw { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+.pm-viewsw small { color: var(--mc-dim, #94a3b8); font-size: 12.5px; font-weight: 700; }
+.pm-viewsw > span { color: var(--mc-dim, #94a3b8); font-size: 12px; margin-left: 4px; }
+
+/* ---- Current Portfolio: pie องค์ประกอบพอร์ต ---- */
+.pm-pie-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin: 0 0 16px; }
+.pm-pie { width: 210px; height: 210px; flex: 0 0 auto; }
+.pm-pie path { stroke: var(--mc-card, #0f172a); stroke-width: 1.5; transition: opacity .12s; }
+.pm-pie path:hover { opacity: .82; }
+.pm-pie-lbl { font-family: Inter, sans-serif; font-size: 10.5px; font-weight: 700; fill: #fff; stroke: rgba(2, 6, 23, .6); stroke-width: 2.6px; paint-order: stroke fill; text-anchor: middle; dominant-baseline: central; }
+.pm-pie-c1 { font-family: Inter, sans-serif; font-size: 21px; font-weight: 800; fill: var(--mc-text, #e2e8f0); text-anchor: middle; }
+.pm-pie-c2 { font-family: "Noto Sans Thai", sans-serif; font-size: 10.5px; font-weight: 600; fill: var(--mc-dim, #94a3b8); text-anchor: middle; }
+.pm-pie-side { flex: 1 1 250px; min-width: 220px; }
+.pm-pie-cap { color: var(--mc-dim, #94a3b8); font-size: 12px; margin-bottom: 9px; }
+.pm-pie-legend { display: flex; flex-wrap: wrap; gap: 7px 14px; }
+.pm-pie-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--mc-dim, #94a3b8); }
+.pm-pie-item i { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.pm-pie-item b { color: var(--mc-text, #e2e8f0); font-weight: 700; }
+.pm-pie-none { margin: 0 0 10px; }

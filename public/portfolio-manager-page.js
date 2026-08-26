@@ -19,9 +19,31 @@
   var PROGRESS_STORE = "pmEntryProgress_v1"; // { TICKER: {"1":true,...} }
   var STANCE_STORE = "pmMegaStance_v1";   // "bullish"|"bearish" — มุมมอง AI Megatrend ผู้ใช้ตั้งเอง
   var ALLOC_STORE = "pmAllocPolicy_v1";   // { indexTicker, indexPct, splitMethod }
+  var CVIEW_STORE = "pmCurrentView_v1";   // "all"|"stocks" — มุมมองตาราง Current Portfolio
   var state = { out: null, cashPct: null, gross: null, invested: null };
 
-  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
+  // ถ้อยคำที่อ้าง "เป้า" — ตัดออกเฉพาะหน้านี้ (engine ยังพูดคำเดิมให้หน้าอื่น)
+  // เรียงจากรูปเฉพาะ → รูปกว้าง · anchored ทั้งหมด ถ้า engine เปลี่ยนข้อความ กฎจะไม่ match เฉย ๆ
+  var NO_TARGET_TXT = [
+    [/ · เติมได้อีก [\d.]+pp ถึงเป้า [\d.]+%/g, ""],
+    [/ทุกตำแหน่งอยู่ระดับเป้าหรือยังไม่มี entry ที่ trigger/g, "ยังไม่มี entry ที่ trigger"],
+    [/วางฐาน ([\d.]+)% ของเป้าได้/g, "วางฐานได้"],
+    [/ถึงเป้า [\d.]+%/g, ""],
+    [/ห่างเป้ารวมเพียง/g, "ห่างรวมเพียง"], [/ห่างเป้ารวม/g, "ห่างรวม"], [/ห่างเป้า/g, "ห่าง"],
+    [/สอดคล้องเป้าแบบไดนามิก/g, "สอดคล้องแผน"],
+    [/ไม่ดันเป้าเพิ่ม/g, "ไม่ดันสัดส่วนเพิ่ม"],
+    [/ระบบแบ่งเป้าให้/g, "ระบบแบ่งสัดส่วนให้"],
+    [/เกินเป้า/g, "ถือเกิน"], [/ครบเป้าแล้ว/g, "ครบระดับแล้ว"],
+    [/ลดเป้าลงระดับ/g, "ลดระดับลงเป็น"], [/ตั้งเป้าคงที่/g, "กำหนดคงที่"],
+    [/ระดับเป้า/g, "ระดับที่วางไว้"], [/ของเป้า/g, ""], [/เป้าคงที่/g, "สัดส่วนคงที่"],
+  ];
+  function noTarget(v) {
+    var t = String(v == null ? "" : v);
+    if (t.indexOf("เป้า") < 0) return t;   // ทางด่วน: ข้อความส่วนใหญ่ไม่มีคำนี้
+    for (var i = 0; i < NO_TARGET_TXT.length; i++) t = t.replace(NO_TARGET_TXT[i][0], NO_TARGET_TXT[i][1]);
+    return t.replace(/\s{2,}/g, " ").replace(/\s+·\s*$/, "").trim();
+  }
+  function esc(s) { return String(noTarget(s)).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
   function fin(v) { if (v == null || v === "") return null; var n = Number(v); return Number.isFinite(n) ? n : null; }
   function pct(v, d) { return v == null ? "—" : v.toFixed(d == null ? 1 : d) + "%"; }
   function baht(v) { return v == null ? "—" : "฿" + Math.round(v).toLocaleString("en-US"); }
@@ -60,6 +82,9 @@
   }
   function megaStance() { var v = readJson(STANCE_STORE, "bullish"); return v === "bearish" ? "bearish" : "bullish"; }
   function setStance(v) { writeJson(STANCE_STORE, v === "bearish" ? "bearish" : "bullish"); render(); }
+  // มุมมองตาราง Current Portfolio: "all" = ทั้งพอร์ต (index core + หุ้น + เงินสด) · "stocks" = เฉพาะหุ้นรายตัว
+  function currentView() { return readJson(CVIEW_STORE, "all") === "stocks" ? "stocks" : "all"; }
+  function setCurrentView(v) { writeJson(CVIEW_STORE, v === "stocks" ? "stocks" : "all"); render(); }
   function allocPolicy() {
     var c = readJson(ALLOC_STORE, {});
     var pct = fin(c.indexPct); if (pct == null || pct < 0 || pct > 100) pct = 50;
@@ -116,7 +141,7 @@
       }
     });
     // ฐาน % = Portfolio Value หุ้นต่างประเทศทั้งก้อน (Quarterly Editor รวมเงินสดใน sleeve)
-    // — ให้ฐานเดียวกับคอลัมน์ "เป้า" (เดิมใช้ผลรวมหุ้นธงแดง → QQQM 2M/5M โชว์ 56.6% แทน 40%)
+    // — ฐาน = Portfolio Value ทั้งก้อน (เดิมใช้ผลรวมหุ้นธงแดง → QQQM 2M/5M โชว์ 56.6% แทน 40%)
     // ไม่มี gross (ยังไม่ตั้ง Quarterly) → fallback ฐานผลรวมธงแดงแบบเดิม
     var wBase = gross > 0 ? Math.max(gross, flagSum) : flagSum;
     var positions = flagged.map(function (f) {
@@ -203,7 +228,7 @@
 
   // ---------------- S1: Portfolio Overview ----------------
   function sectionOverview(out, inp) {
-    var ov = out.overview, p = out.policy;
+    var ov = out.overview;
     return '<section class="pm-sec"><div class="pm-hero">' +
       '<div class="pm-hero-main">' +
       '<div class="pm-hero-q">"ถ้ามีเงินสดวันนี้ ควรวางเงินก้อนถัดไปที่ตำแหน่งไหน"</div>' +
@@ -220,16 +245,103 @@
         inp.cashBaht != null
           ? "ลงทุน " + baht(inp.flagSum || 0) + " · เงินสดใน sleeve " + baht(inp.cashBaht) + " (ฐาน = หุ้นตปท.ทั้งก้อน)"
           : "ตั้งมูลค่า sleeve ที่ Portfolio Position ก่อน จึงจะคำนวณส่วนเงินสดได้") +
-      stat("Allocation Policy", esc(p.indexTicker) + " " + p.indexPct + "% + " + p.satelliteCount + " หุ้น", "Index core " + p.indexPct + "% · หุ้นรายตัวแบ่ง " + p.satellitePool + "% (" + (p.splitMethod === "equal" ? "เท่ากัน" : "ถ่วง conviction") + " · เพดานตัวละ " + p.maxSinglePct + "%)") +
       stat("Portfolio Thesis Score", ov.score == null ? "—" : ov.score + "/100", "ค่าเฉลี่ย Investment Thesis ถ่วงน้ำหนักตามสัดส่วนถือจริง (คนละตัวกับ Accumulation Score)") +
       stat("Portfolio Health", esc(ov.health.label), esc(ov.health.why)) +
-      stat("Portfolio Alignment", ov.alignment.score != null ? esc(ov.alignment.label) + " (" + ov.alignment.score + ")" : esc(ov.alignment.label), esc(ov.alignment.why)) +
       "</div></div></section>";
   }
   function stat(t, v, sub) {
     return '<div class="pm-stat"><small>' + t + "</small><b>" + v + "</b><span>" + sub + "</span></div>";
   }
 
+  // ---------------- pie: องค์ประกอบพอร์ต (SVG donut — ES5, ไม่มี lib) ----------------
+  var PIE_COLORS = ["#34d399", "#f472b6", "#fbbf24", "#a78bfa", "#22d3ee", "#fb923c", "#4ade80", "#f87171", "#c084fc", "#2dd4bf"];
+  var PIE_INDEX_COLOR = "#60a5fa";
+  var PIE_OTHER_COLOR = "#64748b";
+  function polarXY(cx, cy, r, deg) {
+    var rad = (deg * Math.PI) / 180;
+    return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+  }
+  function donutSlice(cx, cy, rOut, rIn, a0, a1) {
+    var big = a1 - a0 > 180 ? 1 : 0;
+    var p0 = polarXY(cx, cy, rOut, a0), p1 = polarXY(cx, cy, rOut, a1);
+    var q1 = polarXY(cx, cy, rIn, a1), q0 = polarXY(cx, cy, rIn, a0);
+    var f = function (n) { return n.toFixed(2); };
+    return "M" + f(p0[0]) + " " + f(p0[1]) +
+      " A" + rOut + " " + rOut + " 0 " + big + " 1 " + f(p1[0]) + " " + f(p1[1]) +
+      " L" + f(q1[0]) + " " + f(q1[1]) +
+      " A" + rIn + " " + rIn + " 0 " + big + " 0 " + f(q0[0]) + " " + f(q0[1]) + " Z";
+  }
+  // slices: [{ label, pct, color }] — pct = % ของทั้งพอร์ต (รวมกันควรได้ ~100)
+  function pieSvg(slices, centerBig, centerSmall) {
+    var sum = 0;
+    slices.forEach(function (x) { sum += x.pct; });
+    if (!(sum > 0)) return '';
+    var CX = 100, CY = 100, RO = 88, RI = 54, a = -90, body = "";
+    slices.forEach(function (x) {
+      var span = (x.pct / sum) * 360;
+      if (!(span > 0)) return;
+      if (span >= 359.99) {
+        // ชิ้นเดียวเต็มวง: arc path วาดไม่ได้ (จุดเริ่ม = จุดจบ) ต้องใช้ circle
+        body += '<circle cx="' + CX + '" cy="' + CY + '" r="' + ((RO + RI) / 2) + '" fill="none" stroke="' + x.color + '" stroke-width="' + (RO - RI) + '"></circle>';
+      } else {
+        body += '<path d="' + donutSlice(CX, CY, RO, RI, a, a + span) + '" fill="' + x.color + '">' +
+          '<title>' + esc(x.label) + ' ' + pct(x.pct) + '</title></path>';
+      }
+      if (x.pct / sum >= 0.055) {
+        var m = polarXY(CX, CY, (RO + RI) / 2, a + span / 2);
+        body += '<text class="pm-pie-lbl" x="' + m[0].toFixed(1) + '" y="' + m[1].toFixed(1) + '">' + esc(x.label) + '</text>';
+      }
+      a += span;
+    });
+    var mid = "";
+    if (centerBig) {
+      mid = '<text class="pm-pie-c1" x="100" y="97">' + esc(centerBig) + '</text>' +
+        '<text class="pm-pie-c2" x="100" y="117">' + esc(centerSmall || '') + '</text>';
+    }
+    return '<svg class="pm-pie" viewBox="0 0 200 200" role="img" aria-label="สัดส่วนพอร์ต">' + body + mid + '</svg>';
+  }
+  function pieBlock(rows, posByTicker, pol, idxMv, cashMv, wholeBase, stocksSharePct, stocksOnly) {
+    if (!(wholeBase > 0)) return '<div class="pm-dim pm-pie-none">ใส่มูลค่าหุ้น + Portfolio Value ก่อน จึงจะวาดสัดส่วนได้</div>';
+    var stocks = [];
+    rows.forEach(function (r) {
+      if (r.isIndex || !r.held) return;
+      var mv = fin(posByTicker[r.ticker] && posByTicker[r.ticker].marketValue);
+      if (mv == null || mv <= 0) return;
+      stocks.push({ ticker: r.ticker, mv: mv, pct: (mv / wholeBase) * 100 });
+    });
+    stocks.sort(function (x, y) { return y.mv - x.mv; });
+    var slices = [], legend = [];
+    stocks.forEach(function (x, k) {
+      var c = PIE_COLORS[k % PIE_COLORS.length];
+      slices.push({ label: x.ticker, pct: x.pct, color: c });
+      legend.push({ label: x.ticker, pct: x.pct, color: c });
+    });
+    // มุมทั้งพอร์ต = แยกชิ้น index/เงินสด · มุมหุ้นรายตัว = รวบเป็นชิ้นจางเดียว (วงยังปิดครบ 100%)
+    if (stocksOnly) {
+      var restPct = (((idxMv || 0) + (cashMv || 0)) / wholeBase) * 100;
+      if (restPct > 0) slices.push({ label: 'อื่น ๆ', pct: restPct, color: PIE_OTHER_COLOR });
+    } else {
+      if (idxMv > 0) {
+        slices.unshift({ label: pol.indexTicker || 'index', pct: (idxMv / wholeBase) * 100, color: PIE_INDEX_COLOR });
+        legend.unshift({ label: pol.indexTicker || 'index', pct: (idxMv / wholeBase) * 100, color: PIE_INDEX_COLOR });
+      }
+      if (cashMv > 0) {
+        slices.push({ label: 'เงินสด', pct: (cashMv / wholeBase) * 100, color: PIE_OTHER_COLOR });
+        legend.push({ label: 'เงินสด', pct: (cashMv / wholeBase) * 100, color: PIE_OTHER_COLOR });
+      }
+    }
+    var svg = pieSvg(slices, stocksSharePct == null ? null : pct(stocksSharePct), 'หุ้นรายตัวรวม');
+    if (!svg) return '';
+    var lg = legend.map(function (x) {
+      return '<span class="pm-pie-item"><i style="background:' + x.color + '"></i>' + esc(x.label) + '<b>' + pct(x.pct) + '</b></span>';
+    }).join('');
+    var cap = stocksOnly
+      ? 'สัดส่วนหุ้นรายตัว — % ของทั้งพอร์ต · ส่วนจาง = ' + esc(pol.indexTicker || 'index') + ' + เงินสด'
+      : 'องค์ประกอบพอร์ตทั้งก้อน — index core + หุ้นรายตัว + เงินสด';
+    return '<div class="pm-pie-wrap">' + svg +
+      '<div class="pm-pie-side"><div class="pm-pie-cap">' + cap + '</div>' +
+      '<div class="pm-pie-legend">' + lg + '</div></div></div>';
+  }
   // ---------------- S2: Current Portfolio (ธงแดง + index core + เงินสด) ----------------
   function sectionCurrent(out, inp) {
     var rows = out.allocationRows;
@@ -249,26 +361,47 @@
       return '<td class="pm-num" data-pv-skip="1"><input class="pm-mv-inp" type="number" min="0" step="any" inputmode="decimal" value="' + (p.marketValue || 0) + '" data-pm-mv="' + esc(r.ticker) + '" title="แก้มูลค่า (฿) แล้ว Enter/คลิกออก เพื่อบันทึก">' +
         '<button type="button" class="pm-rm-btn" data-pm-remove="' + esc(r.ticker) + '" title="เอาออกจากพอร์ต (เก็บเป็น watchlist)">✕</button></td>';
     };
-    var tr = rows.map(function (r) {
+    // ---- 2 มุม: ทั้งพอร์ต vs เฉพาะหุ้นรายตัว ----
+    // มุมที่ 2 = กรองรายชื่อออกมาเฉพาะหุ้นรายตัว — น้ำหนักทุกช่องยังอิงฐาน
+    // ทั้งพอร์ต (Portfolio Value หุ้นต่างประเทศ) เหมือนมุมแรก ไม่ rebase ให้เทียบกันข้ามมุมได้
+    var stocksOnly = currentView() === "stocks";
+    var pol = out.policy || {};
+    var stocksBase = 0, idxMv = null;
+    rows.forEach(function (r) {
+      var mv = fin(posByTicker[r.ticker] && posByTicker[r.ticker].marketValue);
+      if (r.isIndex) { idxMv = mv; return; }
+      if (r.held && mv != null && mv > 0) stocksBase += mv;
+    });
+
+    var visRows = (stocksOnly ? rows.filter(function (r) { return !r.isIndex; }) : rows).slice();
+    // เรียงตามมูลค่า มาก→น้อย (ลำดับเดียวกับ pie) · ตัวที่ยังไม่ใส่มูลค่า/ยังไม่ถือ ไปท้ายสุด
+    var mvSort = function (r) {
+      var mv = fin(posByTicker[r.ticker] && posByTicker[r.ticker].marketValue);
+      return r.held && mv != null && mv > 0 ? mv : -1;
+    };
+    visRows.sort(function (x, y) {
+      var a = mvSort(x), b = mvSort(y);
+      if (a !== b) return b - a;
+      return x.ticker < y.ticker ? -1 : x.ticker > y.ticker ? 1 : 0;   // เสมอ = เรียงชื่อ ให้ลำดับนิ่ง
+    });
+    var tr = visRows.map(function (r) {
       var wcell = r.weightPct == null ? '<span class="pm-dim" title="ใส่มูลค่า (฿) เพื่อคิดสัดส่วน">—</span>' : pct(r.weightPct);
       return "<tr" + (r.isIndex ? ' class="pm-row-index"' : "") + ">" +
         "<td>" + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">core</span>' : "") + '<small class="pm-dim"> ' + esc(r.name) + (r.held ? "" : " · ยังไม่ถือ") + "</small></td>" +
         "<td>" + tierSel(r) + "</td>" +
         mvCell(r) +
         '<td class="pm-num">' + wcell + "</td>" +
-        '<td class="pm-num">' + (r.covered && r.target != null ? "<b>" + r.target + "%</b>" : "—") + "</td>" +
         "<td>" + (r.covered ? zoneChip(r.zone) : '<span class="pm-dim">ไม่มี thesis</span>') + "</td>" +
         "<td>" + (r.covered ? actionChip(r.action) : '<a class="pm-dim" href="/thesis">/thesis-update ' + esc(r.ticker) + "</a>") + "</td></tr>";
     }).join("");
     // แถวเงินสด = Portfolio Value (หุ้นต่างประเทศ) − ผลรวมมูลค่าหุ้นที่ลงทุน — ให้ครบ 100%
-    if (inp && inp.cashBaht != null && inp.gross != null) {
+    if (!stocksOnly && inp && inp.cashBaht != null && inp.gross != null) {
       var cashW = inp.gross > 0 ? (inp.cashBaht / Math.max(inp.gross, inp.flagSum || 0)) * 100 : null;
       tr += '<tr class="pm-row-cash">' +
         '<td>💵 <b>เงินสดใน sleeve</b><small class="pm-dim"> Portfolio Value − หุ้นที่ลงทุน</small></td>' +
         "<td><span class='pm-idxtag'>Cash</span></td>" +
         '<td class="pm-num">' + baht(inp.cashBaht) + "</td>" +
         '<td class="pm-num"><b>' + (cashW == null ? "—" : pct(cashW)) + "</b></td>" +
-        '<td class="pm-num pm-dim">reserve</td>' +
         '<td><span class="pm-dim">รอ deploy ตาม Cash Deployment Plan ด้านล่าง</span></td>' +
         '<td><span class="pm-action pm-neutral">Reserve</span></td></tr>';
     }
@@ -279,64 +412,27 @@
       '<input id="pmAddAmount" type="number" min="0" step="any" inputmode="decimal" placeholder="มูลค่า (฿)">' +
       '<button type="button" id="pmAddBtn" class="pm-add-btn">เพิ่ม</button>' +
       '<small class="pm-dim">bucket: หุ้นต่างประเทศ · บันทึกชุดข้อมูลเดียวกับหน้า Portfolio/ทั้งแอป · พิมพ์ ticker นอก list ได้</small></div>';
-    return '<section class="pm-sec"><h2>💼 Current Portfolio <small>(หุ้นธงแดง + index core + เงินสด — ฐาน 100% = Portfolio Value หุ้นต่างประเทศ · แก้มูลค่า/เพิ่ม/เอาออก ได้ที่นี่)</small></h2>' +
-      '<div class="pm-tablewrap"><table class="pm-table"><thead><tr><th>Ticker</th><th>Tier</th><th>มูลค่า (฿)</th><th>น้ำหนักปัจจุบัน</th><th>เป้า</th><th>Accumulation Zone</th><th>Position Status</th></tr></thead><tbody>' +
-      tr + "</tbody></table></div>" + addForm + "</section>";
+    var cashMv = inp && inp.cashBaht != null ? inp.cashBaht : null;
+    var wholeBase = stocksBase + (idxMv || 0) + (cashMv || 0);
+    var stocksSharePct = wholeBase > 0 ? (stocksBase / wholeBase) * 100 : null;
+    var vnote = stocksOnly
+      ? "กรองเฉพาะรายชื่อหุ้นรายตัว (ซ่อน " + esc(pol.indexTicker || "index") + " + เงินสด) — ตัวเลขทุกช่องยังอิงฐานทั้งพอร์ต"
+      : "ฐาน 100% = Portfolio Value หุ้นต่างประเทศ (index core + หุ้นรายตัว + เงินสด)";
+    var vsw = '<div class="pm-viewsw"><small>มุมมอง:</small>' +
+      '<button type="button" class="pm-stance-btn' + (stocksOnly ? "" : " is-on pm-bull") + '" data-pm-cview="all">🥧 ทั้งพอร์ต</button>' +
+      '<button type="button" class="pm-stance-btn' + (stocksOnly ? " is-on pm-bull" : "") + '" data-pm-cview="stocks">📊 เฉพาะหุ้นรายตัว</button>' +
+      "<span>" + vnote + "</span></div>";
+    return '<section class="pm-sec"><h2>💼 Current Portfolio <small>(' + (stocksOnly ? "เฉพาะหุ้นรายตัว — ตัด index core + เงินสดออก เพื่อดูสัดส่วนภายในกลุ่มหุ้น" : "หุ้นธงแดง + index core + เงินสด — เห็นทั้งพอร์ตรวม") + ' · แก้มูลค่า/เพิ่ม/เอาออก ได้ที่นี่)</small></h2>' + vsw + pieBlock(rows, posByTicker, pol, idxMv, cashMv, wholeBase, stocksSharePct, stocksOnly) +
+      '<div class="pm-tablewrap"><table class="pm-table"><thead><tr><th>Ticker</th><th>Tier</th><th>มูลค่า (฿)</th><th>น้ำหนักปัจจุบัน</th><th>Accumulation Zone</th><th>Position Status</th></tr></thead><tbody>' +
+      tr + "</tbody></table></div>" + addForm + allocEditor(pol) + "</section>";
   }
 
-  // ---------------- S3: Target Allocation (Core-Satellite policy) ----------------
-  function sectionTargets(out) {
-    var rows = out.allocationRows;
-    if (!rows.length) return "";
-    var p = out.policy, maxT = Math.max(p.indexPct, 20);
-    var tr = rows.map(function (r) {
-      var tgt = r.target == null ? 0 : r.target;
-      var diff = r.weightPct == null ? null : tgt - r.weightPct;
-      var diffTxt = diff == null ? "—" : (diff >= 0 ? "+" : "") + diff.toFixed(1) + "pp";
-      var curW = r.weightPct == null ? 0 : r.weightPct;
-      var bar =
-        '<div class="pm-tbar"><i class="pm-tbar-cur" style="width:' + Math.min(100, curW / maxT * 100) + '%"></i>' +
-        '<i class="pm-tbar-target" style="left:' + Math.min(100, tgt / maxT * 100) + '%"></i></div>';
-      var note = p.notes[r.ticker.toUpperCase()] || "";
-      // เป้าจริงมาจาก policy (index % / แบ่งโควตา / ชนเพดาน) — conviction เป็นแค่ตัวถ่วง
-      // น้ำหนักตอนแบ่ง จึงโชว์แค่บรรทัดสรุปเดียว (รายละเอียดคะแนนไปดูที่ Accumulation Opportunities)
-      var capped = !r.isIndex && r.covered && fin(r.target) != null && Math.abs(r.target - p.maxSinglePct) < 0.05;
-      var whyBlock = r.isIndex
-        ? '<div class="pm-why pm-ok">· ' + esc(note) + "</div>"
-        : !r.covered
-          ? '<div class="pm-why pm-no">· ยังไม่มี Investment Thesis — <code>/thesis-update ' + esc(r.ticker) + "</code> เพื่อให้ conviction แม่นขึ้น</div>"
-          : '<div class="pm-why pm-ok">· ' + esc(note) + "</div>" +
-            (capped ? '<div class="pm-why pm-dim">· ชนเพดานรายตัว ' + p.maxSinglePct + "% แล้ว — conviction ที่สูงกว่านี้ไม่ดันเป้าเพิ่ม (ดูที่มาของคะแนนที่ Accumulation Opportunities)</div>" : "");
-      return '<div class="pm-target-row' + (r.isIndex ? " pm-target-index" : "") + '">' +
-        '<div class="pm-target-head">' + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">Index ' + p.indexPct + '%</span>' : (!r.covered ? ' <span class="pm-dim">ไม่มี thesis</span>' : "")) +
-        '<span class="pm-num">' + (r.weightPct == null ? "—" : pct(r.weightPct)) + ' → <b>' + tgt + '%</b> <span class="' + (diff != null && diff > 0 ? "pm-pos" : "pm-dim") + '">(' + diffTxt + ")</span></span>" +
-        "</div>" + bar +
-        '<details class="pm-details"><summary>ทำไมเป้าเป็น ' + tgt + '%</summary><div class="pm-whywrap">' + whyBlock + "</div></details></div>";
-    }).join("");
-    var minSats = p.satellitePool > 0 && p.maxSinglePct > 0 ? Math.ceil(p.satellitePool / p.maxSinglePct) : 0;
-    var unalloc = fin(p.unallocated) && p.unallocated > 0
-      ? '<div class="pm-target-row pm-target-unalloc"><div class="pm-target-head">🪙 โควตาหุ้นรายตัวที่ยังว่าง' +
-        '<span class="pm-num"><b>' + p.unallocated + '%</b></span></div>' +
-        '<small class="pm-dim">' + (p.satelliteCount === 0
-          ? "ยังไม่ได้ปักธงแดงหุ้นรายตัว — ปักธงหุ้นที่อยากถือเพื่อให้ระบบแบ่งเป้าให้"
-          : "หุ้นรายตัวชนเพดานตัวละ " + p.maxSinglePct + "% แล้ว — โควตา " + p.satellitePool + "% เต็มได้ต้องมีหุ้นรายตัว ≥ " + minSats + " ตัว (ตอนนี้ " + p.satelliteCount + " ตัว)") + "</small></div>"
-      : "";
-    return '<section class="pm-sec"><h2>🎯 Target Allocation <small>(Core-Satellite — รวม 100% ของหุ้นต่างประเทศ)</small></h2>' +
-      "<p><b>" + esc(p.indexTicker) + " = " + p.indexPct + "%</b> (index core) · หุ้นธงแดงที่เหลือแบ่ง <b>" + p.satellitePool + "%</b> " +
-      (p.splitMethod === "equal" ? "เท่ากันทุกตัว" : "ถ่วงน้ำหนักตาม conviction") + " <b>เพดานตัวละ " + p.maxSinglePct + "%</b> ของหุ้นต่างประเทศทั้งหมด — เป้าทุกตัวรวมกัน = 100%</p>" +
-      tr + unalloc + allocEditor(p) + "</section>";
-  }
+  // ตัวระบุ index core (ต้องรู้ว่าแถวไหนคือ index — ไม่ใช่เรื่องเป้า) · %/เพดาน/วิธีแบ่ง ถอดออกแล้ว
   function allocEditor(p) {
-    return '<details class="pm-details pm-alloccfg"><summary>⚙️ ตั้งค่า policy — index ticker / % / เพดานหุ้นรายตัว / วิธีแบ่ง</summary>' +
-      '<div class="pm-allocrow"><label>Index ticker <input class="pm-alloc-inp" type="text" value="' + esc(p.indexTicker) + '" data-pm-alloc="indexTicker"></label>' +
-      '<label>Index % <input class="pm-alloc-inp" type="number" min="0" max="100" step="5" value="' + p.indexPct + '" data-pm-alloc="indexPct"></label>' +
-      '<label>เพดานหุ้นรายตัว % <input class="pm-alloc-inp" type="number" min="1" max="100" step="1" value="' + p.maxSinglePct + '" data-pm-alloc="maxSinglePct"></label>' +
-      '<label>แบ่งก้อนหุ้นรายตัว <select class="pm-alloc-inp" data-pm-alloc="splitMethod">' +
-      '<option value="conviction"' + (p.splitMethod === "conviction" ? " selected" : "") + ">ถ่วง conviction</option>" +
-      '<option value="equal"' + (p.splitMethod === "equal" ? " selected" : "") + ">เท่ากัน</option></select></label></div>" +
-      "<small>เพดานหุ้นรายตัว = แต่ละตัวไม่เกิน " + p.maxSinglePct + "% ของหุ้นต่างประเทศทั้งหมด (index ไม่นับ) · ค่าเก็บในเครื่อง</small></details>";
+    return '<details class="pm-details pm-alloccfg" data-pv-skip="1"><summary>⚙️ ตั้งค่า index core</summary>' +
+      '<div class="pm-allocrow"><label>Index ticker <input class="pm-alloc-inp" type="text" value="' + esc(p.indexTicker) + '" data-pm-alloc="indexTicker"></label></div>' +
+      '<small>ตัวที่ถือเป็นแกน index ของพอร์ต — ใช้แยกแถว index ออกจากหุ้นรายตัว (ค่าเก็บในเครื่อง)</small></details>';
   }
-
   // ---------------- S4: Accumulation Opportunities (Zone นำ Score รอง) ----------------
   // "Dip" = dipTiming ของ PMEngine (ยิ่งย่อยิ่งได้แต้ม) — คนละสูตรกับ Timing Score เทคนิคหน้าอื่น
   var SCORE_SHORT = { thesis: "Thesis", growthPrice: "Growth", timing: "Dip", valuation: "Val(curated)" };
@@ -416,7 +512,7 @@
     } else {
       headline = '<div class="pm-dep-next pm-dep-next-wait">🛡️ ตอนนี้ยังไม่มี entry ที่ trigger — <b>ถือเงินสดรอ 100%</b>' +
         (inp.cashBaht != null ? " (เงินสดใน sleeve " + baht(inp.cashBaht) + " · " + pct(inp.cashPct, 1) + ")" : "") +
-        " · เป้าถัดไปดูจาก Zone ที่ดีสุดในตาราง Accumulation ด้านบน</div>";
+        " · ตัวถัดไปดูจาก Zone ที่ดีสุดในตาราง Accumulation ด้านบน</div>";
     }
     return '<section class="pm-sec"><h2>💵 Cash Deployment Plan <small>(เงินสดที่พร้อมวาง = 100%)</small></h2>' +
       headline +
@@ -438,21 +534,19 @@
         var status = e.completed ? "Deploy แล้ว" : e.blocked ? "ปิด" : e.triggered ? "Trigger แล้ว — รอ deploy" : "Waiting";
         return '<div class="pm-entry ' + cls + '">' +
           '<label><input type="checkbox" data-pm-entry="' + esc(r.ticker) + '" data-n="' + e.n + '"' + (e.completed ? " checked" : "") + (e.blocked && !e.completed ? " disabled" : "") + "> " +
-          "<b>" + esc(e.title) + "</b> · " + e.pct + "% ของเป้า</label>" +
+          "<b>" + esc(e.title) + "</b></label>" +
           '<span class="pm-entry-status">' + status + "</span>" +
           "<small>" + esc(e.rule) + '</small><small class="pm-entry-why">→ ' + esc(e.why) + "</small></div>";
       }).join("");
-      var overTxt = r.over > 0 ? mnum("เกินเป้า", r.over + "pp") : mnum("Suggested Today", r.pendingPp > 0 ? "+" + r.pendingPp + "pp" : "—");
       return '<article class="pm-mgr">' +
         '<div class="pm-mgr-head">' + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">Index core</span>' : "") + zoneChip(r.zone) + actionChip(r.action) + "</div>" +
         '<div class="pm-mgr-nums">' +
-        mnum("Current", pct(r.weightPct)) + mnum("Target", r.target + "%") + mnum(r.isIndex ? "ประเภท" : "Tier", r.isIndex ? "Index" : r.tier.key) +
-        mnum("ห่างเป้า", r.gap + "pp") + overTxt + mnum("Capacity เหลือ", r.capacity + "pp") +
+        mnum("น้ำหนักปัจจุบัน", pct(r.weightPct)) + mnum(r.isIndex ? "ประเภท" : "Tier", r.isIndex ? "Index" : r.tier.key) +
         "</div>" +
         '<div class="pm-entries">' + lad + "</div></article>";
     }).join("");
-    return '<section class="pm-sec"><h2>🧰 Position Manager <small>(Entry Ladder 50/20/15/15 ของเป้า — ระบบจำว่า deploy ไปแล้วขั้นไหน)</small></h2>' +
-      "<p>ติ๊ก ✓ เมื่อวางเงินจริงของ entry นั้นแล้ว — ระบบจะหักออกจาก Suggested Today และจำไว้ข้ามวัน (เก็บในเครื่อง)</p>" +
+    return '<section class="pm-sec"><h2>🧰 Position Manager <small>(Entry Ladder — ระบบจำว่า deploy ไปแล้วขั้นไหน)</small></h2>' +
+      "<p>ติ๊ก ✓ เมื่อวางเงินจริงของ entry นั้นแล้ว — ระบบจะจำไว้ข้ามวัน และหักออกจากแผน Cash Deployment ด้านบน (เก็บในเครื่อง)</p>" +
       (cards || '<div class="mc-empty">ยังไม่มีตำแหน่งที่มี Investment Thesis</div>') +
       tierEditor(out) + "</section>";
   }
@@ -462,10 +556,10 @@
     var rows = ["A", "B", "C"].map(function (k) {
       var d = defs[k];
       var inp = function (f) { return '<input class="pm-tier-inp" type="number" min="0" max="100" step="0.5" value="' + d[f] + '" data-pm-tierdef="' + k + '" data-f="' + f + '">'; };
-      return "<tr><td>" + esc(d.label) + "</td><td>" + inp("min") + "</td><td>" + inp("target") + "</td><td>" + inp("max") + "</td></tr>";
+      return "<tr><td>" + esc(d.label) + "</td><td>" + inp("min") + "</td><td>" + inp("max") + "</td></tr>";
     }).join("");
-    return '<details class="pm-details pm-tiercfg"><summary>⚙️ Master Position Size — ปรับกรอบ Tier ได้ (Min / Target / Max % ของ sleeve)</summary>' +
-      '<table class="pm-table"><thead><tr><th>Tier</th><th>Min</th><th>Target</th><th>Max</th></tr></thead><tbody>' + rows + "</tbody></table>" +
+    return '<details class="pm-details pm-tiercfg"><summary>⚙️ Master Position Size — ปรับกรอบ Tier ได้ (Min / Max % ของ sleeve)</summary>' +
+      '<table class="pm-table"><thead><tr><th>Tier</th><th>Min</th><th>Max</th></tr></thead><tbody>' + rows + "</tbody></table>" +
       "<small>เปลี่ยน Tier รายตัวได้ที่ตาราง Current Portfolio — ค่าเก็บในเครื่อง (localStorage)</small></details>";
   }
 
@@ -481,7 +575,7 @@
 
   // ---------------- S8: Explainability / methodology ----------------
   function sectionMethod() {
-    return '<footer class="pm-foot">🧠 <b>วิธีคิดทั้งหมดเปิดเผย:</b> Zone/คะแนน/เป้า/แผนเงิน มาจาก Investment Thesis Engine + Market Regime + Rate Monitor + เทคนิคจาก snapshot · มุมมอง AI Megatrend <b>คุณตัดสินใจเอง</b> (สวิตช์ Bullish/Bearish ด้านบน — เป็นเกต Rule 1 + ตัวคูณเป้า ไม่ใช่คะแนนคำนวณ) — สูตร Accumulation Score ชุดเดียวกับ Accumulation Center (engine กลางตัวเดียวกัน) · deterministic ไม่มี AI-generated opinion · กดดู "ทำไม" ได้ทุกการ์ด · ไม่ใช่คำแนะนำการลงทุน</footer>';
+    return '<footer class="pm-foot">🧠 <b>วิธีคิดทั้งหมดเปิดเผย:</b> Zone/คะแนน/แผนเงิน มาจาก Investment Thesis Engine + Market Regime + Rate Monitor + เทคนิคจาก snapshot · มุมมอง AI Megatrend <b>คุณตัดสินใจเอง</b> (สวิตช์ Bullish/Bearish ด้านบน — เป็นเกต Rule 1 ไม่ใช่คะแนนคำนวณ) — สูตร Accumulation Score ชุดเดียวกับ Accumulation Center (engine กลางตัวเดียวกัน) · deterministic ไม่มี AI-generated opinion · กดดู "ทำไม" ได้ทุกการ์ด · ไม่ใช่คำแนะนำการลงทุน</footer>';
   }
 
   // ---------------- render ----------------
@@ -509,7 +603,6 @@
     root.innerHTML = headerHtml() +
       sectionOverview(out, inp) +
       sectionCurrent(out, inp) +
-      sectionTargets(out) +
       sectionZones(out) +
       sectionDeployment(out, inp) +
       sectionManager(out) +
@@ -558,6 +651,9 @@
     });
     root.querySelectorAll("[data-pm-tierdef]").forEach(function (el) {
       el.addEventListener("change", function () { setTierParam(el.getAttribute("data-pm-tierdef"), el.getAttribute("data-f"), el.value); });
+    });
+    root.querySelectorAll("[data-pm-cview]").forEach(function (el) {
+      el.addEventListener("click", function () { setCurrentView(el.getAttribute("data-pm-cview")); });
     });
     root.querySelectorAll("[data-pm-stance]").forEach(function (el) {
       el.addEventListener("click", function () { setStance(el.getAttribute("data-pm-stance")); });
