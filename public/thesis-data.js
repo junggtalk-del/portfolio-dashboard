@@ -581,7 +581,7 @@
       "name": "NVIDIA Corporation",
       "layer": "gpu",
       "thesis": {
-        "statement": "NVDA คือแกนกลางของโครงสร้างพื้นฐาน AI ทั้งโลก — ไม่ใช่แค่บริษัทขายชิป แต่เป็นผู้ขาย 'โรงงาน AI' ทั้งระบบ (GPU + NVLink + networking + CUDA software) ที่ลูกค้าทุกค่ายต้องพึ่งพา รายได้ Data Center ยังเร่งตัวขึ้นแม้ฐานจะใหญ่มหาศาล และบริษัทประกาศ visibility คำสั่งซื้อ Blackwell + Rubin สะสมราว ~$500B ถึงสิ้นปี 2026 ตราบใดที่รอบลงทุน AI ยังเดินหน้า NVDA คือผู้ชนะที่ชัดเจนที่สุดของทั้ง value chain",
+        "statement": "NVDA คือแกนกลางของโครงสร้างพื้นฐาน AI ทั้งโลก — ไม่ใช่แค่บริษัทขายชิป แต่เป็นผู้ขาย 'โรงงาน AI' ทั้งระบบ (GPU + NVLink + networking + CUDA software) ที่ลูกค้าทุกค่ายต้องพึ่งพา รายได้ Data Center ยังเร่งตัวขึ้นแม้ฐานจะใหญ่มหาศาล (Q2 FY27 +117% YoY) และบริษัทให้ guide เบื้องต้นว่าปี FY2028 รายได้จะโตราว ~70% โดยระบุว่าเป็นตัวเลขที่ถูกจำกัดด้วยกำลังผลิต ไม่ใช่ดีมานด์ ตราบใดที่รอบลงทุน AI ยังเดินหน้า NVDA คือผู้ชนะที่ชัดเจนที่สุดของทั้ง value chain — โจทย์ที่เปลี่ยนไปคือต้นทุน memory และเงินทุนหมุนเวียน ไม่ใช่ดีมานด์",
         "pillars": [
           "ผูกขาดเชิงพฤตินัยในตลาด AI accelerator ด้วยส่วนแบ่ง ~80-90% และ CUDA moat ที่สั่งสมมากว่า 15 ปี",
           "รอบสินค้าใหม่ทุกปี (Hopper → Blackwell → Rubin) ทำให้คู่แข่งไล่ตามไม่ทันทั้งด้าน performance และ TCO",
@@ -594,38 +594,38 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+85% YoY (Q1 FY27 — $81.6B, +20% QoQ) เร่งตัวต่อเนื่อง 3 ไตรมาส · guide Q2 ~$91B",
+          "current": "~+106% YoY (Q2 FY27 — $96.2B, +18% QoQ) เร่งตัว 4 ไตรมาสติด · guide Q3 ~$108B",
           "trend": "up",
-          "score": 97,
+          "score": 98,
           "impact": "positive",
-          "why": "โตเร่งขึ้นอีกจาก ~+73% (Q4 FY26) เป็น ~+85% — Data Center +92% YoY จาก Blackwell GB300 ramp การเติบโตระดับนี้ที่ฐานรายได้ ~$330B run-rate เป็นเรื่องหายากมาก"
+          "why": "โตเร่งขึ้นอีกจาก ~+85% (Q1 FY27) เป็น ~+106% — Data Center +117% YoY การเร่งตัวที่ฐานรายได้ระดับ ~$385B run-rate เป็นเรื่องที่แทบไม่เคยเกิดกับบริษัทขนาดนี้"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "GAAP EPS $1.87 (Q1 FY27) ชนะคาด $1.77 · โตตามรายได้และ margin ที่ฟื้น",
+          "current": "Q2 FY27 GAAP EPS $2.46 · non-GAAP $2.22 (ชนะที่ตลาดคาด ~$2.09)",
           "trend": "up",
           "score": 95,
           "impact": "positive",
-          "why": "กำไรโตตามรายได้ + gross margin ฟื้นกลับ ~75% หลังพ้นภาระ H20 charge ปีก่อน ทำให้ EPS เร่งตัว"
+          "why": "กำไรโตตามรายได้ที่เร่งตัว โดย gross margin ยังยืน 75% ได้ทั้งไตรมาส · หมายเหตุ GAAP รอบนี้มีกำไรจากเงินลงทุน ~$7.8B ปนอยู่ ต้องดู non-GAAP ควบคู่"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "สูงมาก — run-rate รายได้ ~$330B+/ปี แปลงเป็นกระแสเงินสดอิสระมหาศาล",
-          "trend": "up",
-          "score": 95,
-          "impact": "positive",
-          "why": "โมเดล fabless margin ~75% + capex ต่ำเทียบรายได้ ทำให้ FCF พุ่งตามรายได้ที่เร่งตัว รองรับทั้งปันผลและ buyback"
+          "current": "Q2 FY27 $21.3B — ลดจาก $48.6B ไตรมาสก่อน (capex เพียง ~$2.7B ไม่ใช่ต้นเหตุ)",
+          "trend": "down",
+          "score": 78,
+          "impact": "neutral",
+          "why": "กำไรไม่ได้ลด แต่เงินจมในเงินทุนหมุนเวียน: ลูกหนี้เพิ่มกว่า $22B (DSO 45 → 60 วัน จากเครดิตเทอมยาวให้ลูกค้าดีลใหญ่) + สต๊อก +$5.8B รับ Vera Rubin — ถ้าเก็บเงินได้ตามเทอมคือเลื่อนเวลา ไม่ใช่เสียของ แต่ต้องเฝ้าดูว่ากลับมาเป็นเงินสดจริงในไตรมาสถัด ๆ ไปไหม"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "Gross margin ~75% (non-GAAP) ฟื้นเต็มและทรงตัว — FY26 เคยถูกฉุดเหลือ 71.1% จาก H20 charge",
-          "trend": "up",
-          "score": 95,
+          "current": "Q2 FY27 gross margin 75.0% แต่ guide ลงเป็น ~74% (Q3), ~71-72% (Q4), ~72-73% (FY28)",
+          "trend": "down",
+          "score": 86,
           "impact": "positive",
-          "why": "margin กลับสู่ระดับ ~75% พิสูจน์ pricing power ยังอยู่แม้ Blackwell เข้าสู่ full production — จุดกดชั่วคราว (H20 write-off) ผ่านไปแล้ว"
+          "why": "จุดกดใหม่คือ 'ต้นทุน memory' ที่ CFO บอกว่าสูงกว่าคาดและจะสูงขึ้นอีก — ต่างจากรอบ H20 ตรงที่ครั้งนี้เป็นต้นทุนวัตถุดิบต่อเนื่อง ไม่ใช่รายการตัดจำหน่ายครั้งเดียว บริษัทวางแผนขึ้นราคาชดเชยตั้งแต่ Q1 FY28"
         },
         {
           "key": "roic",
@@ -639,20 +639,20 @@
         {
           "key": "cash",
           "label": "เงินสดในมือ",
-          "current": "เงินสด + เงินลงทุนราว ~$6 หมื่นล้านดอลลาร์",
+          "current": "เงินสด + หลักทรัพย์ ~$56.6B (เพิ่มจาก ~$50.3B ไตรมาสก่อน)",
           "trend": "up",
           "score": 90,
           "impact": "positive",
-          "why": "เงินสดสะสมโตต่อเนื่องแม้จะซื้อหุ้นคืนหนักและลงทุนใน ecosystem — ให้ความยืดหยุ่นเต็มที่ทั้งด้าน supply chain commitment และการลงทุนเชิงกลยุทธ์"
+          "why": "เงินสดยังโตแม้คืนผู้ถือหุ้นสูงสุดเป็นประวัติการณ์ ~$26.0B ในไตรมาสเดียว (ซื้อคืน ~$20B + ปันผล ~$6B)"
         },
         {
           "key": "debt",
           "label": "หนี้สิน",
-          "current": "หนี้ระยะยาวราว ~$8-10B — เล็กน้อยมากเทียบเงินสด",
-          "trend": "flat",
-          "score": 95,
+          "current": "หนี้ระยะยาวเพิ่มจาก ~$7.5B เป็น ~$32.4B ในครึ่งปี — ยังเป็น net cash (เทียบเงินสด ~$56.6B)",
+          "trend": "down",
+          "score": 88,
           "impact": "positive",
-          "why": "ฐานะเป็น net cash ชัดเจน หนี้ที่มีเป็นหุ้นกู้ดอกเบี้ยต่ำจากยุคก่อน ไม่มีความเสี่ยงด้านงบดุลใด ๆ ที่มีนัยสำคัญ"
+          "why": "ก่อหนี้เพิ่มชัดเจนเพื่อรองรับภาระ supply commitment ที่พุ่งเป็น $279B และการลงทุนใน ecosystem · ระดับนี้ยังห่างจากจุดที่งบดุลมีความเสี่ยง แต่ทิศทางเปลี่ยนจาก 'แทบไม่มีหนี้' แล้ว จึงต้องเริ่มติดตาม"
         },
         {
           "key": "dilution",
@@ -675,41 +675,35 @@
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "Forward P/E ~24x (ราคา ~$207 · mcap ~$5.09T, ก.ค. 2026) — ต่ำกว่าค่าเฉลี่ย 12 เดือน (~44x) มาก",
+          "current": "Forward P/E ~23x (ราคา $217.55 · 28 ส.ค. 2026 · mcap ~$5.3T) เทียบ consensus FY2027 EPS $9.27",
           "trend": "up",
-          "score": 73,
+          "score": 75,
           "impact": "neutral",
-          "why": "แม้หุ้นขึ้นและ mcap แตะ ~$5T แต่ forward P/E 'ถูกลง' เหลือ ~24x เพราะกำไร (E) โตเร็วกว่าราคา — PEG ต่ำกว่า 1 ชัดเจน ความเสี่ยงหลักคือความยั่งยืนของ E ไม่ใช่ multiple"
+          "why": "ราคาขึ้นหลังงบแต่ E ถูกปรับขึ้นเร็วกว่า ทำให้ multiple ยังไม่แพงเชิงตัวเลข (PEG « 1) · ตัวแปรใหม่คือ margin ที่จะลงไป ~71-72% ช่วง Q4 — ถ้ารายได้โตตาม guide ~70% ในปี FY2028 กำไรยังโตแรงพอชดเชย แต่ถ้ารายได้พลาด multiple กับ E จะถูกปรับลงพร้อมกัน"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
         "consistency": 93,
         "recurringPct": null,
-        "note": "รายได้เร่งตัว 3 ไตรมาสติดและกระจุกที่ Data Center ~92% ของทั้งหมด — ภายใน DC เอง hyperscale ~50% ที่เหลือ ~50% กระจายไป AI clouds/sovereign/enterprise/industrial (การกระจายลูกค้าที่ดีขึ้นลดความเสี่ยงกระจุกตัว) คุณภาพการเติบโตสูงมากแต่ผูกกับรอบลงทุน AI capex ของลูกค้าไม่กี่ราย",
+        "note": "รายได้เร่งตัว 4 ไตรมาสติดและกระจุกที่ Data Center ~93% ของทั้งหมด — แต่ภายใน DC การกระจายดีขึ้น: ACIE (AI clouds/industrial/enterprise) โต +138% YoY เร็วกว่า hyperscale (+13% QoQ) ทำให้พึ่งพา hyperscaler ไม่กี่รายน้อยลง คุณภาพการเติบโตสูงมาก แต่ยังผูกกับรอบ AI capex ของลูกค้ากลุ่มเดิมเป็นหลัก",
         "segments": [
           {
-            "name": "Data Center",
-            "sharePct": 92,
-            "growthNote": "$75.2B (+92% YoY, +21% QoQ) — Blackwell GB300 ramp + networking (NVLink/Spectrum-X/InfiniBand) · hyperscale ~50% ของ DC ที่เหลือกระจายไป AI clouds/sovereign/enterprise",
+            "name": "Data Center — Hyperscale",
+            "sharePct": 51,
+            "growthNote": "~$49B (+13% QoQ) — คลาวด์รายใหญ่ · ยังเป็นก้อนโตที่สุดแต่โตช้ากว่า ACIE แล้ว",
             "trend": "up"
           },
           {
-            "name": "Gaming",
-            "sharePct": 5,
-            "growthNote": "RTX 50 series — ยังเป็นธุรกิจดีแต่ถูกลดสัดส่วน และบางช่วง supply ถูกดึงไป Data Center",
-            "trend": "flat"
-          },
-          {
-            "name": "Professional Visualization",
-            "sharePct": 2,
-            "growthNote": "โตจาก workstation AI และ Omniverse — สัดส่วนเล็ก",
+            "name": "Data Center — ACIE (AI clouds/industrial/enterprise)",
+            "sharePct": 42,
+            "growthNote": "~$40B (+25% QoQ, +138% YoY) — AI natives, enterprise, sovereign · โตเร็วกว่า hyperscale ชัดเจน = ฐานลูกค้ากระจายขึ้น",
             "trend": "up"
           },
           {
-            "name": "Automotive & Robotics",
-            "sharePct": 1,
-            "growthNote": "DRIVE Thor + physical AI — optionality ระยะยาวมากกว่าตัวขับปัจจุบัน",
+            "name": "Edge Computing",
+            "sharePct": 7,
+            "growthNote": "~$7.2B (+13% QoQ, +27% YoY) — ตั้งแต่ Q1 FY27 บริษัทยุบ Gaming + Professional Visualization + Automotive + OEM มารวมเป็น segment เดียว",
             "trend": "up"
           }
         ]
@@ -847,51 +841,53 @@
       },
       "valuationView": {
         "level": "fair",
-        "note": "Forward P/E ~24x (ราคา ~$207, mcap ~$5.09T) สำหรับบริษัทที่โต ~85% margin สุทธิ ~50% — เชิงตัวเลขคือ 'ไม่แพง' (PEG « 1) และ forward multiple ยังลดลงแม้ราคาขึ้น เพราะ E โตเร็วกว่า ความเสี่ยงหลักไม่ใช่ multiple แต่คือความยั่งยืนของตัว E — ถ้า capex ของ hyperscaler ชะลอ กำไรและ multiple จะถูกปรับลงพร้อมกัน จึงมองเป็น 'fair' สำหรับผู้ที่เชื่อใน AI infrastructure buildout ต่อเนื่อง"
+        "note": "Forward P/E ~23x (ราคา $217.55, mcap ~$5.3T) สำหรับบริษัทที่โต ~106% YoY — เชิงตัวเลขยัง 'ไม่แพง' (PEG « 1) และบริษัทเพิ่งให้ guide FY2028 ที่ ~+70% ซึ่งสูงกว่าที่ตลาดประเมินไว้ · สิ่งที่เปลี่ยนไปจากรอบก่อนคือมีตัวกดใหม่ 2 อย่างที่ไม่ใช่เรื่อง multiple: gross margin จะลงไป ~71-72% จากต้นทุน memory และ FCF รายไตรมาสหดจากเงินทุนหมุนเวียน — ยังมองเป็น 'fair' แต่ช่องว่างสำหรับความผิดพลาดแคบลงกว่ารอบก่อน"
       },
       "whatChanged": [
         {
-          "metric": "รายได้รวม (Q4 FY26 → Q1 FY27)",
-          "prev": "$68.1B (+73% YoY)",
-          "now": "$81.6B (+85% YoY, +20% QoQ) — เร่งตัว 3 ไตรมาสติด",
+          "metric": "รายได้รวม (Q1 FY27 → Q2 FY27)",
+          "prev": "$81.6B (+85% YoY)",
+          "now": "$96.2B (+106% YoY, +18% QoQ) — เร่งตัว 4 ไตรมาสติด",
           "direction": "positive"
         },
         {
           "metric": "รายได้ Data Center",
-          "prev": "$62.3B (+75% YoY)",
-          "now": "$75.2B (+92% YoY, +21% QoQ) — Blackwell GB300",
+          "prev": "$75.2B (+92% YoY)",
+          "now": "$89.0B (+117% YoY, +18% QoQ) — ในนี้ ACIE ~$40B โต +138% YoY",
           "direction": "positive"
         },
         {
-          "metric": "Guidance ไตรมาสถัดไป (Q2 FY27)",
-          "prev": "~$65B (guide สำหรับ Q4 FY26)",
-          "now": "~$91B ±2% — สูงกว่าตลาดคาด ~$86.8B โดยไม่นับจีน",
+          "metric": "Guidance ไตรมาสถัดไป (Q3 FY27)",
+          "prev": "~$91B ±2% (guide สำหรับ Q2 FY27)",
+          "now": "~$108B ±2% — เพิ่มจากไตรมาสก่อนราว $11.8B",
           "direction": "positive"
         },
         {
-          "metric": "Gross margin",
-          "prev": "FY26 ถูกฉุดเหลือ 71.1% จาก H20 charge",
-          "now": "ฟื้นเต็ม ~75% และทรงตัว",
-          "direction": "positive"
+          "metric": "แนวโน้ม Gross margin",
+          "prev": "~75% ทรงตัว",
+          "now": "Q2 ทำได้ 75% แต่ guide ลดเป็น ~74% (Q3), ~71-72% (Q4), ~72-73% (FY28) จากต้นทุน memory ที่ CFO ระบุว่า 'สูงกว่าที่เคยคาดและจะสูงขึ้นอีกปีหน้า' · supply commitments พุ่งจาก $119B เป็น $279B ส่วนใหญ่เพื่อจองหน่วยความจำ",
+          "direction": "negative"
         },
         {
-          "metric": "Forward valuation",
-          "prev": "fwd P/E ~30x",
-          "now": "fwd P/E ~24x — E โตเร็วกว่าราคา จึง 'ถูกลง' แม้หุ้นขึ้น",
-          "direction": "positive"
+          "metric": "กระแสเงินสดอิสระรายไตรมาส",
+          "prev": "$48.6B (Q1 FY27)",
+          "now": "$21.3B — กำไรไม่ได้ลด แต่เงินจมในลูกหนี้ที่เพิ่มกว่า $22B (DSO 45 → 60 วัน จากการให้เครดิตเทอมยาวกับลูกค้าดีลใหญ่) และสต๊อก +$5.8B เตรียมส่ง Vera Rubin",
+          "direction": "negative"
         },
         {
-          "metric": "Data Center จากจีน",
-          "prev": "เกือบศูนย์ (H20 ติดข้อจำกัด)",
-          "now": "ยังศูนย์ — ไม่มี Hopper ส่งจีน Q1 FY27 (เทียบ $4.6B ปีก่อน) และไม่นับใน guidance",
-          "direction": "neutral"
+          "metric": "มุมมองปีหน้า (FY2028)",
+          "prev": "บริษัทยังไม่เคยให้ตัวเลข",
+          "now": "ให้ guide เบื้องต้น ~+70% รายได้ และย้ำว่าเป็นตัวเลขที่ 'ถูกจำกัดด้วยกำลังผลิต ไม่ใช่ดีมานด์' — สูงกว่าที่ตลาดเคยประเมินไว้ ~45%",
+          "direction": "positive"
         }
       ],
       "risks": [
         "รอบลงทุน AI capex กระจุกตัวในลูกค้า hyperscaler + AI lab ไม่กี่ราย — หากรายใดชะลอการลงทุนหรือเกิดคำถามเรื่อง ROI ของ AI ในวงกว้าง รายได้จะถูกกระทบแรงและเร็ว",
+        "ต้นทุน memory (HBM/DRAM) ที่บริษัทระบุเองว่าสูงกว่าคาดและจะสูงขึ้นอีก กด gross margin ลงเหลือ ~71-72% ช่วง Q4 FY27 — เป็นต้นทุนต่อเนื่อง ไม่ใช่รายการครั้งเดียวแบบ H20 และแผนชดเชยคือขึ้นราคา ซึ่งยังไม่พิสูจน์ว่าลูกค้ารับได้ทั้งหมด",
+        "เงินทุนหมุนเวียนบวมเร็ว: ลูกหนี้ $63.1B (DSO 45 → 60 วัน) จากการให้เครดิตเทอมยาวกับลูกค้าดีลใหญ่ + สต๊อก $31.6B — ถ้าลูกค้ากลุ่มนี้ชะลอหรือมีปัญหาการเงิน ความเสี่ยงจะย้ายจาก 'ยอดขาย' มาเป็น 'เก็บเงินไม่ได้' ซึ่งกระทบงบดุลตรง ๆ",
         "Custom ASIC ของลูกค้าเอง (Google TPU, AWS Trainium, Meta MTIA) และ AMD MI-series กำลังแย่งส่วนแบ่งงาน inference ซึ่งเป็นตลาดที่จะใหญ่ที่สุดในระยะยาว",
         "จีน: ข้อจำกัดส่งออกทำให้รายได้ Data Center จากจีนแทบเป็นศูนย์ และเร่งให้จีนสร้างชิปทดแทนเอง (Huawei Ascend) — ตลาดที่เคยมีนัยสำคัญอาจหายถาวร",
-        "Circular revenue: การลงทุนขนาดใหญ่ในลูกค้าอย่าง OpenAI/Anthropic ทำให้ตลาดตั้งคำถามว่า backlog สะท้อนดีมานด์แท้จริงแค่ไหน — เป็นความเสี่ยงต่อ multiple มากกว่าต่อธุรกิจทันที",
+        "Circular revenue: การลงทุนขนาดใหญ่ในลูกค้า/ecosystem (~$50B ใน frontier AI labs และดีล financing ~$500B ร่วมกับกองทุนใหญ่) ทำให้ตลาดตั้งคำถามว่า backlog สะท้อนดีมานด์แท้จริงแค่ไหน",
         "Supply chain กระจุกตัว: พึ่งพา TSMC (ไต้หวัน) และ HBM จากผู้ผลิตไม่กี่ราย — ความตึงเครียดภูมิรัฐศาสตร์ช่องแคบไต้หวันคือ tail risk ที่ใหญ่ที่สุดของทั้ง thesis"
       ],
       "asOf": "2026-08",
@@ -1061,21 +1057,40 @@
             "opMarginPct": 65.6,
             "fcfB": 48.6,
             "priceQEnd": 180
+          },
+          {
+            "q": "Q2 FY27",
+            "endYm": "2026-07",
+            "endDate": "2026-07-26",
+            "revenueB": 96.2,
+            "epsAdj": 2.46,
+            "opMarginPct": 66.2,
+            "fcfB": 21.3,
+            "priceQEnd": 206.84,
+            "epsNote": "GAAP EPS 2.46 รวมกำไรจากเงินลงทุน (equity securities) ~$7.8B ก่อนภาษี (~$0.32/หุ้น) ซึ่งไม่ได้มาจากธุรกิจหลัก · non-GAAP ที่บริษัทรายงาน = 2.22 (คอลัมน์นี้ใช้ GAAP ทั้งชุดเพื่อให้เทียบข้ามไตรมาสได้)"
           }
         ]
       },
-      "nextEarnings": "2026-08-26",
+      "nextEarnings": "2026-11",
       "forwardView": {
         "asOf": "2026-08",
         "estimateHistory": [
           {
             "asOf": "2026-08",
             "fy": "FY2027",
-            "eps": 8.96,
-            "revenue": 393.9
+            "eps": 9.27,
+            "revenue": 409
           }
         ],
         "guidanceTrack": [
+          {
+            "quarter": "Q2 FY27",
+            "metric": "revenue",
+            "guided": "~$91.0B ±2%",
+            "actual": "~$96.2B",
+            "result": "beat",
+            "magnitudePct": 5.7
+          },
           {
             "quarter": "Q1 FY27",
             "metric": "revenue",
@@ -1163,33 +1178,25 @@
             "actual": "~$18.1B",
             "result": "beat",
             "magnitudePct": 13.3
-          },
-          {
-            "quarter": "Q2 FY24",
-            "metric": "revenue",
-            "guided": "~$11.0B ±2%",
-            "actual": "~$13.5B",
-            "result": "beat",
-            "magnitudePct": 22.8
           }
         ],
         "consensus": [
           {
             "fy": "FY2027",
-            "revenue": 393.9,
-            "eps": 8.96,
+            "revenue": 409,
+            "eps": 9.27,
             "confidence": "high",
             "basis": "non-GAAP"
           },
           {
             "fy": "FY2028",
-            "revenue": null,
-            "eps": 12.12,
-            "confidence": "medium",
+            "revenue": 573.5,
+            "eps": null,
+            "confidence": "low",
             "basis": "unknown"
           }
         ],
-        "note": "consensus = non-GAAP ของสำนักวิเคราะห์ (ตั้งแต่ Q1 FY27 non-GAAP ของ NVIDIA รวม SBC — เปลี่ยนวิธีคำนวณ) ขณะที่ตาราง KB ใช้ GAAP เทียบข้ามฐานตรง ๆ ไม่ได้ · FY2027 EPS แต่ละสำนัก ~8.96-9.34 / revenue ~391-394B ใช้ StockAnalysis (53 นักวิเคราะห์) · FY2028 แหล่งเดียว ฐานไม่ระบุ · งบ Q2 FY27 ออก 26 ส.ค. 2026 — guidance ~$91.0B ±2% vs consensus ~$91.8B"
+        "note": "consensus เป็น non-GAAP ของสำนักวิเคราะห์ ขณะที่ตารางไตรมาส/รายปีใน KB ใช้ GAAP — เทียบข้ามฐานตรง ๆ ไม่ได้ · FY2027 ใช้ StockAnalysis (34 นักวิเคราะห์) rev $409.0B / EPS $9.27 อัปเดตหลังงบ Q2 · FY2028 ตัวเลข $573.5B คือ consensus 'ก่อน' บริษัทให้ guide เบื้องต้น ~+70% (ซึ่ง implied ~$690B) จึงกำลังถูกปรับขึ้นทั้งกระดาน — ยังไม่พบตัวเลข EPS FY2028 หลังปรับที่ยืนยันได้ จึงเว้นไว้แทนการเดา · Q3 FY27 บริษัท guide ~$108B ±2%"
       }
     },
     "MSFT": {
