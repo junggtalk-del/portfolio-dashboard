@@ -195,3 +195,14 @@
 .pm-pie-item i { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
 .pm-pie-item b { color: var(--mc-text, #e2e8f0); font-weight: 700; }
 .pm-pie-none { margin: 0 0 10px; }
+
+/* ---- Intelligence Layer: Thesis Health chips + safety gate ---- */
+.pm-ii-chip { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .2px; vertical-align: middle; }
+.pm-ii-intact { background: rgba(52, 211, 153, .12); color: #6ee7b7; }
+.pm-ii-watch { background: rgba(245, 158, 11, .12); color: #fbbf24; }
+.pm-ii-deteriorating { background: rgba(251, 146, 60, .16); color: #fb923c; }
+.pm-ii-broken { background: rgba(244, 63, 94, .16); color: #fda4af; }
+.pm-ii-insufficient { background: rgba(148, 163, 184, .1); color: #94a3b8; }
+.pm-ii-gate { color: #fda4af; font-size: 10.5px; font-weight: 700; }
+.pm-ii-gateline { margin: 6px 0 2px; padding: 6px 9px; border-radius: 8px; background: rgba(244, 63, 94, .1); border: 1px solid rgba(244, 63, 94, .35); color: #fda4af; font-size: 11.5px; }
+.pm-ii-ev { margin-top: 6px; padding: 6px 9px; border-radius: 8px; background: rgba(245, 158, 11, .07); color: var(--mc-dim, #94a3b8); font-size: 11px; line-height: 1.6; }

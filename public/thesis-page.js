@@ -96,10 +96,34 @@
     if (t && /^[A-Z0-9.^=-]{1,12}$/.test(t)) return t; // อนุญาต lite ticker ด้วย
     return DEFAULT_TICKER;
   }
+  // ---------------- routing: /thesis = Overview (LEVEL 1) · /thesis?ticker=X = Detail (LEVEL 2) ----------------
+  var thoSort = null; // state การเรียงตาราง All Assets บน Overview
+  function urlTicker() {
+    try {
+      var m = /[?&]ticker=([A-Za-z0-9.^=%-]{1,16})/.exec((window.location && window.location.search) || "");
+      return m ? decodeURIComponent(m[1]).trim().toUpperCase() : null;
+    } catch (e) { return null; }
+  }
+  function pushUrl(qs) {
+    try { if (window.history && window.history.pushState) window.history.pushState({}, "", qs); } catch (e) { /* headless */ }
+  }
+  function goOverview() { compareMode = false; pushUrl("/thesis"); render(); }
+  function renderOverview(root) {
+    var TO = window.ThesisOverview;
+    if (!TO || typeof TO.render !== "function") {
+      root.innerHTML = '<div class="mc-empty"><strong>Overview module ไม่พร้อม</strong> — refresh หน้านี้</div>';
+      return;
+    }
+    var html;
+    try { html = TO.render(readSnapshot() || {}, { sort: thoSort }); }
+    catch (eOv) { html = '<div class="mc-empty">Overview ล้มเหลว: ' + esc(String((eOv && eOv.message) || eOv)) + "</div>"; }
+    root.innerHTML = html;
+  }
   function setTicker(t) {
     t = String(t || "").trim().toUpperCase();
-    if (!t || t === selectedTicker()) return;
+    if (!t) return;
     try { window.localStorage.setItem(STORE_KEY, t); } catch (e) {}
+    pushUrl("/thesis?ticker=" + encodeURIComponent(t));
     render();
   }
 
@@ -119,7 +143,9 @@
       root.innerHTML = headerSection(null) + cmpBody;
       return;
     }
-    var sel = selectedTicker();
+    var sel = urlTicker();
+    if (!sel) { renderOverview(root); return; } // LEVEL 1: /thesis ไม่มี ?ticker = Overview เต็มหน้า ห้ามมี detail ปน
+    try { window.localStorage.setItem(STORE_KEY, sel); } catch (eSel) {} // จำตัวล่าสุดให้ chips ใน header ใช้
     var R;
     try {
       R = isCovered(sel)
@@ -149,7 +175,8 @@
       explainSection(R) +
       methodSection(R) +
       valuationContextSection(R) +
-      forwardSection(R);
+      forwardSection(R) +
+      intelligenceSection(R);
   }
 
   function emptyState(R) {
@@ -166,7 +193,7 @@
       var on = compareMode ? compareSel.indexOf(c.ticker) >= 0 : c.ticker === sel;
       var ord = compareMode ? compareSel.indexOf(c.ticker) : -1;
       var mark = ord >= 0 ? '<i class="th-chipdot" style="background:' + cmpColor(ord) + '"></i>' : "";
-      return '<button type="button" class="th-chipbtn' + (on ? " th-chipbtn-on" : "") + '" data-th-ticker="' + esc(c.ticker) + '" title="' + esc(c.name) + '">' + mark + esc(c.ticker) + "</button>";
+      return       '<button type="button" class="th-chipbtn' + (on ? " th-chipbtn-on" : "") + '" data-th-ticker="' + esc(c.ticker) + '" title="' + esc(c.name) + '">' + mark + esc(c.ticker) + "</button>";
     }).join("");
     if (!covered && !compareMode) chips += '<button type="button" class="th-chipbtn th-chipbtn-on th-chipbtn-lite" data-th-ticker="' + esc(sel) + '">' + esc(sel) + " (Lite)</button>";
     chips += '<button type="button" class="th-chipbtn th-cmpbtn' + (compareMode ? " th-chipbtn-on" : "") + '" data-th-cmp-toggle="1">⇄ ' +
@@ -967,6 +994,7 @@
       .replace(/\([^)]*\)/g, " ")          // ตัดวงเล็บ เช่น (+24% YoY)
       .replace(/[±+]\s*\d+(\.\d+)?\s*%/g, " ") // ตัด ±2%
       .replace(/\d+(\.\d+)?\s*%/g, " ")     // ตัด %-อื่น ๆ
+      .replace(/(\d),(?=\d{3}(\D|$))/g, "$1") // comma หลักพัน: 50,294 → 50294 (ห้ามแตกเป็นสองตัวเลขแล้วโดนตีเป็นช่วง)
       .replace(/[~$,]/g, " ");
     var re = /(\d+(?:\.\d+)?)\s*([BM])?/gi, m, vals = [], unit = null;
     while ((m = re.exec(t)) !== null) {
@@ -1245,6 +1273,183 @@
       badges + c0 + '<h3 class="th-h3">EPS revision trend</h3>' + c1 + c2 + noteHtml);
   }
 
+
+  // ============================================================ §16 Investment Intelligence
+  // ชั้นหลักฐานรวม 6 ฟีเจอร์ (intelligence-engine) — ตอบ "หุ้นลงเพราะอะไร แล้ว thesis ยังอยู่ไหม"
+  function iiStatusIcon(st) { return st === "ok" ? '<span class="th-ii-ok">✓</span>' : st === "warn" ? '<span class="th-ii-warn">⚠</span>' : st === "crit" ? '<span class="th-ii-crit">✗</span>' : '<span class="th-ii-na">—</span>'; }
+  function iiCard(label, value, note) {
+    return '<div class="th-vx-card"><small>' + esc(label) + '</small><b>' + value + '</b><span>' + esc(note || "") + '</span></div>';
+  }
+  // scatter Growth vs Valuation — X = P/E percentile เทียบอดีตตัวเอง (ถูก→แพง) · Y = fundCagr %/ปี
+  function iiMatrixSvg(points, selected) {
+    var W = 640, H = 300, padL = 46, padR = 14, padT = 26, padB = 34;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var GMIN = -10, GMAX = 60, XSPLIT = 65, YSPLIT = 15; // XSPLIT = ขอบ FAIR/PREMIUM ของ Valuation Engine · YSPLIT = เกณฑ์โตสูง 15%/ปี
+    function xOf(p) { return padL + (Math.max(0, Math.min(100, p)) / 100) * plotW; }
+    function yOf(g) { var c = Math.max(GMIN, Math.min(GMAX, g)); return padT + (1 - (c - GMIN) / (GMAX - GMIN)) * plotH; }
+    var b = "";
+    // พื้นหลัง 4 quadrant จาง ๆ
+    b += '<rect x="' + padL + '" y="' + padT + '" width="' + (xOf(XSPLIT) - padL) + '" height="' + (yOf(YSPLIT) - padT) + '" fill="rgba(52,211,153,.07)"/>';
+    b += '<rect x="' + xOf(XSPLIT) + '" y="' + padT + '" width="' + (W - padR - xOf(XSPLIT)) + '" height="' + (yOf(YSPLIT) - padT) + '" fill="rgba(245,158,11,.06)"/>';
+    b += '<rect x="' + padL + '" y="' + yOf(YSPLIT) + '" width="' + (xOf(XSPLIT) - padL) + '" height="' + (H - padB - yOf(YSPLIT)) + '" fill="rgba(148,163,184,.05)"/>';
+    b += '<rect x="' + xOf(XSPLIT) + '" y="' + yOf(YSPLIT) + '" width="' + (W - padR - xOf(XSPLIT)) + '" height="' + (H - padB - yOf(YSPLIT)) + '" fill="rgba(244,63,94,.07)"/>';
+    b += '<line x1="' + xOf(XSPLIT) + '" y1="' + padT + '" x2="' + xOf(XSPLIT) + '" y2="' + (H - padB) + '" stroke="#475569" stroke-dasharray="4 3"/>';
+    b += '<line x1="' + padL + '" y1="' + yOf(YSPLIT) + '" x2="' + (W - padR) + '" y2="' + yOf(YSPLIT) + '" stroke="#475569" stroke-dasharray="4 3"/>';
+    b += '<text class="th-ii-qlab" x="' + (padL + 6) + '" y="' + (padT + 14) + '" fill="#34d399">🟢 OPPORTUNITY</text>';
+    b += '<text class="th-ii-qlab" x="' + (W - padR - 6) + '" y="' + (padT + 14) + '" fill="#f59e0b" text-anchor="end">🟡 PRICE RICH</text>';
+    b += '<text class="th-ii-qlab" x="' + (padL + 6) + '" y="' + (H - padB - 8) + '" fill="#94a3b8">🟡 VALUE / โตช้า</text>';
+    b += '<text class="th-ii-qlab" x="' + (W - padR - 6) + '" y="' + (H - padB - 8) + '" fill="#f43f5e" text-anchor="end">🔴 HIGH RISK</text>';
+    b += '<text class="th-ii-axis" x="' + padL + '" y="' + (H - 8) + '">ถูก (percentile 0)</text>';
+    b += '<text class="th-ii-axis" x="' + (W - padR) + '" y="' + (H - 8) + '" text-anchor="end">แพง (100)</text>';
+    b += '<text class="th-ii-axis" transform="rotate(-90 12 ' + (padT + plotH / 2) + ')" x="12" y="' + (padT + plotH / 2) + '" text-anchor="middle">โต %/ปี</text>';
+    var skipped = [], placed = []; // กล่อง label ที่วางแล้ว — กันซ้อนกัน (MSFT/META ชนกันด้วยข้อมูลจริง)
+    points.forEach(function (p) {
+      var pct = p.valuation ? p.valuation.percentile : null;
+      if (pct == null || p.growthCagrPct == null) { skipped.push(p.ticker); return; }
+      var isSel = p.ticker === selected;
+      var rr = isSel ? 9 : 5;
+      // clamp จุดเข้า plot (NVDA growth 80 โดน clamp ที่ขอบ — วงต้องไม่ทับ label quadrant/หลุดกรอบ)
+      var x = Math.max(padL + rr, Math.min(W - padR - rr, xOf(pct)));
+      var y = Math.max(padT + rr, Math.min(H - padB - rr, yOf(p.growthCagrPct)));
+      var clipTxt = p.growthCagrPct > GMAX ? "↑" : p.growthCagrPct < GMIN ? "↓" : "";
+      b += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (isSel ? 7 : 4) + '" fill="' + (isSel ? "#38bdf8" : "#64748b") + '"' + (isSel ? ' stroke="#e2e8f0" stroke-width="2"' : "") + '>' +
+        '<title>' + esc(p.ticker) + ' · โต ' + p.growthCagrPct + '%/ปี · percentile ' + pct + ' · ' + esc(p.quadrant.label) + '</title></circle>';
+      // label: ชิดขวา = anchor end (ASML percentile 100 เคยโดนตัดเหลือตัวเดียว) · ชนกล่องเดิม = ขยับแนวตั้ง
+      var txt = p.ticker + clipTxt;
+      var wEst = txt.length * 6.5 + 2;
+      var anchorEnd = x + 7 + wEst > W - padR;
+      var lx = anchorEnd ? x - 7 : x + 7;
+      var ly = y - 6;
+      var tries = [0, -11, 11, -22, 22], ti;
+      for (ti = 0; ti < tries.length; ti++) {
+        var cand = ly + tries[ti];
+        var x0 = anchorEnd ? lx - wEst : lx;
+        var hit = placed.some(function (bx) { return x0 < bx.x1 && x0 + wEst > bx.x0 && cand - 9 < bx.y1 && cand > bx.y0; });
+        if (!hit) { ly = cand; placed.push({ x0: x0, x1: x0 + wEst, y0: ly - 9, y1: ly }); break; }
+      }
+      b += '<text class="th-ii-pt' + (isSel ? ' th-ii-pt-sel' : '') + '"' + (anchorEnd ? ' text-anchor="end"' : "") + ' x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '">' + esc(txt) + '</text>';
+    });
+    var svg = '<svg class="th-ii-matrix" viewBox="0 0 ' + W + ' ' + H + '" role="img">' + b + '</svg>';
+    if (skipped.length) svg += '<div class="th-muted">ยังจัด quadrant ไม่ได้ (ข้อมูล valuation/growth ไม่พอ): ' + skipped.map(esc).join(", ") + '</div>';
+    return svg;
+  }
+  function intelligenceSection(R) {
+    var IE = window.IntelligenceEngine;
+    if (!IE || typeof IE.compute !== "function") return "";
+    var X;
+    try { X = IE.compute(R.ticker, readSnapshot() || {}, { o: R }); } catch (eIx) { return ""; }
+    if (!X || !X.available) return "";
+    var H = X.health, S = X.summary, M = X.aiMonetization, E2 = X.expectations, DDX = X.drawdown, MP = X.matrixPoint, VC = X.valueChain;
+
+    // ---- executive summary ----
+    var hero = '<div class="th-ii-hero th-ii-' + S.state.key.toLowerCase().replace(/_/g, "-") + '">' +
+      '<div class="th-ii-hero-head"><span class="th-ii-ico">' + S.state.icon + '</span><div><b>' + esc(S.state.label) + '</b><span>' + esc(S.state.thai) + '</span></div></div>' +
+      '<ul>' + S.why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join("") + '</ul>' +
+      '<div class="th-muted">ป้ายนี้ตอบ "สุขภาพ thesis + คุณภาพของ dip" — จังหวะวางเงินจริงต้องผ่านเกต Macro/Mega Trend ที่ §4 Decision และหน้า Portfolio Manager</div></div>';
+
+    // ---- evidence strip (การ์ดสรุป 6 ใบ) ----
+    var vNow = MP.valuation;
+    var cards = '<div class="th-vx-cards th-ii-cards">' +
+      iiCard("Thesis Health", H.state.icon + " " + H.state.label, "crit " + H.counts.criticals + " · warn " + H.counts.warnings + " จาก " + H.counts.total + " pillar") +
+      iiCard("Expectations", E2.state.icon + " " + E2.state.label, E2.revisions ? "EPS " + (E2.revisions.eps && E2.revisions.eps.chgVsPrevPct != null ? (E2.revisions.eps.chgVsPrevPct >= 0 ? "+" : "") + E2.revisions.eps.chgVsPrevPct + "%" : "—") : "รอสะสมประวัติ estimate") +
+      iiCard("AI Monetization", M.state.icon + " " + M.state.label, (M.overall != null ? "รวม " + M.overall : "—") + " · แนวโน้ม " + (M.trend === "improving" ? "↑" : M.trend === "deteriorating" ? "↓" : "→")) +
+      iiCard("Drawdown", DDX.available && DDX.dd1y != null ? Math.round(Math.abs(Math.min(DDX.dd1y, 0))) + "% จาก high 1 ปี" : "—", DDX.available ? DDX.classification.label : "ไม่มีข้อมูลราคา") +
+      iiCard("Growth vs Valuation", MP.quadrant.icon + " " + MP.quadrant.key, (MP.growthCagrPct != null ? "โต " + MP.growthCagrPct + "%/ปี" : "—") + (vNow && vNow.percentile != null ? " · pct " + vNow.percentile : "")) +
+      iiCard("Value Chain", VC.available ? esc(VC.layerName) : "—", VC.available && VC.phase ? "phase: " + VC.phase.name + " · benefit " + (VC.benefit || "—") : "ต้องมี snapshot จึงระบุ phase ได้") +
+      '</div>';
+
+    // ---- F1 pillars ----
+    var pillarRows = H.pillars.map(function (p) {
+      return '<tr><td>' + iiStatusIcon(p.status) + '</td><td>' + esc(p.label) + (p.companyPillar ? "" : ' <span class="th-muted">(ตลาด)</span>') + '</td><td>' + esc(p.evidence) + '</td></tr>';
+    }).join("");
+    var f1 = '<details class="th-fw-src th-ii-det"><summary>🩺 Thesis Health — หลักฐานราย pillar (' + H.counts.companyAvailable + ' pillar บริษัทมีข้อมูล)</summary>' +
+      '<div class="th-table-wrap"><table class="th-table"><thead><tr><th></th><th>Pillar</th><th>หลักฐาน</th></tr></thead><tbody>' + pillarRows + '</tbody></table></div>' +
+      '<div class="th-muted">' + esc(H.note) + '</div></details>';
+
+    // ---- F2 expectations ----
+    var f2body = "";
+    if (E2.revisions) {
+      var rv = E2.revisions;
+      f2body += '<div class="th-vx-cards">' +
+        (rv.eps ? iiCard("EPS estimate " + rv.eps.fy, (rv.eps.prev == null ? "—" : rv.eps.prev) + " → " + (rv.eps.current == null ? "—" : rv.eps.current), "revision " + (rv.eps.chgVsPrevPct == null ? "—" : (rv.eps.chgVsPrevPct >= 0 ? "+" : "") + rv.eps.chgVsPrevPct + "%") + " (" + (rv.eps.prevAsOf || "") + " → " + (rv.eps.currentAsOf || "") + ")") : "") +
+        (rv.revenue ? iiCard("Revenue estimate " + rv.revenue.fy, (rv.revenue.prev == null ? "—" : rv.revenue.prev) + " → " + (rv.revenue.current == null ? "—" : rv.revenue.current), "revision " + (rv.revenue.chgVsPrevPct == null ? "—" : (rv.revenue.chgVsPrevPct >= 0 ? "+" : "") + rv.revenue.chgVsPrevPct + "%")) : "") + '</div>';
+    } else {
+      f2body += '<div class="th-muted">— ' + esc(E2.note) + '</div>';
+    }
+    function surLine(label, su) {
+      if (!su) return "";
+      return '<div class="th-ii-sur"><b>' + esc(label) + '</b> ' + su.rows.map(function (r0) {
+        var ic = r0.result === "beat" ? "✓" : r0.result === "miss" ? "✗" : "•";
+        return '<span class="th-ii-sur-' + r0.result + '" title="' + esc(r0.quarter) + (r0.magnitudePct != null ? " " + (r0.magnitudePct >= 0 ? "+" : "") + r0.magnitudePct + "%" : "") + '">' + ic + " " + esc(r0.quarter) + '</span>';
+      }).join(" ") + ' <span class="th-muted">(' + su.beats + '/' + su.n + ' beat)</span></div>';
+    }
+    var f2 = '<details class="th-fw-src th-ii-det"><summary>📈 Earnings Expectations — revision + วินัย guidance</summary>' + f2body +
+      surLine("Revenue vs guidance (4 ไตรมาสล่าสุด):", E2.surprise.revenue) + surLine("EPS vs guidance:", E2.surprise.eps) +
+      '<div class="th-muted">' + esc(E2.surprise.basis) + ' · หลักฐานประกอบ ไม่แปลงเป็นคำสั่งซื้อขายอัตโนมัติ</div></details>';
+
+    // ---- F3 monetization ----
+    var f3rows = M.components.map(function (c) {
+      return '<div class="th-ii-mrow"><span>' + esc(c.label) + '</span>' + (c.score == null ? '<b class="th-ii-na">—</b>' : '<b>' + c.score + '</b>' + bar(c.score, scoreColor(c.score))) + '<small>' + esc(c.evidence) + '</small></div>';
+    }).join("");
+    var f3 = '<details class="th-fw-src th-ii-det"><summary>🤖 AI Monetization — เงินลงทุน AI กลายเป็นผลธุรกิจจริงไหม</summary>' +
+      '<div class="th-muted">แยก "การลงทุน/execute" ออกจาก "ผลธุรกิจที่วัดได้" — ลงทุนเยอะไม่ใช่ข่าวดีอัตโนมัติ · ' + esc(M.why) + '</div>' + f3rows +
+      '<div class="th-muted">ที่มา: ' + esc(M.source) + ' · asOf ' + esc(M.asOf || "—") + '</div></details>';
+
+    // ---- F4 drawdown ----
+    var f4body;
+    if (!DDX.available) f4body = '<div class="th-muted">— ' + esc(DDX.note) + '</div>';
+    else {
+      f4body = '<div class="th-vx-cards">' +
+        iiCard("ราคาปัจจุบัน", DDX.price != null ? String(DDX.price) : "—", DDX.priceAsOf || "") +
+        iiCard("จาก high 52 สัปดาห์", DDX.fromHigh52wPct != null ? DDX.fromHigh52wPct + "%" : "—", DDX.high52wNote ? DDX.high52wNote : "52w high " + (DDX.high52w != null ? DDX.high52w : "—")) +
+        iiCard("จากจุดสูงสุดในข้อมูล", DDX.fromDataHighPct != null ? DDX.fromDataHighPct + "%" : "—", DDX.dataHighNote) +
+        iiCard("ระยะจาก SMA50 / SMA200", (DDX.smaDist50Pct != null ? DDX.smaDist50Pct + "%" : "—") + " / " + (DDX.smaDist200Pct != null ? DDX.smaDist200Pct + "%" : "—"), "") +
+        iiCard("Drawdown 90 วัน / 1 ปี", (DDX.dd90 != null ? DDX.dd90 + "%" : "—") + " / " + (DDX.dd1y != null ? DDX.dd1y + "%" : "—"), "สูตรเดียวกับ §3") +
+        iiCard("ระดับการย่อ", DDX.classification.label, DDX.classification.thai) + '</div>';
+      f4body += '<div class="th-muted">' + esc(DDX.classificationBasis) + '</div>';
+      if (DDX.history.count) {
+        f4body += '<div class="th-ii-eps"><b>รอบย่อในอดีตของหุ้นตัวนี้ (' + DDX.history.count + ' รอบ):</b> ' +
+          DDX.history.episodes.map(function (e0) { return '<span>' + e0 + '%</span>'; }).join(" ") +
+          (DDX.history.percentileOfCurrent != null ? ' <span class="th-muted">· การย่อครั้งนี้ลึกกว่า ' + DDX.history.percentileOfCurrent + '% ของรอบในอดีต</span>' : "") + '</div>';
+      }
+      f4body += '<div class="th-ii-note">⚠ ' + esc(DDX.note) + '</div>';
+    }
+    var f4 = '<details class="th-fw-src th-ii-det"><summary>📉 Drawdown Context — ย่อครั้งนี้ลึกแค่ไหนเทียบตัวเอง</summary>' + f4body + '</details>';
+
+    // ---- F5 matrix ----
+    var f5body = "";
+    try {
+      var MX = IE.matrix(readSnapshot() || {}, {});
+      f5body = MX.available ? iiMatrixSvg(MX.points, R.ticker) + '<div class="th-muted">' + esc(MX.note) + '</div>' : '<div class="th-muted">—</div>';
+    } catch (eMx) { f5body = '<div class="th-muted">คำนวณ matrix ไม่ได้</div>'; }
+    var f5 = '<details class="th-fw-src th-ii-det"><summary>🧭 Growth vs Valuation Matrix — ทุกตัวใน KB (' + esc(MP.quadrant.icon + " " + R.ticker + " = " + MP.quadrant.label) + ')</summary>' +
+      '<div class="th-muted">' + esc(MP.growthWhy) + (MP.growthVsPrice && MP.growthVsPrice.score != null ? ' · growth-vs-price score ' + MP.growthVsPrice.score + ' (PMEngine)' : "") + '</div>' + f5body + '</details>';
+
+    // ---- F6 value chain ----
+    var f6body;
+    if (!VC.available) f6body = '<div class="th-muted">—</div>';
+    else {
+      f6body = '<div class="th-vx-cards">' +
+        iiCard("Primary layer", esc(VC.layerName), VC.layerThesis || "") +
+        iiCard("AI Cycle Phase", VC.phase ? esc(VC.phase.name) : "—", VC.nextPhase ? "ถัดไป: " + VC.nextPhase.name : "") +
+        iiCard("Benefit (phase นี้ / ถัดไป)", (VC.benefit || "—") + " / " + (VC.benefitNext || "—"), VC.benefitWhy) +
+        iiCard("Rotation", VC.rotation ? VC.rotation.direction + " · score " + VC.rotation.score : "—", VC.rotation ? (VC.rotation.trendLabel || "") : "") +
+        iiCard("Competitive", VC.competitivePosition || "—", "") + '</div>';
+      if (VC.exposureDetail && VC.exposureDetail.length) {
+        f6body += '<div class="th-ii-eps"><b>Exposure จริงตาม segment:</b> ' + VC.exposureDetail.map(function (sg) {
+          return '<span>' + esc(sg.name) + ' ' + (sg.sharePct != null ? sg.sharePct + '%' : '—') + (sg.trend === "up" ? "↑" : sg.trend === "down" ? "↓" : "") + '</span>';
+        }).join(" · ") + '</div>';
+      }
+    }
+    var f6 = '<details class="th-fw-src th-ii-det"><summary>⛓️ AI Value Chain Position — อยู่ตรงไหนของห่วงโซ่ ได้ประโยชน์ phase ไหน</summary>' + f6body + '</details>';
+
+    // ---- data quality ----
+    var qual = '<div class="th-vx-qual"><b>Intelligence Data Quality</b> · Health: KB quarters + thesis-engine · Expectations: forwardView (asOf ' + esc(E2.asOf || "—") + ') · Monetization: curated KB (asOf ' + esc(X.asOf || "—") + ') · Drawdown: ' + (DDX.available ? esc(DDX.source) : "ไม่มี snapshot") + ' · Matrix: ' + esc(MP.source) + ' · engine v' + esc(X.version) + ' · ไม่มีการประเมินแทนข้อมูลที่ขาด (ช่องว่าง = —)</div>';
+
+    return sec(16, "Investment Intelligence", "หุ้นลงเพราะอะไร แล้ว thesis ยังอยู่ไหม — Thesis Health + Expectations + AI Monetization + Drawdown + Matrix + Value Chain",
+      hero + cards + f1 + f2 + f3 + f4 + f5 + f6 + qual);
+  }
+
   // ============================================================ boot
   function goLite() {
     var inp = document.getElementById("thLiteInput");
@@ -1252,6 +1457,14 @@
   }
   function onRootClick(e) {
     if (e.target && e.target.id === "thLiteGo") { goLite(); return; }
+    var hb = e.target && e.target.closest ? e.target.closest("[data-th-home]") : null;
+    if (hb) { goOverview(); return; }
+    var sb = e.target && e.target.closest ? e.target.closest("[data-tho-sort]") : null;
+    if (sb) {
+      var col = sb.getAttribute("data-tho-sort");
+      thoSort = thoSort && thoSort.col === col && thoSort.dir === "asc" ? { col: col, dir: "desc" } : { col: col, dir: "asc" };
+      render(); return;
+    }
     var mb = e.target && e.target.closest ? e.target.closest("[data-th-hmode]") : null;
     if (mb) { historyMode = mb.getAttribute("data-th-hmode") === "quarter" ? "quarter" : "year"; render(); return; }
     var qb = e.target && e.target.closest ? e.target.closest("[data-th-hquarters]") : null;
@@ -1284,6 +1497,7 @@
     var root = document.getElementById(ROOT_ID);
     if (root) { root.addEventListener("click", onRootClick); root.addEventListener("keydown", onRootKey); }
     render();
+    window.addEventListener("popstate", function () { compareMode = false; render(); }); // ปุ่ม back ของ browser สลับ Overview/Detail ถูกต้อง
     window.addEventListener("portfolio-data-snapshot", render);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();

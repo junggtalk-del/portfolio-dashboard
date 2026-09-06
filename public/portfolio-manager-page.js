@@ -21,6 +21,7 @@
   var ALLOC_STORE = "pmAllocPolicy_v1";   // { indexTicker, indexPct, splitMethod }
   var CVIEW_STORE = "pmCurrentView_v1";   // "all"|"stocks" — มุมมองตาราง Current Portfolio
   var state = { out: null, cashPct: null, gross: null, invested: null };
+  var intelMap = null; // {TICKER: {intel, gate}} จาก IntelligenceEngine — null เมื่อ engine ไม่ได้โหลด
 
   // ถ้อยคำที่อ้าง "เป้า" — ตัดออกเฉพาะหน้านี้ (engine ยังพูดคำเดิมให้หน้าอื่น)
   // เรียงจากรูปเฉพาะ → รูปกว้าง · anchored ทั้งหมด ถ้า engine เปลี่ยนข้อความ กฎจะไม่ match เฉย ๆ
@@ -215,6 +216,36 @@
     return Object.keys(D).filter(function (t) { return !held[t] && t.indexOf(".BK") < 0; });
   }
 
+
+  // ---------------- Intelligence Layer (ชั้นหลักฐาน — optional, ไม่แตะการคำนวณของ PMEngine) ----------------
+  function computeIntelMap(out, snapshot) {
+    var IE = window.IntelligenceEngine;
+    if (!IE || typeof IE.compute !== "function" || !out || !out.rows) return null;
+    var R = null; // ผล rotation คำนวณครั้งเดียว แชร์ทุก ticker
+    try { R = window.AIRotationEngine && window.AIRotationEngine.compute ? window.AIRotationEngine.compute(snapshot || {}) : null; } catch (eR) { R = null; }
+    var map = {};
+    out.rows.forEach(function (r) {
+      if (!r.covered || !r.o) return;
+      try {
+        var X = IE.compute(r.ticker, snapshot || {}, { o: r.o, R: R, gsum: r.growth || null });
+        if (X && X.available) map[r.ticker] = { intel: X, gate: IE.gateZone(r.zone ? r.zone.key : null, X.health.state.key) };
+      } catch (eI) { /* ตัวไหนพังก็ข้าม — หน้าเดิมต้องไม่ล้ม */ }
+    });
+    return map;
+  }
+  function intelOf(ticker) { return intelMap && intelMap[ticker] ? intelMap[ticker] : null; }
+  function healthChip(ticker) {
+    var it = intelOf(ticker);
+    if (!it) return "";
+    var st = it.intel.health.state;
+    return '<span class="pm-ii-chip pm-ii-' + st.key.toLowerCase() + '" title="Thesis Health: ' + esc(st.thai) + '">' + st.icon + ' ' + esc(st.label) + '</span>';
+  }
+  // zone หลัง safety gate: คืน {zone, gated:bool, why} — zone object ของ PMEngine.ZONES
+  function gatedZone(r) {
+    var it = intelOf(r.ticker);
+    if (!it || !it.gate || !it.gate.overridden || !window.PMEngine || !window.PMEngine.ZONES) return { zone: r.zone, gated: false, why: null };
+    return { zone: window.PMEngine.ZONES[it.gate.zoneKey] || r.zone, gated: true, why: it.gate.why };
+  }
   // ---------------- UI helpers ----------------
   function toneClass(tone) { return tone === "bull" ? "pm-bull" : tone === "bear" ? "pm-bear" : tone === "watch" ? "pm-watch" : "pm-neutral"; }
   function zoneChip(zone) { return '<span class="pm-zone pm-zone-' + zone.key.toLowerCase() + '">' + zone.icon + " " + esc(zone.label) + "</span>"; }
@@ -391,8 +422,8 @@
         "<td>" + tierSel(r) + "</td>" +
         mvCell(r) +
         '<td class="pm-num">' + wcell + "</td>" +
-        "<td>" + (r.covered ? zoneChip(r.zone) : '<span class="pm-dim">ไม่มี thesis</span>') + "</td>" +
-        "<td>" + (r.covered ? actionChip(r.action) : '<a class="pm-dim" href="/thesis">/thesis-update ' + esc(r.ticker) + "</a>") + "</td></tr>";
+        "<td>" + (r.covered ? (function () { var gz = gatedZone(r); return zoneChip(gz.zone) + (gz.gated ? ' <span class="pm-ii-gate" title="' + esc(gz.why) + '">⛔ gated</span>' : "") + healthChip(r.ticker); })() : '<span class="pm-dim">ไม่มี thesis</span>') + "</td>" +
+        "<td>" + (r.covered ? actionChip((function () { var gz2 = gatedZone(r); return gz2.gated && gz2.zone.key === "E" && window.PMEngine ? window.PMEngine.ACTIONS.review : r.action; })()) : '<a class="pm-dim" href="/thesis">/thesis-update ' + esc(r.ticker) + "</a>") + "</td></tr>";
     }).join("");
     // แถวเงินสด = Portfolio Value (หุ้นต่างประเทศ) − ผลรวมมูลค่าหุ้นที่ลงทุน — ให้ครบ 100%
     if (!stocksOnly && inp && inp.cashBaht != null && inp.gross != null) {
@@ -456,29 +487,40 @@
   }
   function sectionZones(out) {
     var all = out.rows.filter(function (r) { return r.covered; })
-      .sort(function (a, b) { return a.zone.rank - b.zone.rank || (b.accScore || 0) - (a.accScore || 0); });
+      .sort(function (a, b) { return gatedZone(a).zone.rank - gatedZone(b).zone.rank || (b.accScore || 0) - (a.accScore || 0); }); // เรียงตาม zone หลัง safety gate ให้ตรงกับที่ card แสดง
     if (!all.length) return "";
     var cards = all.map(function (r) {
       var ladderMini = r.ladder.map(function (e) {
         var cls = e.completed ? "pm-lad-done" : e.triggered ? "pm-lad-hot" : "pm-lad-wait";
         return '<span class="pm-lad ' + cls + '" title="' + esc(e.title + " — " + (e.completed ? "Deploy แล้ว" : e.triggered ? "Trigger แล้ว รอ deploy" : e.why)) + '">E' + e.n + "</span>";
       }).join("");
-      return '<article class="pm-card pm-card-' + r.zone.key.toLowerCase() + '">' +
+      var gz = gatedZone(r);
+      var it = intelOf(r.ticker);
+      var gateLine = gz.gated ? '<div class="pm-ii-gateline">⛔ ' + esc(gz.why) + "</div>" : "";
+      var evLines = "";
+      if (it) {
+        var bad = it.intel.health.pillars.filter(function (p) { return p.status === "warn" || p.status === "crit"; });
+        if (bad.length) evLines = '<div class="pm-ii-ev">' + bad.map(function (p) {
+          return (p.status === "crit" ? "✗ " : "⚠ ") + esc(p.label) + ": " + esc(p.evidence);
+        }).join("<br>") + "</div>";
+      }
+      return '<article class="pm-card pm-card-' + gz.zone.key.toLowerCase() + '">' +
         '<div class="pm-card-head">' + assetLink(r.ticker) +
         (r.held ? "" : '<span class="pm-newpos">ยังไม่ได้ถือ — ตัวเลือกตำแหน่งใหม่</span>') +
         '<span class="pm-score"><b>' + (r.accScore == null ? "—" : r.accScore) + "</b>/100</span></div>" +
-        '<div class="pm-card-zone">' + zoneChip(r.zone) + "<small>" + esc(r.zone.thai) + "</small></div>" +
+        '<div class="pm-card-zone">' + zoneChip(gz.zone) + "<small>" + esc(gz.zone.thai) + "</small>" + healthChip(r.ticker) + "</div>" + gateLine +
         '<div class="pm-card-zonewhy">' + r.zoneWhy.map(function (w) { return esc(w); }).join(" · ") + "</div>" +
         '<div class="pm-scoreline">📊 ' + scoreFormula(r.acc.parts, r.accScore) + "</div>" +
         '<div class="pm-lads">' + ladderMini + "</div>" +
         '<details class="pm-details"><summary>ที่มาของคะแนน + เหตุผล</summary>' +
         '<div class="pm-scorebars">' + scoreBars(r.acc.parts, r.accScore) + "</div>" +
         '<div class="pm-whywrap">' + whyList(r.why) + "</div></details>" +
+        evLines +
         (r.stale ? '<div class="pm-stale">⚠ thesis เก่า — /thesis-update ' + esc(r.ticker) + "</div>" : "") +
         "</article>";
     }).join("");
     var counts = {};
-    all.forEach(function (r) { counts[r.zone.key] = (counts[r.zone.key] || 0) + 1; });
+    all.forEach(function (r) { var zk = gatedZone(r).zone.key; counts[zk] = (counts[zk] || 0) + 1; }); // นับ zone หลัง safety gate ให้ตรงกับ card
     var strip = ["A", "B", "C", "D", "E"].map(function (k) {
       var z = window.PMEngine.ZONES[k];
       return '<span class="pm-pill">' + z.icon + " " + k + " <b>" + (counts[k] || 0) + "</b></span>";
@@ -496,19 +538,24 @@
     var bahtOf = function (pctCash) { return inp.cashBaht != null ? baht(inp.cashBaht * pctCash / 100) : null; };
     var items = d.items.map(function (i) {
       var amt = bahtOf(i.pctOfCash);
+      var gI = intelOf(i.ticker);
+      var gateWarn = gI && gI.gate && gI.gate.overridden ? '<div class="pm-ii-gateline">⛔ ' + esc(gI.gate.why) + " — ตรวจหลักฐานที่ /thesis §16 ก่อนวางเงิน</div>" : "";
       return '<div class="pm-dep-row"><div class="pm-dep-head">' + assetLink(i.ticker) +
         '<b>' + i.pctOfCash.toFixed(1) + "% ของเงินสด" + (amt ? " ≈ " + amt : "") + "</b></div>" +
         '<div class="pm-depbar"><i style="width:' + Math.min(100, i.pctOfCash) + '%"></i></div>' +
-        '<small>' + esc(i.why) + (i.halved ? " · ถูกลดครึ่งจาก Macro Risk-Off (Rule 3)" : "") + "</small></div>";
+        '<small>' + esc(i.why) + (i.halved ? " · ถูกลดครึ่งจาก Macro Risk-Off (Rule 3)" : "") + "</small>" + gateWarn + "</div>";
     }).join("");
     // headline: เงินก้อนถัดไปควรไปที่ไหน เท่าไหร่ — ตอบใน 1 บรรทัด ไม่ต้องไล่อ่านแผน
     var top = d.items && d.items.length ? d.items[0] : null;
     var headline;
+    var topGate = top ? intelOf(top.ticker) : null;
+    var topGated = topGate && topGate.gate && topGate.gate.overridden;
     if (top) {
       var topAmt = bahtOf(top.pctOfCash);
       headline = '<div class="pm-dep-next">🎯 เงินก้อนถัดไป → <b>' + esc(top.ticker) + "</b> " +
         (topAmt ? "<b>≈ " + topAmt + "</b> (" + top.pctOfCash.toFixed(1) + "% ของเงินสด " + baht(inp.cashBaht) + ")" : top.pctOfCash.toFixed(1) + "% ของเงินก้อนที่จะวาง") +
-        (d.items.length > 1 ? " · ตัวถัดไป: " + d.items.slice(1, 3).map(function (i) { return esc(i.ticker); }).join(", ") : "") + "</div>";
+        (d.items.length > 1 ? " · ตัวถัดไป: " + d.items.slice(1, 3).map(function (i) { return esc(i.ticker); }).join(", ") : "") + "</div>" +
+        (topGated ? '<div class="pm-ii-gateline">⛔ ' + esc(topGate.gate.why) + " — ตรวจหลักฐานที่ /thesis §16 ก่อนวางเงินตามบรรทัดบน</div>" : "");
     } else {
       headline = '<div class="pm-dep-next pm-dep-next-wait">🛡️ ตอนนี้ยังไม่มี entry ที่ trigger — <b>ถือเงินสดรอ 100%</b>' +
         (inp.cashBaht != null ? " (เงินสดใน sleeve " + baht(inp.cashBaht) + " · " + pct(inp.cashPct, 1) + ")" : "") +
@@ -538,11 +585,13 @@
           '<span class="pm-entry-status">' + status + "</span>" +
           "<small>" + esc(e.rule) + '</small><small class="pm-entry-why">→ ' + esc(e.why) + "</small></div>";
       }).join("");
+      var gzM = gatedZone(r);
+      var mgrGate = gzM.gated ? '<div class="pm-ii-gateline">⛔ ' + esc(gzM.why) + " — entry ladder ด้านล่างคิดจาก zone เดิมของ engine อย่าใช้จนกว่าหลักฐานจะเคลียร์</div>" : "";
       return '<article class="pm-mgr">' +
-        '<div class="pm-mgr-head">' + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">Index core</span>' : "") + zoneChip(r.zone) + actionChip(r.action) + "</div>" +
+        '<div class="pm-mgr-head">' + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">Index core</span>' : "") + zoneChip(gatedZone(r).zone) + actionChip(gatedZone(r).gated && gatedZone(r).zone.key === "E" && window.PMEngine ? window.PMEngine.ACTIONS.review : r.action) + healthChip(r.ticker) + "</div>" +
         '<div class="pm-mgr-nums">' +
         mnum("น้ำหนักปัจจุบัน", pct(r.weightPct)) + mnum(r.isIndex ? "ประเภท" : "Tier", r.isIndex ? "Index" : r.tier.key) +
-        "</div>" +
+        "</div>" + mgrGate +
         '<div class="pm-entries">' + lad + "</div></article>";
     }).join("");
     return '<section class="pm-sec"><h2>🧰 Position Manager <small>(Entry Ladder — ระบบจำว่า deploy ไปแล้วขั้นไหน)</small></h2>' +
@@ -600,6 +649,7 @@
     });
     if (!out.available) { root.innerHTML = '<div class="mc-empty">' + esc(out.reason || "ประเมินไม่ได้") + "</div>"; return; }
     state.out = out;
+    intelMap = computeIntelMap(out, snapshot);
     root.innerHTML = headerHtml() +
       sectionOverview(out, inp) +
       sectionCurrent(out, inp) +
