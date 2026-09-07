@@ -1,0 +1,509 @@
+/* ============================================================
+   CATALYST HUNTER — UI (PHASE 4)
+   Investment intelligence workstation · desktop-first, responsive ถึงแท็บเล็ต
+   ใช้ token ของ design system เดิม (--mc-*) ไม่ประกาศสีใหม่นอกจากโทนสถานะ
+   ============================================================ */
+
+.ch-page {
+  max-width: 1560px; margin: 0 auto; padding: 20px 20px 72px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* ---------- โทนสถานะ (ใช้ร่วมทุก component) ---------- */
+.ch-tone-green  { --t: var(--mc-emerald, #34d399); --tbg: rgba(52, 211, 153, .13); }
+.ch-tone-amber  { --t: var(--mc-amber, #fbbf24);   --tbg: rgba(245, 158, 11, .13); }
+.ch-tone-orange { --t: #fb923c;                    --tbg: rgba(251, 146, 60, .13); }
+.ch-tone-red    { --t: #fb7185;                    --tbg: rgba(244, 63, 94, .13); }
+.ch-tone-blue   { --t: var(--mc-cyan, #38bdf8);    --tbg: rgba(56, 189, 248, .13); }
+.ch-tone-violet { --t: #c4b5fd;                    --tbg: rgba(168, 85, 247, .14); }
+/* UNKNOWN/ไม่มีข้อมูล ต้องเป็นกลาง ห้ามเขียว */
+.ch-tone-grey   { --t: var(--mc-dim, #94a3b8);     --tbg: rgba(148, 163, 184, .10); }
+
+.ch-bg-green { background: var(--mc-emerald, #34d399); }
+.ch-bg-amber { background: var(--mc-amber, #fbbf24); }
+.ch-bg-orange { background: #fb923c; }
+.ch-bg-red { background: #fb7185; }
+.ch-bg-blue { background: var(--mc-cyan, #38bdf8); }
+.ch-bg-violet { background: #a855f7; }
+.ch-bg-grey { background: var(--mc-dim, #94a3b8); }
+
+.ch-txt-green { color: var(--mc-emerald, #34d399); }
+.ch-txt-amber { color: var(--mc-amber, #fbbf24); }
+.ch-txt-red { color: #fb7185; }
+.ch-txt-blue { color: var(--mc-cyan, #38bdf8); }
+.ch-txt-grey { color: var(--mc-dim, #94a3b8); }
+
+/* ---------- HERO ---------- */
+.ch-hero {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap;
+  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 16px; padding: 22px 26px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, .07), rgba(148, 163, 184, .03));
+}
+.ch-hero-main { flex: 1 1 460px; min-width: 0; }
+.ch-hero h1 { margin: 0; font-size: 27px; letter-spacing: .2px; line-height: 1.2; }
+.ch-hero-sub { margin: 4px 0 0; font-size: 13px; font-weight: 700; color: var(--mc-cyan, #38bdf8);
+  letter-spacing: .06em; text-transform: uppercase; }
+.ch-hero-lead { margin: 9px 0 0; color: var(--mc-dim, #94a3b8); font-size: 13.5px; line-height: 1.65; max-width: 720px; }
+.ch-hero-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.ch-fresh { text-align: right; }
+.ch-fresh small { display: block; color: var(--mc-dim, #94a3b8); font-size: 11px; }
+.ch-fresh b { display: block; font-size: 12.5px; font-variant-numeric: tabular-nums; margin: 2px 0; }
+
+.ch-btn {
+  background: rgba(56, 189, 248, .12); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, .4);
+  border-radius: 9px; padding: 8px 16px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.ch-btn:hover { background: rgba(56, 189, 248, .22); }
+.ch-btn-ghost { background: transparent; color: var(--mc-dim, #94a3b8);
+  border-color: var(--mc-border, #1f2a3d); margin-bottom: 12px; }
+.ch-btn-ghost:hover { background: rgba(148, 163, 184, .1); color: inherit; }
+.ch-btn-wide { width: 100%; margin-top: 12px; }
+.ch-link { background: none; border: 0; color: #7dd3fc; font: inherit; font-size: inherit;
+  cursor: pointer; padding: 0; text-decoration: underline; }
+
+/* ---------- SECTION ---------- */
+.ch-sec {
+  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 14px; padding: 18px 20px;
+  background: rgba(148, 163, 184, .03);
+}
+/* ใช้โทนฟ้า (เน้นความสำคัญ) ไม่ใช่เขียว (ความน่าซื้อ) — ส่วนนี้เป็นการจัดหมวดที่พบได้ยาก ไม่ใช่คำแนะนำ */
+.ch-sec-primary { border-color: rgba(56, 189, 248, .34); background: rgba(56, 189, 248, .045); }
+.ch-sec-reject { border-color: rgba(244, 63, 94, .22); background: rgba(244, 63, 94, .03); }
+.ch-sec-quiet { background: transparent; }
+.ch-sec-head { margin-bottom: 14px; }
+.ch-sec-head h2 { margin: 0; font-size: 17px; display: flex; align-items: center; gap: 9px; }
+.ch-sec-head p { margin: 4px 0 0; color: var(--mc-dim, #94a3b8); font-size: 12px; line-height: 1.6; }
+.ch-count { background: rgba(148, 163, 184, .14); border-radius: 999px; padding: 1px 10px;
+  font-size: 12.5px; font-weight: 700; color: var(--mc-dim, #94a3b8); }
+
+/* ---------- สถานะว่างที่ตั้งใจ (ไม่ใช่ UI พังหรือข้อมูลหาย) ---------- */
+.ch-zero { border: 1px dashed rgba(56, 189, 248, .32); border-radius: 12px; padding: 20px 22px;
+  background: rgba(56, 189, 248, .03); }
+.ch-zero-lead { margin: 0 0 16px; font-size: 14px; line-height: 1.7; }
+.ch-zero-lead b { font-size: 15px; }
+.ch-zero-gates h4 { margin: 0 0 8px; font-size: 11px; color: var(--mc-dim, #94a3b8);
+  text-transform: uppercase; letter-spacing: .05em; }
+.ch-zero-gates ul { margin: 0; padding: 0; list-style: none;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 7px; }
+.ch-zero-gates li { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 9px; padding: 9px 12px;
+  background: rgba(148, 163, 184, .04); font-size: 12.5px; font-weight: 600; }
+.ch-zero-gates li span { color: var(--mc-cyan, #38bdf8); font-weight: 800; margin-right: 6px; }
+.ch-zero-gates li em { display: block; margin-top: 2px; font-style: normal; font-weight: 400;
+  font-size: 11px; color: var(--mc-dim, #94a3b8); line-height: 1.5; }
+
+/* ---------- หุ้นที่ใกล้ผ่านเกณฑ์ ---------- */
+.ch-near-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(288px, 1fr)); gap: 10px; }
+.ch-near { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 11px; padding: 12px 14px;
+  background: rgba(148, 163, 184, .035); text-align: left; font: inherit; color: inherit;
+  cursor: pointer; min-width: 0; }
+.ch-near:hover { background: rgba(56, 189, 248, .07); border-color: rgba(56, 189, 248, .3); }
+.ch-near-top { display: flex; align-items: center; justify-content: space-between; gap: 9px; }
+.ch-near-top b { font-size: 16px; }
+.ch-near-name { margin: 3px 0 9px; color: var(--mc-dim, #94a3b8); font-size: 11.5px; }
+.ch-near-gate { border-top: 1px dashed var(--mc-border, #1f2a3d); padding-top: 8px; }
+.ch-near-gate small { display: block; color: var(--mc-dim, #94a3b8); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .04em; }
+.ch-near-gate b { display: block; margin: 3px 0 4px; font-size: 12px; color: var(--mc-amber, #fbbf24);
+  line-height: 1.45; }
+.ch-near-gate span { display: block; font-size: 11px; color: #64748b; line-height: 1.55; }
+
+/* ---------- ธงเสริมที่อ่านคู่กับสถานะหลัก ---------- */
+.ch-flag { display: inline-block; border: 1px dashed rgba(245, 158, 11, .45); color: var(--mc-amber, #fbbf24);
+  border-radius: 5px; padding: 0 6px; font-size: 9.5px; font-weight: 700; white-space: nowrap; cursor: help; }
+.ch-flag-badge { border-color: rgba(245, 158, 11, .5); color: var(--mc-amber, #fbbf24);
+  background: rgba(245, 158, 11, .1); margin-left: 7px; cursor: help; }
+.ch-sum-card.is-zero { opacity: .78; }
+.ch-sum-card.is-zero em { display: block; font-style: normal; font-size: 10px;
+  color: #64748b; margin-top: 1px; }
+
+.ch-note { margin: 10px 0 0; color: var(--mc-dim, #94a3b8); font-size: 11.5px; line-height: 1.65; }
+.ch-note-warn { color: var(--mc-amber, #fbbf24); }
+.ch-foot { border-top: 1px dashed var(--mc-border, #1f2a3d); padding-top: 12px; margin-top: 4px; }
+.ch-na { color: #64748b; font-style: italic; }
+.ch-empty {
+  border: 1px dashed var(--mc-border, #1f2a3d); border-radius: 12px; padding: 20px;
+  color: var(--mc-dim, #94a3b8); font-size: 13px; line-height: 1.75;
+}
+.ch-unavail {
+  border: 1px dashed var(--mc-border, #1f2a3d); border-radius: 10px; padding: 11px 14px;
+  color: #64748b; font-size: 12.5px; background: rgba(148, 163, 184, .04);
+}
+
+/* ---------- SUMMARY GRID ---------- */
+.ch-sum-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 9px; }
+.ch-sum-card {
+  border: 1px solid var(--mc-border, #1f2a3d); border-left: 3px solid var(--t);
+  border-radius: 11px; padding: 11px 13px; background: rgba(148, 163, 184, .04);
+  text-align: left; font: inherit; cursor: pointer; color: inherit;
+}
+.ch-sum-card:hover { background: var(--tbg); }
+.ch-sum-card.is-on { background: var(--tbg); border-color: var(--t); box-shadow: inset 0 0 0 1px var(--t); }
+.ch-sum-card small { display: block; color: var(--mc-dim, #94a3b8); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .04em; line-height: 1.4; }
+.ch-sum-card b { display: block; font-size: 24px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+/* ---------- RARE OPPORTUNITIES ---------- */
+.ch-rare-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 14px; }
+.ch-rare {
+  border: 1px solid rgba(56, 189, 248, .3); border-radius: 13px; padding: 16px 18px;
+  background: rgba(56, 189, 248, .04); display: flex; flex-direction: column;
+}
+.ch-rare-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.ch-rare-top h3 { margin: 0; font-size: 21px; }
+.ch-rare-top h3 small { font-size: 11px; color: var(--mc-dim, #94a3b8); margin-left: 7px; font-weight: 500; }
+.ch-rare-name { margin: 2px 0 0; color: var(--mc-dim, #94a3b8); font-size: 12px; }
+
+.ch-badge {
+  display: inline-block; padding: 4px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 800;
+  letter-spacing: .04em; white-space: nowrap; background: var(--tbg); color: var(--t);
+  border: 1px solid var(--t);
+}
+.ch-badge-lg { font-size: 12px; padding: 6px 14px; }
+
+/* 5 มิติคงที่ 5 คอลัมน์ — auto-fit ทำให้ที่ความกว้างกลาง ๆ ตัวที่ 5 หลุดไปอยู่บรรทัดใหม่เดี่ยว ๆ */
+.ch-dims { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; margin: 14px 0 4px; }
+.ch-dim { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 9px; padding: 7px 9px;
+  background: rgba(148, 163, 184, .04); min-width: 0; overflow: hidden; }
+/* ป้ายอย่าง "Financial Inflection" ยาวกว่าช่องได้ที่ 1440px ⇒ ให้ตัดบรรทัด ไม่ล้นทับกรอบ */
+.ch-dim small { display: block; color: var(--mc-dim, #94a3b8); font-size: 10px;
+  line-height: 1.35; overflow-wrap: break-word; min-height: 27px; }
+.ch-dim b { display: block; font-size: 13.5px; margin-top: 2px; color: var(--t);
+  font-variant-numeric: tabular-nums; }
+
+.ch-rare-ev { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+.ch-ev-col h4 { margin: 0 0 6px; font-size: 11px; color: var(--mc-dim, #94a3b8);
+  text-transform: uppercase; letter-spacing: .05em; }
+
+.ch-list { margin: 0; padding-left: 0; list-style: none; font-size: 12.5px; line-height: 1.75; }
+.ch-list li { margin-bottom: 4px; }
+.ch-list em { color: var(--mc-dim, #94a3b8); font-style: normal; font-size: 11.5px; }
+.ch-list-sm { font-size: 11.5px; }
+.ch-ok { color: var(--mc-emerald, #34d399); font-weight: 700; }
+.ch-warn { color: var(--mc-amber, #fbbf24); font-weight: 700; }
+.ch-miss { color: #64748b; font-weight: 700; }
+.ch-tag-sup { background: rgba(148, 163, 184, .14); color: var(--mc-dim, #94a3b8);
+  border-radius: 5px; padding: 0 6px; font-size: 10px; }
+/* ชั้นที่หลักฐานมาจาก — ช่วยให้เห็นว่าเรื่องเดียวกันถูกยืนยันจากหลายชั้น ไม่ใช่หลายข้อเท็จจริง */
+.ch-ev-layer { border: 1px dashed rgba(148, 163, 184, .3); color: #64748b;
+  border-radius: 4px; padding: 0 5px; font-size: 9.5px; white-space: nowrap; }
+/* เอกสารหลายฉบับที่ใช้พาดหัวเดียวกัน (ต้นฉบับ + ฉบับแก้ไข) รวมเป็นแถวเดียว */
+.ch-copies { color: var(--mc-amber, #fbbf24); font-size: 9.5px; white-space: nowrap; }
+
+/* ---------- QUALIFICATION LANDSCAPE ----------
+   สถานะจัดแยกกันเป็นอิสระ — จึงเป็นแถวแนวนอนขนานกัน ไม่มีตัวเชื่อม/ลูกศรระหว่างแถว */
+.ch-lscape-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); gap: 8px; }
+.ch-lscape {
+  display: grid; grid-template-columns: 186px 1fr 48px; grid-template-rows: auto auto;
+  column-gap: 12px; row-gap: 3px; align-items: center;
+  border: 1px solid var(--mc-border, #1f2a3d); border-left: 3px solid var(--t);
+  border-radius: 10px; padding: 9px 13px;
+  background: rgba(148, 163, 184, .035); font: inherit; color: inherit; cursor: pointer; text-align: left;
+}
+.ch-lscape:hover { background: var(--tbg); }
+.ch-lscape.is-on { border-color: var(--t); background: var(--tbg); box-shadow: inset 0 0 0 1px var(--t); }
+.ch-lscape-label { font-size: 12px; font-weight: 700; letter-spacing: .03em; }
+.ch-lscape-bar { height: 9px; border-radius: 999px; background: rgba(148, 163, 184, .12); overflow: hidden; }
+.ch-lscape-bar i { display: block; height: 100%; border-radius: 999px; }
+.ch-lscape-n { text-align: right; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--t); }
+.ch-lscape-thai { grid-column: 1 / -1; color: var(--mc-dim, #94a3b8); font-size: 10.5px; line-height: 1.5; }
+
+/* ---------- MATRIX ---------- */
+.ch-matrix { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ch-matrix th {
+  color: var(--mc-dim, #94a3b8); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em;
+  padding: 7px 9px; border-bottom: 1px solid var(--mc-border, #1f2a3d); white-space: nowrap; text-align: left;
+}
+.ch-matrix tbody th { text-align: right; border-bottom: 1px solid rgba(148, 163, 184, .1);
+  border-right: 1px solid var(--mc-border, #1f2a3d); width: 82px; }
+.ch-matrix td { padding: 7px 9px; border-bottom: 1px solid rgba(148, 163, 184, .1);
+  border-right: 1px solid rgba(148, 163, 184, .07); vertical-align: top; }
+.ch-mx-empty { background: rgba(148, 163, 184, .015); }
+.ch-mx-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+.ch-mx-more { color: #64748b; font-size: 10.5px; align-self: center; }
+
+.ch-chipbtn {
+  border: 1px solid var(--t); background: var(--tbg); color: var(--t);
+  border-radius: 6px; padding: 2px 7px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.ch-chipbtn:hover { filter: brightness(1.3); }
+
+/* ---------- FILTERS + TABLE ---------- */
+.ch-filters { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 12px; }
+.ch-fld { display: flex; flex-direction: column; gap: 3px; }
+.ch-fld small { color: var(--mc-dim, #94a3b8); font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; }
+.ch-fld select, .ch-fld input {
+  background: rgba(148, 163, 184, .06); border: 1px solid var(--mc-border, #1f2a3d);
+  border-radius: 8px; padding: 6px 9px; color: inherit; font: inherit; font-size: 12px; min-width: 128px;
+}
+.ch-fld-wide input { min-width: 220px; }
+.ch-fld select:focus, .ch-fld input:focus { outline: none; border-color: rgba(56, 189, 248, .5); }
+
+.ch-tablewrap { overflow-x: auto; }
+.ch-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.ch-table th { text-align: left; padding: 0; border-bottom: 1px solid var(--mc-border, #1f2a3d); }
+.ch-sortbtn {
+  width: 100%; text-align: left; background: none; border: 0; color: var(--mc-dim, #94a3b8);
+  font: inherit; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  padding: 8px 9px; cursor: pointer; white-space: nowrap;
+}
+.ch-sortbtn:hover { color: inherit; }
+.ch-sortbtn.is-on { color: #7dd3fc; }
+.ch-table td { padding: 8px 9px; border-bottom: 1px solid rgba(148, 163, 184, .1); vertical-align: middle; }
+.ch-table tbody tr { cursor: pointer; }
+.ch-table tbody tr:hover td { background: rgba(56, 189, 248, .06); }
+.ch-table small { color: var(--mc-dim, #94a3b8); font-size: 10.5px; }
+.ch-num { font-variant-numeric: tabular-nums; text-align: right; }
+.ch-pill {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800;
+  white-space: nowrap; background: var(--tbg); color: var(--t);
+}
+
+/* ป้าย Why Fell แบบกระชับ — คำอธิบายเต็มอยู่ใน tooltip */
+.ch-whybadge {
+  display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: 800;
+  letter-spacing: .04em; white-space: nowrap; background: var(--tbg); color: var(--t);
+  border: 1px solid var(--t); cursor: help;
+}
+.ch-whybadge-lg { font-size: 12px; padding: 4px 12px; border-radius: 7px; }
+
+/* Value Trap: ระดับ + จำนวนสัญญาณ — จำนวนต้องอ่านเป็น "สัญญาณ" ไม่ใช่คะแนน */
+.ch-trap { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ch-trap b { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; color: var(--t); }
+.ch-sigcount {
+  font-size: 9.5px; font-weight: 600; color: var(--mc-dim, #94a3b8);
+  background: rgba(148, 163, 184, .13); border: 1px dashed rgba(148, 163, 184, .34);
+  border-radius: 4px; padding: 0 5px; font-variant-numeric: tabular-nums;
+}
+.ch-sigcount-lg { font-size: 11.5px; padding: 2px 9px; }
+
+/* ข้อความประกอบ */
+.ch-en { color: #64748b; font-size: 11px; font-style: italic; }
+.ch-tagline { font-size: 10.5px; font-weight: 600; color: var(--mc-dim, #94a3b8);
+  background: rgba(148, 163, 184, .12); border-radius: 5px; padding: 2px 8px; letter-spacing: .02em; }
+/* เป็นข้อความบอกจำนวน ไม่ใช่ลิงก์ — ปุ่มไปหน้า Detail อยู่ท้ายการ์ด */
+.ch-more { margin: 5px 0 0; font-size: 11px; color: #64748b; font-style: italic; }
+.ch-scanctx { font-variant-numeric: tabular-nums; }
+
+/* ---------- REJECTION ---------- */
+.ch-reject-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+.ch-reject {
+  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 11px; padding: 12px 14px;
+  background: rgba(148, 163, 184, .04); text-align: left; font: inherit; color: inherit; cursor: pointer;
+}
+.ch-reject:hover { background: rgba(244, 63, 94, .07); }
+.ch-reject.is-on { border-color: rgba(244, 63, 94, .5); background: rgba(244, 63, 94, .08); }
+.ch-reject.is-danger { border-color: rgba(244, 63, 94, .42); background: rgba(244, 63, 94, .06); }
+.ch-reject.is-danger .ch-reject-top b { color: #fb7185; }
+.ch-reject-top { display: flex; align-items: baseline; gap: 9px; }
+.ch-reject-top b { font-size: 22px; font-variant-numeric: tabular-nums; }
+.ch-reject-top span { font-size: 11px; font-weight: 700; color: var(--mc-dim, #94a3b8);
+  text-transform: uppercase; letter-spacing: .04em; }
+.ch-reject p { margin: 6px 0 0; color: var(--mc-dim, #94a3b8); font-size: 11.5px; line-height: 1.6; }
+
+/* ---------- ADAPTERS ---------- */
+.ch-adapters { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+.ch-adapter { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 9px; padding: 9px 11px; font-size: 11.5px; }
+.ch-adapter b { display: block; font-size: 12px; }
+.ch-adapter small { display: block; color: var(--mc-dim, #94a3b8); font-size: 10.5px; margin-top: 2px; }
+.ch-adapter.is-on { border-color: rgba(52, 211, 153, .38); background: rgba(52, 211, 153, .05); }
+
+/* ============================================================
+   DETAIL
+   ============================================================ */
+.ch-dhead {
+  display: grid; grid-template-columns: minmax(240px, 300px) 1fr; gap: 20px 26px; align-items: start;
+  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 14px; padding: 18px 22px;
+  background: rgba(148, 163, 184, .04);
+}
+.ch-dhead-id h2 { margin: 0; font-size: 30px; letter-spacing: .2px; }
+.ch-dhead-id h2 small { font-size: 12px; color: var(--mc-dim, #94a3b8); margin-left: 9px; font-weight: 500; }
+.ch-dname { margin: 3px 0 10px; color: var(--mc-dim, #94a3b8); font-size: 13px; line-height: 1.5; }
+.ch-dhead-dims { display: grid; grid-template-columns: repeat(auto-fit, minmax(146px, 1fr)); gap: 8px; }
+.ch-dhcell { border: 1px solid var(--mc-border, #1f2a3d); border-left: 3px solid var(--t);
+  border-radius: 9px; padding: 8px 11px; background: rgba(148, 163, 184, .04); min-width: 0; }
+.ch-dhcell small { display: block; color: var(--mc-dim, #94a3b8); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .04em; line-height: 1.4; }
+.ch-dhcell b { display: block; font-size: 14.5px; margin: 3px 0 1px; color: var(--t);
+  font-variant-numeric: tabular-nums; overflow-wrap: break-word; }
+.ch-dhcell em { display: block; color: #64748b; font-style: normal; font-size: 10px; line-height: 1.45; }
+.ch-dhead-fresh { grid-column: 1 / -1; margin: 0; }
+
+.ch-blk {
+  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 13px; padding: 16px 20px;
+  background: rgba(148, 163, 184, .03);
+}
+.ch-blk-primary { border-color: rgba(56, 189, 248, .3); background: rgba(56, 189, 248, .04); }
+.ch-blk-danger { border-color: rgba(244, 63, 94, .42); background: rgba(244, 63, 94, .05); }
+.ch-blk-missing { border-color: rgba(148, 163, 184, .28); }
+.ch-blk h3 { margin: 0 0 5px; font-size: 15.5px; display: flex; align-items: center; gap: 10px; }
+.ch-blk h3 span {
+  display: inline-flex; align-items: center; justify-content: center; width: 23px; height: 23px;
+  border-radius: 7px; background: rgba(56, 189, 248, .14); color: #7dd3fc; font-size: 11.5px; font-weight: 800;
+  flex: 0 0 auto;
+}
+.ch-blk h4 { margin: 0 0 6px; font-size: 11px; color: var(--mc-dim, #94a3b8);
+  text-transform: uppercase; letter-spacing: .05em; }
+.ch-sub { margin: 0 0 12px; color: var(--mc-dim, #94a3b8); font-size: 11.5px; line-height: 1.6; }
+
+.ch-whygrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 9px; }
+.ch-whycell { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 10px; padding: 10px 12px;
+  background: rgba(148, 163, 184, .04); }
+.ch-whycell small { display: block; color: var(--mc-dim, #94a3b8); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .04em; }
+.ch-whycell b { display: block; font-size: 14.5px; margin: 3px 0; font-variant-numeric: tabular-nums; }
+.ch-whycell em { display: block; color: #64748b; font-style: normal; font-size: 11px; line-height: 1.5; }
+
+.ch-explain { margin-top: 13px; border-left: 3px solid rgba(56, 189, 248, .4); padding-left: 13px; }
+.ch-explain p { margin: 0 0 5px; font-size: 13px; line-height: 1.7; }
+
+.ch-kv-lg { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 11px; }
+.ch-kv-lg b { font-size: 18px; letter-spacing: .03em; }
+.ch-kv-lg span { color: var(--mc-dim, #94a3b8); font-size: 12.5px; }
+
+.ch-unknowns { margin-top: 11px; border: 1px dashed var(--mc-border, #1f2a3d); border-radius: 9px; padding: 9px 12px; }
+.ch-unknowns small { display: block; color: var(--mc-dim, #94a3b8); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.ch-unknowns ul { margin: 0; padding-left: 18px; font-size: 12px; color: #64748b; line-height: 1.7; }
+
+/* re-rating chain */
+.ch-chain { display: flex; flex-direction: column; gap: 2px; }
+.ch-chain-step {
+  display: grid; grid-template-columns: 26px 1fr; gap: 11px; align-items: start;
+  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 10px; padding: 10px 13px;
+}
+.ch-chain-step.is-ok { border-color: rgba(52, 211, 153, .34); background: rgba(52, 211, 153, .04); }
+.ch-chain-step.is-gap { border-style: dashed; background: rgba(148, 163, 184, .03); }
+.ch-chain-ico { font-size: 14px; line-height: 1.3; }
+.ch-chain-step.is-ok .ch-chain-ico { color: var(--mc-emerald, #34d399); }
+.ch-chain-step.is-gap .ch-chain-ico { color: var(--mc-amber, #fbbf24); }
+.ch-chain-step b { font-size: 12px; letter-spacing: .04em; }
+.ch-chain-state { display: inline-block; margin-left: 9px; font-size: 10.5px; font-weight: 700;
+  color: var(--mc-dim, #94a3b8); background: rgba(148, 163, 184, .12); border-radius: 5px; padding: 1px 7px; }
+.ch-chain-step p { margin: 4px 0 0; color: var(--mc-dim, #94a3b8); font-size: 11.5px; line-height: 1.6; }
+.ch-chain-meta { display: block; margin-top: 4px; font-size: 10.5px; color: #64748b;
+  font-variant-numeric: tabular-nums; }
+/* ตัวเชื่อม: ทึบเมื่อสองขั้นมีหลักฐานทั้งคู่ · ขาดเมื่อขั้นใดขั้นหนึ่งยังไม่มี
+   — ห้ามลากเส้นทึบข้ามช่องว่างของหลักฐาน */
+.ch-chain-link { display: block; padding-left: 12px; font-size: 11px; line-height: 1.5; }
+.ch-chain-link.is-solid { color: var(--mc-emerald, #34d399); }
+.ch-chain-link.is-broken { color: var(--mc-amber, #fbbf24); letter-spacing: .3em; }
+.ch-chain-link.is-broken em { font-style: normal; letter-spacing: normal; color: #94a3b8; font-size: 10.5px; }
+.ch-chain-step.is-gap .ch-chain-state { color: var(--mc-amber, #fbbf24);
+  background: rgba(245, 158, 11, .13); }
+
+/* ตารางงบ: Before → Latest → Direction (ค่าทุกช่องมาจาก engine) */
+.ch-mtable { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.ch-mtable thead th {
+  text-align: left; color: var(--mc-dim, #94a3b8); font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; padding: 7px 11px;
+  border-bottom: 1px solid var(--mc-border, #1f2a3d); white-space: nowrap;
+}
+.ch-mtable thead th:nth-child(2), .ch-mtable thead th:nth-child(3),
+.ch-mtable thead th:nth-child(4) { text-align: right; }
+.ch-mtable tbody th {
+  text-align: left; font-weight: 600; font-size: 12.5px; padding: 9px 11px;
+  border-bottom: 1px solid rgba(148, 163, 184, .1); white-space: nowrap;
+}
+.ch-mtable tbody th small { display: block; color: #64748b; font-size: 10px; font-weight: 400; margin-top: 1px; }
+.ch-mtable td { padding: 9px 11px; border-bottom: 1px solid rgba(148, 163, 184, .1); vertical-align: top; }
+.ch-mtable td.ch-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ch-mtable td.ch-num b { font-size: 13.5px; }
+.ch-mtable td small { display: block; color: #64748b; font-size: 10px; font-weight: 400;
+  margin-top: 1px; white-space: normal; }
+.ch-mtable tr.ch-m-unavail th, .ch-mtable tr.ch-m-unavail td { opacity: .68; }
+.ch-mstate { display: inline-block; font-size: 9.5px; font-weight: 800; letter-spacing: .05em;
+  color: var(--t); background: var(--tbg); border-radius: 4px; padding: 1px 7px; white-space: nowrap; }
+
+/* value trap */
+.ch-vt { display: flex; align-items: baseline; gap: 13px; flex-wrap: wrap;
+  border-left: 4px solid var(--t); padding: 4px 0 4px 13px; margin-bottom: 13px; }
+.ch-vt b { font-size: 22px; color: var(--t); letter-spacing: .04em; }
+.ch-vt span { color: var(--mc-dim, #94a3b8); font-size: 12.5px; }
+.ch-vt.is-high { border-left-width: 6px; background: rgba(244, 63, 94, .07);
+  border-radius: 0 9px 9px 0; padding: 10px 14px 10px 15px; }
+.ch-vt.is-high b { font-size: 26px; }
+.ch-vt-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+/* evidence tension */
+.ch-tension { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.ch-tension-col { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 10px; padding: 12px 14px; }
+.ch-tension-pos { border-color: rgba(52, 211, 153, .28); background: rgba(52, 211, 153, .03); }
+.ch-tension-neg { border-color: rgba(245, 158, 11, .28); background: rgba(245, 158, 11, .03); }
+.ch-tension-col h4 span { background: rgba(148, 163, 184, .16); border-radius: 999px;
+  padding: 0 7px; margin-left: 5px; font-variant-numeric: tabular-nums; }
+.ch-explain-lead p { font-size: 13.5px; color: inherit; }
+/* งบฟื้นแต่ไม่มีเหตุการณ์ธุรกิจ — ข้อเท็จจริงกลาง ๆ ไม่ใช่โอกาสและไม่ใช่ความเสี่ยง */
+.ch-recovery-note { border: 1px solid rgba(148, 163, 184, .3); border-left: 3px solid var(--mc-amber, #fbbf24);
+  border-radius: 10px; padding: 11px 14px; margin-top: 13px; background: rgba(245, 158, 11, .05); }
+.ch-recovery-note b { font-size: 12px; font-weight: 800; letter-spacing: .05em; color: var(--mc-amber, #fbbf24); }
+.ch-recovery-note p { margin: 5px 0 0; font-size: 12.5px; line-height: 1.7; color: var(--mc-dim, #94a3b8); }
+.ch-tl-kind { font-weight: 700; letter-spacing: .04em; }
+
+/* insider / recognition grids */
+.ch-ins-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 9px; margin: 4px 0 10px; }
+.ch-ins-grid div { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 9px; padding: 9px 11px; }
+.ch-ins-grid small { display: block; color: var(--mc-dim, #94a3b8); font-size: 10.5px; }
+.ch-ins-grid b { display: block; font-size: 16px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+/* missing */
+.ch-miss-list li { margin-bottom: 9px; }
+.ch-miss-list b { display: inline-block; font-size: 12.5px; }
+.ch-miss-why { display: block; color: var(--mc-dim, #94a3b8); font-size: 11.5px; line-height: 1.55; padding-left: 17px; }
+
+/* timeline */
+.ch-timeline { display: flex; flex-direction: column; gap: 7px; }
+.ch-tl { display: grid; grid-template-columns: 96px 1fr; gap: 12px;
+  border-left: 2px solid rgba(56, 189, 248, .32); padding-left: 12px; }
+.ch-tl-evidence { border-left-color: rgba(56, 189, 248, .55); }
+.ch-tl-other { border-left-color: rgba(148, 163, 184, .25); opacity: .72; }
+.ch-tl-date { color: var(--mc-dim, #94a3b8); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.ch-tl-body b { display: block; font-size: 12.5px; line-height: 1.5; }
+.ch-tl-body small { display: block; color: #64748b; font-size: 10.5px; margin-top: 2px; }
+
+/* related */
+.ch-rel { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.ch-rel-col { min-width: 0; }
+.ch-rel-col h4 span { background: rgba(148, 163, 184, .14); border-radius: 999px; padding: 0 7px;
+  margin-left: 5px; font-variant-numeric: tabular-nums; text-transform: none; letter-spacing: 0; }
+.ch-rel-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+
+/* กติกาความหมาย (การจัดหมวด ≠ คำแนะนำ ฯลฯ) */
+.ch-semantics summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: #7dd3fc;
+  padding: 4px 0; list-style: none; }
+.ch-semantics summary::-webkit-details-marker { display: none; }
+.ch-semantics summary::before { content: "＋ "; color: var(--mc-dim, #94a3b8); }
+.ch-semantics[open] summary::before { content: "－ "; }
+.ch-sem-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 9px; margin-top: 12px; }
+.ch-sem { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 9px; padding: 10px 12px;
+  background: rgba(148, 163, 184, .03); }
+.ch-sem b { display: block; font-size: 12px; line-height: 1.5; }
+.ch-sem p { margin: 4px 0 0; color: var(--mc-dim, #94a3b8); font-size: 11px; line-height: 1.6; }
+.ch-neq { color: #fb7185; font-weight: 800; }
+
+/* source links */
+.ch-src { color: #64748b; font-size: 10.5px; }
+a.ch-src { text-decoration: none; color: #7dd3fc; }
+a.ch-src:hover { text-decoration: underline; }
+
+/* ---------- RESPONSIVE — desktop-first (เป้า 1440-1600px) ---------- */
+@media (max-width: 1400px) {
+  .ch-lscape-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 1100px) {
+  .ch-rare-ev { grid-template-columns: 1fr; }
+  .ch-rare-grid { grid-template-columns: 1fr; }
+  .ch-lscape { grid-template-columns: 150px 1fr 44px; }
+  .ch-dhead { grid-template-columns: 1fr; }
+}
+@media (max-width: 780px) {
+  .ch-page { padding: 14px 12px 56px; }
+  .ch-hero { padding: 16px 18px; }
+  .ch-hero-meta { align-items: flex-start; }
+  .ch-fresh { text-align: left; }
+  .ch-lscape { grid-template-columns: 1fr auto; }
+  .ch-lscape-bar { display: none; }
+  .ch-chain-step { grid-template-columns: 1fr; }
+  .ch-dhead h2 { font-size: 24px; }
+}

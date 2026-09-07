@@ -16,3 +16,4 @@ public/config.js
 /.claude/skills/qwen-agent
 /.claude/skills/qwenchance
 /.claude/skills/scrutinize
+.cache/
