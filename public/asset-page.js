@@ -404,7 +404,7 @@
       <section class="mc-card mc-glow" style="padding:16px 18px;margin-bottom:14px;">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
           <div style="font-size:14px;font-weight:800;">🧾 Investment Thesis</div>
-          <a href="/thesis" onclick="try{localStorage.setItem('thesis_selected_v1','${esc(th.ticker)}')}catch(e){}" style="font-size:12px;color:var(--app-info,#38bdf8);text-decoration:none;">เปิดหน้า Thesis เต็ม →</a>
+          <a href="/thesis?ticker=${encodeURIComponent(th.ticker)}" style="font-size:12px;color:var(--app-info,#38bdf8);text-decoration:none;">เปิดหน้า Thesis เต็ม →</a>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
           ${cell("Thesis Score", `<b style="font-size:16px;color:${scoreColor};">${th.score}/100</b><em style="font-style:normal;font-size:11px;color:var(--mc-muted,#94a3b8);">${esc(th.statusLabel)} · ${esc(th.trendThai || "")}</em>`)}

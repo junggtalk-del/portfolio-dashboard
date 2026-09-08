@@ -107,11 +107,23 @@
     // "ทำไมถึงเป็นจังหวะย่อที่ดี" — checklist ✓/✗ (สูตรกลาง)
     var why = PM.whyChecklist(o, timing, valLevel, growth);
 
+    // Intelligence Layer (optional): Health / Divergence / Readiness เป็น evidence — ไม่แตะ rec เดิม
+    var intel = null;
+    try {
+      var IEg = window.IntelligenceEngine;
+      if (IEg && typeof IEg.compute === "function") {
+        var X = IEg.compute(ticker, snapshot, { o: o, gsum: growth });
+        if (X && X.available) intel = {
+          health: X.health.state, divergence: X.divergence.state, readiness: X.readiness.state,
+          waitingFor: X.readiness.waitingFor || []
+        };
+      }
+    } catch (eIx) { intel = null; }
     return {
       ticker: ticker, name: o.name || name, score: score, parts: parts,
       dip: dip, rec: rec, recWhy: recWhy, why: why.slice(0, 7),
       dd: timing.dd, exp: exp, stale: o.stale, thesisScore: o.thesis.score,
-      valLevel: valLevel, decisionKey: o.decision.key
+      valLevel: valLevel, decisionKey: o.decision.key, intel: intel
     };
   }
 
@@ -141,11 +153,12 @@
       '<div class="acc-score" title="Accumulation Score — สูตรเดียวกับหน้า AI Portfolio Manager และป้าย Acc บน Home"><b>' + (e.score == null ? "—" : e.score) + '</b><span>/100 · Acc</span></div></div>' +
       '<div class="acc-line">' + e.dip.icon + ' <b>' + esc(e.dip.label) + "</b> — " + esc(e.dip.thai) +
       (e.dd != null ? ' · ย่อ ' + e.dd.toFixed(1) + '%' : "") + "</div>" +
+      (e.intel ? '<div class="acc-intel"><span>' + e.intel.health.icon + " " + esc(e.intel.health.key) + "</span><span title=\"Business vs Price\">" + e.intel.divergence.icon + " " + esc(e.intel.divergence.key) + "</span><span title=\"Investment Readiness — ไม่ใช่คำสั่งซื้อขาย\">" + e.intel.readiness.icon + " " + esc(e.intel.readiness.label) + "</span></div>" : "") +
       '<div class="acc-rec ' + recTone + '">' + esc(e.rec.label) + '<small>' + esc(e.recWhy || "") + "</small></div>" +
       '<details class="acc-details"><summary>ทำไมถึงเข้า/ไม่เข้าเกณฑ์ + องค์ประกอบคะแนน</summary>' +
       '<div class="acc-whywrap">' + whyList(e.why) + "</div>" +
       '<div class="acc-parts">' + partBars(e.parts) + "</div>" +
-      '<div class="acc-exp">💼 ' + expTxt + ' · <a href="/thesis" onclick="try{localStorage.setItem(\'thesis_selected_v1\',\'' + esc(e.ticker) + '\')}catch(e){}">เปิด Thesis →</a></div>' +
+      '<div class="acc-exp">💼 ' + expTxt + ' · <a href="/thesis?ticker=' + encodeURIComponent(e.ticker) + '">เปิด Thesis →</a></div>' +
       "</details>" +
       (e.stale ? '<div class="acc-stale">⚠ ข้อมูล thesis เก่า — สั่ง /thesis-update ' + esc(e.ticker) + "</div>" : "") +
       "</article>";

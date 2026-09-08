@@ -62,3 +62,7 @@
 .acc-foot { font-size: 11px; color: var(--mc-muted); line-height: 1.6; padding: 0 4px; }
 
 @media (max-width: 720px) { .acc-page { padding: 16px 12px 48px; } .acc-grid { grid-template-columns: 1fr; } }
+
+/* Intelligence evidence chips (Health / Divergence / Readiness) */
+.acc-intel { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.acc-intel span { background: rgba(148, 163, 184, .08); border: 1px solid var(--mc-border, #1f2a3d); border-radius: 999px; padding: 1px 9px; font-size: 10.5px; font-weight: 700; }

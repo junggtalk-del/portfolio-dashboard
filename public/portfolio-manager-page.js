@@ -227,7 +227,7 @@
     out.rows.forEach(function (r) {
       if (!r.covered || !r.o) return;
       try {
-        var X = IE.compute(r.ticker, snapshot || {}, { o: r.o, R: R, gsum: r.growth || null });
+        var X = IE.compute(r.ticker, snapshot || {}, { o: r.o, R: R, gsum: r.growth || null, zoneKey: r.zone ? r.zone.key : null });
         if (X && X.available) map[r.ticker] = { intel: X, gate: IE.gateZone(r.zone ? r.zone.key : null, X.health.state.key) };
       } catch (eI) { /* ตัวไหนพังก็ข้าม — หน้าเดิมต้องไม่ล้ม */ }
     });

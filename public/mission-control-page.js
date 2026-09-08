@@ -560,7 +560,7 @@
       const when = x.es.state === "overdue" ? "งบออกแล้ว ~" + Math.abs(d) + " วัน"
         : x.es.state === "stale" ? "ข้อมูล " + x.es.staleMonths + " เดือน" + (x.es.hasDate && d > 0 ? " · งบอีก ~" + d + " วัน" : "")
         : "อีก ~" + d + " วัน";
-      return '<a class="mcx-reload-chip mcx-reload-' + (x.es.state === "due-soon" ? "soon" : "reload") + '" href="/thesis" data-th-ticker="' + esc(x.t) + '">' + esc(x.t) + ' <em>' + esc(when) + "</em></a>";
+      return '<a class="mcx-reload-chip mcx-reload-' + (x.es.state === "due-soon" ? "soon" : "reload") + '" href="/thesis?ticker=' + encodeURIComponent(x.t) + '" data-th-ticker="' + esc(x.t) + '">' + esc(x.t) + ' <em>' + esc(when) + "</em></a>";
     };
     let parts = "";
     if (reload.length) parts += '<div class="mcx-reload-line"><b class="mcx-reload-lbl is-reload">⚠ ควรโหลดใหม่</b>' + reload.map(chip).join("") + "</div>";

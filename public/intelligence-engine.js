@@ -17,7 +17,7 @@
   // ตอบคำถามเดียว: "หุ้นลง — นี่คือจังหวะสะสม หรือ thesis กำลังพัง?"
   // ============================================================
 
-  var VERSION = "1.0.0";
+  var VERSION = "1.1.0";
 
   // ---------------- เกณฑ์ทั้งหมด (deterministic + อธิบายได้) ----------------
   // เกณฑ์ที่มีอยู่แล้วในระบบจะอ่านจาก engine ตัวจริงตอนรัน (ดู thresholds())
@@ -130,6 +130,27 @@
     PRICE_RISK: { key: "PRICE_RISK", icon: "🟡", label: "PRICE RISK", thai: "ธุรกิจดีแต่ราคาตึงระดับสุดขั้ว" },
     MONITOR: { key: "MONITOR", icon: "🟢", label: "HEALTHY / MONITOR", thai: "ปกติดี — ติดตามต่อ" },
     INSUFFICIENT: { key: "INSUFFICIENT", icon: "⚪", label: "INSUFFICIENT DATA", thai: "ข้อมูลไม่พอสรุปภาพรวม" },
+  };
+  var CHANGE = {
+    IMPROVING: { key: "IMPROVING", icon: "🟢", label: "IMPROVING", thai: "thesis ดีขึ้นจากรอบก่อน" },
+    STABLE: { key: "STABLE", icon: "🟡", label: "STABLE", thai: "ไม่มีการเปลี่ยนแปลงมีนัย" },
+    MIXED: { key: "MIXED", icon: "🟠", label: "MIXED", thai: "ดีขึ้นบางด้าน แย่ลงบางด้าน" },
+    DETERIORATING: { key: "DETERIORATING", icon: "🔴", label: "DETERIORATING", thai: "thesis แย่ลงจากรอบก่อน" },
+    INSUFFICIENT: { key: "INSUFFICIENT", icon: "⚪", label: "INSUFFICIENT DATA", thai: "ยังไม่มีข้อมูลรอบก่อนให้เทียบ" },
+  };
+  var DIVERGE = {
+    POSITIVE: { key: "POSITIVE", icon: "🟢", label: "POSITIVE DIVERGENCE", thai: "ธุรกิจยังแข็งแรงขณะราคาอ่อนลง — dip คุณภาพที่เป็นไปได้ (ไม่ใช่คำแนะนำ)" },
+    ALIGNED: { key: "ALIGNED", icon: "🟡", label: "ALIGNED", thai: "ราคาเคลื่อนสอดคล้องกับพื้นฐาน — ไม่มี divergence มีนัย" },
+    NEGATIVE: { key: "NEGATIVE", icon: "🟠", label: "NEGATIVE DIVERGENCE", thai: "ราคาอ่อนพร้อมพื้นฐานเสื่อม — ต้องระวัง" },
+    THESIS_RISK: { key: "THESIS_RISK", icon: "🔴", label: "THESIS RISK", thai: "ราคายังแรงแต่พื้นฐานเสื่อม — ราคาอาจนำหน้าความจริง" },
+    INSUFFICIENT: { key: "INSUFFICIENT", icon: "⚪", label: "INSUFFICIENT DATA", thai: "ข้อมูลไม่พอแยกทิศธุรกิจ/ราคา" },
+  };
+  var READINESS = {
+    READY: { key: "READY", icon: "🟢", label: "READY TO ACCUMULATE", thai: "พร้อมเข้ากระบวนการสะสม (ไม่ใช่คำสั่งซื้อขาย)" },
+    WATCH_PREPARE: { key: "WATCH_PREPARE", icon: "🟡", label: "WATCH / PREPARE", thai: "ธุรกิจแข็งแรง แต่บางเงื่อนไขยังไม่พร้อม" },
+    WAIT: { key: "WAIT", icon: "🟠", label: "WAIT", thai: "เงื่อนไขราคา/จังหวะ/ความเสี่ยงยังไม่เอื้อ" },
+    THESIS_REVIEW: { key: "THESIS_REVIEW", icon: "🔴", label: "THESIS REVIEW", thai: "สุขภาพ thesis เสื่อม/พัง — ต้องทบทวนก่อน ราคาถูกแค่ไหนก็ห้ามข้าม" },
+    INSUFFICIENT: { key: "INSUFFICIENT", icon: "⚪", label: "INSUFFICIENT DATA", thai: "ข้อมูลไม่พอสรุปความพร้อม" },
   };
 
   // ---------------- snapshot helpers ----------------
@@ -684,6 +705,247 @@
   // ============================================================
   // INTEGRATION — สรุปหนึ่งคำตอบ + safety gate
   // ============================================================
+  // ============================================================
+  // F7 — THESIS CHANGE (เทียบกับ observation รอบก่อน — ไม่มีรอบก่อน = บอกตรง ๆ ห้ามมโน)
+  // ============================================================
+  // metric ที่เทียบได้: kind=score (แต้ม 0-100), pp (จุดเปอร์เซ็นต์), pct (เทียบ % สัมพัทธ์), ord (ลำดับสถานะ)
+  var CHANGE_METRICS = [
+    { key: "thesis", label: "Investment Thesis", kind: "score", sig: 2, company: true },
+    { key: "mega", label: "Mega Trend", kind: "score", sig: 2, company: false },
+    { key: "revYoY", label: "Revenue Growth", kind: "pp", sig: 3, company: true },
+    { key: "epsYoY", label: "EPS Growth", kind: "pp", sig: 3, company: true },
+    { key: "fcf", label: "FCF", kind: "pct", sig: 15, company: true },
+    { key: "margin", label: "Margin", kind: "pp", sig: 1.5, company: true },
+    { key: "monet", label: "AI Monetization", kind: "score", sig: 2, company: true },
+    { key: "expectOrd", label: "Earnings Expectations", kind: "ord", sig: 1, company: true },
+    { key: "valuationAttr", label: "Valuation", kind: "score", sig: 5, company: true }, // 100−percentile: ขึ้น = ถูกลง/น่าสนใจขึ้น
+    { key: "tech", label: "Technical (ระยะจาก SMA200)", kind: "pp", sig: 3, company: false },
+    { key: "healthOrd", label: "Thesis Health", kind: "ord", sig: 1, company: true },
+  ];
+  var EXPECT_ORD = { SHARP_DOWN: 0, DETERIORATING: 1, INSUFFICIENT: null, STABLE: 2, IMPROVING: 3 };
+  var HEALTH_ORD = { BROKEN: 0, DETERIORATING: 1, WATCH: 2, INTACT: 3, INSUFFICIENT: null };
+
+  // สกัดชุดตัวเลขที่เทียบข้ามเวลาได้ จากผลคำนวณรอบนี้
+  function observationOf(cfg, o, X, snapshot) {
+    var Q = cfg.history && Array.isArray(cfg.history.quarters) ? cfg.history.quarters : [];
+    var lastQ = Q.length ? Q[Q.length - 1] : null;
+    function lastYoY(field) {
+      var yo = yoySeries(Q, field);
+      return yo.length ? round1(yo[yo.length - 1]) : null;
+    }
+    var day = snapshot && snapshot.loadedAt ? String(snapshot.loadedAt).slice(0, 10) : null;
+    return {
+      day: day,
+      kbAsOf: cfg.asOf || null,
+      quarter: lastQ ? (lastQ.q || lastQ.endYm) : null,
+      metrics: {
+        thesis: o && o.available ? num(o.thesis.score) : null,
+        mega: o && o.available && o.inputs && o.inputs.megaTrend ? num(o.inputs.megaTrend.score) : null,
+        revYoY: Q.length >= 5 ? lastYoY("revenueB") : null,
+        epsYoY: Q.length >= 5 ? lastYoY("epsAdj") : null,
+        fcf: lastQ ? num(lastQ.fcfB) : null,
+        margin: lastQ ? num(lastQ.opMarginPct) : null,
+        monet: X && X.aiMonetization ? X.aiMonetization.overall : null,
+        expectOrd: X && X.expectations ? EXPECT_ORD[X.expectations.state.key] : null,
+        valuationAttr: X && X.matrixPoint && X.matrixPoint.valuation && num(X.matrixPoint.valuation.percentile) != null
+          ? 100 - X.matrixPoint.valuation.percentile : null,
+        tech: X && X.drawdown && X.drawdown.available ? num(X.drawdown.smaDist200Pct) : null,
+        healthOrd: X && X.health ? HEALTH_ORD[X.health.state.key] : null,
+      },
+    };
+  }
+
+  // เปรียบเทียบสอง observation → deltas + สถานะรวม (pure, deterministic)
+  function computeChange(prevObs, curObs) {
+    if (!curObs) return { state: CHANGE.INSUFFICIENT, firstObservation: false, deltas: [], why: [], note: "ไม่มี observation รอบนี้" };
+    if (!prevObs) {
+      return { state: CHANGE.INSUFFICIENT, firstObservation: true, deltas: [], why: [],
+        currentAsOf: curObs.day || curObs.kbAsOf, previousAsOf: null,
+        note: "First observation — ยังไม่มีข้อมูลรอบก่อนให้เทียบ (ระบบเริ่มบันทึกตั้งแต่รอบนี้)" };
+    }
+    var deltas = [], sigGood = 0, sigBad = 0, comparable = 0;
+    CHANGE_METRICS.forEach(function (mdef) {
+      var a = prevObs.metrics ? num(prevObs.metrics[mdef.key]) : null;
+      var b = curObs.metrics ? num(curObs.metrics[mdef.key]) : null;
+      if (a == null || b == null) return; // metric ที่ไม่มีทั้งสองฝั่ง — ไม่แสดง ไม่เดา
+      comparable++;
+      var diff = b - a;
+      var mag = mdef.kind === "pct" ? (a !== 0 ? (diff / Math.abs(a)) * 100 : null) : diff;
+      if (mag == null) return;
+      var significant = Math.abs(mag) >= mdef.sig;
+      var dir = !significant ? "flat" : mag > 0 ? "up" : "down";
+      if (significant) { if (mag > 0) sigGood++; else sigBad++; }
+      deltas.push({ key: mdef.key, label: mdef.label, prev: a, cur: b,
+        delta: round1(diff), deltaPct: mdef.kind === "pct" ? round1(mag) : null,
+        kind: mdef.kind, dir: dir, significant: significant, company: mdef.company });
+    });
+    var state;
+    if (comparable < 3) state = CHANGE.INSUFFICIENT;
+    else if (!sigGood && !sigBad) state = CHANGE.STABLE;
+    else if (sigBad === 0) state = CHANGE.IMPROVING;
+    else if (sigGood === 0) state = CHANGE.DETERIORATING;
+    else if (sigGood >= sigBad * 2) state = CHANGE.IMPROVING;
+    else if (sigBad >= sigGood * 2) state = CHANGE.DETERIORATING;
+    else state = CHANGE.MIXED;
+    // คำอธิบาย deterministic จาก delta ที่มีนัย (ไม่ใช้ LLM)
+    var why = deltas.filter(function (x) { return x.significant; }).map(function (x) {
+      var good = x.dir === "up";
+      var amt = x.kind === "pct" ? ((x.deltaPct > 0 ? "+" : "") + x.deltaPct + "%") : ((x.delta > 0 ? "+" : "") + x.delta + (x.kind === "pp" ? "pp" : ""));
+      return (good ? "🟢 " : "🔴 ") + x.label + (good ? " ดีขึ้น (" : " อ่อนลง (") + amt + ")";
+    });
+    return { state: state, firstObservation: false, deltas: deltas, why: why,
+      comparable: comparable, sigGood: sigGood, sigBad: sigBad,
+      currentAsOf: curObs.day || curObs.kbAsOf, previousAsOf: prevObs.day || prevObs.kbAsOf,
+      note: "เทียบ observation ลงวันที่จริงสองรอบ — metric ที่ไม่มีครบสองฝั่งจะไม่ถูกนำมาเทียบ" };
+  }
+
+  // ---------------- changeLog store (browser: localStorage · test: inject storage) ----------------
+  var changeLog = {
+    KEY: "thesisChangeLog_v1",
+    MAX: 12,
+    _read: function (storage) {
+      try { var v = JSON.parse(storage.getItem(this.KEY) || "null"); return v && typeof v === "object" ? v : {}; }
+      catch (e) { return {}; }
+    },
+    _write: function (storage, all) { try { storage.setItem(this.KEY, JSON.stringify(all)); } catch (e) { /* เต็ม */ } },
+    // key ของ observation: วันที่โหลดข้อมูล + รอบ KB — วันเดิม+KB เดิม = แทนที่ ไม่ append
+    _keyOf: function (obs) { return String(obs.day || "-") + "|" + String(obs.kbAsOf || "-") + "|" + String(obs.quarter || "-"); },
+    record: function (ticker, obs, storage) {
+      if (!storage || !obs || !obs.day) return false; // ไม่มีวันที่จริง = ไม่บันทึก (ห้าม observation ลอย ๆ)
+      var all = this._read(storage);
+      var list = all[ticker] = all[ticker] || [];
+      var k = this._keyOf(obs);
+      if (list.length && this._keyOf(list[list.length - 1]) === k) { list[list.length - 1] = obs; }
+      else list.push(obs);
+      if (list.length > this.MAX) all[ticker] = list.slice(-this.MAX);
+      this._write(storage, all);
+      return true;
+    },
+    previous: function (ticker, curObs, storage) {
+      if (!storage) return null;
+      var list = this._read(storage)[ticker] || [];
+      var k = curObs ? this._keyOf(curObs) : null;
+      for (var i = list.length - 1; i >= 0; i--) {
+        if (this._keyOf(list[i]) !== k) return list[i];
+      }
+      return null;
+    },
+  };
+
+  // ============================================================
+  // F8 — BUSINESS vs PRICE DIVERGENCE
+  // ============================================================
+  function computeDivergence(health, monet, expectations, drawdown, cfg) {
+    // ทิศธุรกิจ — จากหลักฐานพื้นฐานล้วน (ห้ามใช้ราคา/เทคนิคชี้ทิศธุรกิจ)
+    var pillarStat = {};
+    (health.pillars || []).forEach(function (p) { pillarStat[p.key] = p.status; });
+    var coreWarn = ["revenue", "eps", "margin", "fcf"].filter(function (k) { return pillarStat[k] === "warn"; }).length;
+    var coreCrit = ["revenue", "eps", "margin", "fcf"].filter(function (k) { return pillarStat[k] === "crit"; }).length;
+    var accel = cfg.revenueQuality ? cfg.revenueQuality.acceleration : null;
+    var bizEvidence = [];
+    var bizDir;
+    if (health.state.key === "INSUFFICIENT") bizDir = "insufficient";
+    else if (health.state.key === "BROKEN" || health.state.key === "DETERIORATING" || coreCrit >= 1 ||
+             coreWarn >= 2 || expectations.state.key === "SHARP_DOWN") {
+      bizDir = "deteriorating";
+      if (coreCrit) bizEvidence.push("pillar หลักเสื่อมต่อเนื่อง " + coreCrit + " ตัว");
+      if (coreWarn) bizEvidence.push("สัญญาณเตือนพื้นฐาน " + coreWarn + " ตัว");
+      if (expectations.state.key === "SHARP_DOWN") bizEvidence.push("ประมาณการถูกหั่นแรง");
+    } else if (accel === "accelerating" || monet.trend === "improving" || expectations.state.key === "IMPROVING") {
+      bizDir = "improving";
+      if (accel === "accelerating") bizEvidence.push("รายได้เร่งตัว");
+      if (monet.trend === "improving") bizEvidence.push("AI monetization แนวโน้มดีขึ้น");
+      if (expectations.state.key === "IMPROVING") bizEvidence.push("ประมาณการถูกปรับขึ้น");
+    } else { bizDir = "stable"; bizEvidence.push("พื้นฐานทรงตัว — ไม่มีสัญญาณเร่ง/เสื่อมมีนัย"); }
+    var materially = health.state.key === "BROKEN" || health.state.key === "DETERIORATING" || coreCrit >= 1;
+
+    // ทิศราคา — จาก drawdown/SMA เดิม (ไม่สร้าง technical ใหม่)
+    var priceDir, priceEvidence = [];
+    if (!drawdown || !drawdown.available || drawdown.currentDdPct == null) priceDir = "insufficient";
+    else {
+      var dd = drawdown.currentDdPct;
+      var s200 = num(drawdown.smaDist200Pct);
+      if (dd >= CONFIG.dd.meaningfulDip || (s200 != null && s200 <= -3)) {
+        priceDir = "weak";
+        if (dd >= CONFIG.dd.meaningfulDip) priceEvidence.push("ย่อ " + round1(dd) + "% จาก high 1 ปี");
+        if (s200 != null && s200 <= -3) priceEvidence.push("ต่ำกว่า SMA200 " + round1(Math.abs(s200)) + "%");
+      } else if (dd < 5 && (s200 == null || s200 >= 0)) {
+        priceDir = "strong";
+        priceEvidence.push("ใกล้ high (ย่อเพียง " + round1(dd) + "%)" + (s200 != null ? " · เหนือ SMA200" : ""));
+      } else {
+        priceDir = "neutral";
+        priceEvidence.push("ย่อ " + round1(dd) + "% — ยังไม่ถึงระดับมีนัย");
+      }
+    }
+
+    var state;
+    if (bizDir === "insufficient" || priceDir === "insufficient") state = DIVERGE.INSUFFICIENT; // ห้ามตัดสินจากราคาอย่างเดียว
+    else if (bizDir === "improving" && priceDir === "weak") state = DIVERGE.POSITIVE;
+    else if (bizDir === "deteriorating" && priceDir === "weak") state = DIVERGE.NEGATIVE;
+    else if (bizDir === "deteriorating" && materially && priceDir !== "weak") state = DIVERGE.THESIS_RISK;
+    else if (bizDir === "deteriorating") state = DIVERGE.NEGATIVE;
+    else state = DIVERGE.ALIGNED;
+
+    return { state: state, businessDirection: bizDir, priceDirection: priceDir,
+      businessEvidence: bizEvidence, priceEvidence: priceEvidence,
+      note: "ทิศธุรกิจตัดสินจากพื้นฐานล้วน · ทิศราคาจาก drawdown/SMA เดิม — เทคนิคห้าม override สุขภาพ thesis · ไม่ใช่คำสั่งซื้อขาย" };
+  }
+
+  // ============================================================
+  // F9 — INVESTMENT READINESS (สะพาน Investment Thesis → Accumulation Center)
+  // ============================================================
+  function computeReadiness(health, divergence, matrixPoint, drawdown, o, zoneKey, TH) {
+    var hk = health.state.key;
+    if (hk === "INSUFFICIENT") {
+      return { state: READINESS.INSUFFICIENT, why: health.why.slice(), waitingFor: [],
+        note: "ไม่ใช่คำสั่งซื้อขาย — Readiness คือความพร้อมเข้ากระบวนการสะสมเท่านั้น" };
+    }
+    // กฎเหล็ก: thesis เสื่อม/พัง → THESIS_REVIEW เสมอ — ราคาถูก/RSI ต่ำ/ย่อลึก ห้าม override
+    if (hk === "BROKEN" || hk === "DETERIORATING") {
+      var why0 = [];
+      (health.pillars || []).forEach(function (p) { if (p.status === "crit") why0.push("⚠ " + p.label + ": " + p.evidence); });
+      if (!why0.length) why0 = health.why.map(function (w) { return "⚠ " + w; });
+      var even = [];
+      var vcls0 = matrixPoint && matrixPoint.valuation ? matrixPoint.valuation.classification : null;
+      if (vcls0 === "ATTRACTIVE" || vcls0 === "FAIR") even.push("✓ valuation ดูน่าสนใจ (" + vcls0 + ") — แต่ห้ามให้ราคาถูก override สุขภาพ thesis");
+      if (drawdown && drawdown.available && drawdown.currentDdPct != null && drawdown.currentDdPct >= CONFIG.dd.meaningfulDip)
+        even.push("✓ ราคาย่อ " + round1(drawdown.currentDdPct) + "% — แต่การย่อไม่ใช่เหตุผลเมื่อพื้นฐานเสื่อม");
+      return { state: READINESS.THESIS_REVIEW, why: why0, evenThough: even, waitingFor: ["หลักฐานพื้นฐานกลับมาปกติ (ดู Thesis Health)"],
+        note: "ไม่ใช่คำสั่งซื้อขาย" };
+    }
+    // เงื่อนไขความพร้อม — ทุกข้อมาจากหลักฐานเดิม
+    var thesisOk = num(o && o.available ? o.thesis.score : null) != null && o.thesis.score >= TH.thesisMin;
+    var bizOk = divergence.businessDirection === "improving" || divergence.businessDirection === "stable";
+    var mega = o && o.available && o.inputs ? o.inputs.megaTrend : null;
+    var megaOk = mega ? mega.gateOpen === true : null; // null = ไม่มีข้อมูล (ไม่เดา)
+    var vcls = matrixPoint && matrixPoint.valuation ? matrixPoint.valuation.classification : null;
+    var valOk = vcls == null || vcls === "INSUFFICIENT_DATA" ? null : (vcls === "ATTRACTIVE" || vcls === "FAIR");
+    var timingOk;
+    if (zoneKey) timingOk = zoneKey === "A" || zoneKey === "B" || zoneKey === "C";
+    else if (drawdown && drawdown.available && drawdown.currentDdPct != null) timingOk = drawdown.currentDdPct >= 5;
+    else timingOk = null;
+    var conds = [
+      { key: "thesis", label: "Investment Thesis ≥ " + TH.thesisMin, ok: thesisOk },
+      { key: "business", label: "พื้นฐานไม่เสื่อม (ทิศธุรกิจ: " + divergence.businessDirection + ")", ok: bizOk },
+      { key: "mega", label: "Mega Trend gate เปิด", ok: megaOk },
+      { key: "valuation", label: "Valuation ไม่ตึง (" + (vcls || "ไม่มีข้อมูล") + ")", ok: valOk },
+      { key: "timing", label: zoneKey ? "จังหวะสะสม (Zone " + zoneKey + ")" : "จังหวะสะสม (การย่อของราคา)", ok: timingOk },
+    ];
+    var why = conds.filter(function (c) { return c.ok === true; }).map(function (c) { return "✓ " + c.label; });
+    var waiting = conds.filter(function (c) { return c.ok !== true; }).map(function (c) { return (c.ok === null ? "⚪ " : "⚠ ") + c.label + (c.ok === null ? " — ไม่มีข้อมูล" : ""); });
+    var state;
+    if (!thesisOk || !bizOk) state = READINESS.WAIT;                         // แกนหลักไม่ผ่าน = รอ
+    else {
+      var pending = [megaOk, valOk, timingOk].filter(function (v) { return v !== true; }).length;
+      if (divergence.state.key === "NEGATIVE" || divergence.state.key === "THESIS_RISK") state = READINESS.WAIT;
+      else if (pending === 0) state = READINESS.READY;
+      else if (pending <= 2) state = READINESS.WATCH_PREPARE;
+      else state = READINESS.WAIT;
+    }
+    return { state: state, conditions: conds, why: why, waitingFor: waiting,
+      note: "สะพานระหว่าง Investment Thesis → Accumulation Center (Zone/Entry Ladder เดิม) — ไม่ใช่คำสั่งซื้อขาย" };
+  }
+
   function interpret(health, drawdown, matrixPoint, TH) {
     var hk = health.state.key;
     var dd = drawdown && drawdown.available ? (drawdown.currentDdPct != null ? drawdown.currentDdPct : (drawdown.dd1y != null ? Math.abs(Math.min(drawdown.dd1y, 0)) : null)) : null;
@@ -776,6 +1038,13 @@
       var matrixPoint = computeMatrixPoint(cfg, ticker, snapshot, d);
       var valueChain = computeValueChain(cfg, ticker, snapshot, d);
       var summary = interpret(health, drawdown, matrixPoint, TH);
+      var partial = { aiMonetization: monet, expectations: expectations, matrixPoint: matrixPoint, drawdown: drawdown, health: health };
+      var observation = observationOf(cfg, o, partial, snapshot);
+      var prevObs = opts && opts.prevObs !== undefined ? opts.prevObs
+        : (typeof window !== "undefined" && window.localStorage ? changeLog.previous(ticker, observation, window.localStorage) : null);
+      var change = computeChange(prevObs, observation);
+      var divergence = computeDivergence(health, monet, expectations, drawdown, cfg);
+      var readiness = computeReadiness(health, divergence, matrixPoint, drawdown, o, opts && opts.zoneKey ? opts.zoneKey : null, TH);
 
       out.available = true;
       out.name = cfg.name || ticker;
@@ -790,6 +1059,10 @@
       out.matrixPoint = matrixPoint;
       out.valueChain = valueChain;
       out.summary = summary;
+      out.observation = observation;
+      out.change = change;
+      out.divergence = divergence;
+      out.readiness = readiness;
       out.thresholdsUsed = TH;
       return out;
     } catch (e) {
@@ -815,9 +1088,11 @@
   var IntelligenceEngine = {
     VERSION: VERSION, CONFIG: CONFIG,
     HEALTH: HEALTH, EXPECT: EXPECT, MONET: MONET, QUAD: QUAD, DIP_CLS: DIP_CLS, INTERP: INTERP,
+    CHANGE: CHANGE, DIVERGE: DIVERGE, READINESS: READINESS, changeLog: changeLog,
     compute: compute, matrix: matrix, gateZone: gateZone,
     // เปิด internal ให้ test แบบ deterministic
     _internal: { decelState: decelState, yoySeries: yoySeries, ddEpisodes: ddEpisodes, thresholds: thresholds,
+      observationOf: observationOf, computeChange: computeChange, computeDivergence: computeDivergence, computeReadiness: computeReadiness,
       computeHealth: computeHealth, computeExpectations: computeExpectations, computeMonetization: computeMonetization },
   };
   if (typeof window !== "undefined") window.IntelligenceEngine = IntelligenceEngine;

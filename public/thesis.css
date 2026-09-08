@@ -515,3 +515,18 @@
 .tho-acc { color: var(--mc-dim, #94a3b8); font-size: 11.5px; }
 .tho-acc b { color: #e2e8f0; font-size: 13px; }
 .tho-score small { font-size: 10px; color: var(--mc-dim, #94a3b8); }
+
+/* ============ §16 Decision Layer: Divergence / Change / Readiness ============ */
+.th-ii-bv { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0; }
+.th-ii-bv-col { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 10px; padding: 10px 12px; }
+.th-ii-bv-col b { display: block; margin-bottom: 6px; font-size: 12.5px; color: #7dd3fc; }
+.th-ii-bv-col span { display: block; font-size: 12px; color: var(--mc-dim, #94a3b8); padding: 2px 0; }
+.th-ii-dv-positive, .th-ii-rd-ready, .th-ii-cg-improving { border-color: rgba(52, 211, 153, .45); background: rgba(52, 211, 153, .06); }
+.th-ii-dv-aligned, .th-ii-rd-watch_prepare, .th-ii-cg-stable { border-color: rgba(245, 158, 11, .4); background: rgba(245, 158, 11, .05); }
+.th-ii-dv-negative, .th-ii-rd-wait, .th-ii-cg-mixed { border-color: rgba(251, 146, 60, .5); background: rgba(251, 146, 60, .06); }
+.th-ii-dv-thesis_risk, .th-ii-rd-thesis_review, .th-ii-cg-deteriorating { border-color: rgba(244, 63, 94, .55); background: rgba(244, 63, 94, .07); }
+.th-ii-dv-insufficient, .th-ii-rd-insufficient, .th-ii-cg-insufficient { border-style: dashed; }
+.th-ii-cg-sig td { font-weight: 700; }
+@media (max-width: 640px) { .th-ii-bv { grid-template-columns: 1fr; } }
+.tho-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.tho-chip { background: rgba(148, 163, 184, .08); border: 1px solid var(--mc-border, #1f2a3d); border-radius: 999px; padding: 1px 9px; font-size: 10.5px; font-weight: 700; }

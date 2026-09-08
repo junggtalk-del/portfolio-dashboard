@@ -1339,7 +1339,9 @@
     var X;
     try { X = IE.compute(R.ticker, readSnapshot() || {}, { o: R }); } catch (eIx) { return ""; }
     if (!X || !X.available) return "";
+    try { if (IE.changeLog && window.localStorage) IE.changeLog.record(R.ticker, X.observation, window.localStorage); } catch (eCl) { /* เต็ม/ปิด */ }
     var H = X.health, S = X.summary, M = X.aiMonetization, E2 = X.expectations, DDX = X.drawdown, MP = X.matrixPoint, VC = X.valueChain;
+    var DV = X.divergence, CG = X.change, RD = X.readiness;
 
     // ---- executive summary ----
     var hero = '<div class="th-ii-hero th-ii-' + S.state.key.toLowerCase().replace(/_/g, "-") + '">' +
@@ -1356,6 +1358,8 @@
       iiCard("Drawdown", DDX.available && DDX.dd1y != null ? Math.round(Math.abs(Math.min(DDX.dd1y, 0))) + "% จาก high 1 ปี" : "—", DDX.available ? DDX.classification.label : "ไม่มีข้อมูลราคา") +
       iiCard("Growth vs Valuation", MP.quadrant.icon + " " + MP.quadrant.key, (MP.growthCagrPct != null ? "โต " + MP.growthCagrPct + "%/ปี" : "—") + (vNow && vNow.percentile != null ? " · pct " + vNow.percentile : "")) +
       iiCard("Value Chain", VC.available ? esc(VC.layerName) : "—", VC.available && VC.phase ? "phase: " + VC.phase.name + " · benefit " + (VC.benefit || "—") : "ต้องมี snapshot จึงระบุ phase ได้") +
+      iiCard("Business vs Price", DV.state.icon + " " + DV.state.key, "ธุรกิจ " + DV.businessDirection + " · ราคา " + DV.priceDirection) +
+      iiCard("Investment Readiness", RD.state.icon + " " + RD.state.label, RD.waitingFor && RD.waitingFor.length ? "รอ: " + RD.waitingFor.length + " เงื่อนไข" : "เงื่อนไขครบ") +
       '</div>';
 
     // ---- F1 pillars ----
@@ -1365,6 +1369,47 @@
     var f1 = '<details class="th-fw-src th-ii-det"><summary>🩺 Thesis Health — หลักฐานราย pillar (' + H.counts.companyAvailable + ' pillar บริษัทมีข้อมูล)</summary>' +
       '<div class="th-table-wrap"><table class="th-table"><thead><tr><th></th><th>Pillar</th><th>หลักฐาน</th></tr></thead><tbody>' + pillarRows + '</tbody></table></div>' +
       '<div class="th-muted">' + esc(H.note) + '</div></details>';
+
+    // ---- F8 Business vs Price ----
+    var bvRows = '<div class="th-ii-bv"><div class="th-ii-bv-col"><b>Business</b>' +
+      (DV.businessEvidence.length ? DV.businessEvidence.map(function (x) { return "<span>" + esc(x) + "</span>"; }).join("") : "<span>—</span>") +
+      '</div><div class="th-ii-bv-col"><b>Price</b>' +
+      (DV.priceEvidence.length ? DV.priceEvidence.map(function (x) { return "<span>" + esc(x) + "</span>"; }).join("") : "<span>— ไม่มีข้อมูลราคา (กด Load Latest Data)</span>") +
+      "</div></div>";
+    var f8 = '<details class="th-fw-src th-ii-det" open><summary>⚖️ Business vs Price — ' + DV.state.icon + " " + esc(DV.state.label) + '</summary>' +
+      '<div class="th-ii-hero th-ii-dv-' + DV.state.key.toLowerCase() + '"><div class="th-ii-hero-head"><span class="th-ii-ico">' + DV.state.icon + '</span><div><b>' + esc(DV.state.label) + "</b><span>" + esc(DV.state.thai) + "</span></div></div></div>" +
+      bvRows + '<div class="th-muted">' + esc(DV.note) + "</div></details>";
+
+    // ---- F7 Thesis Change ----
+    var f7body;
+    if (CG.firstObservation) {
+      f7body = '<div class="th-muted">📌 ' + esc(CG.note) + '</div>';
+    } else if (CG.state.key === "INSUFFICIENT") {
+      f7body = '<div class="th-muted">— ' + esc(CG.note || "ข้อมูลเทียบไม่พอ") + "</div>";
+    } else {
+      var rows7 = CG.deltas.map(function (x) {
+        var amt = x.kind === "pct" ? ((x.deltaPct > 0 ? "+" : "") + x.deltaPct + "%") : ((x.delta > 0 ? "+" : "") + x.delta + (x.kind === "pp" ? "pp" : ""));
+        var arrow = x.dir === "up" ? '<span class="th-ii-ok">↑</span>' : x.dir === "down" ? '<span class="th-ii-crit">↓</span>' : '<span class="th-ii-na">→</span>';
+        return '<tr' + (x.significant ? ' class="th-ii-cg-sig"' : "") + '><td>' + esc(x.label) + "</td><td>" + x.prev + "</td><td>" + x.cur + "</td><td>" + amt + " " + arrow + "</td></tr>";
+      }).join("");
+      f7body = '<div class="th-ii-hero th-ii-cg-' + CG.state.key.toLowerCase() + '"><div class="th-ii-hero-head"><span class="th-ii-ico">' + CG.state.icon + '</span><div><b>' + esc(CG.state.label) + "</b><span>" + esc(CG.state.thai) + "</span></div></div>" +
+        (CG.why.length ? "<ul>" + CG.why.map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("") + "</ul>" : "") + "</div>" +
+        '<div class="th-table-wrap"><table class="th-table"><thead><tr><th>Metric</th><th>ก่อน</th><th>ตอนนี้</th><th>เปลี่ยน</th></tr></thead><tbody>' + rows7 + "</tbody></table></div>" +
+        '<div class="th-muted">Current As Of: ' + esc(CG.currentAsOf || "—") + " · Previous As Of: " + esc(CG.previousAsOf || "—") + " · " + esc(CG.note) + "</div>";
+    }
+    var f7 = '<details class="th-fw-src th-ii-det"><summary>🕓 Thesis Change — ' + CG.state.icon + " " + esc(CG.state.label) + "</summary>" + f7body + "</details>";
+
+    // ---- F9 Investment Readiness ----
+    var f9why = (RD.why || []).map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("");
+    var f9even = (RD.evenThough || []).map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("");
+    var f9wait = (RD.waitingFor || []).map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("");
+    var f9 = '<details class="th-fw-src th-ii-det" open><summary>🚦 Investment Readiness — ' + RD.state.icon + " " + esc(RD.state.label) + "</summary>" +
+      '<div class="th-ii-hero th-ii-rd-' + RD.state.key.toLowerCase() + '"><div class="th-ii-hero-head"><span class="th-ii-ico">' + RD.state.icon + '</span><div><b>' + esc(RD.state.label) + "</b><span>" + esc(RD.state.thai) + "</span></div></div>" +
+      (f9why ? "<b>Why:</b><ul>" + f9why + "</ul>" : "") +
+      (f9even ? "<b>Even though:</b><ul>" + f9even + "</ul>" : "") +
+      (f9wait ? "<b>Waiting for:</b><ul>" + f9wait + "</ul>" : "") + "</div>" +
+      '<div class="th-muted">ลำดับการไหล: Investment Thesis → Readiness → Accumulation Center → Zone → Entry Ladder (50/20/15/15 เดิม) · ' + esc(RD.note) + "</div></details>";
+
 
     // ---- F2 expectations ----
     var f2body = "";
@@ -1447,7 +1492,7 @@
     var qual = '<div class="th-vx-qual"><b>Intelligence Data Quality</b> · Health: KB quarters + thesis-engine · Expectations: forwardView (asOf ' + esc(E2.asOf || "—") + ') · Monetization: curated KB (asOf ' + esc(X.asOf || "—") + ') · Drawdown: ' + (DDX.available ? esc(DDX.source) : "ไม่มี snapshot") + ' · Matrix: ' + esc(MP.source) + ' · engine v' + esc(X.version) + ' · ไม่มีการประเมินแทนข้อมูลที่ขาด (ช่องว่าง = —)</div>';
 
     return sec(16, "Investment Intelligence", "หุ้นลงเพราะอะไร แล้ว thesis ยังอยู่ไหม — Thesis Health + Expectations + AI Monetization + Drawdown + Matrix + Value Chain",
-      hero + cards + f1 + f2 + f3 + f4 + f5 + f6 + qual);
+      hero + cards + f8 + f1 + f7 + f9 + f2 + f3 + f4 + f5 + f6 + qual);
   }
 
   // ============================================================ boot

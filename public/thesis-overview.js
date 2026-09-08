@@ -91,7 +91,8 @@
       var m = { t: t, name: cfg.name || t, thesis: null, health: "INSUFFICIENT", healthIcon: "⚪", healthThai: "",
         summary: "INSUFFICIENT", summaryLabel: "—", summaryWhy: [], monet: null, monetState: "—", expect: "—",
         veClass: null, vePctl: null, zone: null, zoneLabel: "—", zoneIcon: "", acc: null, dd: null,
-        earnings: null, warns: 0, crits: 0, warnLabels: [], critLabels: [], gated: false, gateWhy: null };
+        earnings: null, warns: 0, crits: 0, warnLabels: [], critLabels: [], gated: false, gateWhy: null,
+        divKey: "INSUFFICIENT", divIcon: "⚪", divLabel: "—", rdKey: "INSUFFICIENT", rdIcon: "⚪", rdLabel: "—", cgKey: "INSUFFICIENT", cgIcon: "⚪" };
       try {
         var pr = pmRows[t] || null;
         var o = pr && pr.o ? pr.o : d.TE.compute(t, snapshot, { data: d.data });
@@ -101,7 +102,8 @@
           m.dd = o.falling ? num(o.falling.drawdown1yPct) : null;
           if (!mega && o.inputs && o.inputs.megaTrend) mega = o.inputs.megaTrend;
         }
-        var X = d.IE.compute(t, snapshot, { data: d.data, TE: d.TE, VE: d.VE, PM: d.PM, o: o && o.available ? o : null, R: Rrot, gsum: pr ? pr.growth : null });
+        var X = d.IE.compute(t, snapshot, { data: d.data, TE: d.TE, VE: d.VE, PM: d.PM, o: o && o.available ? o : null, R: Rrot, gsum: pr ? pr.growth : null, zoneKey: pr && pr.zone ? pr.zone.key : null });
+        try { if (d.IE.changeLog && typeof window !== "undefined" && window.localStorage) d.IE.changeLog.record(t, X.observation, window.localStorage); } catch (eCl) { /* เต็ม/ปิด */ }
         if (X && X.available) {
           m.health = X.health.state.key; m.healthIcon = X.health.state.icon; m.healthThai = X.health.state.thai;
           m.summary = X.summary.state.key; m.summaryLabel = X.summary.state.label; m.summaryWhy = X.summary.why || [];
@@ -114,6 +116,9 @@
           });
           if (X.matrixPoint && X.matrixPoint.valuation) { m.veClass = X.matrixPoint.valuation.classification; m.vePctl = X.matrixPoint.valuation.percentile; }
           if (m.dd == null && X.drawdown && X.drawdown.available) m.dd = X.drawdown.dd1y;
+          if (X.divergence) { m.divKey = X.divergence.state.key; m.divIcon = X.divergence.state.icon; m.divLabel = X.divergence.state.label; }
+          if (X.readiness) { m.rdKey = X.readiness.state.key; m.rdIcon = X.readiness.state.icon; m.rdLabel = X.readiness.state.label; }
+          if (X.change) { m.cgKey = X.change.state.key; m.cgIcon = X.change.state.icon; }
         }
         if (pr && pr.zone) {
           var g = d.IE.gateZone ? d.IE.gateZone(pr.zone.key, m.health) : { zoneKey: pr.zone.key, overridden: false };
@@ -205,6 +210,10 @@
         "<span>Mega Trend: " + esc(megaTxt(M.mega)) + "</span>" +
         "<span>Valuation: " + veTxt(m) + "</span>" +
         "<span>" + zoneTxt(m) + "</span></div>" +
+        '<div class="tho-chips">' +
+        '<span class="tho-chip">' + m.healthIcon + " " + esc(m.health) + "</span>" +
+        '<span class="tho-chip" title="Business vs Price">' + m.divIcon + " " + esc(m.divLabel) + "</span>" +
+        '<span class="tho-chip" title="Investment Readiness (ไม่ใช่คำสั่งซื้อขาย)">' + m.rdIcon + " " + esc(m.rdLabel) + "</span></div>" +
         '<p class="tho-reason">"' + esc(m.reason) + '"</p>' +
         openBtn(m.t) + "</article>";
     }).join("");
@@ -227,6 +236,8 @@
         "<td>" + (m.thesis == null ? "—" : m.thesis) + "</td>" +
         "<td><b>" + (m.acc == null ? "—" : m.acc) + "</b></td>" +
         "<td>" + esc(megaTxt(M.mega)) + "</td>" +
+        '<td title="Business vs Price">' + m.divIcon + " " + esc(m.divKey === "INSUFFICIENT" ? "—" : m.divKey) + "</td>" +
+        '<td title="ไม่ใช่คำสั่งซื้อขาย">' + m.rdIcon + " " + esc(m.rdKey === "INSUFFICIENT" ? "—" : m.rdLabel) + "</td>" +
         "<td>" + veTxt(m) + "</td>" +
         "<td>" + healthTxt(m) + "</td>" +
         "<td>" + zoneTxt(m) + "</td></tr>";
@@ -273,6 +284,7 @@
     // 8) ALL AI ASSETS (ท้ายสุด + sort ได้)
     var cols = [
       { k: "t", label: "Ticker" }, { k: "thesis", label: "Thesis" }, { k: "acc", label: "Acc Score" }, { k: "mega", label: "Mega Trend" },
+      { k: "div", label: "Divergence" }, { k: "rd", label: "Readiness" },
       { k: "monet", label: "AI Monetization" }, { k: "ve", label: "Valuation" }, { k: "health", label: "Health" },
       { k: "zone", label: "Zone" }, { k: "prio", label: "Read Priority" },
     ];
@@ -282,6 +294,8 @@
       if (k === "t") return m.t;
       if (k === "thesis") return -(m.thesis == null ? -1 : m.thesis);
       if (k === "acc") return -(m.acc == null ? -1 : m.acc);
+      if (k === "div") { var DR = { POSITIVE: 0, ALIGNED: 1, NEGATIVE: 2, THESIS_RISK: 3, INSUFFICIENT: 4 }; return DR[m.divKey] != null ? DR[m.divKey] : 9; }
+      if (k === "rd") { var RR = { READY: 0, WATCH_PREPARE: 1, WAIT: 2, THESIS_REVIEW: 3, INSUFFICIENT: 4 }; return RR[m.rdKey] != null ? RR[m.rdKey] : 9; }
       if (k === "mega") return 0; // ตลาดเดียวกันทุกตัว
       if (k === "monet") return -(m.monet == null ? -1 : m.monet);
       if (k === "ve") return m.veClass in VR ? VR[m.veClass] : 9;

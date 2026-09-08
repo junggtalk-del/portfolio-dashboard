@@ -527,7 +527,7 @@
     if (!th) return "";
     const tone = th.answer === "YES" ? "badge-buy" : th.answer === "NO" ? "badge-sell" : "badge-gray";
     const stale = th.stale ? " ⚠" : "";
-    return `<a class="badge ${tone} thesis-chip" href="/thesis" data-th-goto="${escapeHtml(th.ticker)}" title="เปิด Investment Thesis ของ ${escapeHtml(th.ticker)}${th.stale ? " (ข้อมูล curated เก่า — ควร /thesis-update)" : ""}">🧾 Thesis ${th.score} · ${escapeHtml(th.decisionLabel)}${stale}</a>`;
+    return `<a class="badge ${tone} thesis-chip" href="/thesis?ticker=${encodeURIComponent(th.ticker)}" data-th-goto="${escapeHtml(th.ticker)}" title="เปิด Investment Thesis ของ ${escapeHtml(th.ticker)}${th.stale ? " (ข้อมูล curated เก่า — ควร /thesis-update)" : ""}">🧾 Thesis ${th.score} · ${escapeHtml(th.decisionLabel)}${stale}</a>`;
   }
 
   const isDev = location.hostname === "localhost" || location.hostname === "127.0.0.1";

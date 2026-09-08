@@ -503,7 +503,9 @@ console.log("== Thesis Overview (LEVEL 1 landing) — model + render ==");
   ["Investment Thesis Overview", "Today’s Highlights", "Read Next", "Top Opportunities", "Thesis Watch", "Strong Business · Wait", "Thesis Review", "All AI Assets"]
     .forEach(function (sec) { t("render: มี section " + sec, hOv.indexOf(sec) >= 0); });
   t("render: chip/แถวคลิกได้", (hOv.match(/data-th-ticker=/g) || []).length >= 14);
-  t("render: หัวตารางเรียงได้ (9 คอลัมน์ รวม Acc)", (hOv.match(/data-tho-sort=/g) || []).length === 9);
+  t("render: หัวตารางเรียงได้ (11 คอลัมน์ รวม Acc/Divergence/Readiness)", (hOv.match(/data-tho-sort=/g) || []).length === 11);
+  t("render: ตารางมีคอลัมน์ Divergence + Readiness", hOv.indexOf("<th")>=0 && hOv.indexOf(">Divergence")>=0 && hOv.indexOf(">Readiness")>=0);
+  t("render: การ์ดมี chips 3 ตัว", (hOv.match(/tho-chip"/g)||[]).length>=12);
   t("render: การ์ดติดป้าย Thesis ชัด", hOv.indexOf(">Thesis ")>=0);
   t("render: การ์ดโชว์ Accumulation Score คู่กัน", hOv.indexOf("Accumulation Score:")>=0);
   t("render: ตาราง opportunities มีคอลัมน์ Acc Score", hOv.indexOf("<th>Acc Score</th>")>=0);
@@ -512,6 +514,169 @@ console.log("== Thesis Overview (LEVEL 1 landing) — model + render ==");
   // sort ตาราง: เรียง thesis desc ต้องเปลี่ยนลำดับแถวอย่าง deterministic
   var hSorted = TO.render({}, { data: D, TE: TE, VE: VE, PM: PM, IE: IE, AIR: AIR, }, undefined);
   void hSorted;
+}
+
+console.log("== F7 Thesis Change: improving/stable/mixed/deteriorating/first/missing ==");
+{
+  function obs(m, day, kb) { return { day: day || "2026-09-06", kbAsOf: kb || "2026-08", quarter: "Q2", metrics: m }; }
+  var BASE = { thesis: 80, mega: 70, revYoY: 20, epsYoY: 25, fcf: 10, margin: 30, monet: 75, expectOrd: 2, valuationAttr: 60, tech: 2, healthOrd: 3 };
+  var cc = IE._internal.computeChange;
+  // improving: หลาย metric ดีขึ้นมีนัย ไม่มีตัวแย่ลง
+  var up = cc(obs(BASE, "2026-08-01"), obs({ thesis: 84, mega: 74, revYoY: 24, epsYoY: 28, fcf: 11, margin: 31.6, monet: 80, expectOrd: 3, valuationAttr: 68, tech: 5, healthOrd: 3 }));
+  t("F7 improving", up.state.key === "IMPROVING", up.state.key + " good=" + up.sigGood + " bad=" + up.sigBad);
+  t("F7 why เป็นข้อความ deterministic", up.why.length >= 3 && up.why.every(function (w) { return w.indexOf("🟢") === 0 || w.indexOf("🔴") === 0; }));
+  t("F7 มี Current/Previous As Of", up.currentAsOf === "2026-09-06" && up.previousAsOf === "2026-08-01");
+  // stable: เปลี่ยนน้อยกว่า threshold ทุกตัว
+  var st = cc(obs(BASE, "2026-08-01"), obs({ thesis: 81, mega: 71, revYoY: 21, epsYoY: 26, fcf: 10.5, margin: 30.4, monet: 76, expectOrd: 2, valuationAttr: 62, tech: 3, healthOrd: 3 }));
+  t("F7 stable", st.state.key === "STABLE", st.state.key);
+  // mixed: ดี 2 แย่ 2
+  var mx = cc(obs(BASE, "2026-08-01"), obs({ thesis: 84, mega: 66, revYoY: 24, epsYoY: 20, fcf: 10, margin: 30, monet: 75, expectOrd: 2, valuationAttr: 60, tech: 2, healthOrd: 3 }));
+  t("F7 mixed", mx.state.key === "MIXED", mx.state.key + " g=" + mx.sigGood + " b=" + mx.sigBad);
+  // deteriorating
+  var dn = cc(obs(BASE, "2026-08-01"), obs({ thesis: 74, mega: 64, revYoY: 12, epsYoY: 15, fcf: 7, margin: 27, monet: 68, expectOrd: 1, valuationAttr: 60, tech: -5, healthOrd: 2 }));
+  t("F7 deteriorating", dn.state.key === "DETERIORATING", dn.state.key);
+  // first observation — ห้ามมโนเทียบ
+  var fo = cc(null, obs(BASE));
+  t("F7 first observation", fo.state.key === "INSUFFICIENT" && fo.firstObservation === true && fo.note.indexOf("First observation") >= 0);
+  // metric ที่ไม่มีครบสองฝั่ง ต้องไม่ถูกเทียบ
+  var partial = cc(obs({ thesis: 80 }, "2026-08-01"), obs({ thesis: 85, mega: 70 }));
+  t("F7 comparable <3 → INSUFFICIENT", partial.state.key === "INSUFFICIENT", partial.comparable);
+  // valuationAttr ขึ้น = ถูกลง = ดี (นับเป็น good)
+  var valUp = cc(obs(BASE, "2026-08-01"), obs(Object.assign({}, BASE, { valuationAttr: 75 })));
+  t("F7 valuation ถูกลง → improving", valUp.state.key === "IMPROVING" && valUp.why.join("").indexOf("Valuation") >= 0);
+}
+
+console.log("== F7 changeLog store: record/dedup/cap/previous ==");
+{
+  var storeCl = {};
+  var mem = { getItem: function (k) { return storeCl[k] || null; }, setItem: function (k, v) { storeCl[k] = String(v); } };
+  function ob(day, kb, thesis) { return { day: day, kbAsOf: kb, quarter: "Q2", metrics: { thesis: thesis } }; }
+  t("F7 ไม่มี day → ไม่บันทึก", IE.changeLog.record("X", { kbAsOf: "2026-08", metrics: {} }, mem) === false);
+  IE.changeLog.record("X", ob("2026-09-01", "2026-08", 80), mem);
+  IE.changeLog.record("X", ob("2026-09-01", "2026-08", 81), mem); // วันเดิม+KB เดิม → แทนที่
+  var l1 = IE.changeLog._read(mem).X;
+  t("F7 วันเดิมแทนที่ ไม่ append", l1.length === 1 && l1[0].metrics.thesis === 81, l1.length);
+  IE.changeLog.record("X", ob("2026-09-06", "2026-08", 84), mem);
+  var prev = IE.changeLog.previous("X", ob("2026-09-06", "2026-08", 84), mem);
+  t("F7 previous ข้ามตัวที่ key เดียวกับปัจจุบัน", prev && prev.day === "2026-09-01" && prev.metrics.thesis === 81);
+  for (var ci = 0; ci < 15; ci++) IE.changeLog.record("X", ob("2026-10-" + (ci < 9 ? "0" : "") + (ci + 1), "2026-10", 80 + ci), mem);
+  t("F7 cap 12 รายการ", IE.changeLog._read(mem).X.length === 12);
+}
+
+console.log("== F8 Business vs Price: 4 states + missing ==");
+{
+  var cd = IE._internal.computeDivergence;
+  function hSt(k) { return { state: IE.HEALTH[k], pillars: [], why: [] }; }
+  function ddOf(cur, sma) { return { available: true, currentDdPct: cur, smaDist200Pct: sma, dd1y: -cur }; }
+  var mUp = { trend: "improving", state: IE.MONET.STRONG };
+  var mFlat = { trend: "flat", state: IE.MONET.MODERATE };
+  var eSt = { state: IE.EXPECT.STABLE }, eSharp = { state: IE.EXPECT.SHARP_DOWN };
+  var cfgAcc = { revenueQuality: { acceleration: "accelerating" } };
+  var cfgSteady = { revenueQuality: { acceleration: "steady" } };
+  // 1) ธุรกิจดีขึ้น + ราคาอ่อน → POSITIVE
+  var d1 = cd(hSt("INTACT"), mUp, eSt, ddOf(15, -5), cfgAcc);
+  t("F8 positive divergence", d1.state.key === "POSITIVE", d1.state.key);
+  // 2) ธุรกิจดีขึ้น + ราคาแรง → ALIGNED
+  var d2 = cd(hSt("INTACT"), mUp, eSt, ddOf(2, 4), cfgAcc);
+  t("F8 aligned", d2.state.key === "ALIGNED", d2.state.key);
+  // 3) ธุรกิจเสื่อม + ราคาอ่อน → NEGATIVE
+  var h3x = { state: IE.HEALTH.DETERIORATING, pillars: [{ key: "eps", status: "crit" }], why: [] };
+  var d3 = cd(h3x, mFlat, eSt, ddOf(18, -8), cfgSteady);
+  t("F8 negative divergence", d3.state.key === "NEGATIVE", d3.state.key);
+  // 4) ธุรกิจเสื่อมมีนัย + ราคายังแรง → THESIS_RISK
+  var d4 = cd(h3x, mFlat, eSt, ddOf(2, 5), cfgSteady);
+  t("F8 thesis risk", d4.state.key === "THESIS_RISK", d4.state.key);
+  // missing price → INSUFFICIENT (ห้ามตัดสินจากธุรกิจฝั่งเดียวว่าราคา diverge)
+  var d5 = cd(hSt("INTACT"), mUp, eSt, { available: false }, cfgAcc);
+  t("F8 ไม่มีราคา → INSUFFICIENT", d5.state.key === "INSUFFICIENT", d5.state.key);
+  // missing fundamentals → INSUFFICIENT (ห้ามตัดสินจากราคาอย่างเดียว)
+  var d6 = cd(hSt("INSUFFICIENT"), { trend: "flat", state: IE.MONET.INSUFFICIENT }, { state: IE.EXPECT.INSUFFICIENT }, ddOf(25, -10), {});
+  t("F8 ไม่มีพื้นฐาน → INSUFFICIENT (ราคาอย่างเดียวห้ามตัดสิน)", d6.state.key === "INSUFFICIENT", d6.state.key);
+  // warn 2 ตัวใน core → deteriorating (เคส META)
+  var hW = { state: IE.HEALTH.WATCH, pillars: [{ key: "eps", status: "warn" }, { key: "margin", status: "warn" }, { key: "fcf", status: "warn" }], why: [] };
+  var d7 = cd(hW, mFlat, eSt, ddOf(12, -4), cfgSteady);
+  t("F8 core warns ≥2 → ธุรกิจ deteriorating → NEGATIVE", d7.state.key === "NEGATIVE" && d7.businessDirection === "deteriorating", d7.state.key);
+}
+
+console.log("== F9 Investment Readiness: ready/watch/wait/review + กฎเหล็ก ==");
+{
+  var cr = IE._internal.computeReadiness;
+  var TH9 = IE._internal.thresholds();
+  function oOf(score, gate) { return { available: true, thesis: { score: score }, inputs: { megaTrend: gate == null ? null : { score: gate ? 82 : 60, gateOpen: gate } } }; }
+  function mpOf(cls) { return { valuation: cls ? { classification: cls, percentile: 20 } : null }; }
+  function dvOf(dir, stKey) { return { businessDirection: dir, state: IE.DIVERGE[stKey || "ALIGNED"] }; }
+  var ddGood = { available: true, currentDdPct: 12, smaDist200Pct: -4 };
+  var hI = { state: IE.HEALTH.INTACT, pillars: [], why: ["ok"] };
+  var hB = { state: IE.HEALTH.BROKEN, pillars: [{ key: "eps", status: "crit", label: "EPS growth", evidence: "พลิกขาดทุน" }], why: ["พัง"] };
+  var hD = { state: IE.HEALTH.DETERIORATING, pillars: [{ key: "revenue", status: "crit", label: "Revenue", evidence: "ชะลอ 2 ไตรมาส" }], why: ["เสื่อม"] };
+  // READY: ทุกเงื่อนไขผ่าน (มี zone B)
+  var r1 = cr(hI, dvOf("improving", "POSITIVE"), mpOf("ATTRACTIVE"), ddGood, oOf(85, true), "B", TH9);
+  t("F9 ready", r1.state.key === "READY", r1.state.key + " wait=" + JSON.stringify(r1.waitingFor));
+  // WATCH: ธุรกิจแข็ง แต่ mega ยังไม่เปิด → บอกชัดว่ารออะไร
+  var r2 = cr(hI, dvOf("improving", "POSITIVE"), mpOf("ATTRACTIVE"), ddGood, oOf(85, false), "B", TH9);
+  t("F9 watch/prepare เมื่อ mega ปิด", r2.state.key === "WATCH_PREPARE", r2.state.key);
+  t("F9 waitingFor ระบุ Mega Trend", r2.waitingFor.join(" ").indexOf("Mega Trend") >= 0);
+  // strong business but expensive → WATCH (แพงอย่างเดียว)
+  var r3 = cr(hI, dvOf("improving", "ALIGNED"), mpOf("EXPENSIVE"), ddGood, oOf(85, true), "B", TH9);
+  t("F9 แข็งแต่แพง → WATCH_PREPARE", r3.state.key === "WATCH_PREPARE", r3.state.key);
+  // strong thesis, weak timing (zone D + ไม่ย่อ) + mega ปิด + แพง → 3 เงื่อนไขไม่ผ่าน → WAIT
+  var r4 = cr(hI, dvOf("stable", "ALIGNED"), mpOf("EXPENSIVE"), { available: true, currentDdPct: 1, smaDist200Pct: 6 }, oOf(85, false), "D", TH9);
+  t("F9 3 เงื่อนไขไม่ผ่าน → WAIT", r4.state.key === "WAIT", r4.state.key);
+  // กฎเหล็ก: ถูก + ย่อลึก + RSI ต่ำแค่ไหน แต่ BROKEN → THESIS_REVIEW เสมอ
+  var r5 = cr(hB, dvOf("deteriorating", "NEGATIVE"), mpOf("ATTRACTIVE"), { available: true, currentDdPct: 25, smaDist200Pct: -15 }, oOf(48, true), "E", TH9);
+  t("F9 ถูกแต่ thesis พัง → THESIS_REVIEW (ห้าม override)", r5.state.key === "THESIS_REVIEW", r5.state.key);
+  t("F9 evenThough บอกว่า valuation น่าสนใจแต่ห้ามใช้", (r5.evenThough || []).join(" ").indexOf("valuation") >= 0);
+  // DETERIORATING → review เช่นกัน
+  var r6 = cr(hD, dvOf("deteriorating", "NEGATIVE"), mpOf("FAIR"), ddGood, oOf(75, true), "C", TH9);
+  t("F9 deteriorating → THESIS_REVIEW", r6.state.key === "THESIS_REVIEW", r6.state.key);
+  // divergence NEGATIVE → อย่างมาก WAIT แม้เงื่อนไขอื่นครบ
+  var r7 = cr(hI, dvOf("deteriorating", "NEGATIVE"), mpOf("ATTRACTIVE"), ddGood, oOf(85, true), "B", TH9);
+  t("F9 divergence NEGATIVE → WAIT", r7.state.key === "WAIT", r7.state.key);
+  // ห้ามมีคำ Buy/Sell ในทุก state
+  ["READY", "WATCH_PREPARE", "WAIT", "THESIS_REVIEW", "INSUFFICIENT"].forEach(function (k) {
+    var e9 = IE.READINESS[k];
+    t("F9 " + k + " ไม่มีคำ Buy/Sell", !/\b(Buy|Sell)\b/i.test(e9.label + " " + e9.thai));
+  });
+}
+
+console.log("== Decision Layer: 6 หุ้นบังคับ (KB จริง + snapshot ย่อ) ==");
+{
+  var closesD = [];
+  for (var di = 0; di < 500; di++) closesD.push(100 + di * 0.1);
+  for (var dj = 0; dj < 25; dj++) closesD.push(150 * (1 - 0.006 * (dj + 1)));
+  var hdD = {};
+  ["GOOG", "GOOGL", "META", "NVDA", "AMZN", "MSFT", "TSM", "^GSPC", "^IXIC"].forEach(function (tk) { hdD[tk] = { closes: closesD, dates: closesD.map(function () { return "2026-09-06"; }) }; });
+  var snapD = { historicalData: hdD, technicalSignals: {}, rsiSignals: {}, loadedAt: "2026-09-06T02:00:00Z" };
+  ["GOOG", "META", "NVDA", "AMZN", "MSFT", "TSM"].forEach(function (tk) {
+    var r = IE.compute(tk, snapD, { data: D, TE: TE, VE: VE, PM: PM, AIR: AIR, prevObs: null });
+    t(tk + ": divergence enum ถูก", IE.DIVERGE[r.divergence.state.key] != null, r.divergence.state.key);
+    t(tk + ": readiness enum ถูก", IE.READINESS[r.readiness.state.key] != null, r.readiness.state.key);
+    t(tk + ": change first observation", r.change.firstObservation === true);
+    t(tk + ": observation มี metrics ครบโครง", r.observation && r.observation.metrics && "thesis" in r.observation.metrics);
+    var js9 = JSON.stringify([r.change, r.divergence, r.readiness]);
+    t(tk + ": ไม่มี NaN/undefined", js9.indexOf("NaN") < 0 && js9.indexOf("undefined") < 0);
+    t(tk + ": ไม่มีคำ Buy/Sell", !/\b(Buy|Sell)\b/.test(js9));
+  });
+  // GOOG: ราคาย่อ + ธุรกิจแข็ง → ต้องเห็น divergence เป็น POSITIVE
+  var gD = IE.compute("GOOG", snapD, { data: D, TE: TE, VE: VE, PM: PM, prevObs: null });
+  t("GOOG จับ business/price divergence ได้", gD.divergence.state.key === "POSITIVE", gD.divergence.state.key + " biz=" + gD.divergence.businessDirection);
+  // META: ต้องเห็น fundamental warning (ทิศธุรกิจ deteriorating จาก 3 warns)
+  var mD = IE.compute("META", snapD, { data: D, TE: TE, VE: VE, PM: PM, prevObs: null });
+  t("META จับ fundamental warning ได้", mD.divergence.businessDirection === "deteriorating", mD.divergence.businessDirection);
+  // NVDA: ธุรกิจแข็ง — readiness ต้องแยกเรื่องจังหวะออกจากคุณภาพธุรกิจ (ไม่ใช่ review)
+  var nD = IE.compute("NVDA", snapD, { data: D, TE: TE, VE: VE, PM: PM, prevObs: null });
+  t("NVDA แข็ง → readiness ไม่ใช่ THESIS_REVIEW", nD.readiness.state.key !== "THESIS_REVIEW", nD.readiness.state.key);
+  // AMZN: valuation INSUFFICIENT → เงื่อนไข valuation เป็น 'ไม่มีข้อมูล' ไม่ใช่ fail
+  var aD = IE.compute("AMZN", snapD, { data: D, TE: TE, VE: VE, PM: PM, prevObs: null });
+  var valCond = (aD.readiness.conditions || []).filter(function (c) { return c.key === "valuation"; })[0];
+  t("AMZN valuation ไม่พอ → เงื่อนไข ok=null (ไม่เดา)", valCond && valCond.ok === null, valCond && valCond.ok);
+  // เทียบสองรอบจริง: ใช้ observation ปลอมรอบก่อนที่แย่กว่า → change ต้อง IMPROVING
+  var prevG = JSON.parse(JSON.stringify(gD.observation));
+  prevG.day = "2026-08-01";
+  prevG.metrics.thesis -= 5; prevG.metrics.monet -= 6; prevG.metrics.valuationAttr -= 10;
+  var gD2 = IE.compute("GOOG", snapD, { data: D, TE: TE, VE: VE, PM: PM, prevObs: prevG });
+  t("GOOG เทียบรอบก่อน (แย่กว่า) → IMPROVING", gD2.change.state.key === "IMPROVING", gD2.change.state.key);
+  t("GOOG change มีวันที่ทั้งสองฝั่ง", gD2.change.currentAsOf === "2026-09-06" && gD2.change.previousAsOf === "2026-08-01");
 }
 
 console.log("== Routing acceptance: /thesis = Overview · ?ticker=X = Detail ==");
