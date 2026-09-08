@@ -105,6 +105,14 @@
       "destination": "/ai-cycle.html"
     },
     {
+      "source": "/catalyst-hunter",
+      "destination": "/catalyst-hunter.html"
+    },
+    {
+      "source": "/asset",
+      "destination": "/asset.html"
+    },
+    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
