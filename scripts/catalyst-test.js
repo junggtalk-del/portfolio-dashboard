@@ -513,8 +513,21 @@ console.log("== หน้าเว็บ: Radar + Detail render จริง =="
     t("§1 header มีชื่อผลิตภัณฑ์", html.indexOf("Catalyst Hunter") >= 0);
     t("§1 header มี subtitle", html.indexOf("Thai Event-Driven") >= 0);
     t("§1 header บอกความสดของข้อมูล", html.indexOf("ข้อมูล ณ") >= 0);
-    t("§2 มี Radar Summary", html.indexOf("Radar Summary") >= 0);
-    t("§2 การ์ดสรุปกดกรองได้", html.indexOf("data-ch-filter-status") >= 0);
+    // PHASE 6 — กริด 12 สถานะย้ายไปอยู่ใน <details> ของส่วน "ทำไมส่วนใหญ่ไม่ใช่เป้า"
+    // viewport แรกเป็นของ Hunter Brief แทน
+    t("§1 มี Hunter Brief แทนกริด 12 สถานะบนสุด",
+      html.indexOf("Hunter Brief") >= 0 && html.indexOf("ch-brief-grid") >= 0);
+    t("§1 Brief มีสี่ตัวเลขตัดสินใจ",
+      ["RARE OPPORTUNITY", "NEAR-MISS", "CATALYST EXISTS", "EMERGING"]
+        .every(function (x) { return html.indexOf(x) >= 0; }));
+    t("§1 Brief ระบุว่าไม่ใช่คำแนะนำ", html.indexOf("ไม่ใช่คำแนะนำการลงทุน") >= 0);
+    t("§1 Brief ชี้ว่า 12 สถานะครบอยู่ด้านล่าง",
+      html.indexOf("สถานะครบทั้ง 12 กลุ่ม") >= 0);
+    t("กริด 12 สถานะยังอยู่ (ไม่ถูกลบ) แต่ย้ายไปอยู่ใน details",
+      html.indexOf("ch-allstates") >= 0 && html.indexOf("ch-sum-grid") >= 0);
+    t("การ์ดสรุปยังกดกรองได้", html.indexOf("data-ch-filter-status") >= 0);
+    t("Hunter Brief มาก่อน All Candidates",
+      html.indexOf("Hunter Brief") < html.indexOf("All Candidates"));
 
     // PART 2 — Rare Opportunities ต้องบอกบริบท X / Y scanned และห้ามสื่อว่าเป็นรายการแนะนำ
     t("§3 มี Rare Opportunities", html.indexOf("Rare Opportunities") >= 0);
@@ -637,7 +650,8 @@ console.log("== หน้าเว็บ: Radar + Detail render จริง =="
     })();
 
     // PART 6 — ส่วนถูกคัดออก
-    t("§7 มีส่วนอธิบายว่าทำไมถูกคัดออก", html.indexOf("ทำไมหุ้นส่วนใหญ่ถูกคัดออก") >= 0);
+    t("§7 มีส่วนอธิบายว่าทำไมส่วนใหญ่ไม่ใช่เป้า",
+      html.indexOf("ทำไมหุ้นส่วนใหญ่ไม่ใช่เป้า") >= 0);
     t("§7 สื่อว่าหุ้นที่ตกไม่ได้เป็นโอกาสทุกตัว", html.indexOf("หุ้นที่ตกไม่ได้เป็นโอกาสทุกตัว") >= 0);
     t("§7 มีคำอธิบายอังกฤษ deliberately rejects",
       html.indexOf("deliberately rejects many deeply beaten-down stocks") >= 0);
@@ -661,6 +675,109 @@ console.log("== หน้าเว็บ: Radar + Detail render จริง =="
       html.indexOf("Business Impact") >= 0 && html.indexOf("Financial Impact") >= 0 &&
       html.indexOf("ไม่ได้พิสูจน์ว่าธุรกิจเปลี่ยน") >= 0);
     t("§8 ระบุ งบฟื้น ≠ catalyst", html.indexOf("งบฟื้น (Fundamental Recovery)") >= 0);
+
+    // ---------- PHASE 6: information architecture ----------
+    (function () {
+      var src = fs.readFileSync(PUB + "/catalyst-page.js", "utf8");
+      var rows = win.CatalystPage._state.rows;
+      // (2) Today's Targets
+      t("มีส่วน Today's Targets", html.indexOf("Today's Targets") >= 0);
+      t("Today's Targets ระบุว่าไม่ใช่การจัดอันดับ",
+        html.indexOf("ไม่ใช่การจัดอันดับและไม่ใช่คำแนะนำ") >= 0);
+      t("Today's Targets ระบุว่าการ์ดทุกใบน้ำหนักเท่ากัน",
+        html.indexOf("การ์ดทุกใบมีน้ำหนักเท่ากัน") >= 0);
+      t("Today's Targets ไม่แสดงเลขลำดับหรือ priority",
+        !/ch-target[^>]*>[\s\S]{0,120}(อันดับ|#\d|priority)/i.test(html));
+      t("cap 6 ใบต่อกลุ่ม", src.indexOf("var TARGET_CAP = 6;") >= 0);
+      // (8) ไม่มี VALUE_TRAP_RISK ใน Today's Targets
+      var tgSeg = (function () {
+        var i = html.indexOf("Today's Targets"), j = html.indexOf("Near-Miss —", i);
+        return j > i ? html.slice(i, j) : html.slice(i);
+      })();
+      var trapTk = rows.filter(function (r) {
+        return r.valueTrap && r.valueTrap.risk && r.valueTrap.risk.key === "HIGH"; })
+        .map(function (r) { return r.ticker; });
+      t("Today's Targets ไม่มีหุ้น trap HIGH เลย",
+        trapTk.every(function (tk) { return tgSeg.indexOf('data-ch-ticker="' + tk + '"') < 0; }));
+      // การ์ดตอบสี่คำถาม
+      if (tgSeg.indexOf("ch-target\"") >= 0) {
+        t("การ์ดเป้าหมายตอบสี่คำถาม",
+          tgSeg.indexOf("ทำไมน่าสนใจ") >= 0 && tgSeg.indexOf("ผ่านแล้ว") >= 0 &&
+          tgSeg.indexOf("ยังไม่ผ่าน") >= 0 && tgSeg.indexOf("รออะไร") >= 0);
+        t("การ์ดเป้าหมายใช้สัญลักษณ์ ✓ / ○ / →",
+          tgSeg.indexOf("✓") >= 0 && tgSeg.indexOf("○") >= 0 && tgSeg.indexOf("→") >= 0);
+      } else {
+        t("ไม่มีเป้าหมาย → บอกตรง ๆ", tgSeg.indexOf("ไม่มีตัวที่เข้ากลุ่มเป้าหมาย") >= 0);
+      }
+      // (3) Near-Miss แยกตามเหตุที่รอ
+      var nrSeg = (function () {
+        var i = html.indexOf("Near-Miss —"), j = html.indexOf("Catalyst Watch", i);
+        return i < 0 ? "" : (j > i ? html.slice(i, j) : html.slice(i));
+      })();
+      var hasNear = rows.some(function (r) { return true; }) && nrSeg.length > 0;
+      if (hasNear) {
+        t("Near-Miss แยกกลุ่มตามเหตุที่รอ",
+          nrSeg.indexOf("รอราคา") >= 0 || nrSeg.indexOf("รอ catalyst ยืนยัน") >= 0);
+        t("Near-Miss แสดง ผ่านแล้ว / ยังไม่ผ่าน / รออะไร",
+          nrSeg.indexOf("ผ่านแล้ว") >= 0 && nrSeg.indexOf("ยังไม่ผ่าน") >= 0 &&
+          nrSeg.indexOf("รออะไร") >= 0);
+        t("Near-Miss คงคำกำกับว่าไว้ติดตาม ไม่ใช่คำแนะนำ",
+          nrSeg.indexOf("Near-miss is for monitoring, not recommendation") >= 0);
+        t("Near-Miss ประกาศการทับกับ Today's Targets",
+          nrSeg.indexOf("ไม่ใช่การนับสองรอบ") >= 0);
+      }
+      // (9)(10) งบฟื้น/emerging ไม่ถูกนำเสนอเป็น catalyst ยืนยันแล้ว
+      t("Catalyst Watch แยก confirmed กับ emerging ให้เห็นต่าง",
+        html.indexOf("Catalyst Watch") < 0 ||
+        (html.indexOf("ch-watch-confirmed") >= 0 || html.indexOf("ch-watch-emerging") >= 0));
+      t("Emerging ระบุว่ายังไม่ยืนยัน",
+        html.indexOf("Catalyst Watch") < 0 || html.indexOf("ยังไม่ถึงขั้นยืนยัน") >= 0);
+      // harness นี้ไม่โหลด catalyst-qualification.js จึงไม่มีสถานะ FUNDAMENTAL_RECOVERY ให้เรนเดอร์
+      // ถ้าไม่มีในผล ให้ตรวจที่โค้ดว่าคำอธิบายยังอยู่
+      t("FUNDAMENTAL RECOVERY อธิบายว่าไม่ใช่ catalyst เชิงธุรกิจ",
+        rows.some(function (r) { return r.qualification &&
+          r.qualification.state.key === "FUNDAMENTAL_RECOVERY"; })
+          ? html.indexOf("ยังไม่พบ catalyst เชิงธุรกิจอิสระ") >= 0
+          : src.indexOf("ยังไม่พบ catalyst เชิงธุรกิจอิสระ") >= 0);
+      // (11) "ขาดอะไร" มาจาก dimensions
+      t("เกณฑ์อ่านจาก q.dimensions", src.indexOf("q.dimensions") >= 0 &&
+        src.indexOf("RARE_GATES") >= 0);
+      t("ใช้ q.priority เพื่อเรียงเท่านั้น ไม่แสดงค่า",
+        src.indexOf("function byEnginePriority") >= 0 &&
+        !/prio\(r\)[^;]{0,40}(esc|innerHTML|\+ *"<)/.test(src));
+      // (6) ไม่มีการคำนวณแบบ engine ใน UI
+      t("UI ไม่มีฟังก์ชันตัดสินแบบ engine",
+        !/function\s+(computeMaturity|computeQualification|deriveStage|assessMargin|classifyWhyFell)/
+          .test(src));
+      t("whyInteresting มาจาก engine ตัดความยาวเท่านั้น",
+        /function whyLine[\s\S]{0,220}q\.whyInteresting[\s\S]{0,60}clip\(/.test(src));
+      // (12)(13)(14) ของเดิมยังอยู่
+      t("All Candidates ยังอยู่และเปลี่ยนบทบาท",
+        html.indexOf("All Candidates") >= 0 &&
+        html.indexOf("ใช้สำหรับสำรวจและเจาะลึกหลังดู Today's Targets") >= 0);
+      t("Landscape ยังเป็นบริบท ไม่ใช่กลไกล่าหุ้น",
+        html.indexOf("Qualification Landscape") >= 0 &&
+        html.indexOf("Qualification Landscape") > html.indexOf("Today's Targets"));
+      t("Matrix ยังคงป้ายแผนที่บรรยาย",
+        html.indexOf("Descriptive map — not a ranking") >= 0);
+      t("ความสดของข้อมูลยังเห็นในจอแรก",
+        html.indexOf("ch-brief-meta") >= 0 && html.indexOf("scanned") >= 0);
+      // ลำดับหน้าถูกต้อง
+      t("ลำดับ section ถูกต้อง", (function () {
+        // ต้องจับ "หัวข้อ" จาก markup — คำเหล่านี้ถูกอ้างอิงข้ามส่วนด้วย (เช่น "ดูในตาราง All Candidates")
+        var order = ["<h2>Hunter Brief</h2>", "<h2>Today's Targets</h2>",
+          "<h2>ทำไมหุ้นส่วนใหญ่ไม่ใช่เป้า</h2>", "<h2>Qualification Landscape</h2>",
+          "<h2>All Candidates ", "<h2>แหล่งข้อมูลและความครบถ้วน</h2>"];
+        var pos = order.map(function (x) { return html.indexOf(x); });
+        if (pos.some(function (p) { return p < 0; })) {
+          console.error("     หัวข้อที่หาไม่เจอ: " + order.filter(function (x, i) {
+            return pos[i] < 0; }).join(" | "));
+          return false;
+        }
+        for (var i = 1; i < pos.length; i++) if (pos[i] < pos[i - 1]) return false;
+        return pos[0] >= 0;
+      })());
+    })();
 
     // ---------- PHASE 5.1 ----------
     (function () {
@@ -904,6 +1021,16 @@ console.log("== หน้าเว็บ: Radar + Detail render จริง =="
     t("Detail §1 ระบุ ย่อลึก ≠ โอกาส และ C4 ≠ การันตี",
       d.indexOf("ย่อลึก ≠ โอกาส") >= 0 && d.indexOf("C4 ≠ การันตีว่าธุรกิจเปลี่ยน") >= 0);
     t("Detail §4 ระบุ งบพลิก ≠ catalyst", d.indexOf("งบพลิก ≠ catalyst") >= 0);
+    // PHASE 6 — จอแรกของ Detail ต้องตอบสี่คำถาม
+    t("Detail มีสรุป PASSED / NOT YET / WAITING FOR / RISK",
+      ["ผ่านแล้ว (PASSED)", "ยังไม่ผ่าน (NOT YET)", "รออะไร (WAITING FOR)", "ความเสี่ยง (RISK)"]
+        .every(function (x) { return d.indexOf(x) >= 0; }));
+    t("Detail สรุปมาก่อนหัวข้อ 1", d.indexOf("ch-dsum") < d.indexOf("ทำไมหุ้นตัวนี้อยู่ที่นี่"));
+    t("Detail สรุประบุว่าไม่ใช่คำแนะนำ",
+      d.indexOf("เป็นการจัดหมวด <strong>ไม่ใช่คำแนะนำ</strong>") >= 0);
+    t("Detail ยังมี evidence/timeline ครบ (ไม่ถูกลบ)",
+      d.indexOf("ไทม์ไลน์หลักฐาน") >= 0 && d.indexOf("หลักฐานที่ขัดกันเอง") >= 0 &&
+      d.indexOf("Related Candidates") >= 0);
     // PHASE 5.1 — งบล้วนต้องไม่แสดง BUSINESS IMPACT = CONFIRMED_EVENT
     (function () {
       var row = win.CatalystPage._state.rows.filter(function (x) { return x.ticker === "TESTCO"; })[0];

@@ -20,16 +20,23 @@
   // ============================================================
 
   var ROOT_ID = "chRoot";
-  var CACHE_KEY = "catalystScanCache_v2";
-  var CACHE_TTL_MIN = 120;
+  var CACHE_KEY = "catalystScanCache_v3";   // v3 = ย้ายที่เก็บ ไม่ใช้ของ v2 ต่อ
+  var CACHE_TTL_MIN = 60 * 24;              // 1 วัน — หน้าแสดงอายุข้อมูลตลอด จึงไม่ต้องสั้น
+  var IDB_NAME = "catalystHunter";
+  var IDB_STORE = "scan";
   var BATCH = 24;
 
   var state = {
+    // ระหว่างอ่านผลที่จำไว้จาก IndexedDB ยัง "ไม่รู้" ว่ามีหรือไม่มี
+    // ห้ามขึ้น "ยังไม่ได้สแกน" ในช่วงนี้ เพราะอาจกลายเป็นข้อความที่ผิด
+    cacheChecking: false,
     rows: [], bench: null, loading: false, progress: null, universe: "THAI_ALL",
     error: null, scannedAt: null, failed: [], evidenceMeta: null, universeMeta: null,
     // ตัวกรอง/เรียง — ใช้เฉพาะฟิลด์ที่มีอยู่จริง ไม่มีคะแนนซ่อน
     filter: { status: null, maturity: null, financial: null, recognition: null, trap: null, lifecycle: null, q: "" },
     sort: { key: "priority", dir: 1 },
+    // การจำผลสแกน: where = idb | local | none · note = เหตุผลเมื่อจำไม่ได้
+    cache: { where: null, note: null, loadedFromCache: false },
   };
 
   function esc(s) {
@@ -71,16 +78,71 @@
   function CQ() { return window.CatalystQualification; }
   function KB() { return (window.CatalystData && window.CatalystData.companies) || {}; }
 
-  // ---------- cache ----------
-  function readCache() {
-    try {
-      var raw = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
-      if (!raw || !raw.at || !Array.isArray(raw.items) || !raw.items.length) return null;
-      if ((Date.now() - raw.at) / 60000 > CACHE_TTL_MIN) return null;
-      return raw;
-    } catch (e) { return null; }
+  // ---------- ที่เก็บผลสแกน ----------
+  // localStorage รับได้ ~5 MB แต่ผลสแกน 867 ตัวหนัก ~26 MB (evidence 66%)
+  // จึงต้องใช้ IndexedDB เป็นหลัก · ทุกฟังก์ชันคืน Promise เพื่อให้ทางเดียวกันทั้งสองที่เก็บ
+  function idbOpen() {
+    return new Promise(function (res, rej) {
+      if (typeof indexedDB === "undefined" || !indexedDB) { rej(new Error("no-indexeddb")); return; }
+      var req;
+      try { req = indexedDB.open(IDB_NAME, 1); } catch (e) { rej(e); return; }
+      req.onupgradeneeded = function () {
+        var db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = function () { res(req.result); };
+      req.onerror = function () { rej(req.error || new Error("idb-open-failed")); };
+    });
   }
+  function idbPut(key, val) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction(IDB_STORE, "readwrite");
+        tx.objectStore(IDB_STORE).put(val, key);
+        tx.oncomplete = function () { db.close(); res(true); };
+        tx.onabort = tx.onerror = function () {
+          db.close(); rej(tx.error || new Error("idb-write-failed"));
+        };
+      });
+    });
+  }
+  function idbGet(key) {
+    return idbOpen().then(function (db) {
+      return new Promise(function (res, rej) {
+        var tx = db.transaction(IDB_STORE, "readonly");
+        var rq = tx.objectStore(IDB_STORE).get(key);
+        rq.onsuccess = function () { db.close(); res(rq.result || null); };
+        rq.onerror = function () { db.close(); rej(rq.error || new Error("idb-read-failed")); };
+      });
+    });
+  }
+  function lsGet(key) {
+    try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; }
+  }
+
+  function usable(raw) {
+    if (!raw || !raw.at || !Array.isArray(raw.items) || !raw.items.length) return null;
+    if ((Date.now() - raw.at) / 60000 > CACHE_TTL_MIN) return null;
+    return raw;
+  }
+  // อ่านจาก IndexedDB ก่อน ถ้าไม่มีจึงลอง localStorage (ของเครื่องที่เคยเก็บสำเร็จ)
+  function readCache() {
+    return idbGet(CACHE_KEY).then(function (raw) {
+      var ok = usable(raw);
+      if (ok) { state.cache.where = "idb"; return ok; }
+      var ls = usable(lsGet(CACHE_KEY));
+      if (ls) { state.cache.where = "local"; return ls; }
+      return null;
+    }).catch(function () {
+      var ls = usable(lsGet(CACHE_KEY));
+      if (ls) { state.cache.where = "local"; return ls; }
+      return null;
+    });
+  }
+  // เก็บ "input" ไม่ใช่ผลวิเคราะห์ — analyze ซ้ำใช้ 0.14 วิ และให้ผลเหมือนสแกนสดเป๊ะ
+  // ถ้าเก็บไม่สำเร็จ ต้องบันทึกเหตุผลไว้แสดงบนหน้า ห้ามกลืนเงียบเหมือนเดิม
   function writeCache(items, bench, failed, meta) {
+    var payload;
     try {
       var slim = items.map(function (i) {
         return { ticker: i.ticker, name: i.name, market: i.market, universe: i.universe,
@@ -89,10 +151,40 @@
           fullBars: i.bars, source: i.source, sourceType: i.sourceType, range: i.range,
           dd: i.dd, evidence: i.evidence || null };
       });
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), items: slim,
+      payload = { at: Date.now(), items: slim,
         bench: bench ? bench.slice(-300) : null, failed: failed || [],
-        universeMeta: (meta && meta.universeMeta) || null, evidenceMeta: (meta && meta.evidenceMeta) || null }));
-    } catch (e) { /* เต็ม — ข้ามได้ */ }
+        universeMeta: (meta && meta.universeMeta) || null,
+        evidenceMeta: (meta && meta.evidenceMeta) || null };
+    } catch (e) {
+      state.cache.where = "none";
+      state.cache.note = "เตรียมข้อมูลเพื่อจำไม่สำเร็จ: " + String((e && e.message) || e);
+      return Promise.resolve(false);
+    }
+    return idbPut(CACHE_KEY, payload).then(function () {
+      state.cache.where = "idb"; state.cache.note = null;
+      // เคลียร์ของเก่าใน localStorage ที่อาจค้างอยู่ ไม่ให้กินที่เปล่า ๆ
+      try { localStorage.removeItem(CACHE_KEY); localStorage.removeItem("catalystScanCache_v2"); }
+      catch (e2) { /* ไม่สำคัญ */ }
+      return true;
+    }).catch(function (e1) {
+      // ทางถอย: localStorage (จะพอเฉพาะเมื่อจักรวาลเล็ก)
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+        state.cache.where = "local"; state.cache.note = null;
+        return true;
+      } catch (e2) {
+        state.cache.where = "none";
+        // ระบุสาเหตุเท่าที่รู้จริง — ที่เหลือยกข้อความของเบราว์เซอร์มาตรง ๆ
+        // ห้ามเดาว่า "พื้นที่ไม่พอ" ทุกกรณี เพราะอาจไม่จริง
+        var why1 = String((e1 && e1.message) || e1 || "");
+        var why2 = String((e2 && e2.name) || (e2 && e2.message) || e2 || "");
+        var why = why1 === "no-indexeddb" ? "เบราว์เซอร์ไม่รองรับ IndexedDB"
+          : /quota|exceed/i.test(why2) ? "พื้นที่เก็บของเบราว์เซอร์ไม่พอ"
+          : "เบราว์เซอร์ปฏิเสธการเก็บข้อมูล: " + (why2 || why1 || "ไม่ทราบสาเหตุ");
+        state.cache.note = "จำผลสแกนไม่ได้ (" + why + ") — ต้องสแกนใหม่ทุกครั้งที่เปิดหน้า";
+        return false;
+      }
+    });
   }
 
   function analyzeItem(item, bench) {
@@ -112,7 +204,7 @@
     if (state.loading) return;
     state.loading = true; state.error = null;
     if (!force) {
-      var c = readCache();
+      var c = await readCache();
       if (c) {
         state.bench = c.bench;
         state.rows = c.items.map(function (i) { return analyzeItem(i, c.bench); });
@@ -120,6 +212,7 @@
         if (c.universeMeta) state.universeMeta = c.universeMeta;
         if (c.evidenceMeta) state.evidenceMeta = c.evidenceMeta;
         state.scannedAt = new Date(c.at).toISOString();
+        state.cache.loadedFromCache = true;
         state.loading = false; render();
         return;
       }
@@ -149,7 +242,8 @@
       state.rows = items.map(function (i) { return analyzeItem(i, bench); });
       state.failed = failed;
       state.scannedAt = new Date().toISOString();
-      writeCache(items, bench, failed,
+      state.cache.loadedFromCache = false;
+      await writeCache(items, bench, failed,
         { universeMeta: state.universeMeta, evidenceMeta: state.evidenceMeta });
     } catch (e) {
       state.error = String((e && e.message) || e);
@@ -460,6 +554,28 @@
     return parts.length ? parts.join(" · ") : "ยังไม่มีข้อมูล";
   }
 
+  // อายุของผลสแกน — ผู้ใช้ต้องรู้ตลอดว่าเลขที่เห็นเป็นของรอบไหน
+  function scanAge() {
+    if (!state.scannedAt) return null;
+    var ms = Date.now() - new Date(state.scannedAt).getTime();
+    var min = Math.round(ms / 60000);
+    if (min < 1) return { text: "เมื่อครู่นี้", stale: false, min: min };
+    if (min < 60) return { text: min + " นาทีที่แล้ว", stale: false, min: min };
+    var hr = Math.round(min / 60);
+    // ข้ามวันปฏิทิน = ข้ามรอบซื้อขาย ต้องเตือน
+    var sameDay = new Date(state.scannedAt).toDateString() === new Date().toDateString();
+    return { text: hr + " ชั่วโมงที่แล้ว" + (sameDay ? "" : " (คนละวันกับวันนี้)"),
+      stale: !sameDay || hr >= 12, min: min };
+  }
+  // สถานะการจำ — ถ้าจำไม่ได้ต้องบอก ไม่ปล่อยให้ล้มเงียบเหมือนเวอร์ชันก่อน
+  function cacheLine() {
+    var w = state.cache.where;
+    if (state.cache.note) return { text: state.cache.note, warn: true };
+    if (w === "idb") return { text: "จำผลสแกนไว้แล้ว — เปิดหน้านี้ครั้งต่อไปไม่ต้องสแกนใหม่", warn: false };
+    if (w === "local") return { text: "จำผลสแกนไว้ในที่เก็บสำรองของเบราว์เซอร์", warn: false };
+    return null;
+  }
+
   // บริบทของการสแกน — บอกทั้งจักรวาลและส่วนที่ดึงไม่ได้ ไม่โชว์เลขเดียวลอย ๆ
   function scanContext() {
     var uni = state.universeMeta && state.universeMeta.counts ? state.universeMeta.counts.total : null;
@@ -504,6 +620,60 @@
   }
 
   // ============================================================
+  // SECTION 1.5 — HUNTER BRIEF
+  // ตอบคำถามเดียว: "วันนี้มีอะไรน่าเปิดดูไหม" — สี่ตัวเลขตัดสินใจ ไม่ใช่ 12 สถานะ
+  // ตัวเลขทุกตัวนับจาก statusKey ของ engine ตรง ๆ · ประโยคสรุปเลือกจากสถานะจริง ไม่ได้เขียนเอง
+  // ============================================================
+  function hunterBrief() {
+    var c = counts();
+    var rare = c.STRONG_EARLY_CATALYST || 0;
+    var near = state.rows.filter(function (r) { return rareGateMisses(r).length === 1; }).length;
+    var cat = (c.CATALYST_EXISTS || 0) + (c.EARLY_CATALYST || 0);
+    var emerg = (c.EMERGING || 0) + (c.STORY_ONLY || 0);
+    // ประโยคสรุป: เลือกจากสถานะที่นับได้ ไม่มีการตีความเพิ่ม
+    var lead = rare > 0
+      ? "<b>" + rare + " ตัว</b>ผ่านเกณฑ์ Rare Opportunity ครบทุกข้อในรอบสแกนนี้"
+      : "<b>ยังไม่พบตัวที่ผ่านเกณฑ์ Rare Opportunity ครบทุกข้อ</b>ในรอบสแกนนี้" +
+        (near > 0 ? " — มี <b>" + near + " ตัว</b>ที่ตกเพียงข้อเดียว ดูใน Today's Targets ด้านล่าง" : "");
+    var cards = [
+      ["RARE OPPORTUNITY", rare, "STRONG_EARLY_CATALYST", rare > 0 ? "green" : "grey",
+        "ผ่านเกณฑ์ครบทั้งห้าข้อ"],
+      ["NEAR-MISS", near, null, near > 0 ? "amber" : "grey", "ตกเพียงข้อเดียว"],
+      ["CATALYST EXISTS", cat, "CATALYST_EXISTS", cat > 0 ? "blue" : "grey",
+        "มีเหตุการณ์ธุรกิจยืนยันแล้ว"],
+      ["EMERGING", emerg, "EMERGING", emerg > 0 ? "blue" : "grey", "เรื่องกำลังก่อตัว"],
+    ];
+    return '<section class="ch-brief">' +
+      '<div class="ch-brief-head"><div><h2>Hunter Brief</h2>' +
+      '<p class="ch-brief-lead">' + lead + "</p></div>" +
+      '<p class="ch-brief-meta"><span>' + esc(scanContext()) + "</span>" +
+      "<span>" + esc(freshness()) + "</span>" +
+      (function () {
+        var ag = scanAge();
+        return ag ? '<span class="ch-age' + (ag.stale ? " is-stale" : "") + '">' +
+          (state.cache.loadedFromCache ? "ผลที่จำไว้ · " : "") + esc(ag.text) +
+          (ag.stale ? " — กด “สแกนใหม่” เพื่ออัปเดต" : "") + "</span>" : "";
+      })() +
+      (function () {
+        var cl = cacheLine();
+        return cl ? '<span class="ch-cache' + (cl.warn ? " is-warn" : "") + '">' +
+          esc(cl.text) + "</span>" : "";
+      })() + "</p></div>" +
+      '<div class="ch-brief-grid">' + cards.map(function (x) {
+        var clickable = x[2] && x[1] > 0;
+        return "<" + (clickable ? "button type=\"button\"" : "div") +
+          ' class="ch-brief-card ch-tone-' + x[3] + (x[1] === 0 ? " is-zero" : "") + '"' +
+          (clickable ? ' data-ch-filter-status="' + esc(x[2]) + '"' : "") + ">" +
+          "<small>" + esc(x[0]) + "</small><b>" + x[1] + "</b>" +
+          "<em>" + esc(x[4]) + "</em>" +
+          "</" + (clickable ? "button" : "div") + ">";
+      }).join("") + "</div>" +
+      '<p class="ch-note">ตัวเลขทั้งสี่นับจากสถานะที่ engine จัดไว้ · ' +
+      "เป็นการจัดหมวดตามหลักฐาน <strong>ไม่ใช่คำแนะนำการลงทุน</strong> · " +
+      "สถานะครบทั้ง 12 กลุ่มอยู่ในส่วน “ทำไมหุ้นส่วนใหญ่ไม่ใช่เป้า” ด้านล่าง</p></section>";
+  }
+
+  // ============================================================
   // SECTION 2 — RADAR SUMMARY
   // ============================================================
   var SUMMARY_ORDER = ["STRONG_EARLY_CATALYST", "EARLY_CATALYST", "CATALYST_EXISTS", "EMERGING",
@@ -518,7 +688,8 @@
 
   // ศูนย์เป็นข้อมูล — สถานะโอกาสต้องแสดงแม้เป็น 0 เพื่อไม่ให้ดูเหมือนระบบพัง
   var ALWAYS_SHOW = { STRONG_EARLY_CATALYST: 1, EARLY_CATALYST: 1 };
-  function radarSummary() {
+  // กริด 12 สถานะ — เดิมอยู่บนสุด ตอนนี้ถูกเรียกจากส่วน "ทำไมส่วนใหญ่ไม่ใช่เป้า"
+  function radarSummaryGrid() {
     var c = counts();
     var q = CQ() ? CQ().QUAL : {};
     var cards = SUMMARY_ORDER.filter(function (k) { return c[k] || ALWAYS_SHOW[k]; }).map(function (k) {
@@ -531,11 +702,11 @@
         "<small>" + esc(def.icon || "") + " " + esc(def.label || k) + "</small><b>" + v + "</b>" +
         (v === 0 ? "<em>ไม่มีในรอบนี้</em>" : "") + "</button>";
     }).join("");
-    return '<section class="ch-sec"><div class="ch-sec-head"><h2>Radar Summary</h2>' +
-      "<p>นับจากสถานะที่ engine จัดไว้ — กดเพื่อกรองรายการด้านล่าง" +
+    return '<div class="ch-sum-grid">' + cards + "</div>" +
+      '<p class="ch-note">นับจากสถานะที่ engine จัดไว้ — กดเพื่อกรองตาราง All Candidates ด้านล่าง' +
       (state.filter.status
         ? ' · <button type="button" class="ch-link" data-ch-filter-status="">ล้างตัวกรอง</button>' : "") +
-      "</p></div>" + '<div class="ch-sum-grid">' + cards + "</div></section>";
+      "</p>";
   }
 
   // ============================================================
@@ -581,6 +752,38 @@
     var D = (q && q.dimensions) || {};
     return RARE_GATES.filter(function (g) { return !g.ok(r, D); })
       .map(function (g) { return { gate: g, got: g.got(r, D) }; });
+  }
+  // ผ่าน/ไม่ผ่าน แยกกองไว้ใช้แสดง PASSED ✓ / NOT YET ○
+  function rareGateSplit(r) {
+    var q = Qof(r);
+    var D = (q && q.dimensions) || {};
+    var passed = [], notYet = [];
+    RARE_GATES.forEach(function (g) {
+      (g.ok(r, D) ? passed : notYet).push({ gate: g, got: g.got(r, D) });
+    });
+    return { passed: passed, notYet: notYet };
+  }
+  function gateOk(key, r) {
+    var q = Qof(r);
+    var D = (q && q.dimensions) || {};
+    var g = RARE_GATES.filter(function (x) { return x.key === key; })[0];
+    return !!g && g.ok(r, D);
+  }
+  // เรียงด้วยลำดับความสำคัญของ engine เท่านั้น — ไม่ใช่คะแนน และไม่แสดงเป็นอันดับ
+  function byEnginePriority(a, b) {
+    var d = prio(a) - prio(b);
+    return d ? d : String(a.ticker).localeCompare(String(b.ticker));
+  }
+  // เหตุผลหนึ่งบรรทัด — มาจาก q.whyInteresting ของ engine ตัดความยาวได้เท่านั้น ห้ามเขียนใหม่
+  function whyLine(r, len) {
+    var q = Qof(r);
+    return q && q.whyInteresting ? clip(q.whyInteresting, len || 150) : null;
+  }
+  function gateChips(list, mark, cls) {
+    return '<ul class="ch-gates ' + cls + '">' + list.map(function (x) {
+      return "<li><span>" + mark + "</span>" + esc(x.gate.label) +
+        '<em>' + esc(x.got) + "</em></li>";
+    }).join("") + "</ul>";
   }
   function dimRow(r) {
     var items = [
@@ -638,14 +841,14 @@
     return '<div class="ch-zero">' +
       '<p class="ch-zero-lead"><b>ยังไม่พบหุ้นที่ผ่านเกณฑ์ Rare Opportunity ครบทุกข้อ</b><br>' +
       '<span class="ch-en">No qualifying setup detected in the current scan.</span></p>' +
-      '<div class="ch-zero-gates"><h4>เกณฑ์ที่ต้องผ่านครบทั้งห้าข้อ</h4><ul>' +
+      // พับไว้ — เกณฑ์เดียวกันถูกแสดงต่อหุ้นใน Today's Targets ด้านล่างแล้ว
+      '<details class="ch-zero-gates"><summary>ดูเกณฑ์ที่ต้องผ่านครบทั้งห้าข้อ</summary><ul>' +
       RARE_GATES.map(function (g) {
         return "<li><span>✓</span> " + esc(g.label) + "<em>" + esc(g.req) + "</em></li>";
-      }).join("") + "</ul></div>" +
+      }).join("") + "</ul></details>" +
       '<p class="ch-note">ไม่มีรายการให้ติดตามในกลุ่มนี้ ณ รอบสแกนปัจจุบัน — ' +
-      "หมายถึง<strong>ยังไม่มีตัวไหนผ่านเกณฑ์ทั้งห้าข้อพร้อมกัน</strong> " +
-      "ไม่ได้หมายความว่าไม่มีอะไรน่าติดตามเลย · หุ้นที่มี catalyst เชิงธุรกิจจริงยังอยู่ในกลุ่ม " +
-      "CATALYST EXISTS และ EMERGING ด้านล่าง</p></div>";
+      "หมายถึงยังไม่มีตัวไหนผ่านเกณฑ์ทั้งห้าข้อพร้อมกัน ไม่ได้หมายความว่าไม่มีอะไรน่าติดตาม · " +
+      "ดู <strong>Today's Targets</strong> ด้านล่าง (รวม CATALYST EXISTS และ EMERGING)</p></div>";
   }
 
   function rareOpportunities() {
@@ -666,10 +869,119 @@
   }
 
   // ============================================================
-  // SECTION 3.5 — หุ้นที่ใกล้ผ่านเกณฑ์ (แสดงเฉพาะเมื่อไม่มีตัวผ่านครบ)
-  // "ตกข้อเดียว" นับจากเกณฑ์ห้าข้อข้างบน ซึ่งอ่านจากมิติของ engine ทั้งหมด
-  // ไม่ใช่คะแนน ไม่ใช่ระยะห่างจากโอกาส และไม่ใช่รายการแนะนำ — เรียงตามลำดับความสำคัญของ engine
+  // SECTION 2 — TODAY'S TARGETS
+  //
+  // คิวงาน ไม่ใช่การจัดอันดับ: การ์ดทุกใบมีน้ำหนักเท่ากัน ไม่มีเลขลำดับ ไม่มีคะแนน
+  // การจัดกลุ่มมาจากผลของเกณฑ์ห้าข้อ (boolean ทั้งหมด อ่านจาก q.dimensions)
+  // การเรียงในกลุ่มใช้ q.priority ของ engine เท่านั้น และ "ไม่แสดง" ค่า priority ที่ไหนเลย
+  // แต่ละใบตอบสี่คำถาม: ทำไมน่าสนใจ / ผ่านอะไร / ยังไม่ผ่านอะไร / รออะไร
   // ============================================================
+  var TARGET_CAP = 6;
+
+  // กลุ่มเป้าหมาย — เงื่อนไขทุกข้อเป็นผลของเกณฑ์เดิม ไม่มีเส้นตัดใหม่
+  var TARGET_GROUPS = [
+    { key: "waitPrice", title: "Catalyst ยืนยันแล้ว — รอราคา",
+      en: "Catalyst confirmed, waiting for price",
+      note: "มีเหตุการณ์ธุรกิจระดับที่เกณฑ์ต้องการแล้ว แต่ราคายังไม่ย่อลึกพอ",
+      pick: function (r) {
+        return gateOk("cat", r) && !gateOk("dd", r) && gateOk("trap", r);
+      } },
+    { key: "waitCatalyst", title: "ย่อลึกแล้ว — รอ catalyst ยืนยัน",
+      en: "Deep drawdown, waiting for catalyst confirmation",
+      note: "ราคาย่อลึกและพบเหตุการณ์ธุรกิจอยู่บ้าง แต่ยังไม่ถึงระดับที่เกณฑ์ต้องการ",
+      pick: function (r) {
+        return gateOk("dd", r) && bizCount(r) > 0 && !gateOk("cat", r) && gateOk("trap", r);
+      } },
+    { key: "emerging", title: "เรื่องกำลังก่อตัว — ต้องรอการยืนยัน",
+      en: "Emerging story, needs confirmation",
+      note: "มีหลักฐาน/เรื่องราวเริ่มปรากฏ แต่ catalyst ยังไม่ถึงขั้นยืนยัน — ยังไม่ใช่โอกาส",
+      pick: function (r) {
+        return ["EMERGING", "STORY_ONLY"].indexOf(statusKey(r)) >= 0 && gateOk("trap", r);
+      } },
+  ];
+
+  function targetCard(r) {
+    var sp = rareGateSplit(r);
+    var why = whyLine(r, 132);
+    var waiting = sp.notYet.map(function (x) { return x.gate.req; });
+    return '<article class="ch-target">' +
+      '<div class="ch-target-top"><div><h4>' + esc(r.ticker) +
+      "<small>" + esc(r.market) + "</small></h4>" +
+      '<p class="ch-target-name">' + esc(clip(r.name || "", 40)) + "</p></div>" +
+      '<span class="ch-pill ch-tone-' + tone(statusKey(r)) + '">' + esc(statusLabel(r)) + "</span>" +
+      "</div>" +
+      // ทำไมน่าสนใจ — ข้อความของ engine ตัดความยาวเท่านั้น
+      (why ? '<p class="ch-target-why"><small>ทำไมน่าสนใจ</small>' + esc(why) + "</p>"
+        : '<p class="ch-target-why ch-na">engine ยังไม่ได้ให้เหตุผลประกอบสำหรับตัวนี้</p>') +
+      (sp.passed.length ? '<div class="ch-target-gates"><small>ผ่านแล้ว</small>' +
+        gateChips(sp.passed, "✓", "ch-gates-ok") + "</div>" : "") +
+      (sp.notYet.length ? '<div class="ch-target-gates"><small>ยังไม่ผ่าน</small>' +
+        gateChips(sp.notYet, "○", "ch-gates-no") + "</div>" : "") +
+      (waiting.length ? '<p class="ch-target-wait"><small>รออะไร</small><b>→ ' +
+        waiting.map(esc).join(" · ") + "</b></p>" : "") +
+      '<button type="button" class="ch-btn ch-btn-wide" data-ch-ticker="' + esc(r.ticker) + '">' +
+      "เปิดดูหลักฐานทั้งหมด →</button></article>";
+  }
+
+  function todaysTargets() {
+    var groups = TARGET_GROUPS.map(function (g) {
+      var all = state.rows.filter(g.pick).sort(byEnginePriority);
+      return { g: g, all: all, shown: all.slice(0, TARGET_CAP) };
+    });
+    var totalAll = groups.reduce(function (a, x) { return a + x.all.length; }, 0);
+    if (!totalAll) {
+      return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head">' +
+        "<h2>Today's Targets</h2>" +
+        "<p>ไม่มีตัวที่เข้ากลุ่มเป้าหมายในรอบสแกนนี้ — ดูภาพรวมทั้งตลาดได้ที่ตารางด้านล่าง<br>" +
+        "คิวนี้<strong>ไม่ใช่การจัดอันดับและไม่ใช่คำแนะนำ</strong> " +
+        "การ์ดทุกใบมีน้ำหนักเท่ากัน ไม่มีคะแนนและไม่มีเลขลำดับ</p></div></section>";
+    }
+    var body = groups.filter(function (x) { return x.all.length; }).map(function (x) {
+      return '<div class="ch-tgroup"><div class="ch-tgroup-head">' +
+        "<h3>" + esc(x.g.title) + '<span class="ch-count">' + x.all.length + "</span></h3>" +
+        '<p>' + esc(x.g.note) + '<br><span class="ch-en">' + esc(x.g.en) + "</span></p></div>" +
+        '<div class="ch-target-grid">' + x.shown.map(targetCard).join("") + "</div>" +
+        (x.all.length > x.shown.length
+          ? '<p class="ch-note">แสดง ' + x.shown.length + " จาก " + x.all.length +
+            " ตัวในกลุ่มนี้ (เรียงตามลำดับความสำคัญของสถานะที่ engine จัดไว้ ไม่ใช่การจัดอันดับ) — " +
+            "ที่เหลือดูได้ในตาราง All Candidates</p>" : "") +
+        "</div>";
+    }).join("");
+    return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head">' +
+      "<h2>Today's Targets</h2>" +
+      "<p>คิวสำหรับเปิดดูก่อน — <strong>ไม่ใช่การจัดอันดับและไม่ใช่คำแนะนำ</strong> " +
+      "การ์ดทุกใบมีน้ำหนักเท่ากัน ไม่มีคะแนนและไม่มีเลขลำดับ<br>" +
+      "จัดกลุ่มจากผลของเกณฑ์ห้าข้อที่ engine คำนวณไว้ · หุ้นที่ติด Value Trap ระดับ HIGH " +
+      "ไม่ถูกนำเข้ากลุ่มใดเลย</p></div>" + body + "</section>";
+  }
+
+  // ============================================================
+  // SECTION 3 — NEAR-MISS: รออะไรอยู่
+  // ตกเกณฑ์ "ข้อเดียว" เป๊ะ แยกกลุ่มตามข้อที่ตกจริง
+  // ทุกใบแสดง ผ่านอะไร ✓ / ยังไม่ผ่าน ○ / รออะไร →
+  // ============================================================
+  var NEAR_GROUPS = [
+    { key: "dd", title: "รอราคา", en: "Waiting for price",
+      note: "เกณฑ์อื่นครบแล้ว เหลือแค่ราคายังไม่ย่อลึกพอ" },
+    { key: "cat", title: "รอ catalyst ยืนยัน", en: "Waiting for catalyst",
+      note: "เกณฑ์อื่นครบแล้ว เหลือแค่ catalyst เชิงธุรกิจยังไม่ถึงระดับที่ต้องการ" },
+  ];
+
+  function nearCard(r, miss) {
+    var sp = rareGateSplit(r);
+    return '<button type="button" class="ch-near" data-ch-ticker="' + esc(r.ticker) + '">' +
+      '<div class="ch-near-top"><b>' + esc(r.ticker) + "</b>" +
+      '<span class="ch-pill ch-tone-' + tone(statusKey(r)) + '">' + esc(statusLabel(r)) + "</span>" +
+      "</div>" +
+      '<p class="ch-near-name">' + esc(clip(r.name || "", 42)) + "</p>" +
+      '<div class="ch-near-gates"><small>ผ่านแล้ว</small>' +
+      gateChips(sp.passed, "✓", "ch-gates-ok") + "</div>" +
+      '<div class="ch-near-gates"><small>ยังไม่ผ่าน</small>' +
+      gateChips(sp.notYet, "○", "ch-gates-no") + "</div>" +
+      '<p class="ch-near-wait"><small>รออะไร</small><b>→ ' + esc(miss.gate.req) + "</b></p>" +
+      "</button>";
+  }
+
   function nearMiss() {
     var cand = [];
     state.rows.forEach(function (r) {
@@ -677,34 +989,89 @@
       if (miss.length === 1) cand.push({ r: r, miss: miss[0] });
     });
     if (!cand.length) return "";
-    cand.sort(function (a, b) {
-      var d = prio(a.r) - prio(b.r);
-      return d ? d : String(a.r.ticker).localeCompare(String(b.r.ticker));
-    });
-    var shown = cand.slice(0, 12);
-    var rows = shown.map(function (x) {
-      return '<button type="button" class="ch-near" data-ch-ticker="' + esc(x.r.ticker) + '">' +
-        '<div class="ch-near-top"><b>' + esc(x.r.ticker) + "</b>" +
-        '<span class="ch-pill ch-tone-' + tone(statusKey(x.r)) + '">' + esc(statusLabel(x.r)) + "</span>" +
-        "</div>" +
-        '<p class="ch-near-name">' + esc(clip(x.r.name || "", 44)) + "</p>" +
-        '<div class="ch-near-gate"><small>ข้อที่ยังไม่ผ่าน</small>' +
-        "<b>" + esc(x.miss.gate.label) + "</b>" +
-        "<span>ปัจจุบัน: " + esc(x.miss.got) + "</span>" +
-        "<span>ต้องการ: " + esc(x.miss.gate.req) + "</span></div></button>";
+    cand.sort(function (x, y) { return byEnginePriority(x.r, y.r); });
+
+    var used = {};
+    var blocks = NEAR_GROUPS.map(function (g) {
+      var list = cand.filter(function (x) { return x.miss.gate.key === g.key; });
+      list.forEach(function (x) { used[x.r.ticker] = 1; });
+      if (!list.length) return "";
+      return '<div class="ch-ngroup"><div class="ch-ngroup-head">' +
+        "<h3>" + esc(g.title) + '<span class="ch-count">' + list.length + "</span></h3>" +
+        "<p>" + esc(g.note) + '<br><span class="ch-en">' + esc(g.en) + "</span></p></div>" +
+        '<div class="ch-near-grid">' + list.slice(0, 12).map(function (x) {
+          return nearCard(x.r, x.miss);
+        }).join("") + "</div>" +
+        (list.length > 12 ? '<p class="ch-note">แสดง 12 จาก ' + list.length + " รายการ</p>" : "") +
+        "</div>";
     }).join("");
+    // กลุ่มที่เหลือ (ตกข้ออื่น) — แสดงเฉพาะเมื่อมีจริง
+    var other = cand.filter(function (x) { return !used[x.r.ticker]; });
+    var otherBlock = other.length
+      ? '<div class="ch-ngroup"><div class="ch-ngroup-head">' +
+        '<h3>ตกข้ออื่น<span class="ch-count">' + other.length + "</span></h3>" +
+        "<p>ตกเกณฑ์ข้อเดียวเหมือนกัน แต่เป็นข้ออื่นที่ไม่ใช่ราคาหรือ catalyst</p></div>" +
+        '<div class="ch-near-grid">' + other.slice(0, 12).map(function (x) {
+          return nearCard(x.r, x.miss);
+        }).join("") + "</div></div>"
+      : "";
     return '<section class="ch-sec"><div class="ch-sec-head">' +
-      '<h2>หุ้นที่ใกล้ผ่านเกณฑ์ <span class="ch-count">' + cand.length + " / " + state.rows.length +
-      " scanned</span></h2>" +
-      "<p>ตกเกณฑ์ Rare Opportunity เพียง<strong>ข้อเดียว</strong> จากห้าข้อ · " +
-      "เรียงตามลำดับความสำคัญของสถานะที่ engine จัดไว้ ไม่มีคะแนนและไม่มีการวัดระยะห่าง<br>" +
+      '<h2>Near-Miss — รออะไรอยู่ <span class="ch-count">' + cand.length + " / " +
+      state.rows.length + " scanned</span></h2>" +
+      "<p>ตกเกณฑ์ Rare Opportunity <strong>เพียงข้อเดียว</strong> จากห้าข้อ · " +
+      "แยกกลุ่มตามข้อที่ตกจริง · เรียงตามลำดับความสำคัญของสถานะที่ engine จัดไว้ " +
+      "ไม่มีคะแนนและไม่มีการวัดระยะห่าง<br>" +
       "<strong>ไว้เพื่อติดตาม ไม่ใช่คำแนะนำ</strong> " +
-      '<span class="ch-en">Near-miss is for monitoring, not recommendation.</span></p></div>' +
-      '<div class="ch-near-grid">' + rows + "</div>" +
-      (cand.length > shown.length
-        ? '<p class="ch-note">แสดง ' + shown.length + " จาก " + cand.length +
-          " รายการ — ที่เหลืออยู่ในตาราง Candidates</p>" : "") +
-      "</section>";
+      '<span class="ch-en">Near-miss is for monitoring, not recommendation.</span><br>' +
+      "หุ้นบางตัวปรากฏทั้งใน Today's Targets ด้านบนและที่นี่ — เป็นหุ้นชุดเดียวกันมองสองมุม " +
+      "(ด้านบนจัดตามชนิดของ setup · ที่นี่จัดตามข้อที่ยังไม่ผ่าน) ไม่ใช่การนับสองรอบ</p></div>" +
+      blocks + otherBlock + "</section>";
+  }
+
+  // ============================================================
+  // SECTION 4 — CATALYST WATCH
+  // แยกให้เห็นต่างชัด: CATALYST EXISTS = มีกลไกธุรกิจยืนยันแล้ว
+  //                    EMERGING       = เรื่องกำลังก่อตัว ยังไม่ยืนยัน
+  // เหตุผลหนึ่งบรรทัดมาจาก q.whyInteresting ของ engine (ตัดความยาวได้เท่านั้น)
+  // ============================================================
+  var WATCH_GROUPS = [
+    { keys: ["CATALYST_EXISTS", "EARLY_CATALYST"], title: "Catalyst Exists",
+      thai: "มีเหตุการณ์เชิงธุรกิจที่ยืนยันแล้วและอธิบายกลไกได้",
+      cls: "ch-watch-confirmed" },
+    { keys: ["EMERGING", "STORY_ONLY"], title: "Emerging",
+      thai: "เรื่อง/หลักฐานเริ่มปรากฏ แต่ยังไม่ถึงขั้นยืนยัน — ยังไม่ใช่ catalyst ที่ยืนยันแล้ว",
+      cls: "ch-watch-emerging" },
+  ];
+  function catalystWatch() {
+    var blocks = WATCH_GROUPS.map(function (g) {
+      var list = state.rows.filter(function (r) { return g.keys.indexOf(statusKey(r)) >= 0; })
+        .sort(byEnginePriority);
+      if (!list.length) return "";
+      var shown = list.slice(0, 8);
+      return '<div class="ch-watch ' + g.cls + '">' +
+        '<div class="ch-watch-head"><h3>' + esc(g.title) +
+        '<span class="ch-count">' + list.length + "</span></h3>" +
+        "<p>" + esc(g.thai) + "</p></div>" +
+        '<ul class="ch-watch-list">' + shown.map(function (r) {
+          var why = whyLine(r, 118);
+          return '<li><button type="button" data-ch-ticker="' + esc(r.ticker) + '">' +
+            "<b>" + esc(r.ticker) + "</b>" +
+            '<span class="ch-watch-mat">' + esc(matShort(r)) + "</span>" +
+            '<em>' + (why ? esc(why) : "engine ยังไม่ได้ให้เหตุผลประกอบ") + "</em>" +
+            "</button></li>";
+        }).join("") + "</ul>" +
+        (list.length > shown.length
+          ? '<p class="ch-note">แสดง ' + shown.length + " จาก " + list.length +
+            " · กดการ์ดหัวข้อในส่วนล่างเพื่อกรองดูทั้งหมด</p>" : "") +
+        "</div>";
+    }).join("");
+    if (!blocks) return "";
+    return '<section class="ch-sec"><div class="ch-sec-head">' +
+      "<h2>Catalyst Watch</h2>" +
+      "<p>สองกลุ่มนี้<strong>ต่างกัน</strong>: Catalyst Exists คือมีเหตุการณ์ธุรกิจยืนยันแล้ว · " +
+      "Emerging คือเรื่องกำลังก่อตัวและยังไม่ยืนยัน — ไม่ใช่สิ่งเดียวกันและไม่ใช่คำแนะนำ<br>" +
+      "บรรทัด “ทำไมกำลังดูตัวนี้” เป็นข้อความที่ engine สร้างไว้ หน้านี้ตัดความยาวเท่านั้น</p></div>" +
+      '<div class="ch-watch-grid">' + blocks + "</div></section>";
   }
 
   // ============================================================
@@ -897,9 +1264,10 @@
     }).join("");
 
     return '<section class="ch-sec"><div class="ch-sec-head">' +
-      '<h2>Candidates <span class="ch-count">' + list.length +
+      '<h2>All Candidates <span class="ch-count">' + list.length +
       " จาก " + state.rows.length + "</span></h2>" +
-      "<p>เรียงตามลำดับความสำคัญของสถานะ แล้วย่อลึกกว่ามาก่อน · กดหัวคอลัมน์เพื่อเรียงตามฟิลด์นั้น · " +
+      "<p>จักรวาลทั้งหมด — ใช้สำหรับสำรวจและเจาะลึกหลังดู Today's Targets แล้ว · " +
+      "เรียงตามลำดับความสำคัญของสถานะ แล้วย่อลึกกว่ามาก่อน · กดหัวคอลัมน์เพื่อเรียงตามฟิลด์นั้น · " +
       "ชี้ที่ป้าย Why Fell เพื่อดูคำอธิบายและหลักฐาน · ในคอลัมน์ Value Trap ตัวเลขหลัง “·” คือ" +
       "<strong>จำนวนสัญญาณเสื่อมที่ตรวจพบ</strong> ไม่ใช่คะแนน" +
       (state.sort.key !== "priority"
@@ -941,7 +1309,7 @@
     var alsoInLandscape = rejected.filter(function (x) { return LANDSCAPE.indexOf(x[0]) >= 0; })
       .map(function (x) { return ((CQ() ? CQ().QUAL[x[0]] : null) || { label: x[0] }).label; });
     return '<section class="ch-sec ch-sec-reject"><div class="ch-sec-head">' +
-      "<h2>ทำไมหุ้นส่วนใหญ่ถูกคัดออก</h2>" +
+      "<h2>ทำไมหุ้นส่วนใหญ่ไม่ใช่เป้า</h2>" +
       "<p>Catalyst Hunter <strong>ตั้งใจ</strong>ปฏิเสธหุ้นที่ราคาตกหนักจำนวนมาก เมื่อหลักฐานไม่พอหรือ" +
       "ความเสี่ยงสูงเกินไป — หุ้นที่ตกไม่ได้เป็นโอกาสทุกตัว · ยังไม่เข้าเกณฑ์โอกาส " + totalRejected +
       " จาก " + state.rows.length + " ตัว<br>" +
@@ -955,6 +1323,9 @@
           esc(x[0]) + '"><div class="ch-reject-top"><b>' + c[x[0]] + "</b><span>" + esc(def.label) +
           "</span></div><p>" + esc(x[1]) + "</p></button>";
       }).join("") + "</div>" +
+      // 12 สถานะครบชุดย้ายมาอยู่ที่นี่ — ไม่ได้ลบข้อมูล เพียงย้ายออกจากพื้นที่ตัดสินใจ
+      '<details class="ch-allstates"><summary>ดูจำนวนครบทั้ง 12 สถานะที่ engine จัดไว้</summary>' +
+      radarSummaryGrid() + "</details>" +
       (unchecked
         ? '<p class="ch-note">แยกไว้ต่างหาก: <b>' + unchecked + " ตัว</b> เป็น CATALYST UNAVAILABLE — " +
           "ยังตรวจแหล่งหลักฐานไม่สำเร็จ <strong>ไม่ได้ถูกปฏิเสธ</strong> และไม่ได้แปลว่าไม่มี catalyst · " +
@@ -1019,7 +1390,9 @@
       '<p class="ch-note">' + esc(scanContext()) +
       (scanGapDetail() ? " · " + scanGapDetail() : "") +
       " · ราคา: Yahoo Finance (.BK) · ดัชนี ^SET.BK" +
-      (state.bench ? " (" + state.bench.length + " แท่ง)"
+      (state.bench ? " (" + state.bench.length + " แท่ง" +
+        (state.cache.loadedFromCache
+          ? " เท่าที่จำไว้ — ครอบคลุมช่วงที่ relative strength 3 เดือนใช้" : "") + ")"
         : ' <span class="ch-na">ไม่มี — relative strength ไม่ถูกคำนวณ</span>') +
       (anyShort ? " · " + anyShort + " ตัวมีข้อมูลไม่ถึง 3 ปี" : "") +
       " · ไม่ใช่คำสั่งซื้อขาย</p></section>";
@@ -1027,14 +1400,13 @@
 
   function radar() {
     if (!state.rows.length) return "";
-    var rareCount = state.rows.filter(function (r) {
-      return statusKey(r) === "STRONG_EARLY_CATALYST";
-    }).length;
-    return radarSummary() + rareOpportunities() +
-      // แสดงเฉพาะเมื่อไม่มีตัวผ่านครบ — ถ้ามีตัวผ่านแล้ว ส่วนนี้จะกลายเป็นรายการรองที่ไม่จำเป็น
-      (rareCount === 0 ? nearMiss() : "") +
-      landscape() + matrix() + candidateTable() +
-      negativeSignals() + semantics() + dataQuality();
+    // ลำดับใหม่: ตอบ "ควรดูตัวไหนก่อน" ให้ได้ก่อน แล้วค่อยไล่ลงไปเป็นบริบท
+    // 1 Hunter Brief · 2 Rare · 3 Today's Targets · 4 Near-Miss · 5 Catalyst Watch
+    // 6 ทำไมส่วนใหญ่ไม่ใช่เป้า (มี 12 สถานะครบอยู่ข้างใน) · 7 Landscape · 8 Matrix
+    // 9 All Candidates · 10 กติกาความหมาย · 11 แหล่งข้อมูล
+    return hunterBrief() + rareOpportunities() + todaysTargets() + nearMiss() +
+      catalystWatch() + negativeSignals() + landscape() + matrix() +
+      candidateTable() + semantics() + dataQuality();
   }
 
   // ============================================================
@@ -1215,6 +1587,33 @@
       ["Market Recognition", recogKey(r), r.recognition && r.recognition.state ? r.recognition.state.thai : null],
       ["Value Trap", trapPlain(r), r.valueTrap && r.valueTrap.risk ? r.valueTrap.risk.thai : null],
     ];
+    // ---------- สรุปตัดสินใจ: ผ่านอะไร / ยังไม่ผ่าน / รออะไร / เสี่ยงอะไร ----------
+    // ทุกช่องมาจากผลของเกณฑ์ห้าข้อ + riskEvidence ที่ engine จัดไว้ ไม่มีการตีความเพิ่ม
+    var dsp = rareGateSplit(r);
+    var dwait = dsp.notYet.map(function (x) { return x.gate.req; });
+    var drisk = riskEvidence(r).slice(0, 4);
+    h += '<section class="ch-dsum">' +
+      '<div class="ch-dsum-col"><h4>ผ่านแล้ว (PASSED)</h4>' +
+      (dsp.passed.length ? gateChips(dsp.passed, "✓", "ch-gates-ok")
+        : '<p class="ch-na">ยังไม่ผ่านเกณฑ์ข้อใด</p>') + "</div>" +
+      '<div class="ch-dsum-col"><h4>ยังไม่ผ่าน (NOT YET)</h4>' +
+      (dsp.notYet.length ? gateChips(dsp.notYet, "○", "ch-gates-no")
+        : '<p class="ch-na">ผ่านครบทุกข้อ</p>') + "</div>" +
+      '<div class="ch-dsum-col ch-dsum-wait"><h4>รออะไร (WAITING FOR)</h4>' +
+      (dwait.length ? "<b>→ " + dwait.map(esc).join("<br>→ ") + "</b>"
+        : '<p class="ch-na">ไม่มีเงื่อนไขค้าง</p>') + "</div>" +
+      '<div class="ch-dsum-col ch-dsum-risk"><h4>ความเสี่ยง (RISK)</h4>' +
+      (drisk.length
+        ? "<ul>" + drisk.map(function (e) { return "<li>⚠ " + esc(clip(e.text, 88)) + "</li>"; }).join("") +
+          "</ul>" + (riskEvidence(r).length > drisk.length
+            ? '<p class="ch-note">+ ' + (riskEvidence(r).length - drisk.length) +
+              " รายการ ดูในหัวข้อ 6</p>" : "")
+        : '<p class="ch-na">ยังไม่มีหลักฐานความเสี่ยงที่บันทึกไว้</p>') + "</div>" +
+      "</section>" +
+      '<p class="ch-note">สี่ช่องนี้สรุปจากผลของเกณฑ์ Rare Opportunity ห้าข้อและหลักฐานความเสี่ยง' +
+      "ที่ engine จัดไว้ — เป็นการจัดหมวด <strong>ไม่ใช่คำแนะนำ</strong> · " +
+      "รายละเอียดและที่มาของหลักฐานทั้งหมดอยู่ในหัวข้อถัดไป</p>";
+
     h += sec(1, "ทำไมหุ้นตัวนี้อยู่ที่นี่",
       '<div class="ch-whygrid">' + dims.map(function (d) {
         return '<div class="ch-whycell"><small>' + esc(d[0]) + "</small><b>" + esc(d[1]) + "</b>" +
@@ -1547,10 +1946,14 @@
       var p = state.progress;
       body = header(false) + '<div class="ch-empty">กำลังสแกนหุ้นไทยทั้งตลาด' +
         (p && p.total ? " · " + p.done + "/" + p.total : "") + "…</div>";
+    } else if (state.cacheChecking && !state.rows.length) {
+      body = header(false) + '<div class="ch-empty">กำลังเรียกผลสแกนที่จำไว้…</div>';
     } else if (!state.rows.length) {
       body = header(false) + '<div class="ch-empty"><b>ยังไม่ได้สแกน</b><br>' +
         "Catalyst Hunter สแกนหุ้นไทยทั้งตลาด (SET + mai) ซึ่งใช้เวลาราวหนึ่งนาทีครึ่ง " +
-        "จึงไม่เริ่มเองอัตโนมัติ — กด “สแกนใหม่” เพื่อเริ่ม<br>" +
+        "จึงไม่เริ่มเองอัตโนมัติ — กด “เริ่มสแกน” เพื่อเริ่ม<br>" +
+        "<strong>สแกนครั้งเดียวพอ</strong> — ผลจะถูกจำไว้ในเบราว์เซอร์ " +
+        "เปิดหน้านี้ครั้งต่อไปจะขึ้นทันทีโดยไม่สแกนใหม่<br>" +
         '<button type="button" class="ch-btn ch-btn-wide" data-ch-rescan="1">เริ่มสแกน</button></div>';
     } else if (ticker) {
       body = detail(ticker);
@@ -1607,8 +2010,15 @@
     root.addEventListener("change", onChange);
     root.addEventListener("input", onInput);
     window.addEventListener("popstate", function () { render(); });
-    // โหลดจาก cache ถ้ามี — ไม่สแกนทั้งตลาด (868 ตัว / ~37 คำขอ) เองโดยผู้ใช้ไม่ได้สั่ง
-    if (readCache()) scanAll(false); else render();
+    // โหลดจากผลสแกนที่จำไว้ถ้ามี — ไม่สแกนทั้งตลาด (868 ตัว / ~37 คำขอ) เองโดยผู้ใช้ไม่ได้สั่ง
+    // วาดทันทีเพื่อไม่ให้หน้าว่าง แต่บอกว่ากำลังเรียกผลที่จำไว้
+    // ไม่สแกนทั้งตลาดเองถ้าไม่มี cache — ผู้ใช้ต้องกดเอง
+    state.cacheChecking = true;
+    render();
+    readCache().then(function (c) {
+      state.cacheChecking = false;
+      if (c) scanAll(false); else render();
+    }).catch(function () { state.cacheChecking = false; render(); });
   }
 
   window.CatalystPage = { scanAll: scanAll, render: render, _state: state };

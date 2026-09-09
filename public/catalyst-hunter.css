@@ -81,8 +81,11 @@
   background: rgba(56, 189, 248, .03); }
 .ch-zero-lead { margin: 0 0 16px; font-size: 14px; line-height: 1.7; }
 .ch-zero-lead b { font-size: 15px; }
-.ch-zero-gates h4 { margin: 0 0 8px; font-size: 11px; color: var(--mc-dim, #94a3b8);
-  text-transform: uppercase; letter-spacing: .05em; }
+.ch-zero-gates summary { cursor: pointer; font-size: 12px; font-weight: 700; color: #7dd3fc;
+  padding: 2px 0 8px; list-style: none; }
+.ch-zero-gates summary::-webkit-details-marker { display: none; }
+.ch-zero-gates summary::before { content: "＋ "; color: var(--mc-dim, #94a3b8); }
+.ch-zero-gates[open] summary::before { content: "－ "; }
 .ch-zero-gates ul { margin: 0; padding: 0; list-style: none;
   display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 7px; }
 .ch-zero-gates li { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 9px; padding: 9px 12px;
@@ -128,6 +131,142 @@
   border: 1px dashed var(--mc-border, #1f2a3d); border-radius: 10px; padding: 11px 14px;
   color: #64748b; font-size: 12.5px; background: rgba(148, 163, 184, .04);
 }
+
+/* ---------- HUNTER BRIEF (ยึด viewport แรก แทนกริด 12 สถานะ) ---------- */
+.ch-brief {
+  border: 1px solid rgba(56, 189, 248, .3); border-radius: 16px; padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, .07), rgba(148, 163, 184, .03));
+}
+.ch-brief-head { display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 22px; flex-wrap: wrap; margin-bottom: 16px; }
+.ch-brief-head h2 { margin: 0; font-size: 19px; letter-spacing: .01em; }
+.ch-brief-lead { margin: 6px 0 0; font-size: 14.5px; line-height: 1.7; max-width: 760px;
+  color: var(--mc-text, #e2e8f0); }
+.ch-brief-lead b { color: #7dd3fc; }
+.ch-brief-meta { margin: 0; text-align: right; display: flex; flex-direction: column; gap: 2px; }
+.ch-brief-meta span { color: var(--mc-dim, #94a3b8); font-size: 11px;
+  font-variant-numeric: tabular-nums; }
+/* อายุของผลสแกน — ต้องเห็นตลอดว่าเลขที่อ่านเป็นของรอบไหน */
+.ch-age { color: #7dd3fc !important; font-weight: 600; }
+.ch-age.is-stale { color: var(--mc-amber, #fbbf24) !important; }
+/* สถานะการจำ — เตือนเมื่อจำไม่ได้ ไม่ปล่อยให้ล้มเงียบ */
+.ch-cache { color: #64748b !important; }
+.ch-cache.is-warn { color: var(--mc-amber, #fbbf24) !important; font-weight: 600; }
+.ch-brief-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ch-brief-card {
+  border: 1px solid var(--mc-border, #1f2a3d); border-top: 3px solid var(--t);
+  border-radius: 12px; padding: 13px 15px; background: rgba(2, 6, 23, .38);
+  text-align: left; font: inherit; color: inherit; min-width: 0;
+}
+button.ch-brief-card { cursor: pointer; }
+button.ch-brief-card:hover { background: var(--tbg); border-color: var(--t); }
+.ch-brief-card small { display: block; color: var(--mc-dim, #94a3b8); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .06em; line-height: 1.4; }
+.ch-brief-card b { display: block; font-size: 32px; line-height: 1.1; margin: 5px 0 3px;
+  color: var(--t); font-variant-numeric: tabular-nums; }
+.ch-brief-card em { display: block; font-style: normal; font-size: 10.5px;
+  color: #64748b; line-height: 1.45; }
+.ch-brief-card.is-zero b { color: var(--mc-dim, #94a3b8); }
+.ch-brief-card.is-zero { opacity: .82; }
+
+/* ---------- TODAY'S TARGETS (คิวงาน ไม่ใช่อันดับ — ทุกใบน้ำหนักเท่ากัน) ---------- */
+.ch-tgroup { margin-top: 18px; }
+.ch-tgroup:first-of-type { margin-top: 4px; }
+.ch-tgroup-head { border-left: 3px solid rgba(56, 189, 248, .45); padding-left: 12px;
+  margin-bottom: 11px; }
+.ch-tgroup-head h3 { margin: 0; font-size: 14.5px; display: flex; align-items: center; gap: 9px; }
+.ch-tgroup-head p { margin: 3px 0 0; color: var(--mc-dim, #94a3b8); font-size: 11.5px;
+  line-height: 1.6; }
+.ch-target-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 11px; }
+.ch-target {
+  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 12px; padding: 14px 16px;
+  background: rgba(148, 163, 184, .035); display: flex; flex-direction: column; min-width: 0;
+}
+.ch-target-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.ch-target-top h4 { margin: 0; font-size: 18px; }
+.ch-target-top h4 small { font-size: 10.5px; color: var(--mc-dim, #94a3b8); margin-left: 6px;
+  font-weight: 500; }
+.ch-target-name { margin: 2px 0 0; color: var(--mc-dim, #94a3b8); font-size: 11px; }
+.ch-target-why { margin: 11px 0 0; font-size: 12px; line-height: 1.65; }
+.ch-target-why small, .ch-target-gates small, .ch-target-wait small,
+.ch-near-gates small, .ch-near-wait small {
+  display: block; color: var(--mc-dim, #94a3b8); font-size: 9.5px;
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px;
+}
+.ch-target-gates { margin-top: 10px; }
+.ch-target-wait { margin: 11px 0 0; }
+.ch-target-wait b, .ch-near-wait b { font-size: 12.5px; color: var(--mc-amber, #fbbf24);
+  line-height: 1.5; }
+
+/* เกณฑ์ผ่าน/ไม่ผ่าน — ใช้สัญลักษณ์นำ ไม่ระบายสีทั้งแถบ */
+.ch-gates { margin: 0; padding: 0; list-style: none; font-size: 11.5px; line-height: 1.6; }
+.ch-gates li { display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; }
+.ch-gates li span { flex: 0 0 auto; font-weight: 800; font-size: 11px; }
+.ch-gates li em { font-style: normal; color: #64748b; font-size: 10.5px; margin-left: auto;
+  text-align: right; white-space: nowrap; }
+.ch-gates-ok li span { color: var(--mc-cyan, #38bdf8); }
+.ch-gates-no li span { color: var(--mc-amber, #fbbf24); }
+.ch-gates-no li { color: var(--mc-dim, #94a3b8); }
+
+/* ---------- NEAR-MISS แยกกลุ่ม ---------- */
+.ch-ngroup { margin-top: 16px; }
+.ch-ngroup:first-of-type { margin-top: 4px; }
+.ch-ngroup-head { border-left: 3px solid rgba(245, 158, 11, .4); padding-left: 12px;
+  margin-bottom: 10px; }
+.ch-ngroup-head h3 { margin: 0; font-size: 13.5px; display: flex; align-items: center; gap: 9px; }
+.ch-ngroup-head p { margin: 3px 0 0; color: var(--mc-dim, #94a3b8); font-size: 11.5px;
+  line-height: 1.6; }
+.ch-near-gates { margin-top: 9px; }
+.ch-near-wait { margin: 9px 0 0; }
+
+/* ---------- CATALYST WATCH ---------- */
+.ch-watch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
+.ch-watch { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 12px; padding: 14px 16px;
+  min-width: 0; }
+.ch-watch-confirmed { border-left: 3px solid rgba(168, 85, 247, .5);
+  background: rgba(168, 85, 247, .035); }
+.ch-watch-emerging { border-left: 3px solid rgba(148, 163, 184, .4);
+  background: rgba(148, 163, 184, .03); }
+.ch-watch-head h3 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 9px; }
+.ch-watch-head p { margin: 3px 0 11px; color: var(--mc-dim, #94a3b8); font-size: 11.5px;
+  line-height: 1.6; }
+.ch-watch-list { margin: 0; padding: 0; list-style: none; }
+.ch-watch-list li { margin-bottom: 5px; }
+.ch-watch-list button {
+  width: 100%; text-align: left; background: rgba(2, 6, 23, .3); font: inherit; color: inherit;
+  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 9px; padding: 8px 11px;
+  cursor: pointer; display: grid; grid-template-columns: auto auto 1fr; gap: 9px;
+  align-items: baseline; min-width: 0;
+}
+.ch-watch-list button:hover { background: rgba(56, 189, 248, .08);
+  border-color: rgba(56, 189, 248, .3); }
+.ch-watch-list b { font-size: 13px; }
+.ch-watch-mat { font-size: 10px; font-weight: 700; color: var(--mc-dim, #94a3b8);
+  background: rgba(148, 163, 184, .14); border-radius: 4px; padding: 1px 6px; }
+.ch-watch-list em { font-style: normal; font-size: 11px; color: #64748b; line-height: 1.5;
+  min-width: 0; overflow-wrap: break-word; }
+
+/* ---------- 12 สถานะครบชุด (ย้ายมาอยู่ในส่วนคัดออก) ---------- */
+.ch-allstates { margin-top: 14px; }
+.ch-allstates summary { cursor: pointer; font-size: 12px; font-weight: 700; color: #7dd3fc;
+  padding: 4px 0; list-style: none; }
+.ch-allstates summary::-webkit-details-marker { display: none; }
+.ch-allstates summary::before { content: "＋ "; color: var(--mc-dim, #94a3b8); }
+.ch-allstates[open] summary::before { content: "－ "; }
+.ch-allstates .ch-sum-grid { margin-top: 11px; }
+
+/* ---------- DETAIL: PASSED / NOT YET / WAITING / RISK ---------- */
+.ch-dsum { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 11px;
+  margin-top: 13px; }
+.ch-dsum-col { border: 1px solid var(--mc-border, #1f2a3d); border-radius: 10px; padding: 11px 13px;
+  background: rgba(148, 163, 184, .03); min-width: 0; }
+.ch-dsum-col h4 { margin: 0 0 7px; font-size: 10px; color: var(--mc-dim, #94a3b8);
+  text-transform: uppercase; letter-spacing: .05em; }
+.ch-dsum-wait b { display: block; font-size: 13px; color: var(--mc-amber, #fbbf24);
+  line-height: 1.6; }
+.ch-dsum-risk { border-color: rgba(244, 63, 94, .3); background: rgba(244, 63, 94, .04); }
+.ch-dsum-risk ul { margin: 0; padding-left: 17px; font-size: 11.5px; line-height: 1.7;
+  color: var(--mc-dim, #94a3b8); }
 
 /* ---------- SUMMARY GRID ---------- */
 .ch-sum-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 9px; }
@@ -492,12 +631,19 @@ a.ch-src:hover { text-decoration: underline; }
   .ch-lscape-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 1100px) {
+  .ch-brief-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ch-rare-ev { grid-template-columns: 1fr; }
   .ch-rare-grid { grid-template-columns: 1fr; }
   .ch-lscape { grid-template-columns: 150px 1fr 44px; }
   .ch-dhead { grid-template-columns: 1fr; }
 }
 @media (max-width: 780px) {
+  .ch-brief-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ch-brief-meta { text-align: left; }
+  .ch-target-grid, .ch-watch-grid, .ch-near-grid { grid-template-columns: 1fr; }
+  .ch-zero-gates ul { grid-template-columns: 1fr; }
+  .ch-watch-list button { grid-template-columns: auto auto; }
+  .ch-watch-list em { grid-column: 1 / -1; }
   .ch-page { padding: 14px 12px 56px; }
   .ch-hero { padding: 16px 18px; }
   .ch-hero-meta { align-items: flex-start; }
