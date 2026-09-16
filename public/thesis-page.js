@@ -117,7 +117,10 @@
     var html;
     try { html = TO.render(readSnapshot() || {}, { sort: thoSort }); }
     catch (eOv) { html = '<div class="mc-empty">Overview ล้มเหลว: ' + esc(String((eOv && eOv.message) || eOv)) + "</div>"; }
-    root.innerHTML = html;
+    // แถบชิปด้านบน — กดเข้าดู thesis รายตัวได้ทันทีโดยไม่ต้องเลื่อนหาตารางท้ายหน้า
+    var nav = '<nav class="th-chips th-chips-ov" aria-label="เลือกหุ้นเพื่อดู thesis รายตัว">' +
+      '<span class="th-chips-lead">เปิดรายตัว</span>' + tickerChips(true) + "</nav>";
+    root.innerHTML = nav + html;
   }
   function setTicker(t) {
     t = String(t || "").trim().toUpperCase();
@@ -186,18 +189,23 @@
   }
 
   // ---- §0 · header + company chips + lite input + stale badge ----
-  function headerSection(R) {
-    var sel = selectedTicker();
-    var covered = isCovered(sel);
+  // แถบชิปหุ้นทุกตัว — ใช้ร่วมกันระหว่างหน้ารายตัวและหน้า Overview
+  // overview = true: ยังไม่ได้เลือกหุ้นตัวไหน จึงไม่ไฮไลต์ ไม่มีชิป Lite ค้าง
+  //   และไม่ใส่ปุ่ม "เทียบหุ้น" ซ้ำ เพราะหัวหน้า Overview มีปุ่มนั้นอยู่แล้ว
+  function tickerChips(overview) {
+    var sel = overview ? null : selectedTicker();
+    var covered = overview ? true : isCovered(sel);
     var chips = companies().map(function (c) {
-      var on = compareMode ? compareSel.indexOf(c.ticker) >= 0 : c.ticker === sel;
+      var on = compareMode ? compareSel.indexOf(c.ticker) >= 0 : (!overview && c.ticker === sel);
       var ord = compareMode ? compareSel.indexOf(c.ticker) : -1;
       var mark = ord >= 0 ? '<i class="th-chipdot" style="background:' + cmpColor(ord) + '"></i>' : "";
-      return       '<button type="button" class="th-chipbtn' + (on ? " th-chipbtn-on" : "") + '" data-th-ticker="' + esc(c.ticker) + '" title="' + esc(c.name) + '">' + mark + esc(c.ticker) + "</button>";
+      return '<button type="button" class="th-chipbtn' + (on ? " th-chipbtn-on" : "") + '" data-th-ticker="' + esc(c.ticker) + '" title="' + esc(c.name) + '">' + mark + esc(c.ticker) + "</button>";
     }).join("");
     if (!covered && !compareMode) chips += '<button type="button" class="th-chipbtn th-chipbtn-on th-chipbtn-lite" data-th-ticker="' + esc(sel) + '">' + esc(sel) + " (Lite)</button>";
-    chips += '<button type="button" class="th-chipbtn th-cmpbtn' + (compareMode ? " th-chipbtn-on" : "") + '" data-th-cmp-toggle="1">⇄ ' +
-      (compareMode ? "ออกจากโหมดเทียบ" : "เทียบหุ้น") + "</button>";
+    if (!overview) {
+      chips += '<button type="button" class="th-chipbtn th-cmpbtn' + (compareMode ? " th-chipbtn-on" : "") + '" data-th-cmp-toggle="1">⇄ ' +
+        (compareMode ? "ออกจากโหมดเทียบ" : "เทียบหุ้น") + "</button>";
+    }
     if (!compareMode) {
       chips += '<span class="th-litebox"><input id="thLiteInput" type="text" placeholder="ดูตัวอื่น (Lite) เช่น PLTR" maxlength="12" />' +
         '<button type="button" id="thLiteGo" class="th-chipbtn">ดู</button></span>';
@@ -205,6 +213,11 @@
       chips += '<span class="th-cmp-hint">เลือก 2-' + cmpMax() + " ตัว (เลือกแล้ว " + compareSel.length + ")" +
         (compareSel.length ? ' <button type="button" class="th-cmp-clear" data-th-cmp-clear="1">ล้าง</button>' : "") + "</span>";
     }
+    return chips;
+  }
+
+  function headerSection(R) {
+    var chips = tickerChips(false);
     var note = "";
     if (R && R.dataNote) {
       note = '<div class="th-datanote">📎 ' + esc(R.dataNote) + (R.asOf ? " · ความรู้เชิงโครงสร้าง curated ณ <b>" + esc(R.asOf) + "</b>" : "") + "</div>";

@@ -225,7 +225,9 @@ console.log("== เคส 10-13: Growth vs Valuation Matrix ทั้ง 4 quadr
   t("มีป้าย 'ไม่ใช่คำแนะนำซื้อขาย'", q1.note.indexOf("ไม่ใช่คำแนะนำ") >= 0);
   // matrix() รวมทุกตัวใน KB จริง — QQQM (ไม่มี history) ต้องถูกข้าม
   var mx = IE.matrix({}, { data: D, TE: TE, VE: VE, PM: PM });
-  t("matrix ครอบ 14 ตัว (ข้าม QQQM)", mx.points.length === 14, mx.points.length);
+  // นับจาก KB จริง ไม่ hardcode — เพิ่มบริษัทใหม่แล้วเทสต์ต้องยังบังคับว่า matrix ครอบครบ
+  var COVERED = Object.keys(D.companies).filter(function (k) { return k !== "QQQM"; }).length;
+  t("matrix ครอบทุกตัวใน KB (" + COVERED + " ตัว · ข้าม QQQM)", mx.points.length === COVERED, mx.points.length);
   t("ทุกจุดมี quadrant enum ถูก", mx.points.every(function (p) { return IE.QUAD[p.quadrant.key] != null; }));
 }
 
@@ -490,8 +492,9 @@ console.log("== Thesis Overview (LEVEL 1 landing) — model + render ==");
   global.document = { readyState: "complete", getElementById: function () { return null; }, addEventListener: function () {} };
   var M = TO.computeModel({}, { data: D, TE: TE, VE: VE, PM: PM, IE: IE, AIR: AIR });
   t("model available", M.available === true, M.reason);
-  t("model: 14 assets (ไม่รวม QQQM)", M.total === 14 && M.rows.length === 14);
-  t("model: counts รวม = 14", M.counts.hi + M.counts.watch + M.counts.wait + M.counts.review === 14, JSON.stringify(M.counts));
+  var NCOV = Object.keys(D.companies).filter(function (k) { return k !== "QQQM"; }).length;
+  t("model: " + NCOV + " assets (ไม่รวม QQQM)", M.total === NCOV && M.rows.length === NCOV, M.total + "/" + M.rows.length);
+  t("model: counts รวม = " + NCOV, M.counts.hi + M.counts.watch + M.counts.wait + M.counts.review === NCOV, JSON.stringify(M.counts));
   t("model: highlights 3-5 ใบ", M.highlights.length >= 3 && M.highlights.length <= 5, M.highlights.length);
   t("model: readNext 3-5 แถว", M.readNext.length >= 3 && M.readNext.length <= 5, M.readNext.length);
   t("model: priority มีแค่ HIGH/MEDIUM/LOW", M.rows.every(function (m) { return ["HIGH", "MEDIUM", "LOW"].indexOf(m.prio.key) >= 0; }));

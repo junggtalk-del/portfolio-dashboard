@@ -24,6 +24,11 @@
 .th-head h1 { margin: 0; font-size: 25px; font-weight: 800; letter-spacing: -0.01em; }
 .th-headsub { margin: 5px 0 0; color: var(--mc-text-2); font-size: 13px; line-height: 1.6; max-width: 780px; }
 .th-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+/* แถบชิปบนหน้า Overview — เป็นแถบนำทาง ไม่ใช่ส่วนหนึ่งของ detail */
+.th-chips-ov { align-items: center; margin: 0 0 14px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--app-border, #1e293b); }
+.th-chips-lead { font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--app-dim, #94a3b8); margin-right: 2px; }
 .th-chipbtn { font-family: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: 0.02em; color: var(--mc-text-2); background: var(--th-chip-bg); border: 1px solid var(--mc-border); border-radius: 999px; padding: 6px 14px; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
 .th-chipbtn:hover { border-color: var(--mc-border-active); transform: translateY(-1px); }
 .th-chipbtn-on { color: var(--th-blue); border-color: rgba(56, 189, 248, 0.55); background: rgba(56, 189, 248, 0.10); }
