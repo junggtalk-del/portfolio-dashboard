@@ -54,6 +54,16 @@
     var icon = k === "up" ? "▲" : k === "down" ? "▼" : "▬";
     return '<span class="th-trend th-trend-' + k + '">' + icon + "</span>";
   }
+  // คำอธิบายผลการเทียบอดีตตัวเองจาก ValuationEngine — ใช้ร่วมกันทั้ง §14 และการ์ดตัดสินใจ
+  // (เดิมนิยามซ้ำอยู่ใน §14 ที่เดียว ทำให้การ์ดอื่นเขียนคำเองได้ตามใจ)
+  var VX_CLS = {
+    ATTRACTIVE: { icon: "🟢", th: "ต่ำกว่าโซนอดีตตัวเอง", tone: "bull" },
+    FAIR: { icon: "🔵", th: "ใกล้ค่ากลางอดีต", tone: "blue" },
+    PREMIUM: { icon: "🟡", th: "สูงกว่าค่ากลางอดีต", tone: "watch" },
+    EXPENSIVE: { icon: "🔴", th: "สูงกว่าอดีตมาก", tone: "bear" },
+    INSUFFICIENT_DATA: { icon: "⚪", th: "ข้อมูลไม่พอ", tone: "neutral" }
+  };
+
   function toneChip(tone, text) {
     return '<span class="th-chip th-tone-' + esc(tone || "neutral") + '">' + esc(text) + "</span>";
   }
@@ -307,7 +317,23 @@
     }).join("");
     var V = R.valuationView || {};
     var vTone = V.level === "cheap" ? "bull" : V.level === "fair" ? "blue" : V.level === "premium" ? "watch" : V.level === "expensive" ? "bear" : "neutral";
-    var valLine = '<div class="th-valline">มุมมองมูลค่า: ' + toneChip(vTone, fmt(V.level)) + ' <span class="th-valnote">' + esc(V.note || "") + "</span></div>";
+    // มูลค่ามีสองมุมที่วัดคนละเรื่อง — ต้องติดป้ายว่าอันไหนวัดอะไร ไม่ใช่วางปนกันเฉย ๆ
+    //   engine  = "แพง/ถูกกว่าตัวมันเองในอดีตไหม" กลไกล้วน คำนวณสด (ตัวเดียวกับ §14)
+    //   curated = "แพงไหมเมื่อมองภาพรวม" วิจารณญาณคน ประทับ asOf และเป็นตัวที่เข้าสูตรคะแนน
+    var valLine = '<div class="th-valline">มุมมองมูลค่า:' + engineValChip(R) +
+      // ใช้สตริงเดียวกับช่อง VALUATION (F.valuation) เพื่อไม่ให้ป้ายกับช่องเขียนคนละคำ
+      " " + toneChip(vTone, "มุมมองคน" + (R.asOf ? " ณ " + R.asOf : "") + ": " + fmt(F.valuation || V.level)) +
+      liveValBits(R) +
+      (V.note
+        ? '<details class="th-valmore"><summary>สองมุมนี้ต่างกันยังไง + มุมมองมูลค่าแบบเต็ม' +
+          (R.asOf ? " (curated ณ " + esc(R.asOf) + ")" : "") + "</summary>" +
+          '<span class="th-valbasis"><b>เทียบอดีตตัวเอง</b> — กลไกล้วน เทียบ P/E วันนี้กับมัธยฐาน 5 ปีของหุ้นตัวเดียวกัน ' +
+          "คำนวณสดทุกครั้งที่โหลดราคา ใช้เปรียบเทียบข้ามบริษัทไม่ได้<br>" +
+          '<b>มุมมองคน</b> — วิจารณญาณที่ประทับไว้' + (R.asOf ? " ณ " + esc(R.asOf) : "") +
+          " มองภาพรวมและเทียบคู่แข่งด้วย <b>และเป็นตัวที่เข้าสูตรคะแนนตัดสินใจ</b> — " +
+          "ถ้าราคาขยับแรงหลังวันที่ประทับ มุมนี้จะเก่ากว่าเลขสดด้านบน</span>" +
+          '<span class="th-valnote">' + esc(V.note) + "</span></details>"
+        : "") + "</div>";
     var risks = FV.risks && FV.risks.length
       ? '<div class="th-risks"><h3 class="th-h3">ความเสี่ยงหลักที่ต้องจับตา</h3>' + list(FV.risks) + "</div>"
       : "";
@@ -320,6 +346,48 @@
         '<div class="th-hero-fac"><div class="th-hlbl">ปัจจัยประกอบคำตอบ</div>' +
           '<div class="th-factors">' + factorCells + "</div>" + valLine + "</div>" +
       "</div>" + pm + risks + "</section>";
+  }
+
+  // ตัวเลขมูลค่า "สด" — เรียก ValuationEngine ตัวเดียวกับ §14 และปัดเศษสูตรเดียวกัน
+  // เพื่อไม่ให้หัวการ์ดตัดสินใจกับ §14 พูดคนละเลขสำหรับหุ้นตัวเดียวกัน
+  // (valuationView.note เป็นข้อความ curated ประทับ asOf ราคาในนั้นเก่าทันทีที่ราคาขยับ)
+  function liveValBits(R) {
+    var VE = window.ValuationEngine;
+    if (!VE || typeof VE.compute !== "function") return "";
+    var V;
+    try { V = VE.compute(R.ticker, readSnapshot() || {}, {}); } catch (eLv) { return ""; }
+    if (!V || !V.available) return ""; // ETF หรือไม่มีงบใน KB — §14 ก็ซ่อนเหมือนกัน
+    var r1 = function (v) { return v == null ? "—" : Math.round(v * 10) / 10; };
+    var stale = !!(V.warnings && V.warnings.indexOf("STALE_PRICE") >= 0);
+    var warn = V.warnings || [];
+    // เกณฑ์เดียวกับ §14 เป๊ะ: คำนวณ P/E ไม่ได้ -> N/A พร้อมเหตุ ห้ามโชว์ตัวเลขใด ๆ
+    // (ถ้าหัวการ์ดยังโชว์ forward ทั้งที่ §14 บอก N/A ก็กลับไปขัดกันเหมือนเดิม)
+    if (!V.pe || V.pe.current == null) {
+      return ' <span class="th-valnow is-stale">P/E N/A' +
+        (warn.indexOf("NON_POSITIVE_TTM_EPS") >= 0 ? " — กำไร 12 เดือนติดลบ" : "") +
+        " (ดูเหตุใน §14)</span>";
+    }
+    var out = "P/E ~" + r1(V.pe.current);
+    if (V.forwardPe && V.forwardPe.pe != null) out += " · forward ~" + r1(V.forwardPe.pe);
+    out += " · " + (stale
+      ? "⚠ ราคา KB " + esc(V.price.asOf || "—") +
+        (V.price.staleDays != null ? " (เก่า " + V.price.staleDays + " วัน)" : "") + " — กด Load Latest Data"
+      : "ราคา live " + (Math.round(V.price.value * 100) / 100));
+    return ' <span class="th-valnow' + (stale ? " is-stale" : "") + '">' + out + "</span>";
+  }
+
+  // ป้าย "เทียบอดีตตัวเอง" จาก ValuationEngine — ตัวเดียวกับที่ §14 แสดง
+  // คืน "" เมื่อ engine ตัดสินไม่ได้ (ประวัติ P/E ไม่ถึงเกณฑ์) — ห้ามเดาคำตัดสินแทน
+  function engineValChip(R) {
+    var VE = window.ValuationEngine;
+    if (!VE || typeof VE.compute !== "function") return "";
+    var V;
+    try { V = VE.compute(R.ticker, readSnapshot() || {}, {}); } catch (eEc) { return ""; }
+    if (!V || !V.available || !V.classification) return "";
+    if (V.classification === "INSUFFICIENT_DATA") return "";
+    var c = VX_CLS[V.classification];
+    if (!c) return "";
+    return " " + toneChip(c.tone, "เทียบอดีตตัวเอง: " + c.icon + " " + c.th);
   }
 
   // ---- §2 · Thesis score ----
@@ -885,13 +953,7 @@
     var D = window.ThesisData && window.ThesisData.companies ? window.ThesisData.companies[T] : null;
 
     // ---- classification chip — บริบทเทียบอดีตตัวเอง ไม่ใช่คำสั่งซื้อขาย ----
-    var CLS = {
-      ATTRACTIVE: { icon: "🟢", th: "ต่ำกว่าโซนอดีตตัวเอง" },
-      FAIR: { icon: "🔵", th: "ใกล้ค่ากลางอดีต" },
-      PREMIUM: { icon: "🟡", th: "สูงกว่าค่ากลางอดีต" },
-      EXPENSIVE: { icon: "🔴", th: "สูงกว่าอดีตมาก" },
-      INSUFFICIENT_DATA: { icon: "⚪", th: "ข้อมูลไม่พอ" }
-    };
+    var CLS = VX_CLS; // ชุดคำกลาง — การ์ดตัดสินใจใช้ตัวเดียวกัน
     var cls = CLS[V.classification] || CLS.INSUFFICIENT_DATA;
     var clsChip = '<span class="th-vx-cls th-vx-cls-' + esc(V.classification) + '">' + cls.icon + " " + esc(V.classification.replace(/_/g, " ")) + " · " + esc(cls.th) + "</span>";
 

@@ -90,7 +90,10 @@
       var cfg = d.data.companies[t];
       var m = { t: t, name: cfg.name || t, thesis: null, health: "INSUFFICIENT", healthIcon: "⚪", healthThai: "",
         summary: "INSUFFICIENT", summaryLabel: "—", summaryWhy: [], monet: null, monetState: "—", expect: "—",
-        veClass: null, vePctl: null, zone: null, zoneLabel: "—", zoneIcon: "", acc: null, dd: null,
+        veClass: null, vePctl: null, vePe: null, veMedian: null, vePrem: null, veFwd: null,
+        quad: null, quadIcon: "", quadThai: "", growth: null, revCagr: null, peg: null, pegBasis: null,
+        ddCls: null, ddClsThai: "", ddBasis: null, sc: null,
+        zone: null, zoneLabel: "—", zoneIcon: "", acc: null, dd: null,
         earnings: null, warns: 0, crits: 0, warnLabels: [], critLabels: [], gated: false, gateWhy: null,
         divKey: "INSUFFICIENT", divIcon: "⚪", divLabel: "—", rdKey: "INSUFFICIENT", rdIcon: "⚪", rdLabel: "—", cgKey: "INSUFFICIENT", cgIcon: "⚪" };
       try {
@@ -114,8 +117,20 @@
             if (p.status === "warn") m.warnLabels.push(p.label);
             if (p.status === "crit") m.critLabels.push(p.label);
           });
-          if (X.matrixPoint && X.matrixPoint.valuation) { m.veClass = X.matrixPoint.valuation.classification; m.vePctl = X.matrixPoint.valuation.percentile; }
+          if (X.matrixPoint && X.matrixPoint.valuation) {
+            var mv = X.matrixPoint.valuation;
+            m.veClass = mv.classification; m.vePctl = mv.percentile;
+            m.vePe = num(mv.peNow); m.veMedian = num(mv.median); m.vePrem = num(mv.premiumVsMedianPct); m.veFwd = num(mv.forwardPe);
+          }
+          if (X.matrixPoint && X.matrixPoint.quadrant) { m.quad = X.matrixPoint.quadrant.key; m.quadIcon = X.matrixPoint.quadrant.icon || ""; m.quadThai = X.matrixPoint.quadrant.thai || ""; }
+          if (X.matrixPoint) m.growth = num(X.matrixPoint.growthCagrPct);
           if (m.dd == null && X.drawdown && X.drawdown.available) m.dd = X.drawdown.dd1y;
+          // ความลึกของรอบย่อ "เทียบรอบย่อในอดีตของหุ้นตัวนั้นเอง" (percentile ของ episodes)
+          if (X.drawdown && X.drawdown.available && X.drawdown.classification) {
+            m.ddCls = X.drawdown.classification.key;
+            m.ddClsThai = X.drawdown.classification.thai || "";
+            m.ddBasis = X.drawdown.classificationBasis || null;
+          }
           if (X.divergence) { m.divKey = X.divergence.state.key; m.divIcon = X.divergence.state.icon; m.divLabel = X.divergence.state.label; }
           if (X.readiness) { m.rdKey = X.readiness.state.key; m.rdIcon = X.readiness.state.icon; m.rdLabel = X.readiness.state.label; }
           if (X.change) { m.cgKey = X.change.state.key; m.cgIcon = X.change.state.icon; }
@@ -129,6 +144,18 @@
           m.acc = pr.accScore;
         }
       } catch (e) { /* ตัวไหนพังให้คงค่า INSUFFICIENT — ไม่ล้มทั้งหน้า */ }
+      // รายได้โตต่อปี — จาก computeHistory ตัวเดียวกับที่ matrix ใช้ (ไม่ parse string)
+      try {
+        var hh = d.TE.computeHistory(t, snapshot, { data: d.data });
+        if (hh && hh.available && hh.metrics) m.revCagr = num(hh.metrics.revCagrPct);
+      } catch (eH) { /* ไม่มีประวัติ — คงเป็น null */ }
+      // PEG = P/E ÷ อัตราโตต่อปี (สูตรมาตรฐาน) · ใช้ forward P/E ถ้ามี ไม่งั้น trailing
+      // ประกาศฐานไว้เสมอ เพราะ trailing GAAP บิดแรงกับหุ้นที่กำไรบัญชีต่ำ (เช่น DDOG)
+      var pegPe = num(m.veFwd) != null && m.veFwd > 0 ? m.veFwd : (num(m.vePe) != null && m.vePe > 0 ? m.vePe : null);
+      if (pegPe != null && num(m.growth) != null && m.growth > 0) {
+        m.peg = Math.round((pegPe / m.growth) * 100) / 100;
+        m.pegBasis = (num(m.veFwd) != null && m.veFwd > 0) ? "forward" : "trailing";
+      }
       m.rank = importanceRank(m);
       m.prio = prioOf(m.rank);
       m.reason = reasonOf(m);
@@ -143,10 +170,18 @@
     function byImportance(a, b) { return a.rank - b.rank || (b.acc || 0) - (a.acc || 0) || (b.thesis || 0) - (a.thesis || 0) || (a.t < b.t ? -1 : 1); }
     var ranked = rows.slice().sort(byImportance);
 
-    var ZR = { A: 0, B: 1, C: 2, D: 3, E: 4 };
-    var opportunities = rows.filter(function (m) { return m.health !== "BROKEN" && m.health !== "DETERIORATING" && m.zone != null; })
-      .sort(function (a, b) { return (ZR[a.zone] - ZR[b.zone]) || (b.acc || 0) - (a.acc || 0) || (b.thesis || 0) - (a.thesis || 0); })
-      .slice(0, 5);
+    // ---- Top Opportunities: checklist 6 ข้อ "เทียบกับตัวเองล้วน" ----
+    // ไม่มีการเปรียบเทียบข้ามหุ้นในคะแนนเลย — แต่ละข้อถามว่าหุ้นตัวนี้ดีกว่า/ถูกกว่าตัวมันเองในอดีตไหม
+    // เกณฑ์ทุกข้อมาจาก engine ที่มีอยู่แล้ว ไม่มีเลขที่คิดขึ้นใหม่ (ที่มาอยู่ในตาราง SELF_CHECKS)
+    var pool = rows.filter(function (m) { return m.health !== "BROKEN" && m.health !== "DETERIORATING"; });
+    pool.forEach(function (m) { m.sc = selfCheck(m); });
+    var opportunities = pool.slice().sort(function (a, b) {
+      // ผ่านมากกว่ามาก่อน → ข้อมูลครบกว่า → P/E ต่ำกว่าค่ากลางตัวเองมากกว่า → ย่อลึกกว่า → thesis สูงกว่า
+      return (b.sc.passed - a.sc.passed) || (b.sc.known - a.sc.known) ||
+        ((a.vePrem == null ? 0 : a.vePrem) - (b.vePrem == null ? 0 : b.vePrem)) ||
+        ((a.dd == null ? 0 : a.dd) - (b.dd == null ? 0 : b.dd)) ||
+        ((b.thesis || 0) - (a.thesis || 0)) || (a.t < b.t ? -1 : 1);
+    }).slice(0, 10);
     var watchList = rows.filter(function (m) { return m.health === "WATCH" || m.health === "DETERIORATING" || m.health === "BROKEN"; })
       .sort(function (a, b) { return HEALTH_RANK[a.health] - HEALTH_RANK[b.health] || (b.warns + 2 * b.crits) - (a.warns + 2 * a.crits); });
     var strongWait = rows.filter(function (m) {
@@ -169,6 +204,67 @@
   }
 
   // ---------------- view helpers ----------------
+  // ---- checklist 6 ข้อ: ทุกข้อเทียบกับตัวหุ้นเอง ไม่มีการเทียบข้ามหุ้น ----
+  // เกณฑ์ทุกข้ออ้างอิงค่าที่ engine ใช้อยู่แล้ว — คอลัมน์ src คือที่มา (โชว์ใน legend)
+  var SELF_CHECKS = [
+    { key: "dip", label: "ราคาย่อลึก", head: "ราคาย่อลึก (เทียบรอบย่อของตัวเอง)",
+      src: "IntelligenceEngine — percentile ของรอบย่อในอดีตของหุ้นตัวนั้นเอง (DEEP ≥ p50 · EXTREME ≥ p80) ประวัติไม่พอใช้เกณฑ์ทั่วไป 10/20%",
+      get: function (m) {
+        if (!m.ddCls) return { known: false, txt: "— รอโหลดราคา" };
+        var ok = m.ddCls === "DEEP" || m.ddCls === "EXTREME";
+        return { known: true, pass: ok, txt: m.ddCls + (m.dd != null ? " · ▼" + Math.abs(m.dd).toFixed(0) + "%" : ""), sub: m.ddClsThai };
+      } },
+    { key: "pe", label: "P/E ต่ำกว่าค่ากลางตัวเอง", head: "P/E ต่ำกว่าค่ากลางตัวเอง",
+      src: "ValuationEngine — เทียบมัธยฐาน P/E 5 ปีของหุ้นตัวนั้นเอง (ติดลบ = ถูกกว่าที่เคยเป็น)",
+      get: function (m) {
+        if (num(m.vePrem) == null) return { known: false, txt: "— ประวัติ P/E ไม่ถึงเกณฑ์" };
+        return { known: true, pass: m.vePrem < 0,
+          txt: (m.vePrem < 0 ? "ต่ำกว่า " : "สูงกว่า ") + Math.abs(m.vePrem) + "%",
+          sub: num(m.vePctl) != null ? "percentile " + m.vePctl : "" };
+      } },
+    { key: "fund", label: "พื้นฐานไม่เปลี่ยน", head: "พื้นฐานไม่เปลี่ยน",
+      src: "IntelligenceEngine health — INTACT = ไม่มี pillar ไหนเสื่อม · WATCH = มีจุดต้องดู (ไม่ผ่านข้อนี้)",
+      get: function (m) {
+        if (!m.health || m.health === "INSUFFICIENT") return { known: false, txt: "— ข้อมูลไม่พอ" };
+        return { known: true, pass: m.health === "INTACT", txt: m.healthIcon + " " + m.health };
+      } },
+    { key: "rev", label: "รายได้โตดี", head: "รายได้โตดี",
+      src: "ThesisEngine computeHistory — CAGR รายได้ 5 ปี ≥ 15%/ปี (เกณฑ์เดียวกับ matrix.growthHighCagrPct ของ engine)",
+      get: function (m) {
+        if (num(m.revCagr) == null) return { known: false, txt: "— ไม่มีประวัติรายได้" };
+        return { known: true, pass: m.revCagr >= 15, txt: (m.revCagr >= 0 ? "+" : "") + m.revCagr + "%/ปี", sub: "CAGR 5 ปี" };
+      } },
+    { key: "story", label: "story ยังดี", head: "story ยังดี",
+      src: "ThesisEngine thesis score ≥ 75 (เกณฑ์เดียวกับที่หน้านี้ใช้จัดกลุ่ม Strong Business · Wait)",
+      get: function (m) {
+        if (num(m.thesis) == null) return { known: false, txt: "—" };
+        return { known: true, pass: m.thesis >= 75, txt: String(m.thesis), sub: m.summaryLabel || "" };
+      } },
+    { key: "peg", label: "PEG ดี", head: "PEG ดี",
+      src: "P/E ÷ อัตราโตต่อปี (fundCagr = 0.6×EPS + 0.4×Rev ของ engine) · ผ่านเมื่อ < 1 ตามสูตรมาตรฐาน · ใช้ forward P/E ถ้ามี ไม่งั้น trailing",
+      get: function (m) {
+        if (num(m.peg) == null) return { known: false, txt: "— คำนวณไม่ได้" };
+        return { known: true, pass: m.peg < 1, txt: m.peg.toFixed(2),
+          sub: (m.pegBasis === "forward" ? "fwd" : "trailing") + " P/E ÷ โต " + m.growth + "%" };
+      } },
+  ];
+
+  // ประเมิน 6 ข้อ + ประโยคสรุปหนึ่งบรรทัด (ประกอบจากค่าเดียวกับที่ใช้เรียง)
+  function selfCheck(m) {
+    var cells = [], passed = 0, known = 0, hit = [], miss = [];
+    SELF_CHECKS.forEach(function (c) {
+      var r = c.get(m);
+      r.key = c.key; r.label = c.label;
+      if (r.known) { known++; if (r.pass) { passed++; hit.push(c.label); } else miss.push(c.label); }
+      cells.push(r);
+    });
+    var why = "ผ่าน " + passed + "/" + known + " ข้อที่วัดได้" +
+      (hit.length ? " — " + hit.join(" · ") : "") +
+      (miss.length ? " · ยังไม่ผ่าน: " + miss.join(" · ") : "") +
+      (known < SELF_CHECKS.length ? " · วัดไม่ได้ " + (SELF_CHECKS.length - known) + " ข้อ" : "");
+    return { cells: cells, passed: passed, known: known, total: SELF_CHECKS.length, why: why };
+  }
+
   function megaTxt(mega) {
     if (!mega || num(mega.score) == null) return "—";
     var st = mega.stateLabel || (mega.gateOpen ? "Strong" : "Weak"); // state จริงจาก AdaptivePosition (64 = Neutral)
@@ -230,21 +326,38 @@
     }).join("");
     h += '<section class="tho-sec"><h2>📖 Read Next</h2><p>ลำดับที่ควรอ่านก่อน — จากพัฒนาการที่สำคัญที่สุด (ไม่ใช่การจัดอันดับซื้อขาย)</p>' + rn + "</section>";
 
-    // 4) TOP OPPORTUNITIES 🔥
-    var opRows = M.opportunities.map(function (m) {
-      return '<tr data-th-ticker="' + esc(m.t) + '"><td><b>' + esc(m.t) + "</b></td>" +
-        "<td>" + (m.thesis == null ? "—" : m.thesis) + "</td>" +
+    // 4) TOP OPPORTUNITIES 🔥 — checklist 6 ข้อ เทียบตัวเองล้วน · 10 แถว
+    var scHead = SELF_CHECKS.map(function (c) { return "<th>" + esc(c.head) + "</th>"; }).join("");
+    var scCell = function (r) {
+      if (!r.known) return '<td class="tho-sc-na">' + esc(r.txt) + "</td>";
+      return '<td class="tho-sc ' + (r.pass ? "is-pass" : "is-no") + '"><b>' + (r.pass ? "✓" : "○") + " " + esc(r.txt) + "</b>" +
+        (r.sub ? "<br><small>" + esc(r.sub) + "</small>" : "") + "</td>";
+    };
+    var opRows = M.opportunities.map(function (m, i) {
+      var sc = m.sc || { cells: [], passed: 0, known: 0, total: 6, why: "" };
+      var cells = sc.cells.map(scCell).join("");
+      var score = '<b class="tho-sc-sum">' + sc.passed + "/" + sc.known + "</b>" +
+        (sc.known < sc.total ? "<br><small>วัดไม่ได้ " + (sc.total - sc.known) + "</small>" : "");
+      return '<tr data-th-ticker="' + esc(m.t) + '" class="tho-vr-row"><td class="tho-vr-no">' + (i + 1) + "</td>" +
+        "<td><b>" + esc(m.t) + "</b><br><small>" + esc(m.name) + "</small></td>" +
+        "<td>" + score + "</td>" + cells +
         "<td><b>" + (m.acc == null ? "—" : m.acc) + "</b></td>" +
-        "<td>" + esc(megaTxt(M.mega)) + "</td>" +
-        '<td title="Business vs Price">' + m.divIcon + " " + esc(m.divKey === "INSUFFICIENT" ? "—" : m.divKey) + "</td>" +
-        '<td title="ไม่ใช่คำสั่งซื้อขาย">' + m.rdIcon + " " + esc(m.rdKey === "INSUFFICIENT" ? "—" : m.rdLabel) + "</td>" +
-        "<td>" + veTxt(m) + "</td>" +
-        "<td>" + healthTxt(m) + "</td>" +
-        "<td>" + zoneTxt(m) + "</td></tr>";
+        "<td>" + zoneTxt(m) + "</td></tr>" +
+        '<tr data-th-ticker="' + esc(m.t) + '" class="tho-vr-why"><td></td><td colspan="' + (SELF_CHECKS.length + 3) + '">↳ ' + esc(sc.why) + "</td></tr>";
     }).join("");
-    h += '<section class="tho-sec"><h2>🔥 Top Opportunities</h2><p>เรียงตาม Accumulation Zone + Acc Score (คอลัมน์ Acc — เลขเดียวกับหน้า AI Portfolio Manager · ตัด DETERIORATING/BROKEN ออก) — บริบท ไม่ใช่คำแนะนำซื้อขาย</p>' +
-      '<div class="th-table-wrap"><table class="th-table tho-table"><thead><tr><th>Ticker</th><th>Thesis</th><th>Acc Score</th><th>Mega Trend</th><th>Valuation</th><th>Health</th><th>Zone</th></tr></thead><tbody>' +
-      (opRows || '<tr><td colspan="6">—</td></tr>') + "</tbody></table></div></section>";
+    var opStale = M.loadedAt ? "" :
+      '<div class="th-muted-box">⚠ ยังไม่โหลดราคาสด — ข้อ "ราคาย่อลึก" วัดไม่ได้ ส่วน P/E และ PEG ใช้ราคาสิ้นไตรมาสจาก KB · กด <b>Load Latest Data</b> แล้วผลจะคำนวณใหม่จากราคาจริง</div>';
+    var opLegend = '<details class="tho-legend"><summary>อ่านตารางนี้ยังไง — เกณฑ์แต่ละข้อมาจากไหน</summary>' +
+      "<p><b>ทุกข้อเทียบกับตัวหุ้นเอง ไม่มีการเปรียบเทียบกับหุ้นตัวอื่นเลย</b> — ถามว่า \"วันนี้ดีกว่า/ถูกกว่าตัวมันเองในอดีตไหม\" " +
+      "คอลัมน์ <b>ผ่าน</b> คือจำนวนข้อที่ผ่านจากจำนวนข้อที่วัดได้ · เรียงจากผ่านมากไปน้อย · เท่ากันดูข้อมูลครบกว่า แล้วดู P/E ที่ต่ำกว่าค่ากลางตัวเองมากกว่า</p><ul>" +
+      SELF_CHECKS.map(function (c) { return "<li><b>" + esc(c.head) + "</b> — " + esc(c.src) + "</li>"; }).join("") +
+      "<li><b>Acc Score / Zone</b> — มุมมองของ AI Portfolio Manager (คงไว้ให้เทียบ — บางตัวผ่านหลายข้อแต่ PM ให้รอ ให้อ่านประกอบกัน)</li>" +
+      "<li>✓ = ผ่าน · ○ = ยังไม่ผ่าน · — = วัดไม่ได้ (ไม่นับเป็นตก แต่ทำให้ตัวหารน้อยลง)</li>" +
+      "</ul></details>";
+    h += '<section class="tho-sec"><h2>🔥 Top Opportunities</h2><p>10 อันดับ · <b>เทียบกับตัวเองล้วน ไม่เทียบกับหุ้นตัวอื่น</b> — ราคาย่อลึกเทียบรอบย่อของตัวเอง · P/E ต่ำกว่าค่ากลางตัวเอง · พื้นฐานไม่เปลี่ยน · รายได้โตดี · story ยังดี · PEG ดี → เรียงตามจำนวนข้อที่ผ่าน · ตัด DETERIORATING/BROKEN ออก — บริบท ไม่ใช่คำแนะนำซื้อขาย</p>' +
+      opStale + opLegend +
+      '<div class="th-table-wrap"><table class="th-table tho-table tho-vr"><thead><tr><th>#</th><th>Ticker</th><th>ผ่าน</th>' + scHead + "<th>Acc Score</th><th>Zone</th></tr></thead><tbody>" +
+      (opRows || '<tr><td colspan="' + (SELF_CHECKS.length + 4) + '">—</td></tr>') + "</tbody></table></div></section>";
 
     // 5) THESIS WATCH ⚠️
     var wRows = M.watchList.map(function (m) {

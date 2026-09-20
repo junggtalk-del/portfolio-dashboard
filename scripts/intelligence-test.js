@@ -499,7 +499,51 @@ console.log("== Thesis Overview (LEVEL 1 landing) — model + render ==");
   t("model: readNext 3-5 แถว", M.readNext.length >= 3 && M.readNext.length <= 5, M.readNext.length);
   t("model: priority มีแค่ HIGH/MEDIUM/LOW", M.rows.every(function (m) { return ["HIGH", "MEDIUM", "LOW"].indexOf(m.prio.key) >= 0; }));
   t("model: opportunities ไม่มี DETERIORATING/BROKEN", M.opportunities.every(function (m) { return m.health !== "BROKEN" && m.health !== "DETERIORATING"; }));
-  t("model: opportunities ≤5", M.opportunities.length <= 5, M.opportunities.length);
+  // ต้องเท่ากับ min(10, จำนวนที่ผ่านเกต health) — ถ้าเช็คแค่ ≤10 ตัดเหลือ 5 แถวก็ผ่าน (เทสต์ไม่มีค่า)
+  var eligibleN = M.rows.filter(function (m) { return m.health !== "BROKEN" && m.health !== "DETERIORATING"; }).length;
+  t("model: opportunities = min(10, ตัวที่ผ่านเกต) = " + Math.min(10, eligibleN), M.opportunities.length === Math.min(10, eligibleN), M.opportunities.length + " (ผ่านเกต " + eligibleN + ")");
+  // ---- Top Opportunities = checklist 6 ข้อ "เทียบกับตัวเองล้วน" ----
+  // รีวิวจากผู้ใช้: ห้ามมีการเปรียบเทียบข้ามหุ้นในคะแนนเลย (เดิมเคยเรียงด้วยอันดับ #x/N เทียบกลุ่ม)
+  var opp = M.opportunities;
+  t("model: ทุกแถวมี sc (checklist) + ประโยคอธิบาย", opp.every(function (m) { return m.sc && typeof m.sc.why === "string" && m.sc.why.length > 10; }));
+  t("model: checklist มี 6 ข้อครบทุกแถว", opp.every(function (m) { return m.sc.cells.length === 6 && m.sc.total === 6; }));
+  t("model: เรียงตามจำนวนข้อที่ผ่าน (มาก→น้อย) แล้วข้อมูลครบ (มาก→น้อย)", opp.every(function (m, i) {
+    if (i === 0) return true; var p = opp[i - 1];
+    return p.sc.passed > m.sc.passed || (p.sc.passed === m.sc.passed && p.sc.known >= m.sc.known);
+  }));
+  t("model: passed/known ตรงกับ cells จริง (ไม่มีคะแนนที่นับมั่ว)", opp.every(function (m) {
+    var known = 0, passed = 0;
+    m.sc.cells.forEach(function (c) { if (c.known) { known++; if (c.pass) passed++; } });
+    return known === m.sc.known && passed === m.sc.passed && passed <= known;
+  }));
+  t("model: ข้อที่วัดไม่ได้ไม่ถูกนับเป็นผ่านหรือตก", opp.every(function (m) {
+    return m.sc.cells.every(function (c) { return c.known || c.pass === undefined; });
+  }));
+  // กติกาหลักของรีวิว: ไม่มีการเทียบข้ามหุ้นหลงเหลืออยู่
+  t("model: ไม่มีร่องรอยการจัดอันดับเทียบกลุ่ม (vr) เหลืออยู่", opp.every(function (m) { return m.vr === undefined; }));
+  // ---- ล็อกเกณฑ์ของแต่ละข้อ: ผลที่ได้ต้องตรงกับเกณฑ์ที่ประกาศไว้ใน legend เป๊ะ ----
+  // ถ้าใครแก้ตัวเลขเกณฑ์ (เช่น รายได้โต 15% -> 0%) ตารางจะเปลี่ยนความหมายเงียบ ๆ โดยไม่มีเทสต์ร้อง
+  var CRIT = [
+    { i: 0, name: "ราคาย่อลึก = DEEP/EXTREME เท่านั้น",
+      ok: function (m, c) { return c.pass === (m.ddCls === "DEEP" || m.ddCls === "EXTREME"); } },
+    { i: 1, name: "P/E ต่ำกว่าค่ากลางตัวเอง = premiumVsMedian < 0",
+      ok: function (m, c) { return c.pass === (m.vePrem < 0); } },
+    { i: 2, name: "พื้นฐานไม่เปลี่ยน = health INTACT เท่านั้น",
+      ok: function (m, c) { return c.pass === (m.health === "INTACT"); } },
+    { i: 3, name: "รายได้โตดี = CAGR >= 15%/ปี",
+      ok: function (m, c) { return c.pass === (m.revCagr >= 15); } },
+    { i: 4, name: "story ยังดี = thesis >= 75",
+      ok: function (m, c) { return c.pass === (m.thesis >= 75); } },
+    { i: 5, name: "PEG ดี = PEG < 1",
+      ok: function (m, c) { return c.pass === (m.peg < 1); } },
+  ];
+  CRIT.forEach(function (cr) {
+    var bad = opp.filter(function (m) {
+      var c = m.sc.cells[cr.i];
+      return c.known && !cr.ok(m, c);
+    }).map(function (m) { return m.t; });
+    t("model: เกณฑ์ข้อ " + (cr.i + 1) + " — " + cr.name, bad.length === 0, bad.join(", "));
+  });
   t("model: strongWait = INTACT + thesis≥75 เท่านั้น", M.strongWait.every(function (m) { return m.health === "INTACT" && m.thesis >= 75; }));
   t("model: ทุกตัวมี reason หนึ่งประโยค", M.rows.every(function (m) { return typeof m.reason === "string" && m.reason.length > 5; }));
   var hOv = TO.render({}, { data: D, TE: TE, VE: VE, PM: PM, IE: IE, AIR: AIR });
@@ -512,6 +556,19 @@ console.log("== Thesis Overview (LEVEL 1 landing) — model + render ==");
   t("render: การ์ดติดป้าย Thesis ชัด", hOv.indexOf(">Thesis ")>=0);
   t("render: การ์ดโชว์ Accumulation Score คู่กัน", hOv.indexOf("Accumulation Score:")>=0);
   t("render: ตาราง opportunities มีคอลัมน์ Acc Score", hOv.indexOf("<th>Acc Score</th>")>=0);
+  t("render: ตารางมีคอลัมน์ checklist ครบ 6 ข้อ",
+    ["ราคาย่อลึก (เทียบรอบย่อของตัวเอง)", "P/E ต่ำกว่าค่ากลางตัวเอง", "พื้นฐานไม่เปลี่ยน", "รายได้โตดี", "story ยังดี", "PEG ดี"]
+      .every(function (c) { return hOv.indexOf("<th>" + c + "</th>") >= 0; }));
+  t("render: legend อธิบายที่มาของทุกเกณฑ์ + ย้ำว่าไม่เทียบหุ้นตัวอื่น",
+    hOv.indexOf('class="tho-legend"') >= 0 && hOv.indexOf("ไม่มีการเปรียบเทียบกับหุ้นตัวอื่นเลย") >= 0 &&
+    hOv.indexOf("ValuationEngine") >= 0 && hOv.indexOf("ThesisEngine") >= 0 && hOv.indexOf("IntelligenceEngine") >= 0);
+  t("render: ทุกแถว opportunities มีบรรทัดอธิบาย ↳", (hOv.match(/class="tho-vr-why"/g) || []).length === M.opportunities.length);
+  // หัวตารางต้องไม่มีคำที่สื่อการเทียบข้ามหุ้นหลงเหลือ (รีวิวจากผู้ใช้)
+  t("render: ไม่มีคอลัมน์/ข้อความที่เทียบกับหุ้นตัวอื่น",
+    hOv.indexOf(">อันดับรวม<") < 0 && hOv.indexOf("เทียบทั้งกลุ่ม") < 0 && hOv.indexOf("เทียบข้ามบริษัทไม่ได้") < 0);
+  // ต้องจับ "แบนเนอร์ของตาราง" โดยเฉพาะ — คำว่า "ยังไม่โหลดราคาสด" มีในหัว Overview อยู่แล้ว
+  // ถ้าเช็คแค่คำนั้น ลบแบนเนอร์ทิ้งเทสต์ก็ยังผ่าน (mutation จับได้)
+  t("render: ไม่มีราคาสด → ตาราง opportunities บอกชัดว่าใช้ราคา KB", hOv.indexOf("ใช้ราคาสิ้นไตรมาสจาก KB") >= 0 && hOv.indexOf("ผลจะคำนวณใหม่จากราคาจริง") >= 0);
   t("render: ไม่มี NaN/undefined/Infinity/null หลุด", ["NaN", "undefined", "Infinity", ">null<"].every(function (b) { return hOv.indexOf(b) < 0; }));
   t("render: ไม่มีคำ Buy/Sell", !/\b(Buy|Sell)\b/.test(hOv));
   // sort ตาราง: เรียง thesis desc ต้องเปลี่ยนลำดับแถวอย่าง deterministic

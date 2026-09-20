@@ -24,6 +24,19 @@
 .th-head h1 { margin: 0; font-size: 25px; font-weight: 800; letter-spacing: -0.01em; }
 .th-headsub { margin: 5px 0 0; color: var(--mc-text-2); font-size: 13px; line-height: 1.6; max-width: 780px; }
 .th-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+/* ตัวเลขมูลค่าสดบนหัวการ์ดตัดสินใจ — ต้องเด่นกว่าข้อความ curated ที่พับไว้ */
+.th-valnow { font-weight: 600; font-variant-numeric: tabular-nums;
+  color: var(--app-info, #38bdf8); }
+.th-valnow.is-stale { color: var(--app-warn, #f59e0b); }
+.th-valmore { margin-top: 6px; }
+.th-valmore > summary { cursor: pointer; font-size: 11px; letter-spacing: .04em;
+  color: var(--app-dim, #94a3b8); }
+.th-valmore > summary:hover { color: var(--app-fg, #e2e8f0); }
+/* คำอธิบายว่าสองมุมวัดคนละเรื่อง — ต้องอ่านง่ายกว่าตัว note */
+.th-valbasis { display: block; margin: 6px 0 8px; font-size: 11px; line-height: 1.65;
+  color: var(--app-dim, #94a3b8); padding-left: 10px;
+  border-left: 2px solid var(--app-border, #1e293b); }
+.th-valbasis b { color: var(--app-fg, #e2e8f0); font-weight: 600; }
 /* แถบชิปบนหน้า Overview — เป็นแถบนำทาง ไม่ใช่ส่วนหนึ่งของ detail */
 .th-chips-ov { align-items: center; margin: 0 0 14px; padding-bottom: 12px;
   border-bottom: 1px solid var(--app-border, #1e293b); }
@@ -507,6 +520,25 @@
 .tho-why { flex: 1; color: var(--mc-dim, #94a3b8); font-size: 12px; }
 .tho-cta { color: #7dd3fc; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .tho-table tbody tr { cursor: pointer; }
+/* Top Opportunities — อันดับรวม 3 มุม */
+.tho-vr td small { color: var(--mc-dim, #94a3b8); font-size: 11px; }
+.tho-vr-no { color: var(--mc-dim, #94a3b8); font-weight: 700; width: 28px; }
+.tho-vr-rank { color: var(--mc-info, #38bdf8); }
+.tho-vr-sum { font-size: 15px; color: var(--mc-text, #e2e8f0); }
+/* checklist เทียบตัวเอง: ✓ ผ่าน · ○ ยังไม่ผ่าน · — วัดไม่ได้ */
+.tho-sc-sum { font-size: 15px; color: var(--mc-text, #e2e8f0); }
+.tho-sc.is-pass b { color: var(--mc-bull, #34d399); }
+.tho-sc.is-no b { color: var(--mc-dim, #94a3b8); font-weight: 500; }
+.tho-sc-na { color: var(--mc-muted, #64748b); font-size: 11px; }
+.tho-legend > p { margin: 8px 0 0; line-height: 1.65; color: var(--mc-text-2, #cbd5e1); }
+.tho-vr-row td { border-bottom: 0 !important; padding-bottom: 4px; }
+.tho-vr-why td { font-size: 11.5px; color: var(--mc-dim, #94a3b8); padding-top: 0; line-height: 1.5; }
+.tho-legend { margin: 0 0 10px; font-size: 12px; }
+.tho-legend > summary { cursor: pointer; color: var(--mc-dim, #94a3b8); font-size: 11.5px; letter-spacing: .03em; }
+.tho-legend > summary:hover { color: var(--mc-text, #e2e8f0); }
+.tho-legend ul { margin: 8px 0 0; padding-left: 18px; line-height: 1.65; color: var(--mc-text-2, #cbd5e1); }
+.tho-legend li + li { margin-top: 4px; }
+.tho-legend u { text-decoration-color: var(--mc-warn, #f59e0b); }
 .tho-table tbody tr:hover td { background: rgba(56, 189, 248, .05); }
 .tho-sort { background: none; border: 0; color: inherit; font: inherit; font-weight: 700; cursor: pointer; padding: 0; }
 .tho-sort:hover { color: #7dd3fc; }
