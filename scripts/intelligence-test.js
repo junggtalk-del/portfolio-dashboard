@@ -500,8 +500,10 @@ console.log("== Thesis Overview (LEVEL 1 landing) — model + render ==");
   t("model: priority มีแค่ HIGH/MEDIUM/LOW", M.rows.every(function (m) { return ["HIGH", "MEDIUM", "LOW"].indexOf(m.prio.key) >= 0; }));
   t("model: opportunities ไม่มี DETERIORATING/BROKEN", M.opportunities.every(function (m) { return m.health !== "BROKEN" && m.health !== "DETERIORATING"; }));
   // ต้องเท่ากับ min(10, จำนวนที่ผ่านเกต health) — ถ้าเช็คแค่ ≤10 ตัดเหลือ 5 แถวก็ผ่าน (เทสต์ไม่มีค่า)
+  // ตามรีวิว: แสดงทุกตัวที่ผ่านเกต health ไม่ตัดจำนวน
   var eligibleN = M.rows.filter(function (m) { return m.health !== "BROKEN" && m.health !== "DETERIORATING"; }).length;
-  t("model: opportunities = min(10, ตัวที่ผ่านเกต) = " + Math.min(10, eligibleN), M.opportunities.length === Math.min(10, eligibleN), M.opportunities.length + " (ผ่านเกต " + eligibleN + ")");
+  t("model: opportunities = ทุกตัวที่ผ่านเกต (" + eligibleN + " ตัว) ไม่ตัดจำนวน",
+    M.opportunities.length === eligibleN, M.opportunities.length + " (ผ่านเกต " + eligibleN + ")");
   // ---- Top Opportunities = checklist 6 ข้อ "เทียบกับตัวเองล้วน" ----
   // รีวิวจากผู้ใช้: ห้ามมีการเปรียบเทียบข้ามหุ้นในคะแนนเลย (เดิมเคยเรียงด้วยอันดับ #x/N เทียบกลุ่ม)
   var opp = M.opportunities;
@@ -547,11 +549,15 @@ console.log("== Thesis Overview (LEVEL 1 landing) — model + render ==");
   t("model: strongWait = INTACT + thesis≥75 เท่านั้น", M.strongWait.every(function (m) { return m.health === "INTACT" && m.thesis >= 75; }));
   t("model: ทุกตัวมี reason หนึ่งประโยค", M.rows.every(function (m) { return typeof m.reason === "string" && m.reason.length > 5; }));
   var hOv = TO.render({}, { data: D, TE: TE, VE: VE, PM: PM, IE: IE, AIR: AIR });
-  ["Investment Thesis Overview", "Today’s Highlights", "Read Next", "Top Opportunities", "Thesis Watch", "Strong Business · Wait", "Thesis Review", "All AI Assets"]
+  ["Investment Thesis Overview", "Today’s Highlights", "Read Next", "Top Opportunities", "Strong Business · Wait", "หุ้นทั้งหมดที่ติดตาม"]
     .forEach(function (sec) { t("render: มี section " + sec, hOv.indexOf(sec) >= 0); });
+  // ตัดออกตามรีวิว: Thesis Watch เคยมี 9 จาก 18 ตัว (WATCH เป็นสถานะปกติ ไม่ใช่ highlight)
+  // และ Thesis Review เคยมีตัวเดียวซึ่งซ้ำกับ Thesis Watch อยู่แล้ว
+  ["Thesis Watch", "Thesis Review"].forEach(function (sec) {
+    t("render: ไม่มี section " + sec + " แล้ว", hOv.indexOf("<h2>⚠️ " + sec) < 0 && hOv.indexOf("<h2>🔴 " + sec) < 0);
+  });
   t("render: chip/แถวคลิกได้", (hOv.match(/data-th-ticker=/g) || []).length >= 14);
-  t("render: หัวตารางเรียงได้ (11 คอลัมน์ รวม Acc/Divergence/Readiness)", (hOv.match(/data-tho-sort=/g) || []).length === 11);
-  t("render: ตารางมีคอลัมน์ Divergence + Readiness", hOv.indexOf("<th")>=0 && hOv.indexOf(">Divergence")>=0 && hOv.indexOf(">Readiness")>=0);
+  t("render: หัวตารางเรียงได้ 12 คอลัมน์ (รวมคอลัมน์ 'น่าสนใจ' ที่เพิ่มเข้ามา)", (hOv.match(/data-tho-sort=/g) || []).length === 12);
   t("render: การ์ดมี chips 3 ตัว", (hOv.match(/tho-chip"/g)||[]).length>=12);
   t("render: การ์ดติดป้าย Thesis ชัด", hOv.indexOf(">Thesis ")>=0);
   t("render: การ์ดโชว์ Accumulation Score คู่กัน", hOv.indexOf("Accumulation Score:")>=0);
@@ -564,11 +570,60 @@ console.log("== Thesis Overview (LEVEL 1 landing) — model + render ==");
     hOv.indexOf("ValuationEngine") >= 0 && hOv.indexOf("ThesisEngine") >= 0 && hOv.indexOf("IntelligenceEngine") >= 0);
   t("render: ทุกแถว opportunities มีบรรทัดอธิบาย ↳", (hOv.match(/class="tho-vr-why"/g) || []).length === M.opportunities.length);
   // หัวตารางต้องไม่มีคำที่สื่อการเทียบข้ามหุ้นหลงเหลือ (รีวิวจากผู้ใช้)
-  t("render: ไม่มีคอลัมน์/ข้อความที่เทียบกับหุ้นตัวอื่น",
-    hOv.indexOf(">อันดับรวม<") < 0 && hOv.indexOf("เทียบทั้งกลุ่ม") < 0 && hOv.indexOf("เทียบข้ามบริษัทไม่ได้") < 0);
+  // ต้องรัดให้ดูเฉพาะ section Top Opportunities — คำว่า "เทียบข้ามบริษัทไม่ได้" ปรากฏใน
+  // tooltip ของคอลัมน์ Valuation ในตาราง All AI Assets ด้วย ซึ่งเป็นคำเตือนที่ควรมี
+  var secTop = hOv.slice(hOv.indexOf("Top Opportunities"), hOv.indexOf("Strong Business"));
+  t("render: ตาราง Top Opportunities ไม่มีคอลัมน์/ข้อความที่เทียบกับหุ้นตัวอื่น",
+    secTop.indexOf(">อันดับรวม<") < 0 && secTop.indexOf("เทียบทั้งกลุ่ม") < 0 && secTop.indexOf("#1/") < 0,
+    secTop.length + " ตัวอักษร");
   // ต้องจับ "แบนเนอร์ของตาราง" โดยเฉพาะ — คำว่า "ยังไม่โหลดราคาสด" มีในหัว Overview อยู่แล้ว
   // ถ้าเช็คแค่คำนั้น ลบแบนเนอร์ทิ้งเทสต์ก็ยังผ่าน (mutation จับได้)
   t("render: ไม่มีราคาสด → ตาราง opportunities บอกชัดว่าใช้ราคา KB", hOv.indexOf("ใช้ราคาสิ้นไตรมาสจาก KB") >= 0 && hOv.indexOf("ผลจะคำนวณใหม่จากราคาจริง") >= 0);
+  // ---- All AI Assets: หัวตารางกับแถวต้องมีจำนวนช่องเท่ากันเป๊ะ ----
+  // bug จริงที่เคยเกิด: cols ประกาศ 11 คอลัมน์ แต่ tbody สร้างแค่ 9 td
+  // ทำให้ Acc Score ไปโผล่ใต้หัว "AI Monetization" และ Health ได้ Zone มาแสดง
+  // เทสต์เดิมเช็คแค่จำนวน th = 11 จึงไม่จับ
+  var secAll = hOv.slice(hOv.indexOf("หุ้นทั้งหมดที่ติดตาม"));
+  var theadAll = /<thead>([\s\S]*?)<\/thead>/.exec(secAll);
+  var nTh = theadAll ? (theadAll[1].match(/<th[ >]/g) || []).length : 0;
+  var allRows = secAll.match(/<tr data-th-ticker="[^"]*">[\s\S]*?<\/tr>/g) || [];
+  var tdCounts = allRows.map(function (r) { return (r.match(/<td[ >]/g) || []).length; });
+  var badRows = allRows.filter(function (r, i) { return tdCounts[i] !== nTh; }).length;
+  t("render: ตารางหุ้นทั้งหมด — ทุกแถวมีช่องเท่าจำนวนหัวคอลัมน์ (" + nTh + ")",
+    nTh > 0 && allRows.length > 0 && badRows === 0,
+    "th=" + nTh + " · td=" + tdCounts.join("/") + " · แถวที่ไม่ตรง " + badRows);
+  t("render: ตารางหุ้นทั้งหมด — ทุกหัวคอลัมน์มี tooltip ภาษาไทย",
+    theadAll && (theadAll[1].match(/<th title="[^"]+"/g) || []).length === nTh);
+  t("render: ตารางหุ้นทั้งหมด — มี legend อธิบายทุกคอลัมน์",
+    secAll.indexOf("แต่ละคอลัมน์หมายถึงอะไร") >= 0 && secAll.indexOf("สุขภาพ thesis") >= 0);
+  // ---- ตารางต้องเป็นภาษาไทยทั้งหมด (หัวคอลัมน์ + ค่าในเซลล์) ----
+  ["น่าสนใจ", "หุ้น", "คุณภาพธุรกิจ", "คะแนนสะสม", "ภาพรวมตลาด", "ธุรกิจ vs ราคา",
+   "ความพร้อม", "ผลตอบแทนจาก AI", "ราคาเทียบอดีตตัวเอง", "สุขภาพ thesis", "โซนสะสม", "ควรอ่านก่อน"]
+    .forEach(function (c) { t("render: หัวคอลัมน์ไทย \"" + c + "\"", secAll.indexOf(">" + c + "<") >= 0); });
+  t("render: ไม่มีสถานะภาษาอังกฤษหลงเหลือในตาราง",
+    ["INTACT", "DETERIORATING", "ATTRACTIVE", "EXPENSIVE", "WATCH / PREPARE", "THESIS REVIEW",
+     "Zone A", "Zone B", "Zone C", "Zone D", "Zone E"].every(function (w) { return secAll.indexOf(w) < 0; }),
+    ["INTACT", "DETERIORATING", "ATTRACTIVE", "EXPENSIVE", "WATCH / PREPARE", "THESIS REVIEW",
+     "Zone A", "Zone B", "Zone C", "Zone D", "Zone E"].filter(function (w) { return secAll.indexOf(w) >= 0; }).join(", "));
+  // ---- ลำดับเริ่มต้น = ความน่าสนใจในการซื้อ + กฎเหล็กเรื่องพื้นฐานเสื่อม ----
+  var tblOrder = (secAll.match(/<tr data-th-ticker="([^"]*)"/g) || []).map(function (x) { return x.replace(/.*="/, "").replace('"', ""); });
+  var rowBy = {}; M.rows.forEach(function (m) { rowBy[m.t] = m; });
+  t("render: ตารางแสดงครบทุกตัว (" + M.rows.length + ")", tblOrder.length === M.rows.length, tblOrder.length);
+  t("model: ทุกตัวมีคะแนน checklist (รวมตัวที่ถูกกรองออกจาก Top Opportunities)",
+    M.rows.every(function (m) { return m.sc && m.sc.cells.length === 6; }));
+  // engine ประกาศเองว่าสุขภาพ thesis เสื่อม "ราคาถูกแค่ไหนก็ห้ามข้าม" -> ต้องอยู่ท้ายเสมอ
+  var sickIdx = tblOrder.map(function (t2, i) { return { i: i, sick: rowBy[t2] && (rowBy[t2].health === "DETERIORATING" || rowBy[t2].health === "BROKEN") }; });
+  var firstSick = sickIdx.filter(function (x) { return x.sick; }).map(function (x) { return x.i; })[0];
+  var lastOk = sickIdx.filter(function (x) { return !x.sick; }).map(function (x) { return x.i; }).pop();
+  t("render: ตัวที่พื้นฐานเสื่อม/พังอยู่ท้ายตารางเสมอ ไม่ว่าคะแนนจะเท่าไหร่",
+    firstSick === undefined || lastOk === undefined || firstSick > lastOk,
+    "เสื่อมตัวแรกอยู่ที่ " + firstSick + " · ปกติตัวสุดท้ายอยู่ที่ " + lastOk);
+  t("render: ในกลุ่มพื้นฐานปกติ เรียงตามคะแนนจากมากไปน้อย",
+    tblOrder.filter(function (t2) { var m = rowBy[t2]; return m && m.health !== "DETERIORATING" && m.health !== "BROKEN"; })
+      .every(function (t2, i, arr) {
+        if (i === 0) return true;
+        return rowBy[arr[i - 1]].sc.passed >= rowBy[t2].sc.passed;
+      }));
   t("render: ไม่มี NaN/undefined/Infinity/null หลุด", ["NaN", "undefined", "Infinity", ">null<"].every(function (b) { return hOv.indexOf(b) < 0; }));
   t("render: ไม่มีคำ Buy/Sell", !/\b(Buy|Sell)\b/.test(hOv));
   // sort ตาราง: เรียง thesis desc ต้องเปลี่ยนลำดับแถวอย่าง deterministic

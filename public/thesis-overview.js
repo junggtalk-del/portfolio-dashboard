@@ -15,6 +15,24 @@
   function num(v) { if (typeof v === "number") return isFinite(v) ? v : null; if (typeof v === "string") { if (v.trim() === "") return null; var x = Number(v); return isFinite(x) ? x : null; } return null; }
 
   var VE_TH = { ATTRACTIVE: "🟢 Attractive", FAIR: "🔵 Fair", PREMIUM: "🟡 Premium", EXPENSIVE: "🔴 Expensive", INSUFFICIENT_DATA: "—" };
+  // คำไทยสำหรับตาราง All AI Assets — ใช้ถ้อยคำเดียวกับที่ engine นิยามไว้ ไม่ตั้งคำใหม่เอง
+  var TH_VE = {
+    ATTRACTIVE: "🟢 ถูกกว่าอดีตตัวเอง", FAIR: "🔵 ใกล้ค่ากลางอดีต",
+    PREMIUM: "🟡 แพงกว่าค่ากลาง", EXPENSIVE: "🔴 แพงกว่าอดีตมาก", INSUFFICIENT_DATA: "— ข้อมูลไม่พอ",
+  };
+  var TH_HEALTH = {
+    INTACT: "ยังแข็งแรง", WATCH: "มีจุดต้องจับตา",
+    DETERIORATING: "เสื่อมถอย", BROKEN: "พังหลายเสา", INSUFFICIENT: "ข้อมูลไม่พอ",
+  };
+  var TH_DIV = {
+    POSITIVE: "ธุรกิจแข็ง ราคาอ่อน", ALIGNED: "ราคาไปตามพื้นฐาน",
+    NEGATIVE: "ราคาอ่อน พื้นฐานเสื่อม", THESIS_RISK: "เสี่ยงระดับ thesis", INSUFFICIENT: "ข้อมูลไม่พอ",
+  };
+  var TH_RD = {
+    READY: "พร้อมสะสม", WATCH_PREPARE: "เตรียมตัว รอจังหวะ", WAIT: "ยังไม่ใช่จังหวะ",
+    THESIS_REVIEW: "ต้องทบทวน thesis ก่อน", INSUFFICIENT: "ข้อมูลไม่พอ",
+  };
+  var TH_PRIO = { HIGH: "ควรอ่านก่อน", MEDIUM: "อ่านรอง", LOW: "ยังไม่เร่ง" };
   var PRIO = {
     HIGH: { key: "HIGH", label: "HIGH", cls: "tho-p-high" },
     MEDIUM: { key: "MEDIUM", label: "MEDIUM", cls: "tho-p-med" },
@@ -173,33 +191,30 @@
     // ---- Top Opportunities: checklist 6 ข้อ "เทียบกับตัวเองล้วน" ----
     // ไม่มีการเปรียบเทียบข้ามหุ้นในคะแนนเลย — แต่ละข้อถามว่าหุ้นตัวนี้ดีกว่า/ถูกกว่าตัวมันเองในอดีตไหม
     // เกณฑ์ทุกข้อมาจาก engine ที่มีอยู่แล้ว ไม่มีเลขที่คิดขึ้นใหม่ (ที่มาอยู่ในตาราง SELF_CHECKS)
+    // ให้คะแนน checklist กับทุกตัว เพื่อให้ตาราง All AI Assets เรียงตามความน่าสนใจได้ครบ
+    // (เดิมคำนวณเฉพาะ pool ที่ผ่านเกต health ทำให้ตัวที่ถูกกรองออกไม่มีคะแนน)
+    rows.forEach(function (m) { m.sc = selfCheck(m); });
     var pool = rows.filter(function (m) { return m.health !== "BROKEN" && m.health !== "DETERIORATING"; });
-    pool.forEach(function (m) { m.sc = selfCheck(m); });
     var opportunities = pool.slice().sort(function (a, b) {
       // ผ่านมากกว่ามาก่อน → ข้อมูลครบกว่า → P/E ต่ำกว่าค่ากลางตัวเองมากกว่า → ย่อลึกกว่า → thesis สูงกว่า
       return (b.sc.passed - a.sc.passed) || (b.sc.known - a.sc.known) ||
         ((a.vePrem == null ? 0 : a.vePrem) - (b.vePrem == null ? 0 : b.vePrem)) ||
         ((a.dd == null ? 0 : a.dd) - (b.dd == null ? 0 : b.dd)) ||
         ((b.thesis || 0) - (a.thesis || 0)) || (a.t < b.t ? -1 : 1);
-    }).slice(0, 10);
-    var watchList = rows.filter(function (m) { return m.health === "WATCH" || m.health === "DETERIORATING" || m.health === "BROKEN"; })
-      .sort(function (a, b) { return HEALTH_RANK[a.health] - HEALTH_RANK[b.health] || (b.warns + 2 * b.crits) - (a.warns + 2 * a.crits); });
+    });   // แสดงทั้งหมดใน KB ไม่ตัดจำนวน (ตัดเฉพาะ DETERIORATING/BROKEN ที่กรองไว้แล้วด้านบน)
+    // watchList / review ถูกตัดออกตามรีวิว — WATCH เป็นสถานะปกติของครึ่งพอร์ต ไม่ใช่ highlight
+    // และ review เคยมีตัวเดียวซึ่งซ้ำกับ watchList อยู่แล้ว · ตัวที่มีปัญหาจริงยังเห็นได้ใน
+    // Top Opportunities (คะแนนต่ำ/ถูกกรองออก) และตาราง All AI Assets ที่เรียงได้
     var strongWait = rows.filter(function (m) {
       return m.health === "INTACT" && (m.thesis || 0) >= 75 && (m.summary === "MONITOR" || m.summary === "PRICE_RISK");
     }).sort(function (a, b) { return (b.thesis || 0) - (a.thesis || 0); });
-    var review = rows.filter(function (m) {
-      return m.health === "BROKEN" || m.health === "DETERIORATING" ||
-        m.monetState.indexOf("MONETIZATION_RISK") >= 0 || m.monetState.indexOf("WEAK") >= 0 ||
-        m.expect === "DETERIORATING" || m.expect === "SHARP_DOWN" ||
-        (mega && mega.gateOpen === false);
-    }).sort(byImportance);
 
     return {
       available: true, rows: rows, ranked: ranked, counts: counts, total: tickers.length,
       loadedAt: loadedAt, mega: mega,
       highlights: ranked.slice(0, 4),
       readNext: ranked.slice(0, 5),
-      opportunities: opportunities, watchList: watchList, strongWait: strongWait, review: review,
+      opportunities: opportunities, strongWait: strongWait,
     };
   }
 
@@ -272,6 +287,9 @@
   }
   function veTxt(m) { return m.veClass ? (VE_TH[m.veClass] || m.veClass) : "—"; }
   function zoneTxt(m) { return m.zone ? m.zoneIcon + " " + esc(m.zoneLabel) + (m.gated ? " ⛔" : "") : "—"; }
+  // ชื่อโซนแบบไทยสั้น ๆ สำหรับตาราง — ล้อคำ thai ที่ PMEngine นิยามไว้
+  var ZONE_TH = { A: "โอกาสหายาก", B: "สะสมมีน้ำหนัก", C: "ทยอยสะสม", D: "ยังไม่ใช่จังหวะ", E: "ทบทวนก่อน" };
+  function zoneThai(m) { return "โซน " + m.zone + " — " + (ZONE_TH[m.zone] || m.zoneLabel); }
   function openBtn(t, label) { return '<button type="button" class="tho-open" data-th-ticker="' + esc(t) + '">' + esc(label || "READ THESIS →") + "</button>"; }
   function healthTxt(m) { return m.healthIcon + " " + esc(m.health); }
 
@@ -290,7 +308,7 @@
       '<span class="tho-c tho-c-hi">🟢 <b>' + M.counts.hi + "</b> High Interest</span>" +
       '<span class="tho-c tho-c-watch">🟡 <b>' + M.counts.watch + "</b> Watch</span>" +
       '<span class="tho-c tho-c-wait">🟠 <b>' + M.counts.wait + "</b> Wait</span>" +
-      '<span class="tho-c tho-c-review">🔴 <b>' + M.counts.review + "</b> Thesis Review</span>" +
+      '<span class="tho-c tho-c-review">🔴 <b>' + M.counts.review + "</b> ต้องทบทวน</span>" +
       "</div>" +
       '<div class="tho-tools"><button type="button" class="tho-open" data-th-cmp-toggle="1">⇄ เทียบหุ้น</button></div>' +
       "</section>";
@@ -354,22 +372,10 @@
       "<li><b>Acc Score / Zone</b> — มุมมองของ AI Portfolio Manager (คงไว้ให้เทียบ — บางตัวผ่านหลายข้อแต่ PM ให้รอ ให้อ่านประกอบกัน)</li>" +
       "<li>✓ = ผ่าน · ○ = ยังไม่ผ่าน · — = วัดไม่ได้ (ไม่นับเป็นตก แต่ทำให้ตัวหารน้อยลง)</li>" +
       "</ul></details>";
-    h += '<section class="tho-sec"><h2>🔥 Top Opportunities</h2><p>10 อันดับ · <b>เทียบกับตัวเองล้วน ไม่เทียบกับหุ้นตัวอื่น</b> — ราคาย่อลึกเทียบรอบย่อของตัวเอง · P/E ต่ำกว่าค่ากลางตัวเอง · พื้นฐานไม่เปลี่ยน · รายได้โตดี · story ยังดี · PEG ดี → เรียงตามจำนวนข้อที่ผ่าน · ตัด DETERIORATING/BROKEN ออก — บริบท ไม่ใช่คำแนะนำซื้อขาย</p>' +
+    h += '<section class="tho-sec"><h2>🔥 Top Opportunities</h2><p>ทุกตัวที่ติดตาม · <b>เทียบกับตัวเองล้วน ไม่เทียบกับหุ้นตัวอื่น</b> — ราคาย่อลึกเทียบรอบย่อของตัวเอง · P/E ต่ำกว่าค่ากลางตัวเอง · พื้นฐานไม่เปลี่ยน · รายได้โตดี · story ยังดี · PEG ดี → เรียงตามจำนวนข้อที่ผ่าน · ตัด DETERIORATING/BROKEN ออก — บริบท ไม่ใช่คำแนะนำซื้อขาย</p>' +
       opStale + opLegend +
       '<div class="th-table-wrap"><table class="th-table tho-table tho-vr"><thead><tr><th>#</th><th>Ticker</th><th>ผ่าน</th>' + scHead + "<th>Acc Score</th><th>Zone</th></tr></thead><tbody>" +
       (opRows || '<tr><td colspan="' + (SELF_CHECKS.length + 4) + '">—</td></tr>') + "</tbody></table></div></section>";
-
-    // 5) THESIS WATCH ⚠️
-    var wRows = M.watchList.map(function (m) {
-      var flags = m.critLabels.map(function (l) { return '<span class="tho-flag tho-flag-crit">' + esc(l) + " ✗</span>"; })
-        .concat(m.warnLabels.map(function (l) { return '<span class="tho-flag">' + esc(l) + " ↓</span>"; })).join(" ");
-      return '<div class="tho-watch">' +
-        '<div class="tho-watch-head"><b>' + esc(m.t) + "</b> " + healthTxt(m) + "</div>" +
-        '<div class="tho-flags">' + (flags || "—") + "</div>" +
-        '<p class="tho-reason">"' + esc(m.reason) + '"</p>' + openBtn(m.t, "REVIEW THESIS →") + "</div>";
-    }).join("");
-    h += '<section class="tho-sec"><h2>⚠️ Thesis Watch</h2>' +
-      (wRows || '<div class="tho-allclear">🟢 ไม่พบการเสื่อมถอยของ thesis ที่มีนัย</div>') + "</section>";
 
     // 6) STRONG BUSINESS · WAIT 💎
     var swRows = M.strongWait.map(function (m) {
@@ -381,29 +387,27 @@
     h += '<section class="tho-sec"><h2>💎 Strong Business · Wait</h2><p>WAIT ไม่ได้แปลว่าบริษัทแย่ — thesis แข็งแรง แต่จังหวะ/ราคายังไม่เข้าเงื่อนไข</p>' +
       (swRows || '<div class="th-muted">—</div>') + "</section>";
 
-    // 7) THESIS REVIEW 🔴
-    var rvRows = M.review.map(function (m) {
-      var tags = [];
-      if (m.health === "BROKEN" || m.health === "DETERIORATING") tags.push(healthTxt(m));
-      if (m.monetState.indexOf("MONETIZATION_RISK") >= 0 || m.monetState.indexOf("WEAK") >= 0) tags.push("AI Monetization " + esc(m.monetState));
-      if (m.expect === "DETERIORATING" || m.expect === "SHARP_DOWN") tags.push("Estimates ↓");
-      if (M.mega && M.mega.gateOpen === false) tags.push("Mega Trend gate ปิด");
-      return '<div class="tho-watch"><div class="tho-watch-head"><b>' + esc(m.t) + "</b> " + tags.join(" · ") + "</div>" +
-        '<p class="tho-reason">"' + esc(m.reason) + '"</p>' + openBtn(m.t, "REVIEW THESIS →") + "</div>";
-    }).join("");
-    h += '<section class="tho-sec"><h2>🔴 Thesis Review</h2><p>ความเสี่ยงที่ต้องสอบลึก — พื้นฐานเสื่อม / monetization / ประมาณการ / Mega Trend</p>' +
-      (rvRows || '<div class="tho-allclear">🟢 ไม่มีตัวที่เข้าเงื่อนไขต้องทบทวนตอนนี้</div>') + "</section>";
-
     // 8) ALL AI ASSETS (ท้ายสุด + sort ได้)
+    // tip = คำอธิบายไทย ใช้เป็น tooltip บนหัวคอลัมน์ และประกอบเป็น legend ใต้ตาราง
+    // หัวคอลัมน์และค่าในเซลล์เป็นภาษาไทยทั้งหมด · tip = คำอธิบายเต็ม (tooltip + legend)
     var cols = [
-      { k: "t", label: "Ticker" }, { k: "thesis", label: "Thesis" }, { k: "acc", label: "Acc Score" }, { k: "mega", label: "Mega Trend" },
-      { k: "div", label: "Divergence" }, { k: "rd", label: "Readiness" },
-      { k: "monet", label: "AI Monetization" }, { k: "ve", label: "Valuation" }, { k: "health", label: "Health" },
-      { k: "zone", label: "Zone" }, { k: "prio", label: "Read Priority" },
+      { k: "sc", label: "น่าสนใจ", tip: "จำนวนข้อที่ผ่านจาก checklist 6 ข้อที่วัดเทียบกับตัวหุ้นเอง (ราคาย่อลึก · P/E ต่ำกว่าค่ากลางตัวเอง · พื้นฐานไม่เปลี่ยน · รายได้โต · story · PEG) — เกณฑ์เดียวกับตาราง Top Opportunities และเป็นลำดับเริ่มต้นของตารางนี้" },
+      { k: "t", label: "หุ้น", tip: "สัญลักษณ์หุ้นและชื่อบริษัท — คลิกแถวเพื่อเปิด thesis รายตัว" },
+      { k: "thesis", label: "คุณภาพธุรกิจ", tip: "คะแนน 0-100 จากข้อมูล curated (พื้นฐาน · การเติบโต · ความได้เปรียบ · การจัดสรรทุน) ยิ่งสูงยิ่งแข็งแรง" },
+      { k: "acc", label: "คะแนนสะสม", tip: "คะแนนความน่าสะสมจาก AI Portfolio Manager — เลขเดียวกับหน้า /portfolio-manager" },
+      { k: "mega", label: "ภาพรวมตลาด", tip: "สภาพตลาดโดยรวม เหมือนกันทุกตัว — gate ปิดแปลว่าภาพใหญ่ยังไม่เอื้อให้เพิ่มความเสี่ยง" },
+      { k: "div", label: "ธุรกิจ vs ราคา", tip: "เทียบทิศทางธุรกิจกับทิศทางราคา — ธุรกิจแข็ง ราคาอ่อน = ราคาลงโดยพื้นฐานยังดี · ราคาอ่อน พื้นฐานเสื่อม = ลงเพราะธุรกิจแย่จริง" },
+      { k: "rd", label: "ความพร้อม", tip: "ความพร้อมเชิงจังหวะจาก engine — พร้อมสะสม / เตรียมตัว รอจังหวะ / ยังไม่ใช่จังหวะ / ต้องทบทวน thesis ก่อน · เป็นบริบท ไม่ใช่คำสั่งซื้อขาย" },
+      { k: "monet", label: "ผลตอบแทนจาก AI", tip: "คะแนน 0-100 ว่าแปลงการลงทุน AI เป็นผลธุรกิจได้จริงแค่ไหน (จากสถานะการดำเนินงาน + การเติบโต + ความได้เปรียบ)" },
+      { k: "ve", label: "ราคาเทียบอดีตตัวเอง", tip: "เทียบ P/E วันนี้กับมัธยฐาน 5 ปีของหุ้นตัวเอง — ถูกกว่าอดีตตัวเอง = ถูกกว่าที่เคยเป็น · เทียบข้ามบริษัทไม่ได้ เพราะแต่ละตัวมีฐานอดีตคนละระดับ" },
+      { k: "health", label: "สุขภาพ thesis", tip: "ยังแข็งแรง = ไม่มีเสาหลักไหนเสื่อม · มีจุดต้องจับตา = มีสัญญาณเตือนแต่ยังไม่พัง · เสื่อมถอย = แย่ลงจริง · พังหลายเสา = ต้องทบทวนทั้งหมด" },
+      { k: "zone", label: "โซนสะสม", tip: "โซน A-E ของ AI Portfolio Manager (A = โอกาสหายาก · B = สะสมแบบมีน้ำหนัก · C = ทยอยสะสม · D = ยังไม่ใช่จังหวะ · E = ทบทวนก่อน) · ⛔ = ถูกเกตความปลอดภัยกดลง" },
+      { k: "prio", label: "ควรอ่านก่อน", tip: "ลำดับที่ควรเปิดอ่าน thesis — จากพัฒนาการที่เปลี่ยนแปลงมากที่สุด ไม่ใช่ลำดับความน่าซื้อ" },
     ];
     var ZR2 = { A: 0, B: 1, C: 2, D: 3, E: 4 };
     var VR = { ATTRACTIVE: 0, FAIR: 1, PREMIUM: 2, EXPENSIVE: 3 };
     function sortVal(m, k) {
+      if (k === "sc") return -(m.sc ? m.sc.passed * 100 + m.sc.known : -1); // ผ่านมากมาก่อน
       if (k === "t") return m.t;
       if (k === "thesis") return -(m.thesis == null ? -1 : m.thesis);
       if (k === "acc") return -(m.acc == null ? -1 : m.acc);
@@ -424,23 +428,50 @@
         var c = av < bv ? -1 : av > bv ? 1 : (a.t < b.t ? -1 : 1);
         return sort.dir === "desc" ? -c : c;
       });
-    } else tableRows.sort(function (a, b) { return a.rank - b.rank || (a.t < b.t ? -1 : 1); });
+    } else {
+      // ลำดับเริ่มต้น = ความน่าสนใจในการซื้อ (checklist 6 ข้อ เกณฑ์เดียวกับ Top Opportunities)
+      // เท่ากัน → ข้อมูลครบกว่า → P/E ต่ำกว่าค่ากลางตัวเองมากกว่า → ลำดับที่ควรอ่านก่อน → ตัวอักษร
+      // กฎเหล็กที่ engine ประกาศไว้เอง (READINESS.THESIS_REVIEW): สุขภาพ thesis เสื่อม/พัง
+      // "ราคาถูกแค่ไหนก็ห้ามข้าม" — ตัวที่เสื่อมจึงต้องอยู่ท้ายเสมอ ไม่ว่า checklist จะได้กี่ข้อ
+      // (ไม่งั้น DASH ที่ DETERIORATING จะโผล่กลางตารางเหนือหุ้นที่พื้นฐานยังดี)
+      var sick = function (m) { return m.health === "BROKEN" ? 2 : m.health === "DETERIORATING" ? 1 : 0; };
+      tableRows.sort(function (a, b) {
+        var ap = a.sc ? a.sc.passed : -1, bp = b.sc ? b.sc.passed : -1;
+        var ak = a.sc ? a.sc.known : -1, bk = b.sc ? b.sc.known : -1;
+        return (sick(a) - sick(b)) || (bp - ap) || (bk - ak) ||
+          ((a.vePrem == null ? 0 : a.vePrem) - (b.vePrem == null ? 0 : b.vePrem)) ||
+          (a.rank - b.rank) || (a.t < b.t ? -1 : 1);
+      });
+    }
     var thead = cols.map(function (c) {
       var mark = sort && sort.col === c.k ? (sort.dir === "desc" ? " ▼" : " ▲") : "";
-      return '<th><button type="button" class="tho-sort" data-tho-sort="' + c.k + '">' + esc(c.label) + mark + "</button></th>";
+      return '<th title="' + esc(c.tip) + '"><button type="button" class="tho-sort" data-tho-sort="' + c.k + '">' +
+        esc(c.label) + mark + "</button></th>";
     }).join("");
+    // แถวต้องมี td ครบเท่าจำนวนคอลัมน์ใน cols — เดิมขาด Divergence กับ Readiness
+    // ทำให้ข้อมูลเลื่อนไป 2 ช่อง (Acc Score ไปโผล่ใต้หัว "AI Monetization" ฯลฯ)
+    // ทุกเซลล์เป็นภาษาไทย · แถวต้องมี td ครบเท่าจำนวนคอลัมน์ใน cols เสมอ
     var tbody = tableRows.map(function (m) {
-      return '<tr data-th-ticker="' + esc(m.t) + '"><td><b>' + esc(m.t) + '</b><small class="th-muted"> ' + esc(m.name) + "</small></td>" +
+      var scTxt = m.sc
+        ? '<b class="tho-sc-sum">' + m.sc.passed + "/" + m.sc.known + "</b>"
+        : '<span class="th-muted">—</span>';
+      return '<tr data-th-ticker="' + esc(m.t) + '"><td>' + scTxt + "</td>" +
+        "<td><b>" + esc(m.t) + '</b><small class="th-muted"> ' + esc(m.name) + "</small></td>" +
         "<td>" + (m.thesis == null ? "—" : m.thesis) + "</td>" +
         "<td><b>" + (m.acc == null ? "—" : m.acc) + "</b></td>" +
         "<td>" + esc(megaTxt(M.mega)) + "</td>" +
+        "<td>" + m.divIcon + " " + esc(TH_DIV[m.divKey] || "—") + "</td>" +
+        "<td>" + m.rdIcon + " " + esc(TH_RD[m.rdKey] || "—") + "</td>" +
         "<td>" + (m.monet == null ? "—" : m.monet) + "</td>" +
-        "<td>" + veTxt(m) + "</td>" +
-        "<td>" + healthTxt(m) + "</td>" +
-        "<td>" + zoneTxt(m) + "</td>" +
-        '<td><span class="tho-prio ' + m.prio.cls + '">' + m.prio.label + "</span></td></tr>";
+        "<td>" + esc(TH_VE[m.veClass] || "—") + "</td>" +
+        "<td>" + m.healthIcon + " " + esc(TH_HEALTH[m.health] || m.health) + "</td>" +
+        "<td>" + (m.zone ? m.zoneIcon + " " + esc(zoneThai(m)) + (m.gated ? " ⛔" : "") : "—") + "</td>" +
+        '<td><span class="tho-prio ' + m.prio.cls + '">' + esc(TH_PRIO[m.prio.key] || m.prio.label) + "</span></td></tr>";
     }).join("");
-    h += '<section class="tho-sec"><h2>📋 All AI Assets</h2><p>ทั้ง universe · คลิกหัวคอลัมน์เพื่อเรียง · คลิกแถวเพื่อเปิด thesis รายตัว</p>' +
+    var allLegend = '<details class="tho-legend"><summary>แต่ละคอลัมน์หมายถึงอะไร</summary><ul>' +
+      cols.map(function (c) { return "<li><b>" + esc(c.label) + "</b> — " + esc(c.tip) + "</li>"; }).join("") +
+      "</ul></details>";
+    h += '<section class="tho-sec"><h2>📋 หุ้นทั้งหมดที่ติดตาม</h2><p>เรียงตาม<b>ความน่าสนใจในการซื้อ</b> (จำนวนข้อที่ผ่าน checklist 6 ข้อที่วัดเทียบกับตัวหุ้นเอง — เกณฑ์เดียวกับ Top Opportunities) · คลิกหัวคอลัมน์เพื่อเรียงแบบอื่น · คลิกแถวเพื่อเปิด thesis รายตัว · ชี้เมาส์ที่หัวคอลัมน์เพื่อดูคำอธิบาย — บริบท ไม่ใช่คำแนะนำซื้อขาย</p>' + allLegend +
       '<div class="th-table-wrap"><table class="th-table tho-table"><thead><tr>' + thead + "</tr></thead><tbody>" + tbody + "</tbody></table></div>" +
       '<div class="th-muted">ที่มา: ThesisEngine · PMEngine (Zone/Acc) · ValuationEngine · IntelligenceEngine — ไม่มีคะแนนใหม่ · ข้อมูลไม่มี = "—" · ไม่ใช่คำแนะนำซื้อขาย</div></section>';
 
