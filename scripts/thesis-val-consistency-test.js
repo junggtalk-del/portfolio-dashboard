@@ -70,10 +70,18 @@ function boot(ticker, snapshot) {
 
 // ValuationEngine อ่านราคา live จาก snapshot.historicalData[ticker].closes เท่านั้น
 // ถ้าป้อนผิดฟิลด์ เคส "ราคา live" จะตกกลับไปใช้ราคา KB เงียบ ๆ แล้วเทสต์จะไม่ได้ทดสอบจริง
+// วันที่ต้องอิงวันที่รันเสมอ ห้ามตรึงค่าไว้ — ValuationEngine ตัดสิน stale จาก
+// CONFIG.stalePriceDays (7 วัน) เทียบกับ "วันนี้" ถ้าตรึงวันที่ไว้ เทสต์จะเขียวตอนเขียน
+// แล้วค่อยแดงเองเมื่อเวลาผ่านไปเกิน 7 วัน โดยที่โค้ดจริงไม่ได้เปลี่ยนอะไรเลย
+// (เคยเกิดจริง: fixture ตรึง 2026-09-19 เขียนวันที่ 2026-09-20 แล้วแดงวันที่ 2026-09-27)
+function ymdAgo(days) {
+  var d = new Date(Date.now() - days * 86400000);
+  return d.toISOString().slice(0, 10);
+}
 function snapWith(prices) {
   var hd = {};
   Object.keys(prices).forEach(function (k) {
-    hd[k] = { closes: [prices[k] * 0.98, prices[k]], dates: ["2026-09-18", "2026-09-19"] };
+    hd[k] = { closes: [prices[k] * 0.98, prices[k]], dates: [ymdAgo(2), ymdAgo(1)] };
   });
   return { loadedAt: new Date().toISOString(), historicalData: hd };
 }

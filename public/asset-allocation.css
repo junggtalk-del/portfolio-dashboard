@@ -1,0 +1,270 @@
+/* ============================================================
+   Asset Allocation — แบ่งพอร์ตเป็น 3 ระยะ แล้วติดตามผลตอบแทนจริงเทียบเป้าหมาย
+   ใช้ token ของ mission-control (--mc-*) + accent เฉพาะหน้านี้ (--aa-*)
+
+   หลักของหน้านี้: ตัดสินใจก่อน — viewport แรกต้องตอบให้ได้ว่าเงินอยู่ไหน
+   พอร์ตไหนตามหลังเป้า และจากนี้ต้องทำเท่าไหร่ ส่วนตารางดิบอยู่ล่างสุดเสมอ
+
+   สีของพอร์ตเป็น "ป้ายระบุตัว" ไม่ใช่การตัดสินว่าพอร์ตไหนดีกว่า
+   สีที่สื่อสถานะมีแค่ที่ชิปสถานะเท่านั้น และตั้งใจไม่ใช้สีแดงกับ "ตามหลังเป้า"
+   เพราะการตามหลังเป้าเป็นข้อเท็จจริงที่ต้องรู้ ไม่ใช่ความผิด
+   ============================================================ */
+:root {
+  --aa-short: #38bdf8;
+  --aa-mid: #f59e0b;
+  --aa-long: #a855f7;
+  --aa-ahead: #34d399;
+  --aa-on: #94a3b8;
+  --aa-behind: #f59e0b;
+  --aa-idle: #64748b;
+  --aa-chip-bg: rgba(148, 163, 184, 0.10);
+  --aa-track: rgba(148, 163, 184, 0.18);
+}
+[data-theme="light"] {
+  --aa-chip-bg: rgba(100, 116, 139, 0.08);
+  --aa-track: rgba(100, 116, 139, 0.18);
+}
+
+.aa-page { padding: 22px 26px 60px; max-width: 1180px; margin: 0 auto; color: var(--mc-text); }
+.aa-page * { box-sizing: border-box; }
+.aa-muted { color: var(--mc-muted); font-size: 12px; }
+.aa-num { font-variant-numeric: tabular-nums; }
+
+/* -------------------------------------------------- 1 · hero */
+.aa-hero { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card-glow), var(--mc-card); margin-bottom: 16px; }
+.aa-hero-inner { padding: 20px 24px; }
+.aa-title { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
+.aa-sub { margin: 4px 0 0; color: var(--mc-text-2); font-size: 13px; }
+.aa-empty-msg { margin: 12px 0 0; color: var(--mc-text-2); font-size: 13.5px; line-height: 1.75; max-width: 640px; }
+.aa-hero-emoji { font-size: 40px; text-align: center; }
+
+/* ประโยคสรุป — เป็นสิ่งแรกที่ตาไปเกาะ สร้างจาก engine ล้วน ไม่มีการแต่งเรื่อง */
+.aa-headline { margin: 16px 0 0; padding: 13px 16px; border: 1px solid var(--mc-border); border-left: 3px solid var(--aa-on); border-radius: 12px; background: var(--aa-chip-bg); font-size: 14.5px; font-weight: 700; line-height: 1.65; }
+.aa-headline.is-behind { border-left-color: var(--aa-behind); }
+.aa-headline.is-ahead { border-left-color: var(--aa-ahead); }
+
+.aa-stats { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.aa-stat { flex: 1; min-width: 148px; border: 1px solid var(--mc-border); border-radius: 14px; background: var(--aa-chip-bg); padding: 12px 14px; }
+.aa-stat-n { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.aa-stat-l { font-size: 11.5px; color: var(--mc-muted); margin-top: 2px; font-weight: 600; }
+.aa-stat-s { font-size: 11.5px; margin-top: 4px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.aa-stat-link { display: inline-block; margin-top: 4px; font-size: 11.5px; color: var(--mc-cyan); text-decoration: none; font-weight: 700; }
+.aa-stat-link:hover { text-decoration: underline; }
+
+/* -------------------------------------------------- 2 · port cards */
+.aa-block { margin-bottom: 22px; }
+.aa-block-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.aa-block-head h2 { margin: 0; font-size: 16.5px; font-weight: 800; }
+.aa-block-sub { font-size: 12px; color: var(--mc-muted); }
+
+.aa-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.aa-card { border: 1px solid var(--mc-border); border-radius: 16px; background: var(--mc-card); padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 10px; }
+.aa-card-top { display: flex; align-items: center; gap: 8px; }
+.aa-dot { width: 11px; height: 11px; border-radius: 4px; flex: 0 0 auto; }
+.aa-card-name { font-size: 15px; font-weight: 800; }
+.aa-card-sub { font-size: 11px; color: var(--mc-muted); margin-left: auto; text-align: right; }
+.aa-card-val { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.aa-card-share { font-size: 12px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+
+/* แถวเทียบ คาดหวัง ↔ จริง — หัวใจของการ์ด */
+.aa-vs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px dashed var(--mc-border); border-bottom: 1px dashed var(--mc-border); padding: 10px 0; }
+.aa-vs-cell { min-width: 0; }
+.aa-vs-l { font-size: 10.5px; font-weight: 800; letter-spacing: .05em; color: var(--mc-muted); text-transform: uppercase; }
+.aa-vs-n { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.aa-vs-s { font-size: 11px; color: var(--mc-text-2); margin-top: 2px; line-height: 1.5; }
+
+.aa-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 4px 11px; border: 1px solid var(--mc-border); background: var(--aa-chip-bg); color: var(--mc-text-2); }
+.aa-status.is-ahead { color: var(--aa-ahead); border-color: rgba(52, 211, 153, 0.38); }
+.aa-status.is-behind { color: var(--aa-behind); border-color: rgba(245, 158, 11, 0.42); }
+.aa-status.is-on { color: var(--mc-text-2); }
+.aa-status.is-idle { color: var(--mc-muted); }
+
+.aa-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.aa-chip { font-size: 11px; font-weight: 700; border: 1px solid var(--mc-border); background: var(--aa-chip-bg); color: var(--mc-text-2); border-radius: 999px; padding: 2px 9px; font-variant-numeric: tabular-nums; }
+.aa-chip.is-warn { color: var(--aa-behind); border-color: rgba(245, 158, 11, 0.4); }
+
+/* runway ของพอร์ตระยะสั้น — ต้องเด่น เพราะเป็นคำถาม "อยู่ได้กี่เดือน" */
+.aa-runway { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--aa-chip-bg); padding: 9px 12px; }
+.aa-runway-l { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--mc-muted); }
+.aa-runway-n { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.aa-runway-s { font-size: 11px; color: var(--mc-text-2); }
+
+/* -------------------------------------------------- 3 · from here */
+.aa-fromhere { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.aa-fh { border: 1px solid var(--mc-border); border-radius: 14px; background: var(--mc-card); padding: 14px 16px; }
+.aa-fh-name { font-size: 12px; font-weight: 800; color: var(--mc-text-2); display: flex; align-items: center; gap: 7px; }
+.aa-fh-n { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 6px; }
+.aa-fh-s { font-size: 11.5px; color: var(--mc-text-2); margin-top: 3px; line-height: 1.6; }
+.aa-fh-na { font-size: 13px; color: var(--mc-muted); margin-top: 6px; line-height: 1.6; }
+
+.aa-horizon { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12px; color: var(--mc-text-2); }
+
+/* -------------------------------------------------- 3b · เกษียณ (พอหรือยัง) */
+.aa-retire { border: 1px solid var(--mc-border); border-radius: 16px; background: var(--mc-card); padding: 16px 18px; }
+.aa-retire .aa-headline { margin: 0 0 14px; }
+.aa-sc-wrap { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px; }
+.aa-sc { border: 1px solid var(--mc-border); border-radius: 13px; background: var(--aa-chip-bg); padding: 12px 14px; }
+.aa-sc-head { font-size: 12.5px; font-weight: 800; color: var(--mc-text-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 9px; }
+.aa-sc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.aa-sc-grid .aa-vs-n { font-size: 15px; }
+.aa-sc-note { font-size: 12px; color: var(--mc-text-2); margin: 9px 0 0; line-height: 1.7; }
+.aa-sc-note.is-warn { color: var(--aa-behind); }
+.aa-retire-line { stroke: var(--mc-muted); stroke-width: 1.4; stroke-dasharray: 4 4; }
+.aa-retire-in { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--mc-border); }
+
+/* -------------------------------------------------- 4 · charts */
+.aa-port { border: 1px solid var(--mc-border); border-radius: 16px; background: var(--mc-card); padding: 15px 17px; margin-bottom: 14px; }
+.aa-port-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 4px; }
+.aa-port-title { font-size: 15px; font-weight: 800; }
+.aa-verdict { font-size: 12.5px; color: var(--mc-text-2); line-height: 1.75; margin: 6px 0 10px; }
+.aa-verdict b { color: var(--mc-text); }
+/* overflow ต้องเป็น visible เพื่อให้ tooltip ลอยเหนือกราฟได้
+   (ตัว svg กว้าง 100% อยู่แล้วจึงไม่ล้นออกนอกกล่อง และ tooltip ถูกหนีบไว้ในกล่องด้วย JS) */
+.aa-chart { width: 100%; overflow: visible; position: relative; }
+.aa-chart svg { width: 100%; height: auto; display: block; }
+
+/* แถบรับเมาส์ทั้งคอลัมน์ — ชี้ง่ายกว่าจุดเล็ก ๆ มาก และไฮไลต์ให้รู้ว่าอยู่คอลัมน์ไหน */
+.aa-hit { fill: transparent; cursor: crosshair; }
+.aa-hit:hover { fill: rgba(148, 163, 184, 0.12); }
+.aa-tip {
+  position: absolute; z-index: 6; display: none; pointer-events: none;
+  background: var(--mc-surface); border: 1px solid var(--mc-border-active);
+  border-radius: 10px; box-shadow: var(--mc-shadow);
+  padding: 8px 11px; font-size: 11.5px; line-height: 1.7; color: var(--mc-text);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.aa-tip i { color: var(--mc-muted); font-style: normal; }
+.aa-chart-empty { font-size: 12.5px; color: var(--mc-muted); padding: 18px 0; }
+.aa-grid { stroke: var(--mc-border); stroke-width: 1; }
+.aa-axis { fill: var(--mc-muted); font-size: 10.5px; }
+.aa-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--mc-text-2); margin-top: 6px; }
+.aa-legend i { display: inline-block; width: 18px; height: 0; border-top-width: 2px; border-top-style: solid; vertical-align: middle; margin-right: 6px; }
+
+/* -------------------------------------------------- 5 · assignment */
+.aa-assign-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.aa-unassigned { border: 1px solid var(--mc-border-warning); border-radius: 14px; background: rgba(245, 158, 11, 0.06); padding: 14px 16px; margin-bottom: 12px; }
+.aa-unassigned.is-empty { border-color: var(--mc-border); background: var(--aa-chip-bg); }
+.aa-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--mc-border); }
+.aa-row:last-child { border-bottom: 0; }
+.aa-row-name { font-weight: 700; font-size: 13.5px; overflow-wrap: anywhere; }
+.aa-row-type { font-size: 11.5px; color: var(--mc-muted); overflow-wrap: anywhere; }
+.aa-row-val { font-size: 13px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.aa-select, .aa-input { font-family: inherit; font-size: 12.5px; color: var(--mc-text); background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 9px; padding: 6px 9px; }
+.aa-select:focus, .aa-input:focus { outline: 2px solid var(--mc-border-active); outline-offset: 1px; }
+.aa-input { width: 120px; text-align: right; font-variant-numeric: tabular-nums; }
+.aa-group { border: 1px solid var(--mc-border); border-radius: 12px; margin-bottom: 8px; background: var(--mc-card); }
+.aa-group > summary { cursor: pointer; padding: 11px 14px; font-size: 13.5px; font-weight: 700; list-style: none; display: flex; align-items: center; gap: 8px; }
+.aa-group > summary::-webkit-details-marker { display: none; }
+.aa-group > summary::after { content: "▾"; margin-left: auto; color: var(--mc-muted); font-size: 11px; }
+.aa-group[open] > summary::after { content: "▴"; }
+.aa-group-body { padding: 0 14px 12px; }
+
+/* ตารางแบ่งสัดส่วน — สินทรัพย์หนึ่งตัวกระจายได้ทั้ง 3 พอร์ต */
+.aa-atable { display: flex; flex-direction: column; gap: 10px; }
+.aa-arow { border: 1px solid var(--mc-border); border-radius: 13px; background: var(--mc-card); padding: 12px 14px; display: grid; grid-template-columns: minmax(150px, 1.1fr) minmax(0, 2.2fr) minmax(190px, auto); gap: 12px; align-items: center; }
+.aa-arow-id { min-width: 0; }
+.aa-splits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; min-width: 0; }
+.aa-sp { display: grid; gap: 3px; font-size: 11.5px; font-weight: 600; color: var(--mc-text-2); min-width: 0; }
+.aa-sp-l { display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aa-sp-l .aa-dot { width: 8px; height: 8px; border-radius: 3px; flex: 0 0 auto; }
+.aa-sp-in { display: flex; align-items: center; gap: 3px; color: var(--mc-muted); }
+.aa-input-pct { width: 100%; min-width: 0; text-align: right; padding: 5px 7px; }
+.aa-sp-v { font-size: 11px; color: var(--mc-muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aa-arow-foot { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.aa-sum { font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 3px 10px; border: 1px solid var(--mc-border); background: var(--aa-chip-bg); font-variant-numeric: tabular-nums; }
+.aa-sum.is-ok { color: var(--aa-ahead); border-color: rgba(52, 211, 153, 0.35); }
+.aa-sum.is-warn { color: var(--aa-behind); border-color: rgba(245, 158, 11, 0.4); }
+.aa-sum.is-bad { color: var(--mc-red); border-color: var(--mc-border-danger); }
+.aa-preset { font-size: 11.5px; padding: 5px 8px; }
+.aa-comp { font-size: 11.5px; color: var(--mc-muted); margin: 0 0 10px; line-height: 1.7; }
+
+/* -------------------------------------------------- 6 · settings */
+.aa-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.aa-field { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 12px 14px; }
+.aa-field-l { font-size: 12px; font-weight: 700; color: var(--mc-text-2); display: block; margin-bottom: 7px; }
+.aa-field-h { font-size: 11px; color: var(--mc-muted); margin-top: 6px; line-height: 1.55; }
+
+/* -------------------------------------------------- 7 · quality + tables */
+.aa-quality { border: 1px solid var(--mc-border); border-radius: 14px; background: var(--mc-card); padding: 14px 16px; }
+.aa-q-port { padding: 9px 0; border-bottom: 1px solid var(--mc-border); }
+.aa-q-port:last-child { border-bottom: 0; }
+.aa-q-name { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+.aa-q-line { font-size: 12px; color: var(--mc-text-2); line-height: 1.75; }
+.aa-q-line.is-warn { color: var(--aa-behind); }
+
+.aa-details { border: 1px solid var(--mc-border); border-radius: 12px; margin-top: 10px; }
+.aa-details > summary { cursor: pointer; padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: var(--mc-text-2); list-style: none; }
+.aa-details > summary::-webkit-details-marker { display: none; }
+.aa-table-wrap { overflow-x: auto; padding: 0 12px 12px; }
+.aa-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 720px; }
+.aa-table th, .aa-table td { padding: 7px 9px; text-align: right; border-bottom: 1px solid var(--mc-border); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.aa-table th { color: var(--mc-muted); font-weight: 700; font-size: 11px; text-align: right; }
+.aa-table th:first-child, .aa-table td:first-child { text-align: left; }
+.aa-table td:last-child, .aa-table th:last-child { text-align: left; white-space: normal; min-width: 180px; font-variant-numeric: normal; }
+
+/* -------------------------------------------------- 8 · save bar + banners */
+.aa-banner { border: 1px solid var(--mc-border-warning); background: rgba(245, 158, 11, 0.08); border-radius: 12px; padding: 11px 14px; font-size: 12.5px; margin-bottom: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; line-height: 1.6; }
+.aa-savebar { position: sticky; bottom: 0; margin-top: 18px; border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-surface); padding: 9px 14px; font-size: 12.5px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.aa-savebar[data-save-state="saved"] { border-color: rgba(52, 211, 153, 0.4); }
+.aa-savebar[data-save-state="failed"] { border-color: var(--mc-border-danger); }
+.aa-btn { font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--mc-text); background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 9px; padding: 6px 12px; cursor: pointer; }
+.aa-btn:hover { border-color: var(--mc-border-active); }
+.aa-btn-danger { color: var(--mc-red); }
+
+.aa-method { font-size: 12.5px; color: var(--mc-text-2); line-height: 1.85; }
+.aa-method li { margin-bottom: 4px; }
+
+/* -------------------------------------------------- responsive */
+@media (max-width: 960px) {
+  .aa-cards, .aa-fromhere { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  /* SVG ถูกย่อตามความกว้างจอ (viewBox 940 → ~350px ≈ 0.37 เท่า) ตัวหนังสือในกราฟ
+     จึงเล็กลงตามไปด้วยจนอ่านไม่ออก — ต้องเพิ่มขนาดเป็นหน่วยของ viewBox ชดเชย */
+  .aa-axis { font-size: 26px; }
+  .aa-page { padding: 16px 14px 48px; }
+  .aa-hero-inner { padding: 16px 15px; }
+  .aa-title { font-size: 20px; }
+  .aa-stat { min-width: 100%; }
+  .aa-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
+  .aa-row-type { grid-column: 1 / -1; }
+  .aa-row select { grid-column: 1 / -1; width: 100%; }
+  .aa-card-val { font-size: 22px; }
+  .aa-input { width: 100%; }
+  /* แถวแบ่งสัดส่วนเรียงลงมาเป็นชั้น ๆ แต่ช่อง % ยังอยู่ 3 ช่องเรียงกันเพื่อให้เทียบกันได้ */
+  .aa-sc-wrap { grid-template-columns: 1fr; }
+  .aa-sc-grid { grid-template-columns: 1fr; gap: 6px; }
+  .aa-arow { grid-template-columns: 1fr; gap: 10px; }
+  .aa-arow-foot { justify-content: space-between; }
+  .aa-preset { flex: 1 1 auto; min-width: 0; }
+}
+
+/* ช่องว่างที่ต้องปิด — อยู่ติดกับช่องกรอก ปรับตัวเลขแล้วเห็นผลทันที */
+.aa-gap { margin-top: 14px; border: 1px solid var(--mc-border-warning); border-radius: 13px; background: rgba(245, 158, 11, 0.06); padding: 13px 15px; }
+.aa-gap.is-ok { border-color: rgba(52, 211, 153, 0.35); background: rgba(52, 211, 153, 0.06); }
+.aa-gap-head { font-size: 13.5px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.aa-gap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.aa-gapcell { border: 1px solid var(--mc-border); border-radius: 11px; background: var(--mc-card); padding: 10px 12px; min-width: 0; }
+.aa-gap-n { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 3px; line-height: 1.2; }
+.aa-gapcell.is-short .aa-gap-n { color: var(--aa-behind); }
+.aa-gapcell.is-ok .aa-gap-n { color: var(--aa-ahead); }
+@media (max-width: 960px) { .aa-gap-grid { grid-template-columns: 1fr; } }
+
+/* 2 ช่วงเวลาของแผนเกษียณ — ก่อนเกษียณ / หลังเกษียณ */
+.aa-phase { border: 1px solid var(--mc-border); border-radius: 13px; background: var(--aa-chip-bg); padding: 13px 15px; margin-bottom: 12px; }
+.aa-phase.is-ok { border-color: rgba(52, 211, 153, 0.3); }
+.aa-phase-head { font-size: 13.5px; font-weight: 800; margin-bottom: 11px; display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.aa-phase-no { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--mc-bg); background: var(--mc-text-2); border-radius: 5px; padding: 2px 7px; }
+.aa-per { font-size: 12px; font-weight: 600; color: var(--mc-muted); margin-left: 3px; }
+
+/* ตารางบันทึกผลตอบแทนย้อนหลัง */
+.aa-rec-wrap { padding: 0; border: 1px solid var(--mc-border); border-radius: 13px; background: var(--mc-card); }
+.aa-rec { min-width: 620px; }
+.aa-rec th, .aa-rec td { padding: 8px 11px; }
+.aa-rec th .aa-dot { width: 8px; height: 8px; display: inline-block; vertical-align: middle; margin-right: 4px; }
+.aa-rec td.is-up { color: var(--aa-ahead); font-weight: 700; }
+.aa-rec td.is-down { color: var(--mc-red); font-weight: 700; }
+.aa-rec td.aa-rec-na { color: var(--mc-faint); }
+.aa-rec-flag { color: var(--aa-behind); font-weight: 800; margin-left: 2px; }
+.aa-rec-sum td { border-top: 1px solid var(--mc-border); font-weight: 800; background: var(--aa-chip-bg); }
+.aa-rec-sum:first-of-type td { border-top: 2px solid var(--mc-border-active); }

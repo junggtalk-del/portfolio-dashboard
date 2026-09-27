@@ -38,6 +38,7 @@ const elements = {
   valueInput: document.querySelector("#valueInput"),
   investedPercentInput: document.querySelector("#investedPercentInput"),
   investedPercentField: document.querySelector(".invested-percent-field"),
+  netFlowInput: document.querySelector("#netFlowInput"),
   rows: document.querySelector("#assetRows"),
   emptyState: document.querySelector("#emptyState"),
   refreshButton: document.querySelector("#refreshButton"),
@@ -176,6 +177,15 @@ function formatPercent(value, signed = false) {
   return `${signed && value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
+// รายการเก่าที่ยังไม่เคยบันทึกเงินเติม/ถอน ต้องแยกออกจาก "บันทึกว่าเป็น 0" ให้เห็น
+function formatNetFlow(value) {
+  if (value === null || value === undefined || value === "") return '<span title="ยังไม่มีข้อมูลเงินเติม/ถอน — หน้า Asset Allocation จะคิดเป็น 0 และทำเครื่องหมายไว้">—</span>';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '<span title="ค่าไม่ถูกต้อง">—</span>';
+  if (n === 0) return "฿0";
+  return `${n > 0 ? "+" : "−"}${formatMoney(Math.abs(n))}`;
+}
+
 function assetGrossValue(asset, options = {}) {
   if (options.useSnapshot && Number.isFinite(asset.snapshotValue)) return asset.snapshotValue;
   return Number(asset.manualValue) || 0;
@@ -264,6 +274,7 @@ function renderRows() {
     row.innerHTML = `
       <td><div class="asset-name"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(TYPE_LABELS[asset.type] || asset.type)}</span></div></td>
       <td>${formatMoney(metrics.gross)}</td>
+      <td>${formatNetFlow(asset.netFlow)}</td>
       <td>${formatPercent(metrics.portfolioPercent)}</td>
       <td>${asset.type === "cash" ? "-" : formatPercent(metrics.investedPercent)}</td>
       <td>${formatMoney(metrics.invested)}</td>
@@ -283,7 +294,12 @@ function renderPieChart() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   elements.chartLegend.innerHTML = "";
   elements.pieSubtitle.textContent = `${state.data.currentQuarter} · ${formatMoney(totals.wealth)}`;
-  const slices = assets.map((asset, index) => ({ asset, value: assetGrossValue(asset), color: CHART_COLORS[index % CHART_COLORS.length] })).filter((slice) => slice.value > 0);
+  // สีผูกกับลำดับที่บันทึกข้อมูล (index เดิม) เพื่อให้สินทรัพย์ตัวเดิมได้สีเดิมทุกไตรมาส
+  // แล้วค่อยเรียงจากมากไปน้อย — ทั้งวงกลมและ legend ใช้ลำดับเดียวกันนี้
+  const slices = assets
+    .map((asset, index) => ({ asset, value: assetGrossValue(asset), color: CHART_COLORS[index % CHART_COLORS.length] }))
+    .filter((slice) => slice.value > 0)
+    .sort((a, b) => b.value - a.value);
   if (!slices.length || totals.wealth <= 0) {
     ctx.beginPath(); ctx.arc(center, center, radius, 0, Math.PI * 2); ctx.fillStyle = "#e7edf5"; ctx.fill(); drawDonutHole(ctx, center, radius);
     renderLegendItem("ยังไม่มีข้อมูล", 0, "#dfe6f1");
@@ -589,11 +605,21 @@ function readAssetFromForm() {
     elements.statusText.textContent = "กรุณากรอกมูลค่าปัจจุบันเป็นบาทให้ถูกต้อง";
     return null;
   }
-  return { type, name: elements.nameInput.value.trim() || TYPE_LABELS[type], manualValue, investedPercent: type === "cash" ? 0 : investedPercent, snapshotValue: manualValue };
+  const rawFlow = elements.netFlowInput ? elements.netFlowInput.value.trim() : "";
+  const netFlow = rawFlow === "" ? 0 : Number(rawFlow);
+  if (!Number.isFinite(netFlow)) {
+    elements.statusText.textContent = "กรุณากรอกเงินเติม/ถอนเป็นตัวเลข (ติดลบได้ เว้นว่าง = 0)";
+    return null;
+  }
+  return { type, name: elements.nameInput.value.trim() || TYPE_LABELS[type], manualValue, investedPercent: type === "cash" ? 0 : investedPercent, snapshotValue: manualValue, netFlow };
 }
 
 function handleFormSubmit(event) {
   event.preventDefault();
+  if (state.hydrating) {
+    elements.statusText.textContent = "กำลังโหลดข้อมูลอยู่ — ลองอีกครั้งในอีกสักครู่";
+    return;
+  }
   const asset = readAssetFromForm();
   if (!asset) return;
   const quarter = currentQuarter();
@@ -614,6 +640,7 @@ function editAsset(id) {
   elements.nameInput.value = asset.name || "";
   elements.valueInput.value = asset.manualValue || "";
   elements.investedPercentInput.value = asset.type === "cash" ? "0" : asset.investedPercent;
+  if (elements.netFlowInput) elements.netFlowInput.value = Number.isFinite(Number(asset.netFlow)) && asset.netFlow !== null && asset.netFlow !== "" ? String(asset.netFlow) : "0";
   elements.formTitle.textContent = "แก้ไขรายการพอร์ต";
   elements.submitButton.textContent = "บันทึกการแก้ไข";
   elements.cancelEditButton.classList.remove("is-hidden");
@@ -694,6 +721,7 @@ function copyFromPreviousQuarter() {
       manualValue,
       investedPercent: asset.type === "cash" ? 0 : clamp(Number(asset.investedPercent) || 0, 0, 100),
       snapshotValue: manualValue,
+      netFlow: 0,
       createdAt: now,
       updatedAt: null,
       copiedFrom: previous.key

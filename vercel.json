@@ -113,6 +113,10 @@
       "destination": "/asset.html"
     },
     {
+      "source": "/asset-allocation",
+      "destination": "/asset-allocation.html"
+    },
+    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }

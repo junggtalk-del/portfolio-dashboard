@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css?v=20260728-qe-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260927-qe-3" />
       <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
       <script src="/api-auth.js?v=20260620-auth-1"></script>
       <script src="/privacy.js?v=20260728-pv-1"></script>
@@ -216,6 +216,12 @@
               <input id="investedPercentInput" name="investedPercent" type="number" min="0" max="100" step="any" value="100" />
             </label>
 
+            <label class="net-flow-field">
+              เงินเติม/ถอนสุทธิในไตรมาสนี้ (บาท)
+              <input id="netFlowInput" name="netFlow" type="number" step="any" value="0" placeholder="0" />
+              <small>+ = เติมเข้า · − = ถอน/ใช้จ่าย · รายการที่เพิ่งเข้าพอร์ต: ใส่เงินที่ใช้ซื้อ · ใช้หักออกตอนคำนวณผลตอบแทนจริงในหน้า <a href="/asset-allocation">Asset Allocation</a></small>
+            </label>
+
             <div class="form-actions">
               <button class="primary-button" id="submitButton" type="submit">เพิ่มเข้าพอร์ต</button>
               <button class="secondary-button is-hidden" id="cancelEditButton" type="button">ยกเลิกแก้ไข</button>
@@ -241,6 +247,7 @@
                   <tr>
                     <th>Asset</th>
                     <th>มูลค่ารวม</th>
+                    <th title="เงินที่เติมเข้าหรือถอนออกในไตรมาสนี้ — ใช้หักออกตอนคำนวณผลตอบแทนจริง">เงินเติม/ถอน</th>
                     <th>% พอร์ต</th>
                     <th>% ลงทุนจริง</th>
                     <th>ลงทุนจริง</th>
@@ -260,7 +267,7 @@
         </section>
       </section>
     </main>
-    <script src="/app.js?v=20260728-app-5"></script>
-<script src="/app-navigation.js?v=20260907-nav-21"></script>
+    <script src="/app.js?v=20260927-app-7"></script>
+<script src="/app-navigation.js?v=20260927-nav-22"></script>
   </body>
 </html>
