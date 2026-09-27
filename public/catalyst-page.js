@@ -33,7 +33,8 @@
     rows: [], bench: null, loading: false, progress: null, universe: "THAI_ALL",
     error: null, scannedAt: null, failed: [], evidenceMeta: null, universeMeta: null,
     // ตัวกรอง/เรียง — ใช้เฉพาะฟิลด์ที่มีอยู่จริง ไม่มีคะแนนซ่อน
-    filter: { status: null, maturity: null, financial: null, recognition: null, trap: null, lifecycle: null, q: "" },
+    filter: { status: null, maturity: null, financial: null, recognition: null, trap: null,
+      lifecycle: null, technical: null, q: "" },
     sort: { key: "priority", dir: 1 },
     // การจำผลสแกน: where = idb | local | none · note = เหตุผลเมื่อจำไม่ได้
     cache: { where: null, note: null, loadedFromCache: false },
@@ -76,6 +77,8 @@
 
   function CE() { return window.CatalystEngine; }
   function CQ() { return window.CatalystQualification; }
+  // ชั้นหลักฐานเชิงเทคนิค — แยกไฟล์ แยกระนาบ ไม่ถูกป้อนเข้า engine/qualification
+  function SR() { return window.Sma200Reclaim; }
   function KB() { return (window.CatalystData && window.CatalystData.companies) || {}; }
 
   // ---------- ที่เก็บผลสแกน ----------
@@ -197,6 +200,10 @@
     r.universe = item.universe;
     r.sourceType = item.sourceType;
     r.range = item.range;
+    // ชั้นหลักฐานเชิงเทคนิค — "แปะทีหลัง" โดยตั้งใจ
+    // ไม่ส่งเข้า CE().analyze() และไม่ส่งเข้า qualification จึงไม่มีทางไปเลื่อนขั้น
+    // catalyst / market recognition / value trap / lifecycle ได้เลยโดยโครงสร้าง
+    r.technical = SR() ? SR().detect({ closes: item.closes, dates: item.dates }) : null;
     return r;
   }
 
@@ -341,6 +348,35 @@
     RELATIVE_UNDERPERFORMANCE: "RELATIVE",
     UNKNOWN: "UNKNOWN",
   };
+  // ---------- ชั้นหลักฐานเชิงเทคนิค (SMA200 Reclaim) ----------
+  // อ่านค่าอย่างเดียว ไม่ตัดสินใหม่ · ไม่มีคะแนน ไม่ใช้จัดอันดับที่ไหนเลย
+  function techOf(r) { return (r && r.technical) || null; }
+  function techStatus(r) { var x = techOf(r); return x && x.status ? x.status : "DATA_UNAVAILABLE"; }
+  function hasReclaim(r) { var x = techOf(r); return !!(x && x.status === "RECLAIM" && x.detected === true); }
+  var TECH_TH = {
+    RECLAIM: "กลับขึ้นยืนเหนือ SMA200",
+    NO_RECLAIM: "ยังไม่กลับขึ้นเหนือ SMA200",
+    DATA_INSUFFICIENT: "ประวัติราคาไม่พอคำนวณ SMA200",
+    DATA_UNAVAILABLE: "ไม่มีข้อมูลราคาให้ตรวจ",
+    DATA_STALE: "ข้อมูลราคาไม่สด",
+  };
+  // ป้ายสั้นสำหรับตาราง — สถานะข้อมูลต้องอ่านออกว่า "ไม่รู้" ไม่ใช่ "ไม่มีสัญญาณ"
+  function techShort(r) {
+    var k = techStatus(r);
+    if (k === "RECLAIM") return "RECLAIM";
+    if (k === "NO_RECLAIM") return "—";
+    if (k === "DATA_INSUFFICIENT") return "ข้อมูลไม่พอ";
+    if (k === "DATA_STALE") return "ข้อมูลไม่สด";
+    return "ไม่มีข้อมูล";
+  }
+  // บรรทัดเดียวที่อธิบายเหตุการณ์ให้ครบ — วันที่ · ระยะห่างก่อน → หลัง
+  function techLine(r) {
+    var x = techOf(r);
+    if (!x || x.status !== "RECLAIM") return "";
+    return "ปิดเหนือเส้นเมื่อ " + (x.signalDate || "—") +
+      " · จาก " + pct(x.previousDistancePct) + " → " + pct(x.currentDistancePct) +
+      (x.stillAbove === false ? " · ตอนนี้หลุดกลับลงใต้เส้นแล้ว" : "");
+  }
   function whyKey(r) { return (r.whyFell && r.whyFell.category) || "UNKNOWN"; }
   function whyBadgeText(r) { var k = whyKey(r); return WHY_BADGE[k] || k; }
   function whyTone(k) {
@@ -919,6 +955,11 @@
         gateChips(sp.notYet, "○", "ch-gates-no") + "</div>" : "") +
       (waiting.length ? '<p class="ch-target-wait"><small>รออะไร</small><b>→ ' +
         waiting.map(esc).join(" · ") + "</b></p>" : "") +
+      // §13A/§21 หลักฐานเชิงเทคนิค — บรรทัดรอง อยู่ท้ายสุด ไม่แย่งที่หลักฐานเชิงธุรกิจ
+      // แสดงเฉพาะเมื่อ "มีเหตุการณ์จริง" เท่านั้น ไม่มีก็ไม่ขึ้นอะไรเลย
+      (hasReclaim(r) ? '<p class="ch-tech-line"><small>Technical</small>' +
+        '<span class="ch-tech-pill">🟢 SMA200 Reclaim</span>' +
+        '<em>' + esc(techLine(r)) + "</em></p>" : "") +
       '<button type="button" class="ch-btn ch-btn-wide" data-ch-ticker="' + esc(r.ticker) + '">' +
       "เปิดดูหลักฐานทั้งหมด →</button></article>";
   }
@@ -1168,6 +1209,8 @@
     { key: "cat", label: "Catalyst", get: matShort },
     { key: "fin", label: "Financial", get: finShort },
     { key: "recog", label: "Recognition", get: recogKey },
+    // §22 อยู่ติดกับ Recognition เพราะเป็นระนาบเดียวกัน (หลักฐานเชิงเทคนิค) ไม่ใช่ catalyst
+    { key: "tech", label: "SMA200", get: techShort },
     { key: "trap", label: "Value Trap", get: trapKey },
     { key: "why", label: "Why Fell", get: whyKey },
     { key: "life", label: "Lifecycle", get: function (r) { return r.lifecycle || "—"; } },
@@ -1183,6 +1226,8 @@
       if (f.recognition && recogKey(r) !== f.recognition) return false;
       if (f.trap && trapKey(r) !== f.trap) return false;
       if (f.lifecycle && (r.lifecycle || "") !== f.lifecycle) return false;
+      // §13D ตัวกรองเชิงเทคนิค — เพิ่มเข้ามาคู่กับตัวกรองเดิม ไม่ได้แทนที่ตัวใด
+      if (f.technical && techStatus(r) !== f.technical) return false;
       if (q && (r.ticker + " " + (r.name || "")).toUpperCase().indexOf(q) < 0) return false;
       return true;
     });
@@ -1237,7 +1282,8 @@
       selectFilter("financial", "Financial", uniq(finShort), f.financial) +
       selectFilter("recognition", "Recognition", uniq(recogKey), f.recognition) +
       selectFilter("trap", "Value Trap", uniq(trapKey), f.trap) +
-      selectFilter("lifecycle", "Lifecycle", uniq(function (r) { return r.lifecycle; }), f.lifecycle) + "</div>";
+      selectFilter("lifecycle", "Lifecycle", uniq(function (r) { return r.lifecycle; }), f.lifecycle) +
+      selectFilter("technical", "SMA200 Reclaim", uniq(techStatus), f.technical) + "</div>";
 
     var head = "<tr>" + COLS.map(function (c) {
       var on = state.sort.key === c.key;
@@ -1257,6 +1303,10 @@
         "<td>" + esc(matShort(r)) + "</td>" +
         '<td class="ch-txt-' + finTone(finState(r)) + '">' + esc(finShort(r)) + "</td>" +
         "<td>" + esc(recogKey(r)) + "</td>" +
+        "<td>" + (hasReclaim(r)
+          ? '<span class="ch-tech-pill" title="' + esc(techLine(r)) + '">RECLAIM</span>'
+          : '<small class="ch-na" title="' + esc(TECH_TH[techStatus(r)] || "") + '">' +
+            esc(techShort(r)) + "</small>") + "</td>" +
         "<td>" + trapPill(r, true) + "</td>" +
         '<td><span class="ch-whybadge ch-tone-' + whyTone(whyKey(r)) + '" title="' + esc(whyTip(r)) + '">' +
         esc(whyBadgeText(r)) + "</span></td>" +
@@ -1418,6 +1468,88 @@
   }
   function unavailable(msg) {
     return '<div class="ch-unavail">Evidence unavailable' + (msg ? " — " + esc(msg) : "") + "</div>";
+  }
+
+  // ============================================================
+  // §13B — บล็อกหลักฐานเชิงเทคนิคในหน้า Detail
+  // ทุกช่องมาจากผลของโมดูล sma200-reclaim.js ตรง ๆ ไม่ตีความเพิ่ม ไม่มีคะแนน
+  // ============================================================
+  function techFresh(x) {
+    if (!x) return "";
+    if (!x.freshnessKnown) return '<span class="ch-na">ไม่ทราบวันที่ของข้อมูล</span>';
+    return "ราคาล่าสุดที่ใช้: <b>" + esc(x.asOf) + "</b>" +
+      (x.staleDays != null ? " (" + x.staleDays + " วันก่อน)" : "") +
+      (x.excludedPartialBar
+        ? ' · <span class="ch-note-warn">ตัดแท่งของวันนี้ (' + esc(x.excludedPartialBar) +
+          ") ออกแล้ว เพราะยังไม่ปิดตลาด</span>" : "");
+  }
+  function techBlock(r) {
+    var x = techOf(r);
+    if (!x) return unavailable("ยังไม่ได้โหลดโมดูลหลักฐานเชิงเทคนิค");
+
+    var head = '<div class="ch-kv-lg"><b>' + esc(x.status) + "</b><span>" +
+      esc(TECH_TH[x.status] || "") + "</span></div>";
+
+    if (x.status !== "RECLAIM") {
+      // สถานะข้อมูลต้องอ่านออกว่าเป็นคนละเรื่องกับ "ตรวจแล้วไม่เจอ"
+      return head +
+        '<p class="ch-note">' + esc(x.note || "") + "</p>" +
+        '<div class="ch-ins-grid">' +
+        "<div><small>วันทำการที่ใช้ได้</small><b>" + (x.validObservations || 0) + "</b></div>" +
+        "<div><small>ตรวจย้อนหลัง</small><b>" + (x.windowBars || 0) + " วัน</b></div>" +
+        "<div><small>ราคาปิดล่าสุด</small><b>" + na(x.latestClose) + "</b></div>" +
+        "<div><small>SMA200 ล่าสุด</small><b>" + na(x.latestSma200) + "</b></div>" +
+        "<div><small>ห่างจากเส้น</small><b>" + pct(x.latestDistancePct) + "</b></div>" +
+        "</div>" +
+        '<p class="ch-src">' + techFresh(x) + "</p>";
+    }
+
+    // §12 — ราคากลับขึ้นเหนือเส้น ไม่ลบล้างความเสี่ยง value trap
+    var trapWarn = trapKey(r) === "HIGH"
+      ? '<p class="ch-note ch-note-warn">ราคากลับขึ้นเหนือ SMA200 แล้ว ' +
+        "แต่ความเสี่ยง Value Trap ยังเป็น <b>HIGH</b> อยู่เหมือนเดิม — " +
+        "เหตุการณ์เชิงราคาไม่ลบล้างสัญญาณการเสื่อมของธุรกิจ</p>"
+      : "";
+    // §11 — มี reclaim แต่ยังไม่พบ catalyst ที่เข้าเกณฑ์ ต้องไม่ถูกอ่านว่าเป็น catalyst
+    // เงื่อนไขอิงฟิลด์ของ engine เอง (availability) ไม่ใช่ชื่อสถานะ — ชื่อสถานะเปลี่ยนได้
+    // ครอบทั้ง NO_CATALYST · CATALYST_UNAVAILABLE · UNEXPLAINED_MARKET_MOVE
+    var catAvail = r.catalyst && r.catalyst.availability ? r.catalyst.availability.key : null;
+    var catNote = catAvail !== "CATALYST_IDENTIFIED"
+      ? '<p class="ch-note ch-note-warn">สถานะตอนนี้คือ <b>' + esc(statusLabel(r)) + "</b> — " +
+        "การกลับขึ้นเหนือ SMA200 <strong>ไม่ทำให้กลายเป็น EARLY CATALYST</strong> " +
+        "เพราะยังไม่พบเหตุการณ์เชิงธุรกิจที่เข้าเกณฑ์ · " +
+        "นี่คือ<strong>สัญญาณเชิงเทคนิค ไม่ใช่ catalyst</strong></p>"
+      : "";
+
+    return head +
+      '<div class="ch-ins-grid">' +
+      "<div><small>วันที่เกิดสัญญาณ</small><b>" + na(x.signalDate) + "</b></div>" +
+      // แสดงวันของ "วันก่อนหน้า" ด้วย — ถ้าหุ้นถูกพักการซื้อขาย ช่องว่างจะเห็นได้ทันที
+      "<div><small>ปิดวันก่อนหน้า</small><b>" + na(x.previousClose) + "</b>" +
+      "<em>" + na(x.previousDate) + " · SMA200 " + na(x.previousSma200) + "</em></div>" +
+      "<div><small>ปิดวันที่ข้าม</small><b>" + na(x.currentClose) + "</b>" +
+      "<em>" + na(x.signalDate) + " · SMA200 " + na(x.currentSma200) + "</em></div>" +
+      "<div><small>ระยะห่างก่อนหน้า</small><b>" + pct(x.previousDistancePct) + "</b></div>" +
+      "<div><small>ระยะห่างวันที่ข้าม</small><b>" + pct(x.currentDistancePct) + "</b></div>" +
+      "<div><small>แรงของการกลับขึ้น</small><b>" + pp(x.reclaimStrengthPct) + "</b>" +
+      "<em>ผลต่างของสองระยะ ไม่ใช่คะแนน</em></div>" +
+      "<div><small>ผ่านมาแล้ว</small><b>" + (x.barsSinceSignal == null ? "—" : x.barsSinceSignal + " วันทำการ") +
+      "</b></div>" +
+      "<div><small>ตอนนี้ยังเหนือเส้นไหม</small><b>" +
+      (x.stillAbove == null ? "—" : (x.stillAbove ? "ยังยืนเหนือเส้น" : "หลุดกลับลงใต้เส้นแล้ว")) + "</b>" +
+      "<em>ห่างจากเส้น " + pct(x.latestDistancePct) + "</em></div>" +
+      "</div>" +
+      trapWarn + catNote +
+      (x.eventCount > 1
+        ? '<p class="ch-note">ในช่วง ' + x.windowBars + " วันทำการที่ตรวจ พบการกลับขึ้นเหนือเส้น " +
+          x.eventCount + " ครั้ง (" +
+          x.events.map(function (e) { return esc(e.signalDate); }).join(" · ") +
+          ") — ด้านบนแสดงครั้งล่าสุด</p>"
+        : "") +
+      '<p class="ch-note">เกณฑ์: ปิดวันก่อนหน้า <strong>ที่หรือต่ำกว่า</strong> SMA200 ' +
+      "และปิดวันถัดมา <strong>เหนือ</strong> SMA200 · SMA200 คิดจากราคาปิด 200 วันทำการที่ใช้ได้จริง · " +
+      "ตรวจย้อนหลัง " + (x.windowBars || 0) + " วันทำการ</p>" +
+      '<p class="ch-src">' + techFresh(x) + "</p>";
   }
   function srcTag(src, url) {
     if (!src && !url) return "";
@@ -1841,8 +1973,21 @@
       (rg.evidence && rg.evidence.length
         ? '<ul class="ch-list">' + rg.evidence.map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("") + "</ul>" : "") +
       (rm.volumeAnomaly ? '<p class="ch-note ch-note-warn">ข้อมูลวอลุ่มผิดปกติ — ไม่ถูกนำมานับ</p>' : "") +
+      // §13C หลักฐานเชิงเทคนิคล่าสุด — วางไว้ "ใต้" ผลของ engine เสมอ
+      // และพูดให้ชัดว่ามันไม่ได้เลื่อนขั้นการรับรู้ของตลาด
+      (hasReclaim(r)
+        ? '<p class="ch-note ch-tech-note">หลักฐานเชิงเทคนิคล่าสุด: <b>SMA200 Reclaim</b> — ' +
+          esc(techLine(r)) + "<br>" +
+          "ระดับการรับรู้ของตลาดด้านบนยังเป็น <b>" + esc(recogKey(r)) + "</b> ตามกฎเดิมของ engine — " +
+          "การกลับขึ้นเหนือเส้นค่าเฉลี่ยไม่ได้เลื่อนขั้นนี้ให้</p>"
+        : "") +
       '<p class="ch-note">' + esc(rg.note || "") + "</p>",
       "เป็นตัวชี้เชิงราคา ไม่ใช่ตัวบอกว่ามี catalyst · ตัวเลขทั้งหมดมาจาก engine ไม่ได้แปลงเป็นคะแนน");
+
+    // ---------- 7.9b TECHNICAL EVIDENCE — SMA200 RECLAIM (§13B) ----------
+    h += sec("T", "หลักฐานเชิงเทคนิค — SMA200 Reclaim", techBlock(r),
+      "เหตุการณ์เชิงราคาล้วน · <strong>ไม่ใช่ catalyst และไม่ใช่คำแนะนำ</strong> · " +
+      "ไม่มีคะแนน ไม่ใช้จัดอันดับ และไม่เปลี่ยนสถานะใด ๆ ด้านบน", "ch-blk-tech");
 
     // ---------- 7.10 WHAT IS STILL MISSING ----------
     h += sec(9, "ยังขาดหลักฐานอะไร (What is still missing)",

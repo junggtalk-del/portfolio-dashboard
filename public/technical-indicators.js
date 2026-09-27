@@ -240,11 +240,16 @@
     };
   }
 
-  window.AITechnicalIndicators = {
+  const AITechnicalIndicators = {
     calculateEMA,
     calculateSMA,
     detectEmaCrossover,
     detectCloseSmaCrossover,
     calculateTechnicalSignalsForAsset
   };
+
+  // ตัวคำนวณ SMA/EMA ที่นี่เป็น "ตัวเดียวของทั้งเว็บ" — โมดูลอื่นต้องเรียกใช้ตัวนี้
+  // ห้ามเขียนสูตรซ้ำที่อื่น (sma200-reclaim.js เรียกผ่าน window/require ตัวนี้)
+  if (typeof window !== "undefined") window.AITechnicalIndicators = AITechnicalIndicators;
+  if (typeof module !== "undefined" && module.exports) module.exports = AITechnicalIndicators;
 })();
