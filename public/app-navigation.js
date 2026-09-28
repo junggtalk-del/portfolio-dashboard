@@ -511,8 +511,8 @@
       { p: "/accumulation-center", i: "🧺", t: "Accumulation Center" }
     ] },
     { label: "Portfolio", items: [
+      // Asset Allocation ถูกรวมเข้าไปอยู่ท้ายหน้า /portfolio แล้ว จึงไม่มีเมนูของตัวเอง
       { p: "/portfolio", i: "📊", t: "Portfolio Position" },
-      { p: "/asset-allocation", i: "🧮", t: "Asset Allocation" },
       { p: "/", i: "🗓️", t: "Quarterly Editor" }
     ] },
     { label: "Signals", items: [
@@ -540,8 +540,7 @@
     "/": { category: "Portfolio Command Center", title: "Dashboard การลงทุน", subtitle: "ภาพรวมพอร์ตการลงทุนรายไตรมาส" },
     "/action-center": { category: "Decision Center", title: "Action Center", subtitle: "list สินทรัพย์ที่ติดตาม + ควรทำอะไรกับแต่ละตัวตามสัญญาณของระบบ" },
     "/scanner": { category: "Signals", title: "🔎 Market Scanner", subtitle: "สแกนสัญญาณซื้อ (EMA ตัดขึ้น + วอลุ่ม) — หุ้นไทย SET100+mai · หุ้นนอกที่มี DR ไทย · Crypto Top 10" },
-    "/asset-allocation": { category: "Portfolio", title: "🧮 Asset Allocation", subtitle: "แบ่งพอร์ตเป็น 3 ระยะ (สั้น · กลาง · ยาว) · ผลตอบแทนจริงหักเงินเติม/ถอน เทียบกับที่คาดหวัง · จากนี้ต้องทำเท่าไหร่ · runway · การย่อลึกสุด" },
-    "/portfolio": { category: "Portfolio", title: "📊 Portfolio Position", subtitle: "ภาพจริงของพอร์ต: สัดส่วน มูลค่า ไส้ใน และสภาวะสัญญาณของแต่ละสินทรัพย์" },
+    "/portfolio": { category: "Portfolio", title: "📊 Portfolio Position", subtitle: "มูลค่าและสัดส่วนพอร์ตตอนนี้ · แบ่งเป็น 3 ระยะ (สั้น · กลาง · ยาว) · ผลตอบแทนจริงหักเงินเติม/ถอน เทียบกับที่คาดหวัง · แผนเกษียณ" },
     "/market-risk": { category: "Risk Monitor", title: "Market Risk", subtitle: "VIX / VVIX / VIXEQ และระดับความเสี่ยงของตลาด" },
     "/wave3": { category: "Opportunity Radar", title: "🌊 Wave 3 Setup", subtitle: "สินทรัพย์ที่ใกล้เข้าสู่ Major Wave 3 — Portfolio · AI Boom · ไทย · Crypto (Readiness / Quality / Confidence)" },
     "/ai-cycle": { category: "Strategic Intelligence", title: "🧭 AI Cycle Intelligence", subtitle: "วัฏจักร AI อยู่ตรงไหน · เงินหมุนเข้ากลุ่มไหน · พอร์ตวางตัวสอดคล้องแค่ไหน · ควรปรับกลยุทธ์อย่างไร" },

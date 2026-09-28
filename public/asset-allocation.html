@@ -3,26 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="/theme.js?v=20260623-theme-2"></script>
-    <link rel="stylesheet" href="/theme.css?v=20260623-theme-2" />
-    <title>Asset Allocation · AI Investment Mission Control</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/mission-control.css?v=20260623-mc-8" />
-    <link rel="stylesheet" href="/asset-allocation.css?v=20260927-aa-1" />
-    <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
-    <script src="/api-auth.js?v=20260620-auth-1"></script>
-    <script src="/privacy.js?v=20260728-pv-1"></script>
-    <script src="/scoring.js?v=20260623-scoring-11"></script>
-    <script src="/data-snapshot.js?v=20260816-snapshot-14"></script>
+    <title>Asset Allocation ย้ายไปอยู่ใน Portfolio Position แล้ว</title>
+    <!-- Asset Allocation ถูกรวมเข้าไปอยู่ท้ายหน้า /portfolio ตั้งแต่ 2026-09-29
+         หน้านี้เหลือไว้เพื่อไม่ให้ลิงก์/บุ๊กมาร์กเดิมพัง และเพื่อไม่ให้มีหน้า
+         แก้ไขข้อมูลชุดเดียวกันสองที่ (data.allocation ใน /api/portfolio) -->
+    <meta http-equiv="refresh" content="0; url=/portfolio" />
+    <script>
+      try { window.location.replace("/portfolio"); } catch (e) {}
+    </script>
   </head>
   <body>
-    <main id="aaRoot" class="aa-page">
-      <div class="mc-empty"><strong>กำลังโหลด Asset Allocation…</strong></div>
-    </main>
-    <script src="/asset-allocation-engine.js?v=20260927-aa-1"></script>
-    <script src="/asset-allocation-page.js?v=20260927-aa-1"></script>
-    <script src="/app-navigation.js?v=20260927-nav-22"></script>
+    <p style="font-family: system-ui, sans-serif; padding: 24px; line-height: 1.7">
+      Asset Allocation ย้ายไปอยู่ท้ายหน้า Portfolio Position แล้ว —
+      <a href="/portfolio">ไปที่ Portfolio Position</a>
+    </p>
   </body>
 </html>

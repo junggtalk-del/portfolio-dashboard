@@ -10,7 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/mission-control.css?v=20260623-mc-8" />
-    <link rel="stylesheet" href="/portfolio-position.css?v=20260718-pp-3" />
+    <link rel="stylesheet" href="/portfolio-position.css?v=20260929-pp-4" />
+    <link rel="stylesheet" href="/asset-allocation.css?v=20260929-aa-2" />
     <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
     <script src="/api-auth.js?v=20260620-auth-1"></script>
     <script src="/privacy.js?v=20260728-pv-1"></script>
@@ -21,10 +22,17 @@
     <main id="ppRoot" class="pp-page">
       <div class="mc-empty"><strong>กำลังโหลด Portfolio Position…</strong></div>
     </main>
+    <!-- Asset Allocation ต่อท้ายบนหน้าเดียวกัน — ต้องเป็น "พี่น้อง" ของ #ppRoot ไม่ใช่ลูก
+         เพราะ portfolio-position-page.js เขียนทับ innerHTML ของ #ppRoot ทุกครั้งที่เรนเดอร์ -->
+    <div id="aaRoot" class="aa-page aa-embedded">
+      <div class="mc-empty"><strong>กำลังโหลด Asset Allocation…</strong></div>
+    </div>
     <script src="/portfolio-core.js?v=20260618-core-3"></script>
     <script src="/ai-boom-universe-data.js?v=20260524-summary-1"></script>
     <script src="/portfolio-position-engine.js?v=20260718-pp-4"></script>
-    <script src="/portfolio-position-page.js?v=20260722-pp-5"></script>
-    <script src="/app-navigation.js?v=20260927-nav-22"></script>
+    <script src="/portfolio-position-page.js?v=20260929-pp-6"></script>
+    <script src="/asset-allocation-engine.js?v=20260927-aa-1"></script>
+    <script src="/asset-allocation-page.js?v=20260927-aa-1"></script>
+    <script src="/app-navigation.js?v=20260929-nav-23"></script>
   </body>
 </html>

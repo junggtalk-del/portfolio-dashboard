@@ -268,3 +268,15 @@
 .aa-rec-flag { color: var(--aa-behind); font-weight: 800; margin-left: 2px; }
 .aa-rec-sum td { border-top: 1px solid var(--mc-border); font-weight: 800; background: var(--aa-chip-bg); }
 .aa-rec-sum:first-of-type td { border-top: 2px solid var(--mc-border-active); }
+
+/* ---------- ฝังต่อท้าย Portfolio Position บนหน้าเดียวกัน ----------
+   เปลือกของ Mission Control มีกฎ `.mc-shell-active .mc-content > main` ที่ปลด
+   max-width/padding ของหน้าให้ยืดเต็มพื้นที่ — แต่กฎนั้นเจาะจงที่ <main> เท่านั้น
+   บล็อกนี้เป็น <div> (มี <main> ได้หน้าละอันเดียว) จึงต้องทำแบบเดียวกันเองที่นี่
+
+   min-width: 0 สำคัญ: .mc-content เป็น flex column ถ้าไม่ตั้ง ตัว flex item จะไม่ยอม
+   หดต่ำกว่าความกว้างของตารางข้างใน แล้วจะดันหน้าให้กว้าง 650px บนจอ 390px */
+.aa-embedded {
+  max-width: none; width: auto; min-width: 0; margin: 0; padding: 0; background: transparent;
+}
+.aa-embedded .aa-hero { border-top: 1px dashed var(--mc-border, #1f2a3d); padding-top: 20px; }
