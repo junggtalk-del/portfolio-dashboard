@@ -506,6 +506,18 @@ console.log("== หน้าเว็บ: Radar + Detail render จริง =="
   var done = false;
   // PHASE 4.1: หน้าใหม่ไม่ auto-scan เอง — เรียก scanAll แล้วรอ
   win.CatalystPage.scanAll(true).then(function () {
+    // หน้าแรกของ /catalyst-hunter คือ "ภาพรวมตัวสแกน" (hub) ตั้งแต่เวอร์ชันแท็บ
+    // เนื้อหา Radar เดิมย้ายไปอยู่แท็บ ?view=catalyst — เทสต์ชุดนี้ตรวจแท็บนั้น
+    var hub = els.chRoot.innerHTML;
+    t("หน้าแรกเป็นภาพรวมตัวสแกน ไม่ใช่ Radar เดิม",
+      hub.indexOf("ตัวสแกนทั้งหมด") >= 0 && hub.indexOf("All Candidates") < 0);
+    t("หน้าภาพรวมมีแท็บให้เข้าแต่ละตัวสแกน",
+      hub.indexOf('data-ch-view="catalyst"') >= 0 && hub.indexOf('data-ch-view="sma200"') >= 0);
+    t("หน้าภาพรวมมีปุ่มสแกนเดียว", (hub.match(/data-ch-rescan=/g) || []).length === 1,
+      (hub.match(/data-ch-rescan=/g) || []).length);
+
+    win.location.search = "?view=catalyst";
+    win.CatalystPage.render();
     var html = els.chRoot.innerHTML;
 
     // ---------- RADAR ----------

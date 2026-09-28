@@ -34,8 +34,11 @@
     error: null, scannedAt: null, failed: [], evidenceMeta: null, universeMeta: null,
     // ตัวกรอง/เรียง — ใช้เฉพาะฟิลด์ที่มีอยู่จริง ไม่มีคะแนนซ่อน
     filter: { status: null, maturity: null, financial: null, recognition: null, trap: null,
-      lifecycle: null, technical: null, q: "" },
+      lifecycle: null, q: "" },
     sort: { key: "priority", dir: 1 },
+    // ตัวกรองของแท็บ SMA200 — all | holding | fellback
+    smaFilter: "all",
+    lastView: "hub",
     // การจำผลสแกน: where = idb | local | none · note = เหตุผลเมื่อจำไม่ได้
     cache: { where: null, note: null, loadedFromCache: false },
   };
@@ -73,6 +76,19 @@
   }
   function pushUrl(qs) {
     try { if (window.history && window.history.pushState) window.history.pushState({}, "", qs); } catch (e) {}
+  }
+  // ?view= เลือกแท็บ — ไม่ระบุ = หน้าภาพรวม (hub)
+  // ค่าที่ไม่รู้จักตกกลับเป็น hub เสมอ ไม่ทำให้หน้าว่าง
+  function urlView() {
+    try {
+      var m = /[?&]view=([a-z0-9_-]{1,24})/i.exec(window.location.search || "");
+      var v = m ? String(m[1]).toLowerCase() : "hub";
+      if (v === "hub") return "hub";
+      return scannerByKey(v) ? v : "hub";
+    } catch (e) { return "hub"; }
+  }
+  function viewUrl(v) {
+    return "/catalyst-hunter" + (v && v !== "hub" ? "?view=" + encodeURIComponent(v) : "");
   }
 
   function CE() { return window.CatalystEngine; }
@@ -203,7 +219,9 @@
     // ชั้นหลักฐานเชิงเทคนิค — "แปะทีหลัง" โดยตั้งใจ
     // ไม่ส่งเข้า CE().analyze() และไม่ส่งเข้า qualification จึงไม่มีทางไปเลื่อนขั้น
     // catalyst / market recognition / value trap / lifecycle ได้เลยโดยโครงสร้าง
-    r.technical = SR() ? SR().detect({ closes: item.closes, dates: item.dates }) : null;
+    r.technical = SR()
+      ? SR().detect({ closes: item.closes, dates: item.dates, volumes: item.volumes })
+      : null;
     return r;
   }
 
@@ -353,6 +371,9 @@
   function techOf(r) { return (r && r.technical) || null; }
   function techStatus(r) { var x = techOf(r); return x && x.status ? x.status : "DATA_UNAVAILABLE"; }
   function hasReclaim(r) { var x = techOf(r); return !!(x && x.status === "RECLAIM" && x.detected === true); }
+  // เข้าเงื่อนไขของตัวสแกน SMA200 = กลับขึ้นเหนือเส้น "และ" วอลุ่มยืนยัน
+  function volOk(r) { var x = techOf(r); return !!(x && x.volumeConfirmed === true); }
+  function smaHit(r) { return hasReclaim(r) && volOk(r); }
   var TECH_TH = {
     RECLAIM: "กลับขึ้นยืนเหนือ SMA200",
     NO_RECLAIM: "ยังไม่กลับขึ้นเหนือ SMA200",
@@ -360,22 +381,23 @@
     DATA_UNAVAILABLE: "ไม่มีข้อมูลราคาให้ตรวจ",
     DATA_STALE: "ข้อมูลราคาไม่สด",
   };
-  // ป้ายสั้นสำหรับตาราง — สถานะข้อมูลต้องอ่านออกว่า "ไม่รู้" ไม่ใช่ "ไม่มีสัญญาณ"
-  function techShort(r) {
-    var k = techStatus(r);
-    if (k === "RECLAIM") return "RECLAIM";
-    if (k === "NO_RECLAIM") return "—";
-    if (k === "DATA_INSUFFICIENT") return "ข้อมูลไม่พอ";
-    if (k === "DATA_STALE") return "ข้อมูลไม่สด";
-    return "ไม่มีข้อมูล";
-  }
   // บรรทัดเดียวที่อธิบายเหตุการณ์ให้ครบ — วันที่ · ระยะห่างก่อน → หลัง
   function techLine(r) {
     var x = techOf(r);
     if (!x || x.status !== "RECLAIM") return "";
     return "ปิดเหนือเส้นเมื่อ " + (x.signalDate || "—") +
       " · จาก " + pct(x.previousDistancePct) + " → " + pct(x.currentDistancePct) +
+      (x.volumeVsAvgPct == null ? "" : " · วอลุ่ม " + pct(x.volumeVsAvgPct) + " เทียบเฉลี่ย 10 วัน") +
       (x.stillAbove === false ? " · ตอนนี้หลุดกลับลงใต้เส้นแล้ว" : "");
+  }
+  // ย่อจำนวนหุ้นให้อ่านได้ — ไม่ปัดจนความหมายเปลี่ยน
+  function shares(v) {
+    if (v == null || !isFinite(v)) return "—";
+    var a = Math.abs(v);
+    if (a >= 1e9) return (a / 1e9).toFixed(2) + "bn";
+    if (a >= 1e6) return (a / 1e6).toFixed(2) + "M";
+    if (a >= 1e3) return (a / 1e3).toFixed(0) + "k";
+    return String(Math.round(a));
   }
   function whyKey(r) { return (r.whyFell && r.whyFell.category) || "UNKNOWN"; }
   function whyBadgeText(r) { var k = whyKey(r); return WHY_BADGE[k] || k; }
@@ -637,22 +659,44 @@
     return gap + " ตัวไม่ได้กลับมาในผลสแกนรอบนี้ — API ไม่ได้ระบุเหตุผล";
   }
 
-  function header(detailMode) {
+  function header(detailMode, view) {
+    var sc = view && view !== "hub" ? scannerByKey(view) : null;
+    // หัวหน้าเปลี่ยนตามแท็บที่เปิดอยู่ — ผู้ใช้ต้องรู้เสมอว่ากำลังดูตัวสแกนไหน
+    var h1 = sc ? sc.title : "Thai Stock Scanner";
+    var sub = sc ? "Thai Event-Driven &amp; Turnaround Intelligence"
+      : "Thai Event-Driven &amp; Turnaround Intelligence";
+    var lead = sc ? esc(sc.lead)
+      : "ศูนย์รวมตัวสแกนหุ้นไทยทั้งตลาด (SET + mai) — กดสแกนครั้งเดียว ได้ผลครบทุกตัวสแกน " +
+        "แต่ละตัวตอบคนละคำถามและแยกกันชัดเจน";
     return '<header class="ch-hero">' +
       '<div class="ch-hero-main">' +
-      (detailMode ? '<button type="button" class="ch-btn ch-btn-ghost" data-ch-home="1">← Catalyst Radar</button>' : "") +
-      "<h1>Catalyst Hunter</h1>" +
-      '<p class="ch-hero-sub">Thai Event-Driven &amp; Turnaround Intelligence</p>' +
-      '<p class="ch-hero-lead">ค้นหาหุ้นไทยที่ราคาถูกทิ้งอย่างหนัก แต่มี catalyst ใหม่ที่กำลังเปลี่ยนธุรกิจจริง ' +
-      "และตลาดยังไม่รับรู้เต็มที่</p></div>" +
+      (detailMode ? '<button type="button" class="ch-btn ch-btn-ghost" data-ch-home="1">← กลับไปที่รายการ</button>' : "") +
+      "<h1>" + esc(h1) + "</h1>" +
+      '<p class="ch-hero-sub">' + sub + "</p>" +
+      '<p class="ch-hero-lead">' + lead + "</p></div>" +
       '<div class="ch-hero-meta">' +
       '<div class="ch-fresh"><small>ข้อมูล ณ</small><b>' + esc(freshness()) + "</b>" +
       (state.rows.length ? '<small class="ch-scanctx">' + esc(scanContext()) + "</small>" : "") +
       (state.universeMeta && state.universeMeta.counts
         ? "<small>จักรวาล SET " + state.universeMeta.counts.set +
-          " · mai " + state.universeMeta.counts.mai + "</small>" : "") + "</div>" +
+          " · mai " + state.universeMeta.counts.mai + "</small>" : "") +
+      // อายุของผลสแกน + สถานะการจำ ต้องอยู่บน "ทุกแท็บ" ไม่ใช่เฉพาะแท็บ Catalyst
+      // ไม่งั้นหน้าภาพรวมจะโชว์ผลเก่าโดยผู้ใช้ไม่มีทางรู้ว่าเก่าแค่ไหน
+      (function () {
+        var ag = state.rows.length ? scanAge() : null;
+        return ag ? '<small class="ch-age' + (ag.stale ? " is-stale" : "") + '">' +
+          (state.cache.loadedFromCache ? "ผลที่จำไว้ · " : "") + esc(ag.text) +
+          (ag.stale ? " — กด “สแกนใหม่” เพื่ออัปเดต" : "") + "</small>" : "";
+      })() +
+      (function () {
+        var cl = state.rows.length ? cacheLine() : null;
+        return cl ? '<small class="ch-cache' + (cl.warn ? " is-warn" : "") + '">' +
+          esc(cl.text) + "</small>" : "";
+      })() + "</div>" +
       '<button type="button" class="ch-btn" data-ch-rescan="1">' +
-      (state.loading ? "กำลังสแกน…" : "สแกนใหม่") + "</button></div></header>";
+      (state.loading ? "กำลังสแกน…" : "สแกนใหม่") + "</button></div></header>" +
+      // แท็บอยู่ใต้หัวเสมอ ทั้งหน้ารายการและหน้าเจาะลึก — ย้ายไปตัวสแกนอื่นได้ตลอด
+      tabs(detailMode ? null : (view || "hub"));
   }
 
   // ============================================================
@@ -682,19 +726,10 @@
     return '<section class="ch-brief">' +
       '<div class="ch-brief-head"><div><h2>Hunter Brief</h2>' +
       '<p class="ch-brief-lead">' + lead + "</p></div>" +
+      // อายุผลสแกน/สถานะการจำ ย้ายไปอยู่บนหัวหน้าแล้ว (เห็นได้ทุกแท็บ)
+      // ไม่ซ้ำที่นี่อีก เพราะสองบล็อกนี้อยู่ติดกันบนจอ
       '<p class="ch-brief-meta"><span>' + esc(scanContext()) + "</span>" +
-      "<span>" + esc(freshness()) + "</span>" +
-      (function () {
-        var ag = scanAge();
-        return ag ? '<span class="ch-age' + (ag.stale ? " is-stale" : "") + '">' +
-          (state.cache.loadedFromCache ? "ผลที่จำไว้ · " : "") + esc(ag.text) +
-          (ag.stale ? " — กด “สแกนใหม่” เพื่ออัปเดต" : "") + "</span>" : "";
-      })() +
-      (function () {
-        var cl = cacheLine();
-        return cl ? '<span class="ch-cache' + (cl.warn ? " is-warn" : "") + '">' +
-          esc(cl.text) + "</span>" : "";
-      })() + "</p></div>" +
+      "<span>" + esc(freshness()) + "</span></p></div>" +
       '<div class="ch-brief-grid">' + cards.map(function (x) {
         var clickable = x[2] && x[1] > 0;
         return "<" + (clickable ? "button type=\"button\"" : "div") +
@@ -955,11 +990,8 @@
         gateChips(sp.notYet, "○", "ch-gates-no") + "</div>" : "") +
       (waiting.length ? '<p class="ch-target-wait"><small>รออะไร</small><b>→ ' +
         waiting.map(esc).join(" · ") + "</b></p>" : "") +
-      // §13A/§21 หลักฐานเชิงเทคนิค — บรรทัดรอง อยู่ท้ายสุด ไม่แย่งที่หลักฐานเชิงธุรกิจ
-      // แสดงเฉพาะเมื่อ "มีเหตุการณ์จริง" เท่านั้น ไม่มีก็ไม่ขึ้นอะไรเลย
-      (hasReclaim(r) ? '<p class="ch-tech-line"><small>Technical</small>' +
-        '<span class="ch-tech-pill">🟢 SMA200 Reclaim</span>' +
-        '<em>' + esc(techLine(r)) + "</em></p>" : "") +
+      // ไม่มีบรรทัด SMA200 ที่นี่โดยตั้งใจ — การ์ดนี้ตอบเรื่อง catalyst อย่างเดียว
+      // สัญญาณเชิงเทคนิคอยู่ในแท็บของตัวเอง และในหน้าเจาะลึกรายตัว
       '<button type="button" class="ch-btn ch-btn-wide" data-ch-ticker="' + esc(r.ticker) + '">' +
       "เปิดดูหลักฐานทั้งหมด →</button></article>";
   }
@@ -1209,8 +1241,7 @@
     { key: "cat", label: "Catalyst", get: matShort },
     { key: "fin", label: "Financial", get: finShort },
     { key: "recog", label: "Recognition", get: recogKey },
-    // §22 อยู่ติดกับ Recognition เพราะเป็นระนาบเดียวกัน (หลักฐานเชิงเทคนิค) ไม่ใช่ catalyst
-    { key: "tech", label: "SMA200", get: techShort },
+    // SMA200 ไม่อยู่ในตารางนี้โดยตั้งใจ — เป็นคนละระนาบ มีแท็บของตัวเอง
     { key: "trap", label: "Value Trap", get: trapKey },
     { key: "why", label: "Why Fell", get: whyKey },
     { key: "life", label: "Lifecycle", get: function (r) { return r.lifecycle || "—"; } },
@@ -1226,8 +1257,6 @@
       if (f.recognition && recogKey(r) !== f.recognition) return false;
       if (f.trap && trapKey(r) !== f.trap) return false;
       if (f.lifecycle && (r.lifecycle || "") !== f.lifecycle) return false;
-      // §13D ตัวกรองเชิงเทคนิค — เพิ่มเข้ามาคู่กับตัวกรองเดิม ไม่ได้แทนที่ตัวใด
-      if (f.technical && techStatus(r) !== f.technical) return false;
       if (q && (r.ticker + " " + (r.name || "")).toUpperCase().indexOf(q) < 0) return false;
       return true;
     });
@@ -1282,8 +1311,7 @@
       selectFilter("financial", "Financial", uniq(finShort), f.financial) +
       selectFilter("recognition", "Recognition", uniq(recogKey), f.recognition) +
       selectFilter("trap", "Value Trap", uniq(trapKey), f.trap) +
-      selectFilter("lifecycle", "Lifecycle", uniq(function (r) { return r.lifecycle; }), f.lifecycle) +
-      selectFilter("technical", "SMA200 Reclaim", uniq(techStatus), f.technical) + "</div>";
+      selectFilter("lifecycle", "Lifecycle", uniq(function (r) { return r.lifecycle; }), f.lifecycle) + "</div>";
 
     var head = "<tr>" + COLS.map(function (c) {
       var on = state.sort.key === c.key;
@@ -1303,10 +1331,6 @@
         "<td>" + esc(matShort(r)) + "</td>" +
         '<td class="ch-txt-' + finTone(finState(r)) + '">' + esc(finShort(r)) + "</td>" +
         "<td>" + esc(recogKey(r)) + "</td>" +
-        "<td>" + (hasReclaim(r)
-          ? '<span class="ch-tech-pill" title="' + esc(techLine(r)) + '">RECLAIM</span>'
-          : '<small class="ch-na" title="' + esc(TECH_TH[techStatus(r)] || "") + '">' +
-            esc(techShort(r)) + "</small>") + "</td>" +
         "<td>" + trapPill(r, true) + "</td>" +
         '<td><span class="ch-whybadge ch-tone-' + whyTone(whyKey(r)) + '" title="' + esc(whyTip(r)) + '">' +
         esc(whyBadgeText(r)) + "</span></td>" +
@@ -1460,6 +1484,287 @@
   }
 
   // ============================================================
+  // ทะเบียนตัวสแกน (SCANNERS)
+  //
+  // ทุกตัวกินผลจาก "การสแกนรอบเดียวกัน" (state.rows) — กดสแกนครั้งเดียว
+  // ได้ครบทุกตัว ไม่มีใครยิง API เพิ่ม
+  //
+  // เพิ่มตัวสแกนใหม่ในอนาคต = เพิ่ม 1 รายการที่นี่ แล้วมันจะโผล่เองทั้งใน
+  // แท็บ · การ์ดบนหน้าภาพรวม · ตารางรวม — ไม่ต้องแก้ที่อื่น
+  //
+  // กติกาที่ทุกตัวต้องรักษา: เงื่อนไขเป็น TRUE/FALSE จากผลที่ engine คำนวณไว้แล้ว
+  // ห้ามคิดเกณฑ์ใหม่ในชั้นนี้ ห้ามให้คะแนน ห้ามจัดอันดับข้ามตัวสแกน
+  // ============================================================
+  var CATALYST_HIT_STATES = ["STRONG_EARLY_CATALYST", "EARLY_CATALYST", "CATALYST_EXISTS"];
+
+  var SCANNERS = [
+    {
+      key: "catalyst", tab: "Catalyst", icon: "🔬",
+      title: "Thai Catalyst Hunter",
+      lead: "หุ้นไทยที่ราคาถูกทิ้ง แต่เรื่องราวของธุรกิจกำลังเปลี่ยน",
+      cond: "พบเหตุการณ์เชิงธุรกิจที่ยืนยันแล้ว และ value trap ไม่ใช่ HIGH",
+      hits: function (rows) {
+        return rows.filter(function (r) {
+          return CATALYST_HIT_STATES.indexOf(statusKey(r)) >= 0;
+        });
+      },
+      badge: function (r) { return statusLabel(r); },
+      tone: function (r) { return tone(statusKey(r)); },
+      line: function (r) {
+        var w = whyLine(r, 96);
+        return w || (matLabel(r) + " · ย่อ " + pct(ddPct(r)));
+      },
+      view: function () { return radar(); }
+    },
+    {
+      key: "sma200", tab: "SMA200 Reclaim", icon: "📈",
+      title: "SMA200 Reclaim",
+      lead: "หุ้นที่ปิดกลับขึ้นไปยืนเหนือเส้นค่าเฉลี่ย 200 วัน พร้อมวอลุ่มยืนยัน",
+      cond: "วันก่อนหน้าปิดที่หรือต่ำกว่า SMA200 · วันถัดมาปิดเหนือ SMA200 · " +
+        "และวอลุ่มวันนั้นสูงกว่าค่าเฉลี่ย 10 วันก่อนหน้าเกิน 20%",
+      hits: function (rows) { return rows.filter(smaHit); },
+      badge: function (r) {
+        var x = techOf(r);
+        return x && x.stillAbove === false ? "หลุดกลับลงแล้ว" : "ยังยืนเหนือเส้น";
+      },
+      tone: function (r) {
+        var x = techOf(r);
+        return x && x.stillAbove === false ? "grey" : "green";
+      },
+      line: function (r) { return techLine(r); },
+      view: function () { return sma200View(); }
+    }
+  ];
+
+  function scannerByKey(k) {
+    for (var i = 0; i < SCANNERS.length; i++) if (SCANNERS[i].key === k) return SCANNERS[i];
+    return null;
+  }
+
+  // แท็บบนหัวหน้า — ตัวเลขข้างชื่อคือ "จำนวนที่เข้าเงื่อนไข" ไม่ใช่คะแนน
+  function tabs(active) {
+    var items = [{ key: "hub", tab: "ภาพรวม", icon: "🎯", n: null }];
+    if (state.rows.length) {
+      items[0].n = hubHits().length;
+      SCANNERS.forEach(function (s) {
+        items.push({ key: s.key, tab: s.tab, icon: s.icon, n: s.hits(state.rows).length });
+      });
+    } else {
+      SCANNERS.forEach(function (s) { items.push({ key: s.key, tab: s.tab, icon: s.icon, n: null }); });
+    }
+    return '<nav class="ch-tabs" aria-label="ตัวสแกน">' + items.map(function (x) {
+      return '<button type="button" class="ch-tab' + (x.key === active ? " is-on" : "") + '"' +
+        ' data-ch-view="' + esc(x.key) + '"' + (x.key === active ? ' aria-current="page"' : "") + ">" +
+        '<span class="ch-tab-ic">' + esc(x.icon) + "</span>" + esc(x.tab) +
+        (x.n == null ? "" : '<span class="ch-tab-n">' + x.n + "</span>") + "</button>";
+    }).join("") + "</nav>";
+  }
+
+  // ============================================================
+  // หน้าภาพรวม (HUB) — รวมหุ้นที่เข้าเงื่อนไขของทุกตัวสแกนไว้ที่เดียว
+  // เรียงให้ตัวที่เข้าหลายเงื่อนไขขึ้นก่อน เพราะ "เข้าหลายข้อ" คือข้อเท็จจริง
+  // ที่ต้องเห็นก่อน ไม่ใช่คะแนนที่ให้เอง
+  // ============================================================
+  function hubHits() {
+    var byTicker = {}, order = [];
+    SCANNERS.forEach(function (s) {
+      s.hits(state.rows).forEach(function (r) {
+        if (!byTicker[r.ticker]) { byTicker[r.ticker] = { r: r, keys: [] }; order.push(r.ticker); }
+        if (byTicker[r.ticker].keys.indexOf(s.key) < 0) byTicker[r.ticker].keys.push(s.key);
+      });
+    });
+    return order.map(function (t) { return byTicker[t]; }).sort(function (a, b) {
+      if (a.keys.length !== b.keys.length) return b.keys.length - a.keys.length;
+      return byEnginePriority(a.r, b.r);
+    });
+  }
+
+  function hubCards() {
+    return '<div class="ch-hub-cards">' + SCANNERS.map(function (s) {
+      var n = s.hits(state.rows).length;
+      return '<button type="button" class="ch-hub-card' + (n === 0 ? " is-zero" : "") + '"' +
+        ' data-ch-view="' + esc(s.key) + '">' +
+        '<div class="ch-hub-card-top"><span class="ch-hub-ic">' + esc(s.icon) + "</span>" +
+        "<h3>" + esc(s.title) + "</h3></div>" +
+        '<b class="ch-hub-n">' + n + '<em>ตัวเข้าเงื่อนไข</em></b>' +
+        '<p class="ch-hub-cond"><small>เงื่อนไข</small>' + esc(s.cond) + "</p>" +
+        '<span class="ch-hub-go">ดูทั้งหมด →</span></button>';
+    }).join("") + "</div>";
+  }
+
+  function hubTable() {
+    var list = hubHits();
+    if (!list.length) {
+      return '<div class="ch-zero"><p class="ch-zero-lead">' +
+        "<b>รอบสแกนนี้ไม่มีหุ้นตัวไหนเข้าเงื่อนไขของตัวสแกนใด</b><br>" +
+        "เป็นผลลัพธ์ที่ถูกต้อง ไม่ใช่ข้อมูลหาย — เงื่อนไขทั้งหมดเป็นเหตุการณ์ที่เกิดไม่บ่อย</p></div>";
+    }
+    var multi = list.filter(function (x) { return x.keys.length > 1; }).length;
+    var shown = list.slice(0, 150);
+    var rows = shown.map(function (x) {
+      var r = x.r;
+      return '<tr data-ch-ticker="' + esc(r.ticker) + '">' +
+        "<td><b>" + esc(r.ticker) + "</b><small> " + esc(r.market) + "</small><br>" +
+        '<small class="ch-dim">' + esc(clip(r.name || "", 34)) + "</small></td>" +
+        '<td class="ch-hub-badges">' + x.keys.map(function (k) {
+          var s = scannerByKey(k);
+          return '<span class="ch-hub-badge ch-tone-' + s.tone(r) + '" title="' + esc(s.cond) + '">' +
+            esc(s.icon) + " " + esc(s.badge(r)) + "</span>";
+        }).join("") + "</td>" +
+        "<td>" + x.keys.map(function (k) {
+          var s = scannerByKey(k);
+          var ln = s.line(r);
+          return ln ? '<div class="ch-hub-line"><small>' + esc(s.tab) + "</small>" + esc(ln) + "</div>" : "";
+        }).join("") + "</td>" +
+        '<td class="ch-num">' + pct(ddPct(r)) + "</td>" +
+        "<td>" + trapPill(r, true) + "</td></tr>";
+    }).join("");
+
+    return '<div class="ch-tablewrap"><table class="ch-table ch-hub-table"><thead><tr>' +
+      "<th>หุ้น</th><th>เข้าเงื่อนไขของ</th><th>รายละเอียด</th><th>52W Drawdown</th><th>Value Trap</th>" +
+      "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
+      '<p class="ch-note">' +
+      (multi > 0
+        ? "<b>" + multi + " ตัว</b>เข้าเงื่อนไขมากกว่าหนึ่งข้อ จึงถูกจัดไว้บนสุด — " +
+          "การเข้าหลายข้อเป็น<strong>ข้อเท็จจริง ไม่ใช่คะแนน</strong> และไม่ได้แปลว่าดีกว่า"
+        : "รอบนี้ยังไม่มีตัวไหนเข้าเงื่อนไขมากกว่าหนึ่งข้อ") +
+      " · เรียงตามจำนวนเงื่อนไขที่เข้า แล้วตามลำดับความสำคัญของสถานะที่ engine จัดไว้" +
+      (list.length > shown.length ? " · แสดง " + shown.length + " จาก " + list.length : "") +
+      "</p>";
+  }
+
+  function hubPage() {
+    return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head">' +
+      "<h2>ตัวสแกนทั้งหมด</h2>" +
+      "<p>กด “สแกนใหม่” ครั้งเดียวได้ผลครบทุกตัวสแกน — ทุกตัวอ่านจากข้อมูลรอบเดียวกัน<br>" +
+      "แต่ละตัวสแกนตอบคนละคำถาม จึงไม่ถูกรวมเป็นคะแนนเดียว และไม่มีตัวไหน “สำคัญกว่า” ตัวอื่น</p>" +
+      "</div>" + hubCards() + "</section>" +
+      '<section class="ch-sec"><div class="ch-sec-head">' +
+      '<h2>หุ้นที่เข้าเงื่อนไข <span class="ch-count">' + hubHits().length + " / " +
+      state.rows.length + " scanned</span></h2>" +
+      "<p>รวมทุกตัวที่เข้าเงื่อนไขของตัวสแกนอย่างน้อยหนึ่งข้อ · กดที่แถวเพื่อเปิดดูหลักฐานทั้งหมดของหุ้นตัวนั้น<br>" +
+      "<strong>เป็นรายการเฝ้าดู ไม่ใช่คำแนะนำการลงทุน</strong></p></div>" +
+      hubTable() +
+      '<p class="ch-note ch-foot">' + esc(scanContext()) +
+      (scanGapDetail() ? " · " + scanGapDetail() : "") + "</p></section>";
+  }
+
+  // ============================================================
+  // แท็บ SMA200 RECLAIM — ตารางของตัวเอง แยกจากระนาบ catalyst เด็ดขาด
+  // ไม่มีคะแนน ไม่จัดอันดับ · เรียงตามวันที่เกิดสัญญาณ (ใหม่ → เก่า) ซึ่งเป็นข้อเท็จจริง
+  // ============================================================
+  function smaCounts() {
+    var c = { RECLAIM: 0, NO_RECLAIM: 0, DATA_INSUFFICIENT: 0, DATA_STALE: 0, DATA_UNAVAILABLE: 0 };
+    state.rows.forEach(function (r) {
+      var k = techStatus(r);
+      if (c[k] == null) c[k] = 0;
+      c[k]++;
+    });
+    return c;
+  }
+
+  function sma200View() {
+    if (!state.rows.length) return "";
+    var c = smaCounts();
+    // "reclaim ทั้งหมด" กับ "เข้าเงื่อนไขของตัวสแกน" เป็นคนละชุด — ต้องนับแยกและบอกทั้งคู่
+    var reclaims = state.rows.filter(hasReclaim);
+    var all = reclaims.filter(volOk);
+    var noVol = reclaims.filter(function (r) { return techOf(r).volumeConfirmed === false; });
+    var unkVol = reclaims.filter(function (r) { return techOf(r).volumeConfirmed == null; });
+    var f = state.smaFilter || "all";
+    // โหมด novol แสดง "ตัวที่ตกเงื่อนไขวอลุ่ม" ซึ่งอยู่นอกชุดที่เข้าเงื่อนไข
+    var base = f === "novol" ? noVol : all;
+    var list = base.filter(function (r) {
+      var x = techOf(r);
+      if (f === "holding") return x && x.stillAbove === true;
+      if (f === "fellback") return x && x.stillAbove === false;
+      return true;
+    }).sort(function (a, b) {
+      // ใหม่ก่อนเก่า — ถ้าวันเดียวกันเรียงตามชื่อ ให้ผลคงที่ทุกครั้ง
+      var da = (techOf(a) || {}).signalDate || "", db = (techOf(b) || {}).signalDate || "";
+      if (da !== db) return da < db ? 1 : -1;
+      return String(a.ticker) < String(b.ticker) ? -1 : 1;
+    });
+
+    var holding = all.filter(function (r) { return (techOf(r) || {}).stillAbove === true; }).length;
+    var fell = all.length - holding;
+    var chipDefs = [["all", "เข้าเงื่อนไขครบ", all.length], ["holding", "ยังยืนเหนือเส้น", holding],
+      ["fellback", "หลุดกลับลงไปแล้ว", fell]];
+    // ชิปสุดท้ายเป็น "ของที่ตกเงื่อนไข" — ตั้งชื่อให้อ่านออกว่าไม่ใช่ตัวที่เข้าเงื่อนไข
+    if (noVol.length) chipDefs.push(["novol", "ตกเงื่อนไขวอลุ่ม (ไม่นับเป็นผลสแกน)", noVol.length]);
+    var chips = chipDefs.map(function (x) {
+      return '<button type="button" class="ch-chip' + (f === x[0] ? " is-on" : "") +
+        (x[0] === "novol" ? " ch-chip-out" : "") + '"' +
+        ' data-ch-smafilter="' + x[0] + '">' + esc(x[1]) + '<span>' + x[2] + "</span></button>";
+    }).join("");
+
+    var body = list.length ? list.map(function (r) {
+      var x = techOf(r);
+      return '<tr data-ch-ticker="' + esc(r.ticker) + '">' +
+        "<td><b>" + esc(r.ticker) + "</b><small> " + esc(r.market) + "</small><br>" +
+        '<small class="ch-dim">' + esc(clip(r.name || "", 34)) + "</small></td>" +
+        "<td>" + esc(x.signalDate || "—") +
+        '<br><small class="ch-dim">' + (x.barsSinceSignal == null ? "" : x.barsSinceSignal + " วันทำการก่อน") +
+        "</small></td>" +
+        '<td class="ch-num">' + pct(x.previousDistancePct) + "</td>" +
+        '<td class="ch-num">' + pct(x.currentDistancePct) + "</td>" +
+        '<td class="ch-num">' + pp(x.reclaimStrengthPct) + "</td>" +
+        '<td class="ch-num">' +
+        (x.volumeVsAvgPct == null
+          ? '<span class="ch-na" title="' + esc(x.volumeNote || "") + '">ตรวจไม่ได้</span>'
+          : (x.volumeConfirmed
+              ? '<b class="ch-txt-green">' + pct(x.volumeVsAvgPct) + "</b>"
+              : '<span class="ch-na">' + pct(x.volumeVsAvgPct) + "</span>")) +
+        '<br><small class="ch-dim">' + shares(x.volume) + " เทียบเฉลี่ย " + shares(x.volumeAvg) +
+        "</small></td>" +
+        "<td>" + (x.stillAbove === false
+          ? '<span class="ch-na">หลุดกลับลงไปแล้ว</span>'
+          : '<span class="ch-tech-pill">ยังยืนเหนือเส้น</span>') +
+        '<br><small class="ch-dim">ห่างจากเส้น ' + pct(x.latestDistancePct) + "</small></td>" +
+        "<td>" + trapPill(r, true) + "</td></tr>";
+    }).join("") : "";
+
+    var table = list.length
+      ? '<div class="ch-tablewrap"><table class="ch-table"><thead><tr>' +
+        "<th>หุ้น</th><th>วันที่เกิดสัญญาณ</th><th>ระยะห่างก่อนหน้า</th><th>ระยะห่างวันที่ข้าม</th>" +
+        "<th>แรงของการกลับขึ้น</th><th>วอลุ่ม vs เฉลี่ย 10 วัน</th><th>ตอนนี้</th><th>Value Trap</th>" +
+        "</tr></thead><tbody>" + body + "</tbody></table></div>"
+      : '<div class="ch-zero"><p class="ch-zero-lead"><b>ไม่มีตัวไหนตรงตัวกรองนี้ในรอบสแกน</b><br>' +
+        "เป็นผลลัพธ์ที่ถูกต้อง ไม่ใช่ข้อมูลหาย</p></div>";
+
+    // สถานะข้อมูลต้องอ่านออกว่า "ไม่รู้" ไม่ใช่ "ตรวจแล้วไม่เจอ"
+    // ทางเดินของตัวเลขต้องไล่ได้: reclaim ทั้งหมด → ผ่านวอลุ่ม / ตก / ตรวจไม่ได้
+    var funnel = '<p class="ch-note">ทางเดินของเงื่อนไข: ' +
+      "กลับขึ้นเหนือ SMA200 <b>" + reclaims.length + "</b> ตัว → " +
+      "ผ่านเงื่อนไขวอลุ่ม <b>" + all.length + "</b> · " +
+      "ตกเงื่อนไขวอลุ่ม <b>" + noVol.length + "</b>" +
+      (unkVol.length ? " · ตรวจวอลุ่มไม่ได้ <b>" + unkVol.length + "</b>" : "") +
+      "<br>ตัวเลขในแท็บนี้และบนหน้าภาพรวมนับเฉพาะ <b>" + all.length +
+      "</b> ตัวที่ผ่านครบทั้งสองเงื่อนไข</p>";
+
+    var quality = '<p class="ch-note ch-foot">ผลการตรวจทั้งจักรวาล: ' +
+      "พบสัญญาณ <b>" + (c.RECLAIM || 0) + "</b> · ตรวจแล้วไม่พบ <b>" + (c.NO_RECLAIM || 0) + "</b>" +
+      (c.DATA_INSUFFICIENT ? " · ประวัติราคาไม่พอคำนวณ SMA200 <b>" + c.DATA_INSUFFICIENT + "</b>" : "") +
+      (c.DATA_STALE ? " · ข้อมูลราคาไม่สด <b>" + c.DATA_STALE + "</b>" : "") +
+      (c.DATA_UNAVAILABLE ? " · ไม่มีข้อมูลราคา <b>" + c.DATA_UNAVAILABLE + "</b>" : "") +
+      "<br>“ข้อมูลไม่พอ” กับ “ตรวจแล้วไม่พบ” เป็นคนละเรื่อง — ตัวที่ข้อมูลไม่พอไม่ได้แปลว่าไม่มีสัญญาณ" +
+      "</p>";
+
+    return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head">' +
+      '<h2>SMA200 Reclaim <span class="ch-count">' + all.length + " / " +
+      state.rows.length + " scanned</span></h2>" +
+      "<p>ต้องเข้า<strong>ทั้งสองเงื่อนไข</strong>: " +
+      "(1) ปิดวันก่อนหน้า<strong>ที่หรือต่ำกว่า</strong> SMA200 แล้วปิดวันถัดมา<strong>เหนือ</strong> SMA200 · " +
+      "(2) วอลุ่มของวันที่ข้าม<strong>สูงกว่าค่าเฉลี่ย 10 วันทำการก่อนหน้าเกิน 20%</strong><br>" +
+      "SMA200 คิดจากราคาปิด 200 วันทำการที่ใช้ได้จริง · ค่าเฉลี่ยวอลุ่มไม่รวมวันที่เกิดสัญญาณ · " +
+      "ใช้เฉพาะแท่งที่ปิดตลาดแล้ว<br>" +
+      "<strong>เป็นเหตุการณ์เชิงราคา/วอลุ่ม ไม่ใช่ catalyst และไม่ใช่คำแนะนำ</strong> — " +
+      "ไม่มีคะแนน ไม่จัดอันดับ ตัวเลขทุกตัวเป็นคำบรรยาย · " +
+      "การกลับขึ้นเหนือเส้นไม่ลบล้างความเสี่ยง Value Trap ในคอลัมน์ขวาสุด</p></div>" +
+      funnel + '<div class="ch-chips">' + chips + "</div>" + table + quality + "</section>";
+  }
+
+  // ============================================================
   // DETAIL PAGE — พื้นที่สืบหลักฐานของหุ้นตัวเดียว
   // ============================================================
   function sec(n, title, body, sub, cls) {
@@ -1487,8 +1792,17 @@
     var x = techOf(r);
     if (!x) return unavailable("ยังไม่ได้โหลดโมดูลหลักฐานเชิงเทคนิค");
 
+    // หัวบล็อกต้องบอกสองเรื่องแยกกัน: เกิดเหตุการณ์ไหม · เข้าเงื่อนไขของตัวสแกนไหม
     var head = '<div class="ch-kv-lg"><b>' + esc(x.status) + "</b><span>" +
-      esc(TECH_TH[x.status] || "") + "</span></div>";
+      esc(TECH_TH[x.status] || "") + "</span></div>" +
+      (x.status === "RECLAIM" && x.volumeConfirmed !== true
+        ? '<p class="ch-note ch-note-warn">เกิดการกลับขึ้นเหนือ SMA200 จริง แต่' +
+          (x.volumeConfirmed === false
+            ? "วอลุ่มวันนั้นไม่ถึงเกณฑ์ > " + (x.volumeMinPct || 20) + "%"
+            : "ตรวจวอลุ่มไม่ได้") +
+          " จึง<strong>ไม่ถูกนับเป็นผลของตัวสแกน SMA200</strong> — เหตุการณ์ยังเป็นข้อเท็จจริง " +
+          "แต่ไม่เข้าเงื่อนไขที่ตั้งไว้</p>"
+        : "");
 
     if (x.status !== "RECLAIM") {
       // สถานะข้อมูลต้องอ่านออกว่าเป็นคนละเรื่องกับ "ตรวจแล้วไม่เจอ"
@@ -1533,6 +1847,14 @@
       "<div><small>ระยะห่างวันที่ข้าม</small><b>" + pct(x.currentDistancePct) + "</b></div>" +
       "<div><small>แรงของการกลับขึ้น</small><b>" + pp(x.reclaimStrengthPct) + "</b>" +
       "<em>ผลต่างของสองระยะ ไม่ใช่คะแนน</em></div>" +
+      "<div><small>วอลุ่มวันที่ข้าม</small><b>" + shares(x.volume) + "</b>" +
+      "<em>เฉลี่ย 10 วันก่อนหน้า " + shares(x.volumeAvg) +
+      (x.volumeSamples ? " (จาก " + x.volumeSamples + " วัน)" : "") + "</em></div>" +
+      "<div><small>วอลุ่มเทียบค่าเฉลี่ย</small><b>" +
+      (x.volumeVsAvgPct == null ? "ตรวจไม่ได้" : pct(x.volumeVsAvgPct)) + "</b>" +
+      "<em>" + (x.volumeConfirmed === true ? "ผ่านเกณฑ์ > " + (x.volumeMinPct || 20) + "%"
+        : x.volumeConfirmed === false ? "ไม่ถึงเกณฑ์ > " + (x.volumeMinPct || 20) + "%"
+        : esc(clip(x.volumeNote || "ไม่มีข้อมูลวอลุ่ม", 48))) + "</em></div>" +
       "<div><small>ผ่านมาแล้ว</small><b>" + (x.barsSinceSignal == null ? "—" : x.barsSinceSignal + " วันทำการ") +
       "</b></div>" +
       "<div><small>ตอนนี้ยังเหนือเส้นไหม</small><b>" +
@@ -2083,27 +2405,37 @@
     var root = el();
     if (!root) return;
     var ticker = urlTicker();
+    var view = urlView();
+    // จำแท็บล่าสุด เพื่อให้ปุ่มย้อนกลับจากหน้าเจาะลึกพากลับที่เดิม
+    // (URL ของหน้าเจาะลึกพา view ติดไปด้วย การรีโหลดจึงยังกลับถูกที่)
+    state.lastView = view;
     var body;
     if (state.error) {
-      body = header(false) + '<div class="ch-empty"><b>เกิดข้อผิดพลาด</b><br>' + esc(state.error) +
+      body = header(false, view) + '<div class="ch-empty"><b>เกิดข้อผิดพลาด</b><br>' + esc(state.error) +
         '<br><button type="button" class="ch-btn" data-ch-rescan="1">ลองอีกครั้ง</button></div>';
     } else if (state.loading && !state.rows.length) {
       var p = state.progress;
-      body = header(false) + '<div class="ch-empty">กำลังสแกนหุ้นไทยทั้งตลาด' +
+      body = header(false, view) + '<div class="ch-empty">กำลังสแกนหุ้นไทยทั้งตลาด' +
         (p && p.total ? " · " + p.done + "/" + p.total : "") + "…</div>";
     } else if (state.cacheChecking && !state.rows.length) {
-      body = header(false) + '<div class="ch-empty">กำลังเรียกผลสแกนที่จำไว้…</div>';
+      body = header(false, view) + '<div class="ch-empty">กำลังเรียกผลสแกนที่จำไว้…</div>';
     } else if (!state.rows.length) {
-      body = header(false) + '<div class="ch-empty"><b>ยังไม่ได้สแกน</b><br>' +
-        "Catalyst Hunter สแกนหุ้นไทยทั้งตลาด (SET + mai) ซึ่งใช้เวลาราวหนึ่งนาทีครึ่ง " +
-        "จึงไม่เริ่มเองอัตโนมัติ — กด “เริ่มสแกน” เพื่อเริ่ม<br>" +
+      body = header(false, view) + '<div class="ch-empty"><b>ยังไม่ได้สแกน</b><br>' +
+        "สแกนหุ้นไทยทั้งตลาด (SET + mai) ซึ่งใช้เวลาราวหนึ่งนาทีครึ่ง จึงไม่เริ่มเองอัตโนมัติ — " +
+        "กด “เริ่มสแกน” เพื่อเริ่ม<br>" +
+        "<strong>กดครั้งเดียวได้ผลครบทุกตัวสแกน</strong> (" +
+        SCANNERS.map(function (s) { return esc(s.tab); }).join(" · ") + ") " +
+        "เพราะทุกตัวอ่านจากข้อมูลรอบเดียวกัน<br>" +
         "<strong>สแกนครั้งเดียวพอ</strong> — ผลจะถูกจำไว้ในเบราว์เซอร์ " +
         "เปิดหน้านี้ครั้งต่อไปจะขึ้นทันทีโดยไม่สแกนใหม่<br>" +
         '<button type="button" class="ch-btn ch-btn-wide" data-ch-rescan="1">เริ่มสแกน</button></div>';
     } else if (ticker) {
       body = detail(ticker);
+    } else if (view === "hub") {
+      body = header(false, "hub") + hubPage();
     } else {
-      body = header(false) + radar();
+      var sc = scannerByKey(view);
+      body = header(false, view) + (sc ? sc.view() : hubPage());
     }
     root.innerHTML = body;
   }
@@ -2111,8 +2443,19 @@
   function onClick(e) {
     var t = e.target;
     if (!t || !t.closest) return;
-    if (t.closest("[data-ch-home]")) { pushUrl("/catalyst-hunter"); render(); window.scrollTo(0, 0); return; }
+    // กลับจากหน้าเจาะลึก → กลับไปแท็บเดิมที่ผู้ใช้มาจาก ไม่ใช่โยนกลับหน้าแรกเสมอ
+    if (t.closest("[data-ch-home]")) {
+      pushUrl(viewUrl(state.lastView || "hub")); render(); window.scrollTo(0, 0); return;
+    }
     if (t.closest("[data-ch-rescan]")) { scanAll(true); return; }
+    var vb = t.closest("[data-ch-view]");
+    if (vb) {
+      var nv = vb.getAttribute("data-ch-view") || "hub";
+      state.lastView = nv;
+      pushUrl(viewUrl(nv)); render(); window.scrollTo(0, 0); return;
+    }
+    var sf = t.closest("[data-ch-smafilter]");
+    if (sf) { state.smaFilter = sf.getAttribute("data-ch-smafilter") || "all"; render(); return; }
     var fs = t.closest("[data-ch-filter-status]");
     if (fs) {
       var v = fs.getAttribute("data-ch-filter-status");
@@ -2129,7 +2472,11 @@
     var tk = t.closest("[data-ch-ticker]");
     if (tk) {
       var sym = tk.getAttribute("data-ch-ticker");
-      if (sym) { pushUrl("/catalyst-hunter?ticker=" + encodeURIComponent(sym)); render(); window.scrollTo(0, 0); }
+      if (sym) {
+        var keep = state.lastView && state.lastView !== "hub" ? "view=" + encodeURIComponent(state.lastView) + "&" : "";
+        pushUrl("/catalyst-hunter?" + keep + "ticker=" + encodeURIComponent(sym));
+        render(); window.scrollTo(0, 0);
+      }
     }
   }
   function onChange(e) {

@@ -41,9 +41,39 @@ var FLAT_CLOSES = rep(203, 100);
 var TRAP_CLOSES = rep(200, 100).concat([90, 108, 109]);
 // SHORTCO — ประวัติราคาไม่พอคำนวณ SMA200
 var SHORT_CLOSES = rep(120, 100);
+// BOTHCO — เข้าเงื่อนไข "ทั้งสอง" ตัวสแกน (catalyst ยืนยันแล้ว + reclaim)
+// ต้องมีตัวแบบนี้ ไม่งั้นเส้นทางรวมหุ้นซ้ำบนหน้าภาพรวมจะไม่เคยถูกทดสอบเลย
+var BOTH_CLOSES = rep(200, 100).concat([93, 105, 106]);
+// BACKCO — เคยกลับขึ้นเหนือเส้น แล้วหลุดกลับลงไปใต้เส้น
+var BACK_CLOSES = rep(200, 100).concat([92, 106, 80, 78]);
+// NOVOLCO — กลับขึ้นเหนือเส้นจริง แต่วอลุ่มวันนั้นไม่พุ่ง → ต้องไม่ถูกนับเป็นผลสแกน
+var NOVOL_CLOSES = rep(200, 100).concat([94, 107, 108]);
 
-var DATES = recentTradingDates(203);
+// วอลุ่มฐานคงที่ แล้วพุ่งเฉพาะวันที่เกิดสัญญาณ (ทุก fixture สัญญาณอยู่ที่ดัชนี 201)
+var VOL_BASE = 1000000;
+var SIGNAL_IDX = 201;
+function volsWithSpike(len, mult) {
+  var v = rep(len, VOL_BASE);
+  if (len > SIGNAL_IDX) v[SIGNAL_IDX] = Math.round(VOL_BASE * mult);
+  return v;
+}
+
+var DATES = recentTradingDates(204);
 var SHORT_DATES = DATES.slice(-120);
+
+// เหตุการณ์ธุรกิจที่ทำให้ engine จัดเป็น CATALYST_EXISTS (ยืนยันด้วยการรันจริง)
+function catalystEvidence(tk) {
+  return {
+    inspected: true, totalDisclosures: 3, routineCount: 0, unknownCount: 0, filingsCount: 1,
+    perSource: {}, items: [{
+      ticker: tk, eventDate: DATES[DATES.length - 20], sourceType: "SET_DISCLOSURE",
+      sourceName: "SET Disclosure", sourceUrl: "https://www.set.or.th/x",
+      eventType: "NEW_ORDER", title: "เซ็นสัญญาโครงการใหม่", summary: null,
+      evidenceStrength: "C3_CONFIRMED_EVENT", confidence: null,
+      affectedBusiness: null, expectedImpact: null, status: "VERIFIED"
+    }], note: "ทดสอบ"
+  };
+}
 
 function trapEvidence() {
   return {
@@ -56,26 +86,36 @@ function trapEvidence() {
   };
 }
 
-function apiItem(tk, nm, closes, dates, evidence) {
+function apiItem(tk, nm, closes, dates, evidence, volMult) {
+  // วันที่ต้องยาวเท่าราคาเสมอ — ถ้าไม่เท่า โมดูลจะถือว่าจับคู่ไม่ได้ (ถูกต้องแล้ว)
+  // แล้วเทสต์จะเพี้ยนเงียบ ๆ เพราะ asOf/signalDate กลายเป็น null
+  var d = dates.length === closes.length ? dates : dates.slice(-closes.length);
   return { ticker: tk, name: nm, market: "SET", universe: "SET",
-    dates: dates, closes: closes, volumes: closes.map(function () { return 1e6; }),
+    dates: d, closes: closes,
+    volumes: volsWithSpike(closes.length, volMult == null ? 1 : volMult),
     bars: closes.length, source: "test", sourceType: "LIVE_MARKET_DATA", range: "5y",
     evidence: evidence || null };
 }
 
 var fakeApi = {
-  total: 4, offset: 0, scanned: 4, done: true, nextOffset: null, universe: "THAI_ALL",
+  total: 6, offset: 0, scanned: 6, done: true, nextOffset: null, universe: "THAI_ALL",
   universeMeta: { source: "SET registry (test)", asOf: new Date().toISOString(),
     degraded: false, note: null, counts: { set: 637, mai: 231, total: 868 } },
   benchmark: { symbol: "^SET.BK", closes: rep(203, 100), available: true },
   items: [
-    apiItem("RECLAIMCO", "Reclaim PCL", RECLAIM_CLOSES, DATES),
+    apiItem("RECLAIMCO", "Reclaim PCL", RECLAIM_CLOSES, DATES, null, 2.0),
     apiItem("FLATCO", "Flat PCL", FLAT_CLOSES, DATES),
-    apiItem("TRAPCO", "Trap PCL", TRAP_CLOSES, DATES, trapEvidence()),
+    apiItem("TRAPCO", "Trap PCL", TRAP_CLOSES, DATES, trapEvidence(), 1.8),
     apiItem("SHORTCO", "Short PCL", SHORT_CLOSES, SHORT_DATES),
+    apiItem("BOTHCO", "Both PCL", BOTH_CLOSES, DATES, catalystEvidence("BOTHCO"), 1.5),
+    apiItem("BACKCO", "Back Below PCL", BACK_CLOSES, DATES, null, 2.2),
+    // วอลุ่มเท่าเดิมทุกวัน → +0% → ตกเงื่อนไข ทั้งที่ราคากลับขึ้นเหนือเส้นจริง
+    apiItem("NOVOLCO", "No Volume PCL", NOVOL_CLOSES, DATES, null, 1.0),
   ],
   failed: [],
 };
+fakeApi.total = fakeApi.items.length;
+fakeApi.scanned = fakeApi.items.length;
 
 // ---------- sandbox ----------
 var els = {};
@@ -106,20 +146,30 @@ win.window = win; win.self = win;
 var ctx = vm.createContext(win);
 
 var bootOk = true;
-// ต้องโหลด catalyst-qualification.js ด้วย ไม่งั้น r.qualification = null
-// แล้วข้อยืนยันเรื่อง "สถานะไม่เปลี่ยน" จะทดสอบเส้นทางที่ไม่ใช่ของจริง
-["catalyst-qualification.js", "technical-indicators.js", "sma200-reclaim.js",
-  "catalyst-engine.js", "catalyst-data.js", "catalyst-page.js"]
-  .forEach(function (f) {
-    try { vm.runInContext(fs.readFileSync(PUB + "/" + f, "utf8"), ctx, { filename: f }); }
-    catch (e) { bootOk = false; console.error("   boot " + f + ": " + e.message); }
-  });
+// โหลดสคริปต์ชุดเดียวกับที่ catalyst-hunter.html โหลดจริง โดยอ่านลำดับจากตัว HTML เอง
+// เหตุผล: เคยพลาดมาแล้วสองรอบ — ไม่โหลด catalyst-qualification.js ทำให้ r.qualification
+// เป็น null และไม่โหลด evidence-model.js ทำให้ระนาบหลักฐานไม่ทำงานเลย
+// ผลคือเทสต์ "เขียว" อยู่บนเส้นทางที่ไม่ใช่ของจริง
+var SKIP = ["theme.js", "api-auth.js", "privacy.js", "app-navigation.js"];
+var HTML_SCRIPTS = (function () {
+  var src = fs.readFileSync(PUB + "/catalyst-hunter.html", "utf8");
+  var out = [], re = /<script src="\/([A-Za-z0-9._-]+\.js)/g, m;
+  while ((m = re.exec(src)) !== null) if (SKIP.indexOf(m[1]) < 0) out.push(m[1]);
+  return out;
+})();
+HTML_SCRIPTS.forEach(function (f) {
+  try { vm.runInContext(fs.readFileSync(PUB + "/" + f, "utf8"), ctx, { filename: f }); }
+  catch (e) { bootOk = false; console.error("   boot " + f + ": " + e.message); }
+});
 
 console.log("== boot + ลำดับการโหลด ==");
 t("หน้าเว็บ boot ได้พร้อมโมดูลเทคนิค", bootOk);
 t("window.Sma200Reclaim ถูกโหลด", !!win.Sma200Reclaim);
 t("window.CatalystQualification ถูกโหลด (ไม่งั้นเทสต์สถานะจะทดสอบเส้นทางปลอม)",
   !!win.CatalystQualification);
+t("ระนาบหลักฐานถูกโหลด (ไม่งั้น catalyst จะเป็น NONE ทุกตัวแบบเงียบ ๆ)",
+  !!win.EvidenceModel && !!win.EvidenceClassifier);
+t("โหลดสคริปต์ครบตามที่หน้าเว็บจริงโหลด", HTML_SCRIPTS.length >= 11, HTML_SCRIPTS);
 t("window.AITechnicalIndicators ถูกโหลด (ตัวคำนวณ SMA ร่วม)", !!win.AITechnicalIndicators);
 t("HTML โหลด technical-indicators ก่อน sma200-reclaim", (function () {
   var h = fs.readFileSync(PUB + "/catalyst-hunter.html", "utf8");
@@ -145,47 +195,192 @@ win.CatalystPage.scanAll(true).then(function () {
   t("SHORTCO ข้อมูลไม่พอ", sh.technical && sh.technical.status === "DATA_INSUFFICIENT",
     sh.technical && sh.technical.status);
 
-  console.log("== §25 RADAR — ตาราง + ตัวกรอง ==");
-  var html = els.chRoot.innerHTML;
-  t("Radar เรนเดอร์ได้", html.length > 3000, html.length);
-  t("มีคอลัมน์ SMA200 ในตาราง", html.indexOf('data-ch-sort="tech"') >= 0);
-  t("มีตัวกรอง SMA200 Reclaim", html.indexOf('data-ch-filter="technical"') >= 0);
-  t("ตัวกรองเดิมยังอยู่ครบ (ไม่ถูกแทนที่)",
-    ["status", "maturity", "financial", "recognition", "trap", "lifecycle"].every(function (k) {
-      return html.indexOf('data-ch-filter="' + k + '"') >= 0;
-    }));
-  t("ตัวเลือก RECLAIM มีให้เลือกในตัวกรอง", /data-ch-filter="technical"[\s\S]{0,400}?value="RECLAIM"/.test(html));
-  t("แถวที่มีสัญญาณขึ้นป้าย RECLAIM", html.indexOf('class="ch-tech-pill"') >= 0);
-  // §18 ในตาราง "ข้อมูลไม่พอ" ต้องอ่านออกว่าไม่รู้ ไม่ใช่ "—" ที่แปลว่าไม่มีสัญญาณ
-  t("ช่องตารางของ SHORTCO บอกว่าข้อมูลไม่พอ ไม่ใช่ขีดเปล่า", (function () {
-    var m = /<tr data-ch-ticker="SHORTCO"[\s\S]*?<\/tr>/.exec(html);
-    return !!m && m[0].indexOf("ข้อมูลไม่พอ") >= 0;
-  })(), (function () { var m = /<tr data-ch-ticker="SHORTCO"[\s\S]*?<\/tr>/.exec(html); return m ? m[0].slice(0, 200) : null; })());
-  t("ช่องตารางของ FLATCO (ตรวจแล้วไม่เจอ) ใช้ขีด — คนละความหมายกับข้อมูลไม่พอ", (function () {
-    var m = /<tr data-ch-ticker="FLATCO"[\s\S]*?<\/tr>/.exec(html);
-    return !!m && m[0].indexOf("ข้อมูลไม่พอ") < 0;
-  })());
+  console.log("== หน้าภาพรวม (HUB) — หน้าแรกของ /catalyst-hunter ==");
+  var hub = els.chRoot.innerHTML;
+  t("หน้าภาพรวมเรนเดอร์ได้", hub.length > 1500, hub.length);
+  t("มีการ์ดของทุกตัวสแกน",
+    hub.indexOf("Thai Catalyst Hunter") >= 0 && hub.indexOf("SMA200 Reclaim") >= 0);
+  t("การ์ดบอกเงื่อนไขของตัวสแกนไว้ชัด",
+    hub.indexOf("วันก่อนหน้าปิดที่หรือต่ำกว่า SMA200") >= 0);
+  t("มีตารางรวมหุ้นที่เข้าเงื่อนไข", hub.indexOf("หุ้นที่เข้าเงื่อนไข") >= 0);
+  t("RECLAIMCO (เข้าเงื่อนไข SMA200) อยู่ในตารางรวม",
+    hub.indexOf('data-ch-ticker="RECLAIMCO"') >= 0);
+  t("FLATCO (ไม่เข้าเงื่อนไขไหนเลย) ไม่อยู่ในตารางรวม",
+    hub.indexOf('data-ch-ticker="FLATCO"') < 0);
+  t("SHORTCO (ข้อมูลไม่พอ) ไม่อยู่ในตารางรวม",
+    hub.indexOf('data-ch-ticker="SHORTCO"') < 0);
+  t("มีป้ายบอกว่าเข้าเงื่อนไขของตัวสแกนไหน", hub.indexOf("ch-hub-badge") >= 0);
+  t("ย้ำว่าเข้าหลายข้อ = ข้อเท็จจริง ไม่ใช่คะแนน", hub.indexOf("ไม่ใช่คะแนน") >= 0);
 
-  console.log("== §25 ตัวกรองทำงานจริง ==");
-  var before = (html.match(/data-ch-ticker="/g) || []).length;
-  win.CatalystPage._state.filter.technical = "RECLAIM";
+  // ---- หุ้นที่เข้าสองเงื่อนไขพร้อมกัน ----
+  t("BOTHCO เข้าทั้งสองตัวสแกนจริง (ไม่งั้นเทสต์ด้านล่างว่างเปล่า)",
+    ["STRONG_EARLY_CATALYST", "EARLY_CATALYST", "CATALYST_EXISTS"].indexOf(
+      row("BOTHCO").qualification.state.key) >= 0 && row("BOTHCO").technical.status === "RECLAIM",
+    [row("BOTHCO").qualification.state.key, row("BOTHCO").technical.status]);
+  t("BOTHCO ปรากฏเป็นแถวเดียว ไม่ซ้ำตามจำนวนเงื่อนไขที่เข้า",
+    (hub.match(/<tr data-ch-ticker="BOTHCO"/g) || []).length === 1,
+    (hub.match(/<tr data-ch-ticker="BOTHCO"/g) || []).length);
+  // นับ "ป้ายจริง" ไม่ใช่ทุกที่ที่มีคำว่า ch-hub-badge — คลาสของ <td> คือ ch-hub-badgeS
+  // ซึ่งมีคำนั้นเป็นส่วนหนึ่ง ถ้านับหลวม ๆ จะได้เกินมา 1 เสมอ
+  t("แถวของ BOTHCO ติดป้ายครบทั้งสองตัวสแกน", (function () {
+    var m = /<tr data-ch-ticker="BOTHCO"[\s\S]*?<\/tr>/.exec(hub);
+    return !!m && (m[0].match(/class="ch-hub-badge ch-tone-/g) || []).length === 2;
+  })(), (function () {
+    var m = /<tr data-ch-ticker="BOTHCO"[\s\S]*?<\/tr>/.exec(hub);
+    return m ? (m[0].match(/class="ch-hub-badge ch-tone-/g) || []).length : null;
+  })());
+  t("แถวที่เข้าเงื่อนไขเดียวติดป้ายเดียว", (function () {
+    var m = /<tr data-ch-ticker="RECLAIMCO"[\s\S]*?<\/tr>/.exec(hub);
+    return !!m && (m[0].match(/class="ch-hub-badge ch-tone-/g) || []).length === 1;
+  })());
+  t("ตัวที่เข้าสองเงื่อนไขถูกจัดไว้เหนือตัวที่เข้าข้อเดียว",
+    hub.indexOf('data-ch-ticker="BOTHCO"') < hub.indexOf('data-ch-ticker="RECLAIMCO"'),
+    [hub.indexOf('data-ch-ticker="BOTHCO"'), hub.indexOf('data-ch-ticker="RECLAIMCO"')]);
+  t("บอกจำนวนตัวที่เข้ามากกว่าหนึ่งข้อ", /<b>1 ตัว<\/b>เข้าเงื่อนไขมากกว่าหนึ่งข้อ/.test(hub));
+
+  // ---- ความสดของข้อมูลต้องเห็นได้บนทุกแท็บ ไม่ใช่เฉพาะแท็บ Catalyst ----
+  t("หน้าภาพรวมบอกอายุของผลสแกน (ไม่โชว์ของเก่าเงียบ ๆ)", hub.indexOf("ch-age") >= 0);
+  t("หน้าภาพรวมบอกสถานะการจำผลสแกน", hub.indexOf("ch-cache") >= 0);
+  t("หน้าภาพรวมบอกวันของข้อมูล", hub.indexOf("ข้อมูล ณ") >= 0);
+  t("ปุ่มสแกนมีปุ่มเดียวในหน้า", (hub.match(/data-ch-rescan=/g) || []).length === 1,
+    (hub.match(/data-ch-rescan=/g) || []).length);
+  t("บอกว่ากดครั้งเดียวได้ครบทุกตัวสแกน", hub.indexOf("ได้ผลครบทุกตัวสแกน") >= 0);
+
+  console.log("== แท็บ ==");
+  // ต้องตรวจ "ในแถบแท็บ" เท่านั้น — การ์ดบนหน้าภาพรวมก็มี data-ch-view เหมือนกัน
+  // ถ้าตรวจทั้งหน้า แท็บหายไปก็ยังเขียวได้เพราะไปเจอที่การ์ดแทน
+  var tabBar = (/<nav class="ch-tabs"[\s\S]*?<\/nav>/.exec(hub) || [""])[0];
+  t("มีแถบแท็บจริง", tabBar.length > 0);
+  t("แถบแท็บมีครบสามอัน (ภาพรวม + สองตัวสแกน)",
+    tabBar.indexOf('data-ch-view="hub"') >= 0 && tabBar.indexOf('data-ch-view="catalyst"') >= 0 &&
+    tabBar.indexOf('data-ch-view="sma200"') >= 0, tabBar.slice(0, 160));
+  t("จำนวนแท็บ = 1 + จำนวนตัวสแกน", (tabBar.match(/data-ch-view=/g) || []).length === 3,
+    (tabBar.match(/data-ch-view=/g) || []).length);
+  t("แท็บภาพรวมถูกทำเครื่องหมายว่าเปิดอยู่",
+    /data-ch-view="hub" aria-current="page"|class="ch-tab is-on" data-ch-view="hub"/.test(hub));
+  t("แท็บมีตัวเลขจำนวนที่เข้าเงื่อนไข", hub.indexOf("ch-tab-n") >= 0);
+
+  console.log("== แท็บ SMA200 ==");
+  win.location.search = "?view=sma200";
   win.CatalystPage.render();
-  var filtered = els.chRoot.innerHTML;
-  t("กรอง RECLAIM แล้ว FLATCO หายจากตาราง",
-    filtered.indexOf('data-ch-ticker="FLATCO"') < 0, undefined);
-  t("กรอง RECLAIM แล้ว RECLAIMCO ยังอยู่", filtered.indexOf('data-ch-ticker="RECLAIMCO"') >= 0);
-  t("กรอง RECLAIM แล้ว SHORTCO (ข้อมูลไม่พอ) หายไปด้วย",
-    filtered.indexOf("SHORTCO") < 0 || filtered.indexOf('<tr data-ch-ticker="SHORTCO"') < 0);
-  win.CatalystPage._state.filter.technical = "NO_RECLAIM";
+  var sv = els.chRoot.innerHTML;
+  t("แท็บ SMA200 เรนเดอร์ได้", sv.indexOf("SMA200 Reclaim") >= 0 && sv.length > 1500);
+  t("มีคอลัมน์วันที่เกิดสัญญาณ", sv.indexOf("วันที่เกิดสัญญาณ") >= 0);
+  t("มีคอลัมน์ระยะห่างก่อนหน้า/วันที่ข้าม",
+    sv.indexOf("ระยะห่างก่อนหน้า") >= 0 && sv.indexOf("ระยะห่างวันที่ข้าม") >= 0);
+  t("มีคอลัมน์แรงของการกลับขึ้น", sv.indexOf("แรงของการกลับขึ้น") >= 0);
+  t("ยังแสดง Value Trap คู่กันเสมอ", sv.indexOf("Value Trap") >= 0);
+  t("RECLAIMCO อยู่ในตาราง", sv.indexOf('data-ch-ticker="RECLAIMCO"') >= 0);
+  t("FLATCO ไม่อยู่ในตาราง", sv.indexOf('data-ch-ticker="FLATCO"') < 0);
+  t("บอกว่าไม่ใช่ catalyst และไม่ใช่คำแนะนำ",
+    sv.indexOf("ไม่ใช่ catalyst และไม่ใช่คำแนะนำ") >= 0);
+  t("แยก 'ข้อมูลไม่พอ' ออกจาก 'ตรวจแล้วไม่พบ' อย่างชัดเจน",
+    sv.indexOf("ประวัติราคาไม่พอคำนวณ SMA200") >= 0 && sv.indexOf("เป็นคนละเรื่อง") >= 0);
+  t("นับ SHORTCO เป็นข้อมูลไม่พอ ไม่ใช่ไม่พบสัญญาณ",
+    /ประวัติราคาไม่พอคำนวณ SMA200 <b>1<\/b>/.test(sv), undefined);
+
+  console.log("== ตัวกรองของแท็บ SMA200 ==");
+  t("มีชิปตัวกรองสามแบบ",
+    sv.indexOf('data-ch-smafilter="all"') >= 0 && sv.indexOf('data-ch-smafilter="holding"') >= 0 &&
+    sv.indexOf('data-ch-smafilter="fellback"') >= 0);
+  var allN = (sv.match(/data-ch-ticker="/g) || []).length;
+  win.CatalystPage._state.smaFilter = "fellback";
   win.CatalystPage.render();
-  var f2 = els.chRoot.innerHTML;
-  t("กรอง NO_RECLAIM แล้วเห็น FLATCO", f2.indexOf('data-ch-ticker="FLATCO"') >= 0);
-  t("กรอง NO_RECLAIM แล้ว RECLAIMCO หายจากตาราง",
-    f2.indexOf('<tr data-ch-ticker="RECLAIMCO"') < 0);
-  win.CatalystPage._state.filter.technical = null;
+  var fb = els.chRoot.innerHTML;
+  t("กรอง 'หลุดกลับลงไปแล้ว' ตัดตัวที่ยังยืนเหนือเส้นออก",
+    (fb.match(/data-ch-ticker="/g) || []).length < allN,
+    [(fb.match(/data-ch-ticker="/g) || []).length, allN]);
+  t("BACKCO อยู่ในผล 'หลุดกลับลงไปแล้ว'", fb.indexOf('data-ch-ticker="BACKCO"') >= 0);
+  t("BACKCO หลุดกลับลงใต้เส้นจริง (ไม่งั้นเทสต์ตัวกรองว่างเปล่า)",
+    row("BACKCO").technical.status === "RECLAIM" && row("BACKCO").technical.stillAbove === false,
+    [row("BACKCO").technical.status, row("BACKCO").technical.stillAbove]);
+  win.CatalystPage._state.smaFilter = "holding";
   win.CatalystPage.render();
-  t("ล้างตัวกรองแล้วกลับมาเท่าเดิม",
-    (els.chRoot.innerHTML.match(/data-ch-ticker="/g) || []).length === before, undefined);
+  var hd = els.chRoot.innerHTML;
+  t("กรอง 'ยังยืนเหนือเส้น' ยังเห็น RECLAIMCO", hd.indexOf('data-ch-ticker="RECLAIMCO"') >= 0);
+  t("กรอง 'ยังยืนเหนือเส้น' ต้องตัด BACKCO ออก (ตัวกรองทำงานจริง ไม่ใช่ผ่านทุกตัว)",
+    hd.indexOf('data-ch-ticker="BACKCO"') < 0);
+  t("สองตัวกรองให้ผลต่างกันจริง", fb !== hd);
+  win.CatalystPage._state.smaFilter = "all";
+  win.CatalystPage.render();
+  t("กลับมา 'ทั้งหมด' ได้จำนวนเดิม",
+    (els.chRoot.innerHTML.match(/data-ch-ticker="/g) || []).length === allN);
+
+  console.log("== เงื่อนไขวอลุ่มในชั้นแสดงผล ==");
+  win.CatalystPage._state.smaFilter = "all";
+  win.location.search = "?view=sma200";
+  win.CatalystPage.render();
+  var sv2 = els.chRoot.innerHTML;
+  var nv = row("NOVOLCO");
+  t("NOVOLCO กลับขึ้นเหนือเส้นจริง แต่วอลุ่มไม่ผ่าน (ไม่งั้นเทสต์ด้านล่างว่างเปล่า)",
+    nv.technical.status === "RECLAIM" && nv.technical.volumeConfirmed === false,
+    [nv.technical.status, nv.technical.volumeConfirmed, nv.technical.volumeVsAvgPct]);
+  t("ตัวที่วอลุ่มไม่ผ่าน ไม่อยู่ในผลของตัวสแกน",
+    sv2.indexOf('<tr data-ch-ticker="NOVOLCO"') < 0);
+  t("ตัวที่วอลุ่มผ่าน ยังอยู่", sv2.indexOf('data-ch-ticker="RECLAIMCO"') >= 0);
+  t("มีคอลัมน์วอลุ่มเทียบค่าเฉลี่ย 10 วัน", sv2.indexOf("วอลุ่ม vs เฉลี่ย 10 วัน") >= 0);
+  t("หัวข้อบอกเงื่อนไขวอลุ่มไว้ชัด",
+    sv2.indexOf("สูงกว่าค่าเฉลี่ย 10 วันทำการก่อนหน้าเกิน 20%") >= 0);
+  t("บอกว่าค่าเฉลี่ยไม่รวมวันที่เกิดสัญญาณ",
+    sv2.indexOf("ค่าเฉลี่ยวอลุ่มไม่รวมวันที่เกิดสัญญาณ") >= 0);
+
+  // ทางเดินของตัวเลขต้องไล่ได้ ไม่ใช่โผล่เลขเดียวลอย ๆ
+  t("มีบรรทัดทางเดินของเงื่อนไข", sv2.indexOf("ทางเดินของเงื่อนไข") >= 0);
+  t("ทางเดิน: reclaim ทั้งหมด 5 → ผ่านวอลุ่ม 4 · ตก 1",
+    /กลับขึ้นเหนือ SMA200 <b>5<\/b> ตัว/.test(sv2) &&
+    /ผ่านเงื่อนไขวอลุ่ม <b>4<\/b>/.test(sv2) &&
+    /ตกเงื่อนไขวอลุ่ม <b>1<\/b>/.test(sv2),
+    (/ทางเดินของเงื่อนไข[\s\S]{0,260}/.exec(sv2) || [""])[0].replace(/<[^>]*>/g, ""));
+
+  t("มีชิปดูตัวที่ตกเงื่อนไขวอลุ่ม", sv2.indexOf('data-ch-smafilter="novol"') >= 0);
+  t("ชิปนั้นระบุว่าไม่นับเป็นผลสแกน", sv2.indexOf("ไม่นับเป็นผลสแกน") >= 0);
+  win.CatalystPage._state.smaFilter = "novol";
+  win.CatalystPage.render();
+  var nvv = els.chRoot.innerHTML;
+  t("กดชิปแล้วเห็น NOVOLCO", nvv.indexOf('data-ch-ticker="NOVOLCO"') >= 0);
+  t("กดชิปแล้วไม่เห็นตัวที่ผ่านเงื่อนไข", nvv.indexOf('<tr data-ch-ticker="RECLAIMCO"') < 0);
+  win.CatalystPage._state.smaFilter = "all";
+  win.CatalystPage.render();
+
+  console.log("== หน้าภาพรวมต้องนับตามเงื่อนไขใหม่ ==");
+  win.location.search = "";
+  win.CatalystPage.render();
+  var hub2 = els.chRoot.innerHTML;
+  t("NOVOLCO ไม่ขึ้นหน้าภาพรวม (ไม่เข้าเงื่อนไขตัวสแกนใด)",
+    hub2.indexOf('data-ch-ticker="NOVOLCO"') < 0);
+  t("การ์ด SMA200 บนหน้าภาพรวมบอกเงื่อนไขวอลุ่มด้วย",
+    hub2.indexOf("วอลุ่มวันนั้นสูงกว่าค่าเฉลี่ย 10 วันก่อนหน้าเกิน 20%") >= 0);
+
+  console.log("== หน้าเจาะลึกของตัวที่วอลุ่มไม่ผ่าน ==");
+  win.location.search = "?ticker=NOVOLCO";
+  win.CatalystPage.render();
+  var dn = els.chRoot.innerHTML;
+  t("ยังบอกว่าเกิดการกลับขึ้นเหนือเส้นจริง (ไม่ลบข้อเท็จจริงทิ้ง)",
+    dn.indexOf("เกิดการกลับขึ้นเหนือ SMA200 จริง") >= 0);
+  t("อธิบายว่าทำไมไม่ถูกนับเป็นผลสแกน",
+    dn.indexOf("ไม่ถูกนับเป็นผลของตัวสแกน SMA200") >= 0);
+  t("แสดงวอลุ่มวันที่ข้ามและค่าเฉลี่ย",
+    dn.indexOf("วอลุ่มวันที่ข้าม") >= 0 && dn.indexOf("เฉลี่ย 10 วันก่อนหน้า") >= 0);
+  t("แสดงส่วนต่างวอลุ่มพร้อมเกณฑ์", /ไม่ถึงเกณฑ์ > 20%/.test(dn));
+  win.location.search = "?ticker=RECLAIMCO";
+  win.CatalystPage.render();
+  t("ตัวที่ผ่าน แสดงว่าผ่านเกณฑ์", /ผ่านเกณฑ์ > 20%/.test(els.chRoot.innerHTML));
+  t("ตัวที่ผ่าน ไม่ขึ้นคำเตือนว่าไม่ถูกนับ",
+    els.chRoot.innerHTML.indexOf("ไม่ถูกนับเป็นผลของตัวสแกน SMA200") < 0);
+
+  console.log("== แท็บ Catalyst — ต้องไม่มี SMA200 ปนแล้ว ==");
+  win.location.search = "?view=catalyst";
+  win.CatalystPage.render();
+  var cv = els.chRoot.innerHTML;
+  t("แท็บ Catalyst ยังเป็นของเดิมครบ",
+    cv.indexOf("All Candidates") >= 0 && cv.indexOf("Hunter Brief") >= 0);
+  t("ไม่มีคอลัมน์ SMA200 ในตาราง All Candidates", cv.indexOf('data-ch-sort="tech"') < 0);
+  t("ไม่มีตัวกรอง SMA200", cv.indexOf('data-ch-filter="technical"') < 0);
+  t("ไม่มีป้ายเทคนิคในการ์ด/ตาราง", cv.indexOf("ch-tech-pill") < 0 && cv.indexOf("ch-tech-line") < 0);
+  t("ตัวกรองเดิมของ catalyst ยังอยู่ครบ",
+    ["status", "maturity", "financial", "recognition", "trap", "lifecycle"].every(function (k) {
+      return cv.indexOf('data-ch-filter="' + k + '"') >= 0;
+    }));
 
   console.log("== §25 DETAIL — ตัวที่มีสัญญาณ ==");
   win.location.search = "?ticker=RECLAIMCO";
@@ -276,8 +471,23 @@ win.CatalystPage.scanAll(true).then(function () {
   var radar = pages[0].html;
   var trCount = (radar.match(/<tr data-ch-ticker="RECLAIMCO"/g) || []).length;
   t("RECLAIMCO ปรากฏในตารางแถวเดียว ไม่ซ้ำ", trCount === 1, trCount);
-  t("จำนวนแถวในตาราง = จำนวนหุ้นที่สแกน", (radar.match(/<tr data-ch-ticker="/g) || []).length === 4,
+  // หน้าภาพรวมแสดง "เฉพาะตัวที่เข้าเงื่อนไข" — หุ้นที่เข้าสองข้อต้องยังเป็นแถวเดียว
+  // ไม่ใช่โผล่ซ้ำข้อละแถว
+  t("ตารางรวมไม่มี ticker ซ้ำแม้เข้าหลายเงื่อนไข", (function () {
+    var seen = {}, dup = 0, m, re = /<tr data-ch-ticker="([^"]+)"/g;
+    while ((m = re.exec(radar)) !== null) { if (seen[m[1]]) dup++; seen[m[1]] = 1; }
+    return dup === 0;
+  })());
+  // 4 จาก 6: BOTHCO (สองเงื่อนไข) · RECLAIMCO · TRAPCO · BACKCO (SMA200 อย่างเดียว)
+  // FLATCO ไม่เข้าอะไรเลย · SHORTCO ข้อมูลไม่พอ
+  t("ตารางรวมมีเฉพาะตัวที่เข้าเงื่อนไข (4 จาก 6 ที่สแกน)",
+    (radar.match(/<tr data-ch-ticker="/g) || []).length === 4,
     (radar.match(/<tr data-ch-ticker="/g) || []).length);
+  t("หุ้นที่ติด value trap HIGH ยังขึ้นหน้าภาพรวมได้ถ้าเข้าเงื่อนไข แต่ต้องเห็นป้ายเสี่ยงคู่กัน",
+    (function () {
+      var m = /<tr data-ch-ticker="TRAPCO"[\s\S]*?<\/tr>/.exec(radar);
+      return !!m && m[0].indexOf("HIGH") >= 0;
+    })());
   t("บล็อกเทคนิคในหน้า detail มีอันเดียว",
     (pages[1].html.match(/หลักฐานเชิงเทคนิค — SMA200 Reclaim/g) || []).length === 1);
 

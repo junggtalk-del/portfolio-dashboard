@@ -37,6 +37,16 @@
   // ราคาปิดล่าสุดเก่ากว่านี้ = ข้อมูลไม่สด (ใช้เกณฑ์เดียวกับ valuation-engine.js)
   var STALE_DAYS = 7;
 
+  // ---- เงื่อนไขวอลุ่มยืนยัน ----
+  // วอลุ่ม "ของวันที่เกิดสัญญาณ" ต้องสูงกว่าค่าเฉลี่ย 10 วันทำการ "ก่อนหน้าวันนั้น" เกิน 20%
+  // ค่าเฉลี่ยไม่รวมวันสัญญาณเอง — ถ้ารวม วันที่วอลุ่มพุ่งจะดันค่าเฉลี่ยขึ้นเอง
+  // แล้วเกณฑ์จะอ่อนลงโดยอัตโนมัติ (ยิ่งพุ่งแรงยิ่งผ่านยาก) ซึ่งไม่ใช่สิ่งที่ต้องการ
+  var VOLUME_LOOKBACK = 10;
+  var VOLUME_MIN_PCT = 20;
+  // ใน 10 วันนั้นต้องมีวอลุ่มที่ใช้ได้อย่างน้อยเท่านี้ จึงจะตัดสินได้
+  // น้อยกว่านี้ = "ตรวจไม่ได้" (null) ไม่ใช่ "ไม่ผ่าน" (false)
+  var VOLUME_MIN_SAMPLES = 6;
+
   var STATUS = {
     RECLAIM: "RECLAIM",
     NO_RECLAIM: "NO_RECLAIM",
@@ -127,6 +137,15 @@
       currentDistancePct: null,
       reclaimStrengthPct: null,
       barsSinceSignal: null,
+      // เงื่อนไขวอลุ่มของวันที่เกิดสัญญาณ
+      volume: null,
+      volumeAvg: null,
+      volumeVsAvgPct: null,
+      volumeConfirmed: null,
+      volumeSamples: 0,
+      volumeLookback: VOLUME_LOOKBACK,
+      volumeMinPct: VOLUME_MIN_PCT,
+      volumeNote: "",
       stillAbove: null,
       latestClose: null,
       latestSma200: null,
@@ -150,6 +169,50 @@
     return out;
   }
 
+  // ============================================================
+  // เงื่อนไขวอลุ่มยืนยัน ณ วันที่เกิดสัญญาณ
+  //   vols  = ชุดวอลุ่มที่เรียงตรงกับราคาแล้ว (null = วันที่ใช้ไม่ได้)
+  //   k     = ดัชนีของวันที่เกิดสัญญาณ
+  //   ผลลัพธ์ confirmed: true = ผ่าน · false = ตรวจแล้วไม่ผ่าน · null = ตรวจไม่ได้
+  // "ตรวจไม่ได้" ต้องแยกจาก "ไม่ผ่าน" เสมอ — ไม่มีข้อมูลวอลุ่มไม่ได้แปลว่าวอลุ่มไม่มา
+  // ============================================================
+  function volumeCheck(vols, k, minPct) {
+    var out = { volume: null, avg: null, vsAvgPct: null, confirmed: null,
+      samples: 0, lookback: VOLUME_LOOKBACK, minPct: minPct, note: "" };
+    if (!Array.isArray(vols)) { out.note = "ไม่มีข้อมูลวอลุ่ม"; return out; }
+    var v = fin(vols[k]);
+    if (v == null || !(v > 0)) { out.note = "ไม่มีวอลุ่มของวันที่เกิดสัญญาณ"; return out; }
+    out.volume = v;
+
+    var start = k - VOLUME_LOOKBACK;
+    if (start < 0) { out.note = "มีวันก่อนหน้าไม่ครบ " + VOLUME_LOOKBACK + " วัน"; return out; }
+    var sum = 0, cnt = 0;
+    for (var j = start; j < k; j++) {           // ไม่รวมวันสัญญาณเอง
+      var x = fin(vols[j]);
+      if (x == null || !(x > 0)) continue;
+      sum += x; cnt++;
+    }
+    out.samples = cnt;
+    if (cnt < VOLUME_MIN_SAMPLES) {
+      out.note = "วอลุ่มย้อนหลังใช้ได้เพียง " + cnt + " จาก " + VOLUME_LOOKBACK +
+        " วัน — ต้องมีอย่างน้อย " + VOLUME_MIN_SAMPLES + " วันจึงจะตัดสินได้";
+      return out;
+    }
+    var avg = sum / cnt;
+    if (!(avg > 0) || !isFinite(avg)) { out.note = "ค่าเฉลี่ยวอลุ่มใช้ไม่ได้"; return out; }
+    out.avg = avg;
+    var pctv = (v / avg - 1) * 100;
+    if (!isFinite(pctv)) { out.note = "คำนวณส่วนต่างวอลุ่มไม่ได้"; return out; }
+    out.vsAvgPct = pctv;
+    out.confirmed = pctv > minPct;              // "มากกว่า 20%" = เกินจริง ไม่ใช่เท่ากับ
+    out.note = out.confirmed
+      ? "วอลุ่มวันสัญญาณสูงกว่าค่าเฉลี่ย " + VOLUME_LOOKBACK + " วันก่อนหน้า " +
+        (Math.round(pctv * 10) / 10) + "% (เกณฑ์ > " + minPct + "%)"
+      : "วอลุ่มวันสัญญาณสูงกว่าค่าเฉลี่ย " + VOLUME_LOOKBACK + " วันก่อนหน้าเพียง " +
+        (Math.round(pctv * 10) / 10) + "% (ไม่ถึงเกณฑ์ > " + minPct + "%)";
+    return out;
+  }
+
   // ระยะห่างจากเส้น เป็น % ของเส้น — ฟิลด์บรรยาย ไม่ใช่คะแนน (สเปค §8)
   function distPct(close, sma) {
     if (close == null || sma == null || !(sma > 0)) return null;
@@ -168,6 +231,9 @@
     opts = opts || {};
     var closesIn = opts.closes;
     var datesIn = Array.isArray(opts.dates) ? opts.dates : [];
+    var volsIn = Array.isArray(opts.volumes) ? opts.volumes : null;
+    var volMinPct = fin(opts.volumeMinPct);
+    volMinPct = volMinPct == null ? VOLUME_MIN_PCT : volMinPct;
     var lookback = fin(opts.lookbackBars);
     lookback = lookback != null && lookback >= 1 ? Math.floor(Math.min(lookback, 500)) : LOOKBACK_BARS;
     var staleLimit = fin(opts.staleDays);
@@ -199,12 +265,17 @@
     }
 
     // ---- 2) เก็บเฉพาะ "วันทำการที่ใช้ได้จริง" (สเปค §6 — ไม่ใช่วันปฏิทิน) ----
-    var vCloses = [], vDates = [];
+    // วอลุ่มต้องถูกกรองไปพร้อมกับราคาด้วยดัชนีเดียวกัน ไม่งั้นจะเหลื่อมกัน
+    // วอลุ่มที่ใช้ไม่ได้เก็บเป็น null ไว้ในตำแหน่งเดิม (ไม่ตัดทิ้ง) เพื่อรักษาการเรียงตัว
+    var volsAligned = Array.isArray(volsIn) && volsIn.length === closesIn.length;
+    var vCloses = [], vDates = [], vVols = [];
     for (var i = 0; i < cut; i++) {
       var c = fin(closesIn[i]);
       if (c == null || !(c > 0)) continue;        // ราคา <= 0 / ว่าง / NaN = ไม่ใช่วันทำการที่ใช้ได้
       vCloses.push(c);
       vDates.push(datesAligned && isYmd(datesIn[i]) ? datesIn[i] : null);
+      var vv = volsAligned ? fin(volsIn[i]) : null;
+      vVols.push(vv != null && vv > 0 ? vv : null);
     }
     var valid = vCloses.length;
 
@@ -226,6 +297,7 @@
     var need = SMA_PERIOD + lookback;
     var tC = vCloses.length > need ? vCloses.slice(vCloses.length - need) : vCloses;
     var tD = vDates.length > need ? vDates.slice(vDates.length - need) : vDates;
+    var tV = vVols.length > need ? vVols.slice(vVols.length - need) : vVols;
     var n = tC.length;
 
     var smaSeries = sma(tC, SMA_PERIOD);
@@ -255,9 +327,16 @@
       if (!(pC <= pS)) continue;      // วันก่อนหน้าต้องอยู่ "ที่หรือต่ำกว่า" เส้น
       if (!(cC > cS)) continue;       // วันนี้ต้องปิด "เหนือ" เส้นจริง ๆ (เท่ากับ = ยังไม่นับ)
       var pd = distPct(pC, pS), cd = distPct(cC, cS);
+      var vchk = volumeCheck(tV, k, volMinPct);
       events.push({
         signalDate: tD[k],
         previousDate: tD[k - 1],
+        volume: vchk.volume,
+        volumeAvg: vchk.avg,
+        volumeVsAvgPct: vchk.vsAvgPct,
+        volumeConfirmed: vchk.confirmed,
+        volumeSamples: vchk.samples,
+        volumeNote: vchk.note,
         previousClose: pC,
         previousSma200: pS,
         currentClose: cC,
@@ -296,6 +375,12 @@
           currentDistancePct: r2(e.currentDistancePct),
           reclaimStrengthPct: r2(e.reclaimStrengthPct),
           barsAgo: e.barsAgo,
+          volume: e.volume == null ? null : Math.round(e.volume),
+          volumeAvg: e.volumeAvg == null ? null : Math.round(e.volumeAvg),
+          volumeVsAvgPct: r2(e.volumeVsAvgPct),
+          volumeConfirmed: e.volumeConfirmed,
+          volumeSamples: e.volumeSamples,
+          volumeNote: e.volumeNote,
         };
       }),
       eventCount: events.length,
@@ -320,6 +405,7 @@
         st.currentDistancePct = r2(last.currentDistancePct);
         st.reclaimStrengthPct = r2(last.reclaimStrengthPct);
         st.barsSinceSignal = last.barsAgo;
+        applyVolume(st, last, volMinPct);
       }
       st.detected = false;            // สถานะข้อมูล ไม่ใช่สัญญาณ
       return st;
@@ -345,7 +431,19 @@
     out.currentDistancePct = r2(last.currentDistancePct);
     out.reclaimStrengthPct = r2(last.reclaimStrengthPct);
     out.barsSinceSignal = last.barsAgo;
+    applyVolume(out, last, volMinPct);
     return out;
+  }
+
+  // ยกค่าวอลุ่มของ "เหตุการณ์ล่าสุด" ขึ้นมาไว้ระดับบนสุด ให้อ่านง่ายเหมือนฟิลด์อื่น
+  function applyVolume(target, ev, minPct) {
+    target.volume = ev.volume == null ? null : Math.round(ev.volume);
+    target.volumeAvg = ev.volumeAvg == null ? null : Math.round(ev.volumeAvg);
+    target.volumeVsAvgPct = r2(ev.volumeVsAvgPct);
+    target.volumeConfirmed = ev.volumeConfirmed;
+    target.volumeSamples = ev.volumeSamples;
+    target.volumeMinPct = minPct;
+    target.volumeNote = ev.volumeNote;
   }
 
   // ============================================================
@@ -354,7 +452,9 @@
   // ============================================================
   function summarize(list) {
     var out = { scanned: 0, reclaim: 0, noReclaim: 0, insufficient: 0, unavailable: 0, stale: 0,
-      withSma200History: 0, stillAbove: 0, fellBackBelow: 0, latestDataDate: null };
+      withSma200History: 0, stillAbove: 0, fellBackBelow: 0, latestDataDate: null,
+      // แยกสามช่องเสมอ: ผ่าน / ไม่ผ่าน / ตรวจไม่ได้ — ห้ามยุบ "ตรวจไม่ได้" เข้ากับ "ไม่ผ่าน"
+      volumeConfirmed: 0, volumeRejected: 0, volumeUnknown: 0 };
     if (!Array.isArray(list)) return out;
     for (var i = 0; i < list.length; i++) {
       var s = list[i];
@@ -372,6 +472,9 @@
       if (s.status === STATUS.RECLAIM) {
         if (s.stillAbove === true) out.stillAbove++;
         else if (s.stillAbove === false) out.fellBackBelow++;
+        if (s.volumeConfirmed === true) out.volumeConfirmed++;
+        else if (s.volumeConfirmed === false) out.volumeRejected++;
+        else out.volumeUnknown++;
       }
       if (isYmd(s.asOf) && (out.latestDataDate == null || s.asOf > out.latestDataDate)) {
         out.latestDataDate = s.asOf;
@@ -385,11 +488,15 @@
     SMA_PERIOD: SMA_PERIOD,
     LOOKBACK_BARS: LOOKBACK_BARS,
     STALE_DAYS: STALE_DAYS,
+    VOLUME_LOOKBACK: VOLUME_LOOKBACK,
+    VOLUME_MIN_PCT: VOLUME_MIN_PCT,
+    VOLUME_MIN_SAMPLES: VOLUME_MIN_SAMPLES,
     STATUS: STATUS,
     STATUS_TH: STATUS_TH,
     detect: detect,
     summarize: summarize,
-    _internal: { fin: fin, distPct: distPct, daysBetween: daysBetween, todayBangkok: todayBangkok,
+    _internal: { fin: fin, distPct: distPct, volumeCheck: volumeCheck,
+      daysBetween: daysBetween, todayBangkok: todayBangkok,
       ymdMs: ymdMs, isYmd: isYmd, smaCalc: smaCalc },
   };
 

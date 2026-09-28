@@ -485,6 +485,145 @@ console.log("== §24 full universe — นับผลรวมได้ แล�
     fs.readdirSync(process.cwd() + "/public").filter(function (f) { return /\.html$/.test(f); }).length === 18);
 }
 
+console.log("== เงื่อนไขวอลุ่ม: สูงกว่าค่าเฉลี่ย 10 วันก่อนหน้าเกิน 20% ==");
+{
+  var VB = 1000000;
+  // ราคา 202 แท่ง — สัญญาณอยู่ที่ดัชนี 201
+  var vc = rep(200, 100).concat([95, 110]);
+  var vd = tradingDates(202, "2026-09-24");
+  function withVol(mult, opt) {
+    var v = rep(202, VB);
+    v[201] = typeof mult === "number" ? Math.round(VB * mult) : mult;
+    if (opt && opt.mutate) opt.mutate(v);
+    return SR.detect({ closes: vc, dates: vd, volumes: v, today: TODAY,
+      volumeMinPct: opt && opt.minPct });
+  }
+
+  t("ค่าคงที่ตรงตามที่สั่ง: 10 วัน · เกิน 20%",
+    SR.VOLUME_LOOKBACK === 10 && SR.VOLUME_MIN_PCT === 20, [SR.VOLUME_LOOKBACK, SR.VOLUME_MIN_PCT]);
+
+  var r2x = withVol(2.0);
+  t("วอลุ่ม 2 เท่า (+100%) => ผ่าน", r2x.volumeConfirmed === true, r2x.volumeVsAvgPct);
+  t("รายงานวอลุ่มวันสัญญาณตามจริง", r2x.volume === 2000000, r2x.volume);
+  t("ค่าเฉลี่ยคิดจาก 10 วันก่อนหน้า ไม่รวมวันสัญญาณ", r2x.volumeAvg === VB, r2x.volumeAvg);
+  t("ใช้ตัวอย่างครบ 10 วัน", r2x.volumeSamples === 10, r2x.volumeSamples);
+  t("ส่วนต่าง = +100%", near(r2x.volumeVsAvgPct, 100, 1e-9), r2x.volumeVsAvgPct);
+
+  t("+20.0001% => ผ่าน (เกินเกณฑ์)", withVol(1.200001).volumeConfirmed === true);
+  // 1.2 ไม่ใช่เลขที่แทนได้เป๊ะในฐานสอง — (1.2-1)*100 จึงไม่เท่ากับ 20 พอดี
+  // จะทดสอบ "เท่ากับเกณฑ์พอดี" ต้องใช้อัตราส่วนที่เป๊ะจริง เช่น 1.25 → 25% เป๊ะ
+  var exact25 = withVol(1.25, { minPct: 25 });
+  t("ยืนยันว่าส่วนต่าง = 25% เป๊ะจริงในเลขฐานสอง (ไม่งั้นเทสต์ขอบนี้ไม่ได้ทดสอบอะไร)",
+    exact25.volumeVsAvgPct === 25 && (1250000 / 1000000 - 1) * 100 === 25, exact25.volumeVsAvgPct);
+  t("เท่ากับเกณฑ์พอดี => ไม่ผ่าน (เกณฑ์คือ 'มากกว่า' ไม่ใช่ 'ตั้งแต่')",
+    exact25.volumeConfirmed === false, exact25.volumeConfirmed);
+  // ตัวคูณต้องใหญ่พอให้รอดจาก Math.round ของตัวช่วยสร้างวอลุ่ม
+  // (1.2500001 × 1,000,000 ปัดกลับเป็น 1,250,000 → กลายเป็นเคสเดียวกับ 25% พอดี)
+  t("เกินเกณฑ์นิดเดียว (25.0001%) => ผ่าน", (function () {
+    var r = withVol(1.250001, { minPct: 25 });
+    return r.volumeConfirmed === true && r.volume === 1250001;
+  })(), withVol(1.250001, { minPct: 25 }).volumeVsAvgPct);
+  t("+19.9999% => ไม่ผ่าน", withVol(1.199999).volumeConfirmed === false);
+  t("วอลุ่มเท่าเดิม (+0%) => ไม่ผ่าน", withVol(1.0).volumeConfirmed === false);
+  t("วอลุ่มต่ำกว่าเฉลี่ย => ไม่ผ่าน", withVol(0.5).volumeConfirmed === false);
+  t("ขอบ 20% ตัดสินจากค่าดิบ ไม่ใช่ค่าที่ปัดแล้ว (19.9999 กับ 20.0001 ปัดได้ 20 เท่ากัน)",
+    withVol(1.199999).volumeVsAvgPct === withVol(1.200001).volumeVsAvgPct &&
+    withVol(1.199999).volumeConfirmed !== withVol(1.200001).volumeConfirmed,
+    [withVol(1.199999).volumeVsAvgPct, withVol(1.200001).volumeVsAvgPct]);
+
+  // "ตรวจไม่ได้" ต้องเป็น null ห้ามเป็น false — ไม่มีข้อมูล ≠ ไม่ผ่าน
+  t("ไม่ส่ง volumes เลย => ตรวจไม่ได้ (null) ไม่ใช่ไม่ผ่าน",
+    SR.detect({ closes: vc, dates: vd, today: TODAY }).volumeConfirmed === null);
+  // ต้องใช้ชุดที่ "ยาวกว่า" และมีค่าที่ดัชนีสัญญาณจริง ๆ ไม่งั้นจะได้ null
+  // เพราะอ่านไม่เจอ ซึ่งเป็นคนละเหตุผลกับ "ปฏิเสธเพราะจับคู่ไม่ได้"
+  t("volumes ยาวไม่ตรงกับ closes => ตรวจไม่ได้ (ปฏิเสธเพราะจับคู่ไม่ได้ ไม่ใช่เพราะอ่านไม่เจอ)",
+    SR.detect({ closes: vc, dates: vd, volumes: rep(400, VB * 9), today: TODAY }).volumeConfirmed === null,
+    SR.detect({ closes: vc, dates: vd, volumes: rep(400, VB * 9), today: TODAY }).volumeVsAvgPct);
+  t("volumes สั้นกว่า closes => ตรวจไม่ได้",
+    SR.detect({ closes: vc, dates: vd, volumes: rep(50, VB), today: TODAY }).volumeConfirmed === null);
+  t("วอลุ่มวันสัญญาณเป็น null => ตรวจไม่ได้", withVol(null).volumeConfirmed === null);
+  t("วอลุ่มวันสัญญาณเป็น 0 => ตรวจไม่ได้ (ไม่ใช่ไม่ผ่าน)", withVol(0).volumeConfirmed === null);
+  t("วอลุ่มติดลบ => ตรวจไม่ได้", withVol(-5).volumeConfirmed === null);
+
+  // ตัวอย่างย้อนหลังไม่พอ
+  var few = withVol(3.0, { mutate: function (v) {
+    for (var i = 191; i <= 200; i++) if (i < 197) v[i] = null;   // เหลือใช้ได้ 4 จาก 10
+  } });
+  t("วอลุ่มย้อนหลังใช้ได้ 4 จาก 10 => ตรวจไม่ได้ (ต้องมีอย่างน้อย 6)",
+    few.volumeConfirmed === null && few.volumeSamples === 4, [few.volumeConfirmed, few.volumeSamples]);
+  var six = withVol(3.0, { mutate: function (v) {
+    for (var i = 191; i <= 194; i++) v[i] = null;                // เหลือใช้ได้ 6 จาก 10
+  } });
+  t("วอลุ่มย้อนหลังใช้ได้ 6 จาก 10 => ตัดสินได้",
+    six.volumeConfirmed === true && six.volumeSamples === 6, [six.volumeConfirmed, six.volumeSamples]);
+  t("ค่าเฉลี่ยคิดจากเฉพาะวันที่ใช้ได้ ไม่หารด้วย 10 เสมอ", six.volumeAvg === VB, six.volumeAvg);
+
+  // ค่าเฉลี่ยต้องไม่รวมวันสัญญาณ — ถ้ารวม ค่าเฉลี่ยจะถูกดันขึ้นและเกณฑ์จะอ่อนลงเอง
+  t("วันสัญญาณไม่ถูกนับเข้าค่าเฉลี่ยของตัวเอง", (function () {
+    var v = rep(202, VB);
+    v[201] = VB * 100;                 // พุ่ง 100 เท่า
+    var r = SR.detect({ closes: vc, dates: vd, volumes: v, today: TODAY });
+    return r.volumeAvg === VB;         // ถ้ารวมตัวเอง ค่าเฉลี่ยจะกลายเป็น ~10x
+  })());
+
+  t("ปรับเกณฑ์ได้เพื่อทดสอบ (volumeMinPct)",
+    withVol(1.1, { minPct: 5 }).volumeConfirmed === true &&
+    withVol(1.1, { minPct: 50 }).volumeConfirmed === false);
+
+  t("เหตุการณ์แต่ละอันมีค่าวอลุ่มของตัวเอง", (function () {
+    var c2 = rep(200, 100).concat([95, 110, 111, 90, 88, 115, 116]);
+    var v2 = rep(c2.length, VB);
+    v2[201] = VB * 3;                  // เหตุการณ์แรกวอลุ่มพุ่ง
+    v2[205] = VB;                      // เหตุการณ์ที่สองวอลุ่มเท่าเดิม
+    var r = SR.detect({ closes: c2, dates: tradingDates(c2.length, "2026-09-24"),
+      volumes: v2, today: TODAY });
+    return r.eventCount === 2 && r.events[0].volumeConfirmed === true &&
+      r.events[1].volumeConfirmed === false &&
+      r.volumeConfirmed === false;     // ระดับบนสุดรายงานของ "เหตุการณ์ล่าสุด"
+  })());
+
+  t("เงื่อนไขวอลุ่มไม่เปลี่ยน status ของการ reclaim (คนละมิติ)",
+    withVol(1.0).status === "RECLAIM" && withVol(3.0).status === "RECLAIM",
+    [withVol(1.0).status, withVol(3.0).status]);
+
+  t("ไม่มี NaN/Infinity จากฟิลด์วอลุ่มในทุกเคส", (function () {
+    var bad = [];
+    [2.0, 1.0, 0, -1, null, 1e12].forEach(function (m) {
+      var r = withVol(m);
+      ["volume", "volumeAvg", "volumeVsAvgPct", "volumeSamples"].forEach(function (k) {
+        if (typeof r[k] === "number" && !isFinite(r[k])) bad.push(m + "." + k);
+        if (r[k] === undefined) bad.push(m + "." + k + "=undefined");
+      });
+    });
+    return bad.length === 0;
+  })());
+
+  t("volumeCheck กันเคสขอบเองได้ (ไม่พึ่งผู้เรียก)",
+    SR._internal.volumeCheck(null, 5, 20).confirmed === null &&
+    SR._internal.volumeCheck([1, 2, 3], 1, 20).confirmed === null &&
+    SR._internal.volumeCheck(rep(20, 100), 3, 20).confirmed === null);
+
+  // สแกนสด vs cache ต้องยังตรงกันเมื่อมีวอลุ่มด้วย
+  var CACHE_BARS2 = CE.CONFIG.bars.year + 20;
+  var longC = [], longV = [];
+  for (var q = 0; q < 900; q++) { longC.push(100 + Math.sin(q / 9) * 14 + q * 0.01); longV.push(VB * (1 + (q % 7) * 0.1)); }
+  var longD = tradingDates(900, "2026-09-24");
+  var fullR = SR.detect({ closes: longC, dates: longD, volumes: longV, today: TODAY });
+  var cacheR = SR.detect({ closes: longC.slice(-CACHE_BARS2), dates: longD.slice(-CACHE_BARS2),
+    volumes: longV.slice(-CACHE_BARS2), today: TODAY });
+  t("สแกนสดกับ cache ให้ผลวอลุ่มเหมือนกันเป๊ะ",
+    JSON.stringify(Object.assign({}, fullR, { validObservations: 0 })) ===
+    JSON.stringify(Object.assign({}, cacheR, { validObservations: 0 })),
+    [fullR.volumeConfirmed, cacheR.volumeConfirmed, fullR.volumeVsAvgPct, cacheR.volumeVsAvgPct]);
+
+  // summarize ต้องแยกสามช่อง
+  var sm = SR.summarize([withVol(2.0), withVol(1.0), withVol(null)]);
+  t("summarize แยก ผ่าน/ไม่ผ่าน/ตรวจไม่ได้ ออกจากกัน",
+    sm.volumeConfirmed === 1 && sm.volumeRejected === 1 && sm.volumeUnknown === 1, sm);
+  t("สามช่องรวมกัน = จำนวน reclaim ทั้งหมด",
+    sm.volumeConfirmed + sm.volumeRejected + sm.volumeUnknown === sm.reclaim, sm);
+}
+
 console.log("== §27 กฎเดียวกันมีอยู่ก่อนแล้วใน data-snapshot.js — ต้องไม่แตกคอกัน ==");
 {
   // public/data-snapshot.js มี smaReclaimDays() ที่ใช้กฎเดียวกันเป๊ะ (pp <= psp && p > sp)

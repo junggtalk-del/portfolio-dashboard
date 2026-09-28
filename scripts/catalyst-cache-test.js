@@ -190,8 +190,18 @@ function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
     return JSON.stringify(x.threeMonth) !== JSON.stringify(y.threeMonth);
   });
   t("relative strength 3 เดือนตรงกันทุกตัว", rsDiff.length === 0, rsDiff.length);
+  // จำนวนแท่งดัชนีถูกแสดงในหัวข้อ "แหล่งข้อมูล" ซึ่งอยู่ในแท็บ Catalyst
+  // คำอธิบายต้องอยู่ "ติดกับเลขนั้น" จึงตรวจที่แท็บเดียวกัน
+  b.win.location.search = "?view=catalyst";
+  b.win.CatalystPage.render();
   t("จำนวนแท่งดัชนีที่ต่างกันต้องมีคำอธิบาย ไม่ปล่อยเลขกระโดดเฉย ๆ",
     b.els.chRoot.innerHTML.indexOf("เท่าที่จำไว้") >= 0);
+  t("หน้าภาพรวมไม่ได้โชว์จำนวนแท่งดัชนีลอย ๆ โดยไม่มีคำอธิบาย", (function () {
+    b.win.location.search = "";
+    b.win.CatalystPage.render();
+    var h = b.els.chRoot.innerHTML;
+    return h.indexOf("แท่ง)") < 0 || h.indexOf("เท่าที่จำไว้") >= 0;
+  })());
 
   console.log("\n== เบราว์เซอร์ไม่รองรับ IndexedDB ==");
   var s2 = { idb: {}, ls: {} };

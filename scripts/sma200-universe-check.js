@@ -16,7 +16,7 @@ var LIMIT = 24;
 
 function get(path) {
   return new Promise(function (resolve, reject) {
-    var req = http.get(BASE + path, { timeout: 120000 }, function (res) {
+    var req = http.get(BASE + path, { timeout: 260000 }, function (res) {
       var body = "";
       res.setEncoding("utf8");
       res.on("data", function (c) { body += c; });
@@ -58,7 +58,7 @@ function get(path) {
   for (var b = 0; b < BATCHES; b++) {
     (batch.items || []).forEach(function (it) {
       markets[it.market] = (markets[it.market] || 0) + 1;
-      var sig = SR.detect({ closes: it.closes, dates: it.dates });
+      var sig = SR.detect({ closes: it.closes, dates: it.dates, volumes: it.volumes });
       sig.__ticker = it.ticker;
       sig.__bars = it.bars;
       all.push(sig);
@@ -76,6 +76,9 @@ function get(path) {
   console.log("sufficient SMA200    : " + s.withSma200History);
   console.log("reclaims found       : " + s.reclaim +
     "   (ยังยืนเหนือเส้น " + s.stillAbove + " · หลุดกลับลงไป " + s.fellBackBelow + ")");
+  console.log("  ผ่านเงื่อนไขวอลุ่ม : " + s.volumeConfirmed +
+    "   (ตก " + s.volumeRejected + " · ตรวจไม่ได้ " + s.volumeUnknown + ")");
+  console.log("  => เข้าเงื่อนไขครบ : " + s.volumeConfirmed + " ตัว");
   console.log("no reclaim           : " + s.noReclaim);
   console.log("data insufficient    : " + s.insufficient);
   console.log("data stale           : " + s.stale);
@@ -92,7 +95,7 @@ function get(path) {
         " " + x.signalDate +
         "  " + String(x.previousDistancePct).padStart(7) + "% → " +
         String(x.currentDistancePct).padStart(6) + "%" +
-        "  แรง " + String(x.reclaimStrengthPct).padStart(6) + "pp" +
+        "  แรง " + String(x.reclaimStrengthPct).padStart(6) + "pp" + "  vol " + String(x.volumeVsAvgPct).padStart(7) + "%" + (x.volumeConfirmed ? " ✓" : " ✗") +
         "  ผ่านมา " + String(x.barsSinceSignal).padStart(2) + " วัน" +
         (x.stillAbove ? "" : "  (หลุดกลับลงแล้ว)"));
     });
@@ -124,8 +127,8 @@ function get(path) {
   });
   var reScan = [];
   (batch.items || first.items || []).forEach(function (it) {
-    var live = SR.detect({ closes: it.closes, dates: it.dates });
-    var cached = SR.detect({ closes: it.closes.slice(-CACHE_BARS), dates: it.dates.slice(-CACHE_BARS) });
+    var live = SR.detect({ closes: it.closes, dates: it.dates, volumes: it.volumes });
+    var cached = SR.detect({ closes: it.closes.slice(-CACHE_BARS), dates: it.dates.slice(-CACHE_BARS), volumes: (it.volumes||[]).slice(-CACHE_BARS) });
     delete live.validObservations; delete cached.validObservations;
     if (JSON.stringify(live) !== JSON.stringify(cached)) drift.push(it.ticker);
     reScan.push(it.ticker);

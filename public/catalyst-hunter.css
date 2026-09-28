@@ -653,6 +653,85 @@ a.ch-src:hover { text-decoration: underline; }
    ไม่งั้นจะดันหน้าให้เลื่อนแนวนอน */
 .ch-blk-tech .ch-kv-lg b, .ch-blk-tech .ch-ins-grid b { overflow-wrap: anywhere; }
 
+/* ---------- แท็บตัวสแกน ----------
+   เลขข้างชื่อ = จำนวนที่เข้าเงื่อนไข ไม่ใช่คะแนน จึงเป็นสีกลางเสมอ */
+.ch-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--mc-border, #1f2a3d); padding-bottom: 0; margin-top: -4px;
+}
+.ch-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: none; border: 1px solid transparent; border-bottom: 0;
+  border-radius: 10px 10px 0 0; padding: 9px 15px 10px;
+  font: inherit; font-size: 13px; font-weight: 700; color: var(--mc-dim, #94a3b8);
+  cursor: pointer; margin-bottom: -1px; white-space: nowrap;
+}
+.ch-tab:hover { color: inherit; background: rgba(148, 163, 184, .07); }
+.ch-tab.is-on {
+  color: #7dd3fc; background: rgba(56, 189, 248, .08);
+  border-color: rgba(56, 189, 248, .32); border-bottom: 1px solid var(--mc-bg, #0b1220);
+}
+.ch-tab-ic { font-size: 14px; }
+.ch-tab-n {
+  background: rgba(148, 163, 184, .16); color: var(--mc-dim, #94a3b8);
+  border-radius: 999px; padding: 0 7px; font-size: 11px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ch-tab.is-on .ch-tab-n { background: rgba(56, 189, 248, .2); color: #7dd3fc; }
+
+/* ---------- หน้าภาพรวม ---------- */
+.ch-hub-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.ch-hub-card {
+  display: flex; flex-direction: column; gap: 9px; text-align: left; font: inherit; color: inherit;
+  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 13px; padding: 16px 18px;
+  background: rgba(148, 163, 184, .04); cursor: pointer; min-width: 0;
+}
+.ch-hub-card:hover { border-color: rgba(56, 189, 248, .4); background: rgba(56, 189, 248, .06); }
+.ch-hub-card.is-zero { opacity: .74; }
+.ch-hub-card-top { display: flex; align-items: center; gap: 9px; }
+.ch-hub-card-top h3 { margin: 0; font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
+.ch-hub-ic { font-size: 19px; flex: 0 0 auto; }
+.ch-hub-n {
+  font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.ch-hub-n em { font-style: normal; font-size: 11.5px; font-weight: 600; color: var(--mc-dim, #94a3b8); }
+.ch-hub-cond { margin: 0; font-size: 11.5px; line-height: 1.6; color: var(--mc-dim, #94a3b8); }
+.ch-hub-cond small {
+  display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: #64748b; margin-bottom: 2px;
+}
+.ch-hub-go { font-size: 12px; font-weight: 700; color: #7dd3fc; }
+
+.ch-hub-badges { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.ch-hub-badge {
+  display: inline-block; border: 1px solid var(--t, #94a3b8); color: var(--t, #94a3b8);
+  background: var(--tbg, rgba(148, 163, 184, .1)); border-radius: 6px; padding: 1px 8px;
+  font-size: 10.5px; font-weight: 700; white-space: nowrap;
+}
+.ch-hub-line { font-size: 11.5px; line-height: 1.55; margin-bottom: 4px; overflow-wrap: anywhere; }
+.ch-hub-line small {
+  display: inline-block; min-width: 92px; color: #64748b; font-size: 9.5px;
+  font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+}
+.ch-hub-table td { vertical-align: top; }
+.ch-dim { color: var(--mc-dim, #94a3b8); }
+
+/* ---------- ชิปตัวกรองแบบกดสลับ ---------- */
+.ch-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
+.ch-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 999px; padding: 6px 14px;
+  background: rgba(148, 163, 184, .04); font: inherit; font-size: 12px; font-weight: 700;
+  color: var(--mc-dim, #94a3b8); cursor: pointer;
+}
+.ch-chip:hover { color: inherit; }
+.ch-chip.is-on { color: #7dd3fc; border-color: rgba(56, 189, 248, .42); background: rgba(56, 189, 248, .1); }
+.ch-chip span {
+  background: rgba(148, 163, 184, .16); border-radius: 999px; padding: 0 7px;
+  font-size: 11px; font-variant-numeric: tabular-nums;
+}
+
 /* ---------- RESPONSIVE — desktop-first (เป้า 1440-1600px) ---------- */
 @media (max-width: 1400px) {
   .ch-lscape-grid { grid-template-columns: 1fr; }
@@ -679,4 +758,15 @@ a.ch-src:hover { text-decoration: underline; }
   .ch-lscape-bar { display: none; }
   .ch-chain-step { grid-template-columns: 1fr; }
   .ch-dhead h2 { font-size: 24px; }
+  /* แท็บบนจอแคบ: เลื่อนแนวนอนในแถบของตัวเอง ไม่ดันทั้งหน้าให้เลื่อน */
+  .ch-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ch-tab { padding: 8px 12px 9px; font-size: 12.5px; }
+  .ch-hub-cards { grid-template-columns: 1fr; }
+  .ch-hub-n { font-size: 26px; }
+  .ch-hub-line small { min-width: 0; margin-right: 6px; }
 }
+
+/* ชิปของ "ของที่ตกเงื่อนไข" — ต้องอ่านออกว่าไม่ใช่ผลของตัวสแกน จึงใช้เส้นประและโทนเตือน */
+.ch-chip-out { border-style: dashed; }
+.ch-chip-out.is-on { color: var(--mc-amber, #fbbf24); border-color: rgba(245, 158, 11, .5);
+  background: rgba(245, 158, 11, .1); }
