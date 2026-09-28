@@ -42,6 +42,7 @@
   --mc-radius-sm: 12px;
   --mc-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
   --mc-sidebar-w: 260px;
+  --mc-rail-w: 64px;
   --mc-header-h: 72px;
   --mc-font: "Inter", "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -466,6 +467,41 @@ html, body {
   .mc-search { max-width: none; }
 }
 .mc-menu-toggle { display: none; }
+
+/* ============================================================
+   ย่อเมนูเหลือแถบไอคอน (desktop) — เอาพื้นที่คืนให้เนื้อหาหลัก
+   ใช้เฉพาะจอ >= 861px เพราะจอแคบกว่านั้นเมนูเป็นลิ้นชักซ่อนอยู่แล้ว
+   ============================================================ */
+.mc-rail-toggle { display: none; }
+
+@media (min-width: 861px) {
+  .mc-rail-toggle {
+    display: grid; place-items: center;
+    flex: 0 0 auto; margin-right: 4px;
+  }
+  .mc-app.is-rail { grid-template-columns: var(--mc-rail-w, 64px) 1fr; }
+  .mc-app.is-rail .mc-sidebar { padding: 20px 8px; gap: 14px; overflow-x: hidden; }
+
+  /* ซ่อนเฉพาะ "ตัวหนังสือ" — ไอคอนยังอยู่และยังกดได้ */
+  .mc-app.is-rail .mc-logo-text,
+  .mc-app.is-rail .mc-nav-label,
+  .mc-app.is-rail .mc-nav-group-label,
+  .mc-app.is-rail .mc-assistant { display: none; }
+
+  .mc-app.is-rail .mc-logo { justify-content: center; }
+  .mc-app.is-rail .mc-nav { gap: 6px; }
+  .mc-app.is-rail .mc-nav-item {
+    justify-content: center; padding: 10px 0; gap: 0;
+  }
+  .mc-app.is-rail .mc-nav-item .mc-ic { width: auto; font-size: 17px; opacity: 1; }
+  /* เส้นคั่นแทนหัวข้อกลุ่มที่ถูกซ่อน ให้ยังแยกกลุ่มออกจากกันได้ */
+  .mc-app.is-rail .mc-nav-group-label + .mc-nav-item {
+    border-top: 1px solid var(--mc-border); padding-top: 12px; margin-top: 2px;
+  }
+  .mc-app.is-rail .mc-nav-group-label:first-child + .mc-nav-item {
+    border-top: 0; padding-top: 10px; margin-top: 0;
+  }
+}
 
 /* ============================================================
    AppShell overrides for legacy pages mounted via app-navigation.js

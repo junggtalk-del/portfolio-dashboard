@@ -558,7 +558,9 @@
       const items = group.items.map((it) => {
         const active = !it.soon && normalizePath(it.p) === normalizePath(activePath) ? " is-active" : "";
         const soon = it.soon ? " is-soon" : "";
-        return `<a class="mc-nav-item${active}${soon}" href="${escapeHtml(it.p)}"><span class="mc-ic">${it.i}</span> ${escapeHtml(it.t)}</a>`;
+        // ชื่อเมนูต้องอยู่ใน span ของตัวเอง เพื่อซ่อนได้ตอนย่อเมนูเหลือแถบไอคอน
+        // title ไว้ให้ชี้เมาส์แล้วรู้ว่าไอคอนนี้คืออะไรตอนที่ชื่อถูกซ่อน
+        return `<a class="mc-nav-item${active}${soon}" href="${escapeHtml(it.p)}" title="${escapeHtml(it.t)}"><span class="mc-ic">${it.i}</span><span class="mc-nav-label">${escapeHtml(it.t)}</span></a>`;
       }).join("");
       return `<div class="mc-nav-group-label">${escapeHtml(group.label)}</div>${items}`;
     }).join("");
@@ -576,9 +578,38 @@
       </div>`;
   }
 
+  // ---------------- ย่อ/ขยายเมนู ----------------
+  const RAIL_KEY = "mc_sidebar_rail_v1";
+  function readRail() {
+    try { return window.localStorage.getItem(RAIL_KEY) === "1"; } catch (e) { return false; }
+  }
+  function writeRail(on) {
+    try { window.localStorage.setItem(RAIL_KEY, on ? "1" : "0"); } catch (e) { /* ปิด storage อยู่ก็ยังย่อได้ แค่ไม่จำ */ }
+  }
+  function syncRailButton(app) {
+    const btn = document.getElementById("mcRailToggle");
+    if (!btn || !app) return;
+    const on = app.classList.contains("is-rail");
+    btn.textContent = on ? "⇥" : "⇤";
+    btn.setAttribute("title", on ? "ขยายเมนู" : "ย่อเมนูให้เหลือไอคอน");
+    btn.setAttribute("aria-expanded", on ? "false" : "true");
+  }
+  function wireRailToggle(app) {
+    const btn = document.getElementById("mcRailToggle");
+    if (!btn || !app) return;
+    syncRailButton(app);
+    btn.addEventListener("click", () => {
+      const on = app.classList.toggle("is-rail");
+      writeRail(on);
+      syncRailButton(app);
+    });
+  }
+
   function buildHeader() {
     return `
       <button class="mc-icon-btn mc-menu-toggle" id="mcMenuToggle" type="button">☰</button>
+      <button class="mc-icon-btn mc-rail-toggle" id="mcRailToggle" type="button"
+        title="ย่อ/ขยายเมนู" aria-label="ย่อหรือขยายเมนู">⇤</button>
       <div class="mc-search"><span>🔍</span><input type="text" placeholder="Search assets, pages, signals, actions..." /><span class="mc-kbd">⌘ K</span></div>
       <div class="mc-header-right">
         <span id="appRegimeChip"></span>
@@ -661,10 +692,15 @@
     // Don't rebuild it — but DO refresh the sidebar from the single canonical
     // SIDEBAR config so menu items never drift / go missing.
     const existingSidebar = document.getElementById("mcSidebar");
-    if (existingSidebar && document.querySelector(".mc-app")) {
+    const existingApp = document.querySelector(".mc-app");
+    if (existingSidebar && existingApp) {
       existingSidebar.innerHTML = buildSidebar(activePath);
       // NOTE: a hardcoded-shell page (Home) wires its own #mcMenuToggle — don't
       // double-bind it here or the two toggles cancel out.
+      // แต่ปุ่มย่อเมนูเป็นคนละตัวและหน้านั้นไม่ได้ผูกเอง จึงต้องผูกที่นี่
+      // ไม่งั้นหน้า Home จะย่อเมนูไม่ได้อยู่หน้าเดียว
+      if (readRail()) existingApp.classList.add("is-rail");
+      wireRailToggle(existingApp);
       wireRegimeChip();
       return;
     }
@@ -675,7 +711,9 @@
 
     const app = document.createElement("div");
     app.id = "mc-shell";
-    app.className = "mc-app";
+    // เว็บนี้เป็นหลายหน้า — เปลี่ยนเมนูทีคือโหลดหน้าใหม่และสร้างเปลือกใหม่ทั้งหมด
+    // สถานะย่อเมนูจึงต้องเก็บไว้ ไม่งั้นมันจะกางกลับทุกครั้งที่กดไปหน้าอื่น
+    app.className = "mc-app" + (readRail() ? " is-rail" : "");
 
     const sidebar = document.createElement("aside");
     sidebar.className = "mc-sidebar";
@@ -709,6 +747,7 @@
 
     const toggle = document.getElementById("mcMenuToggle");
     if (toggle) toggle.addEventListener("click", () => sidebar.classList.toggle("is-open"));
+    wireRailToggle(app);
 
     wireDataStatus();
     wireRegimeChip();
