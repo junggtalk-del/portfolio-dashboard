@@ -39,6 +39,8 @@
     // ตัวกรองของแท็บ SMA200 — all | holding | fellback
     smaFilter: "all",
     lastView: "hub",
+    // ผลสแกนที่ยังไม่ครบจักรวาล — null = ครบแล้ว · {nextOffset,total} = ค้างอยู่
+    partial: null,
     // การจำผลสแกน: where = idb | local | none · note = เหตุผลเมื่อจำไม่ได้
     cache: { where: null, note: null, loadedFromCache: false },
   };
@@ -167,13 +169,18 @@
         return { ticker: i.ticker, name: i.name, market: i.market, universe: i.universe,
           closes: i.closes.slice(-CE().CONFIG.bars.year - 20), dates: i.dates.slice(-CE().CONFIG.bars.year - 20),
           volumes: (i.volumes || []).slice(-CE().CONFIG.bars.year - 20),
-          fullBars: i.bars, source: i.source, sourceType: i.sourceType, range: i.range,
+          // ของที่อ่านกลับมาจาก cache จะมี fullBars อยู่แล้วและไม่มี bars — ต้องรับทั้งสองแบบ
+          // ไม่งั้นพอบันทึกทับรอบที่สอง จำนวนแท่งเดิมจะกลายเป็น undefined
+          fullBars: i.bars != null ? i.bars : i.fullBars,
+          source: i.source, sourceType: i.sourceType, range: i.range,
           dd: i.dd, evidence: i.evidence || null };
       });
       payload = { at: Date.now(), items: slim,
         bench: bench ? bench.slice(-300) : null, failed: failed || [],
         universeMeta: (meta && meta.universeMeta) || null,
-        evidenceMeta: (meta && meta.evidenceMeta) || null };
+        evidenceMeta: (meta && meta.evidenceMeta) || null,
+        // ความคืบหน้า — ทำให้ผลที่สแกนไปแล้วบางส่วน "ไม่หาย" และสแกนต่อได้
+        progress: (meta && meta.progress) || null };
     } catch (e) {
       state.cache.where = "none";
       state.cache.note = "เตรียมข้อมูลเพื่อจำไม่สำเร็จ: " + String((e && e.message) || e);
@@ -225,24 +232,58 @@
     return r;
   }
 
-  async function scanAll(force) {
+  // force  = true  → เริ่มสแกนใหม่ทั้งหมด
+  // resume = true  → สแกนต่อจากที่ค้างไว้ (ไม่ยิงซ้ำส่วนที่ได้มาแล้ว)
+  // ไม่ใส่ทั้งคู่  → ใช้ของที่จำไว้ถ้ามี
+  async function scanAll(force, resume) {
     if (state.loading) return;
     state.loading = true; state.error = null;
-    if (!force) {
-      var c = await readCache();
-      if (c) {
-        state.bench = c.bench;
-        state.rows = c.items.map(function (i) { return analyzeItem(i, c.bench); });
-        state.failed = c.failed || [];
-        if (c.universeMeta) state.universeMeta = c.universeMeta;
-        if (c.evidenceMeta) state.evidenceMeta = c.evidenceMeta;
-        state.scannedAt = new Date(c.at).toISOString();
+    var cached = null;
+    if (!force || resume) {
+      cached = await readCache();
+      if (cached && !resume) {
+        state.bench = cached.bench;
+        state.rows = cached.items.map(function (i) { return analyzeItem(i, cached.bench); });
+        state.failed = cached.failed || [];
+        if (cached.universeMeta) state.universeMeta = cached.universeMeta;
+        if (cached.evidenceMeta) state.evidenceMeta = cached.evidenceMeta;
+        state.scannedAt = new Date(cached.at).toISOString();
         state.cache.loadedFromCache = true;
+        // ค้างอยู่ครึ่งทาง — จำไว้เพื่อให้หน้าเสนอ "สแกนต่อ" แทนที่จะทำเป็นว่าครบแล้ว
+        state.partial = cached.progress && !cached.progress.done ? cached.progress : null;
         state.loading = false; render();
         return;
       }
     }
+    // สแกนต่อจากของเดิม: เอาสิ่งที่เคยสแกนได้กลับมาตั้งต้น แล้วยิงเฉพาะส่วนที่ยังขาด
     var items = [], failed = [], bench = null, offset = 0, total = null;
+    if (resume && cached && cached.progress && !cached.progress.done) {
+      items = cached.items.slice();
+      failed = (cached.failed || []).slice();
+      bench = cached.bench || null;
+      offset = cached.progress.nextOffset || 0;
+      total = cached.progress.total || null;
+      if (cached.universeMeta) state.universeMeta = cached.universeMeta;
+      if (cached.evidenceMeta) state.evidenceMeta = cached.evidenceMeta;
+    }
+
+    // บันทึกสิ่งที่ได้มาแล้ว ณ จุดนี้ — เรียกได้ทั้งตอนจบและตอนพังกลางคัน
+    // เหตุผลที่ต้องมี: ก่อนหน้านี้บันทึกครั้งเดียวตอนจบ 37 รอบ พลาดรอบเดียว
+    // หรือผู้ใช้เดินออกจากหน้า = งานทั้ง 25 นาทีหายหมด แล้วต้องเริ่มใหม่
+    async function persistProgress(nextOffset, isDone) {
+      if (!items.length) return;
+      state.bench = bench;
+      state.rows = items.map(function (i) { return analyzeItem(i, bench); });
+      state.failed = failed;
+      state.scannedAt = new Date().toISOString();
+      state.cache.loadedFromCache = false;
+      var prog = { nextOffset: isDone ? null : nextOffset, total: total, done: !!isDone };
+      state.partial = isDone ? null : prog;
+      await writeCache(items, bench, failed, {
+        universeMeta: state.universeMeta, evidenceMeta: state.evidenceMeta, progress: prog
+      });
+    }
+
     try {
       while (true) {
         state.progress = { done: offset, total: total };
@@ -260,18 +301,16 @@
           items.push(i);
         });
         (j.failed || []).forEach(function (f) { failed.push(f); });
-        if (j.done || j.nextOffset == null) break;
+        var finished = j.done || j.nextOffset == null;
+        // บันทึกทุกรอบ — 23 MB ใช้เวลาเขียนราว 74 ms เทียบกับการสแกนที่ใช้นาที จึงไม่คุ้มที่จะเสี่ยง
+        await persistProgress(finished ? null : j.nextOffset, finished);
+        if (finished) break;
         offset = j.nextOffset;
       }
-      state.bench = bench;
-      state.rows = items.map(function (i) { return analyzeItem(i, bench); });
-      state.failed = failed;
-      state.scannedAt = new Date().toISOString();
-      state.cache.loadedFromCache = false;
-      await writeCache(items, bench, failed,
-        { universeMeta: state.universeMeta, evidenceMeta: state.evidenceMeta });
     } catch (e) {
       state.error = String((e && e.message) || e);
+      // พังกลางคันก็ต้องไม่ทิ้งของที่ได้มาแล้ว — เก็บไว้ให้สแกนต่อได้
+      try { await persistProgress(offset, false); } catch (e2) { /* เก็บไม่ได้ก็ต้องไม่กลบ error เดิม */ }
     }
     state.progress = null; state.loading = false; render();
   }
@@ -693,8 +732,14 @@
         return cl ? '<small class="ch-cache' + (cl.warn ? " is-warn" : "") + '">' +
           esc(cl.text) + "</small>" : "";
       })() + "</div>" +
-      '<button type="button" class="ch-btn" data-ch-rescan="1">' +
-      (state.loading ? "กำลังสแกน…" : "สแกนใหม่") + "</button></div></header>" +
+      // ค้างกลางทาง → ปุ่มหลักต้องเป็น "สแกนต่อ" ไม่ใช่ "สแกนใหม่"
+      // เพราะเริ่มใหม่ทั้งหมดคือสิ่งที่ผู้ใช้เสียเวลาไปกับมันอยู่แล้ว
+      (!state.loading && state.partial
+        ? '<button type="button" class="ch-btn" data-ch-resume="1">สแกนต่อ</button>' +
+          '<button type="button" class="ch-btn ch-btn-ghost ch-btn-inline" data-ch-rescan="1">เริ่มใหม่ทั้งหมด</button>'
+        : '<button type="button" class="ch-btn" data-ch-rescan="1">' +
+          (state.loading ? "กำลังสแกน…" : "สแกนใหม่") + "</button>") +
+      "</div></header>" +
       // แท็บอยู่ใต้หัวเสมอ ทั้งหน้ารายการและหน้าเจาะลึก — ย้ายไปตัวสแกนอื่นได้ตลอด
       tabs(detailMode ? null : (view || "hub"));
   }
@@ -1481,6 +1526,24 @@
     return hunterBrief() + rareOpportunities() + todaysTargets() + nearMiss() +
       catalystWatch() + negativeSignals() + landscape() + matrix() +
       candidateTable() + semantics() + dataQuality();
+  }
+
+  // ผลที่ยังสแกนไม่ครบจักรวาล ต้องบอกตรง ๆ ว่ายังไม่ครบ
+  // ไม่งั้นตัวเลข "X / Y scanned" จะถูกอ่านว่าเป็นภาพทั้งตลาดทั้งที่ยังไม่ใช่
+  function partialBanner() {
+    if (state.loading || !state.partial) return "";
+    var p = state.partial;
+    var done = state.rows.length;
+    var tot = p.total || null;
+    return '<div class="ch-partial">' +
+      "<b>ผลสแกนนี้ยังไม่ครบทั้งตลาด</b> — สแกนไปแล้ว " + done +
+      (tot ? " จาก " + tot : "") + " ตัว แล้วหยุดกลางคัน " +
+      "(เน็ตหลุด ปิดหน้า หรือกดออกไปก่อน)<br>" +
+      "ผลที่ได้มาแล้วถูกเก็บไว้ให้ — กด <b>สแกนต่อ</b> เพื่อทำต่อจากตัวที่ " +
+      (p.nextOffset == null ? "ค้างไว้" : p.nextOffset + 1) +
+      " ไม่ต้องเริ่มใหม่ทั้งหมด<br>" +
+      '<span class="ch-partial-note">ตัวเลขทุกตัวด้านล่างนับเฉพาะ ' + done +
+      " ตัวที่สแกนแล้วเท่านั้น</span></div>";
   }
 
   // ============================================================
@@ -2432,10 +2495,10 @@
     } else if (ticker) {
       body = detail(ticker);
     } else if (view === "hub") {
-      body = header(false, "hub") + hubPage();
+      body = header(false, "hub") + partialBanner() + hubPage();
     } else {
       var sc = scannerByKey(view);
-      body = header(false, view) + (sc ? sc.view() : hubPage());
+      body = header(false, view) + partialBanner() + (sc ? sc.view() : hubPage());
     }
     root.innerHTML = body;
   }
@@ -2448,6 +2511,7 @@
       pushUrl(viewUrl(state.lastView || "hub")); render(); window.scrollTo(0, 0); return;
     }
     if (t.closest("[data-ch-rescan]")) { scanAll(true); return; }
+    if (t.closest("[data-ch-resume]")) { scanAll(false, true); return; }
     var vb = t.closest("[data-ch-view]");
     if (vb) {
       var nv = vb.getAttribute("data-ch-view") || "hub";

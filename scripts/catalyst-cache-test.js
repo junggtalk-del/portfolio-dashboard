@@ -116,8 +116,30 @@ function boot(shared, opts) {
       removeItem: function (k) { delete shared.ls[k]; },
     },
     addEventListener: function () {},
-    fetch: function () {
+    fetch: function (url) {
       fetches++;
+      // โหมดหลายรอบ — จักรวาลจริงใช้ 37 รอบ ถ้าเทสต์จบใน 1 รอบเสมอ
+      // เส้นทาง "พังกลางคัน / ออกจากหน้ากลางคัน" จะไม่เคยถูกทดสอบเลย
+      if (opts.multi) {
+        var LIMIT = 24, TOTAL = opts.multi.total;
+        var off = 0, mm = /offset=(\d+)/.exec(String(url)); if (mm) off = +mm[1];
+        if (opts.multi.failAt && fetches === opts.multi.failAt) {
+          if (opts.multi.failMode === "http") {
+            return Promise.resolve({ ok: false, status: 502, json: function () { return Promise.resolve({}); } });
+          }
+          return Promise.reject(new Error("network down"));
+        }
+        var list = [];
+        for (var q = off; q < Math.min(off + LIMIT, TOTAL); q++) list.push(apiItem("TK" + q, 0.4));
+        var next = off + list.length;
+        return Promise.resolve({ ok: true, json: function () { return Promise.resolve({
+          total: TOTAL, offset: off, scanned: list.length,
+          done: next >= TOTAL, nextOffset: next >= TOTAL ? null : next, universe: "THAI_ALL",
+          universeMeta: { source: "test", asOf: null, degraded: false, note: null,
+            counts: { set: TOTAL, mai: 0, total: TOTAL } },
+          benchmark: { symbol: "^SET.BK", closes: bench, available: true },
+          items: list, failed: [] }); } });
+      }
       return Promise.resolve({ ok: true, json: function () { return Promise.resolve(fakeApi); } });
     },
     console: console, Math: Math, JSON: JSON, Date: Date, Number: Number, String: String,
@@ -288,6 +310,96 @@ function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
     } catch (err) { okAll = false; why = "เคส " + i + ": " + err.message; break; }
   }
   t("cache รูปแบบผิด 6 แบบ → ทิ้ง ไม่ล่ม ไม่แอบสแกน", okAll, why);
+
+  // ============================================================
+  // สแกนหลายรอบ — จักรวาลจริง 865 ตัว = 37 รอบ ใช้เวลาหลายสิบนาที
+  // ของเดิมบันทึกครั้งเดียว "ตอนจบ" เท่านั้น พลาดรอบเดียวหรือผู้ใช้เดินออกจากหน้า
+  // = งานทั้งหมดหายเกลี้ยง ต้องเริ่มใหม่ ซึ่งคือปัญหาที่ผู้ใช้เจอจริง
+  // ============================================================
+  console.log("\n== สแกนหลายรอบ: พังกลางคันต้องไม่ทิ้งของที่ได้มาแล้ว ==");
+  {
+    var sm = { idb: {}, ls: {} };
+    var m1 = boot(sm, { multi: { total: 240 } });
+    await wait(40);
+    await m1.win.CatalystPage.scanAll(true);
+    await wait(60);
+    t("สแกนครบ 10 รอบ → จำครบ 240 ตัว",
+      sm.idb.catalystScanCache_v3 && sm.idb.catalystScanCache_v3.items.length === 240,
+      sm.idb.catalystScanCache_v3 ? sm.idb.catalystScanCache_v3.items.length : "ไม่มี");
+    t("สแกนครบแล้วต้องไม่ถูกทำเครื่องหมายว่าค้าง",
+      sm.idb.catalystScanCache_v3.progress && sm.idb.catalystScanCache_v3.progress.done === true);
+
+    var sf = { idb: {}, ls: {} };
+    var m2 = boot(sf, { multi: { total: 240, failAt: 8 } });
+    await wait(40);
+    await m2.win.CatalystPage.scanAll(true);
+    await wait(60);
+    var stF = m2.win.CatalystPage._state;
+    t("เน็ตหลุดรอบที่ 8 → ของ 7 รอบแรก (168 ตัว) ยังอยู่",
+      sf.idb.catalystScanCache_v3 && sf.idb.catalystScanCache_v3.items.length === 168,
+      sf.idb.catalystScanCache_v3 ? sf.idb.catalystScanCache_v3.items.length : "หายหมด");
+    t("ยังบอกผู้ใช้ว่าเกิดข้อผิดพลาด (ไม่กลบ)", !!stF.error, stF.error);
+    t("ทำเครื่องหมายว่าค้าง พร้อมจุดที่จะไปต่อ",
+      sf.idb.catalystScanCache_v3.progress && sf.idb.catalystScanCache_v3.progress.done === false &&
+      sf.idb.catalystScanCache_v3.progress.nextOffset === 168,
+      JSON.stringify(sf.idb.catalystScanCache_v3.progress));
+
+    var sh = { idb: {}, ls: {} };
+    var m3 = boot(sh, { multi: { total: 240, failAt: 8, failMode: "http" } });
+    await wait(40);
+    await m3.win.CatalystPage.scanAll(true);
+    await wait(60);
+    t("HTTP 502 กลางคัน → ของที่ได้มาแล้วยังอยู่เหมือนกัน",
+      sh.idb.catalystScanCache_v3 && sh.idb.catalystScanCache_v3.items.length === 168,
+      sh.idb.catalystScanCache_v3 ? sh.idb.catalystScanCache_v3.items.length : "หายหมด");
+
+    // เคสนี้ "การบันทึกทุกรอบ" เท่านั้นที่ช่วยได้ — ตัวดัก error ไม่ทำงานเลย
+    // เพราะไม่มี error ผู้ใช้แค่เดินออกไปเฉย ๆ ระหว่างที่ยังสแกนอยู่
+    var sw = { idb: {}, ls: {} };
+    var m5 = boot(sw, { multi: { total: 960 } });     // 40 รอบ — ยาวพอให้ออกกลางคันได้
+    await wait(40);
+    m5.win.CatalystPage.scanAll(true);                 // ไม่ await = เดินออกจากหน้า
+    await wait(50);
+    var midItems = sw.idb.catalystScanCache_v3 ? sw.idb.catalystScanCache_v3.items.length : 0;
+    t("ออกจากหน้าระหว่างสแกน → ของที่สแกนไปแล้วถูกเก็บไว้ทันที ไม่ต้องรอจบ",
+      midItems > 0, midItems);
+    t("ของที่เก็บกลางคันถูกทำเครื่องหมายว่ายังไม่ครบ",
+      sw.idb.catalystScanCache_v3 && sw.idb.catalystScanCache_v3.progress &&
+      sw.idb.catalystScanCache_v3.progress.done === false,
+      sw.idb.catalystScanCache_v3 ? JSON.stringify(sw.idb.catalystScanCache_v3.progress) : "ไม่มี");
+    t("จำนวนที่เก็บกลางคันน้อยกว่าทั้งจักรวาลจริง (ยังไม่จบ)", midItems < 960, midItems);
+
+    console.log("\n== เปิดหน้าใหม่แล้วสแกนต่อ ==");
+    var m4 = boot(sf, { multi: { total: 240 } });        // ที่เก็บเดียวกับตัวที่ค้างไว้
+    await wait(40);
+    await m4.win.CatalystPage.scanAll(false);
+    await wait(40);
+    var stR = m4.win.CatalystPage._state;
+    t("เปิดใหม่ไม่ยิง API เลย", m4.fetches() === 0, m4.fetches());
+    t("ได้ของที่ค้างไว้กลับมาครบ 168 ตัว", stR.rows.length === 168, stR.rows.length);
+    t("รู้ตัวว่ายังสแกนไม่ครบ", !!stR.partial && stR.partial.nextOffset === 168,
+      JSON.stringify(stR.partial));
+    t("หน้าบอกผู้ใช้ว่ายังไม่ครบทั้งตลาด",
+      m4.els.chRoot.innerHTML.indexOf("ยังไม่ครบทั้งตลาด") >= 0);
+    t("มีปุ่มสแกนต่อ", m4.els.chRoot.innerHTML.indexOf("data-ch-resume") >= 0);
+    t("ยังมีปุ่มเริ่มใหม่ทั้งหมดให้เลือก", m4.els.chRoot.innerHTML.indexOf("เริ่มใหม่ทั้งหมด") >= 0);
+
+    await m4.win.CatalystPage.scanAll(false, true);
+    await wait(80);
+    var stR2 = m4.win.CatalystPage._state;
+    t("สแกนต่อแล้วครบ 240 ตัว", stR2.rows.length === 240, stR2.rows.length);
+    t("สแกนต่อยิงแค่ 3 รอบที่เหลือ ไม่ยิงซ้ำ 7 รอบแรก", m4.fetches() === 3, m4.fetches());
+    t("ครบแล้วธงค้างต้องหาย", stR2.partial === null, JSON.stringify(stR2.partial));
+    t("ไม่มี ticker ซ้ำหลังสแกนต่อ", (function () {
+      var seen = {}, dup = 0;
+      (sf.idb.catalystScanCache_v3.items || []).forEach(function (i) { if (seen[i.ticker]) dup++; seen[i.ticker] = 1; });
+      return dup === 0;
+    })());
+    t("บันทึกทับรอบสองแล้วจำนวนแท่งเดิมไม่หาย (fullBars)",
+      (sf.idb.catalystScanCache_v3.items || []).every(function (i) { return i.fullBars != null; }));
+    t("แบนเนอร์ 'ยังไม่ครบ' หายไปเมื่อสแกนครบแล้ว",
+      m4.els.chRoot.innerHTML.indexOf("ยังไม่ครบทั้งตลาด") < 0);
+  }
 
   console.log("\n== ห้ามสแกนเองอัตโนมัติในทุกกรณี ==");
   var src = fs.readFileSync(PUB + "/catalyst-page.js", "utf8");
