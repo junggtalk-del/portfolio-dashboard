@@ -2,7 +2,17 @@
 # ตัดออกจาก Vercel เพื่อให้จำนวน serverless function อยู่ในลิมิต 12 ตัวของ Hobby plan
 # (ยังอยู่ใน repo เพื่อใช้ตอน dev ในเครื่อง)
 #
-# นับหลังตัด: api/*.js 15 ไฟล์ − debug 2 − fund-nav 2 = 11 function (ลิมิต 12)
+# นับหลังตัด: api 16 ไฟล์ − debug 2 − fund-nav 2 = 12 function (ลิมิต 12)
+#
+# ⚠ เต็มลิมิตแล้ว — เพิ่ม endpoint ใหม่อีกตัวเดียว build บน Vercel จะพังทันที
+#   (เคยพังมาแล้วตอน a56898e → 5319bee) ถ้าต้องเพิ่ม ให้ยุบรวมของเดิมก่อน
+#
+# ประวัติการยุบ: api/market-data.js (alias บรรทัดเดียวของ price-history) ถูกลบแล้ว
+#   ย้ายไปเป็น rewrite ใน vercel.json: /api/market-data → /api/price-history
+#   ฝั่ง local ไม่กระทบ เพราะ server.js require ./api/price-history ตรง ๆ อยู่แล้ว
+#   และที่เรียก /api/market-data ในเบราว์เซอร์เป็น fetch interceptor ที่ match
+#   จาก url.pathname ซึ่ง rewrite ฝั่ง server ไม่เปลี่ยน
+#   slot ที่ได้คืนมา ใช้ไปกับ api/thai-dr.js (Thai DR Monitor)
 # ห้ามตัด api/price-history.js — ไม่มี frontend เรียกตรง แต่ api/catalyst-scan,
 # api/market-data, api/thai-stock-scanner require มันอยู่ ตัดแล้ว build จะพัง
 api/debug/

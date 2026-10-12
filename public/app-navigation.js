@@ -503,7 +503,8 @@
       { p: "/thesis", i: "🧾", t: "Investment Thesis" }
     ] },
     { label: "Thai Market", items: [
-      { p: "/catalyst-hunter", i: "🇹🇭", t: "Thai Catalyst Hunter" }
+      { p: "/catalyst-hunter", i: "🇹🇭", t: "Thai Catalyst Hunter" },
+      { p: "/thai-dr-monitor", i: "🌏", t: "Thai DR Monitor" }
     ] },
     { label: "Strategic Intelligence", items: [
       { p: "/ai-cycle", i: "🧭", t: "AI Cycle Intelligence" },
@@ -548,6 +549,7 @@
     "/smart-dca": { category: "Bitcoin", title: "🪙 Smart DCA", subtitle: "DCA บิทคอยน์ตามโซน MVRV — ซื้อมากตอนถูก ซื้อน้อยตอนแพง พร้อม backtest เทียบ DCA ปกติ" },
     "/adaptive-position": { category: "Strategic Intelligence", title: "🎛️ Adaptive Position", subtitle: "ควรถือ exposure เท่าไหร่ — Mega Trend Gate · Core/Tactical · เงื่อนไขสะสมจังหวะย่อ · ความมั่นใจของ position" },
     "/catalyst-hunter": { category: "Thai Market", title: "🇹🇭 Thai Catalyst Hunter", subtitle: "หุ้นไทยที่ราคาถูกทิ้ง แต่เรื่องราวของธุรกิจกำลังเปลี่ยน — ย่อลึก · ทำไมตก · เรื่องใหม่ · หลักฐาน · ตลาดรับรู้หรือยัง" },
+    "/thai-dr-monitor": { category: "Thai Market", title: "🌏 Thai DR Monitor", subtitle: "DR ที่จดทะเบียนในไทยมีอะไรบ้าง — ยุบรวมตามสินทรัพย์อ้างอิง · แยกตลาด/ประเภท · ตัวไหนเพิ่งจดทะเบียน · ข้อมูลไหนยังต้องตรวจ" },
     "/thesis": { category: "AI Portfolio Manager", title: "🧾 Investment Thesis", subtitle: "บริษัทนี้ยังเดินตาม thesis ระยะยาวอยู่ไหม — พื้นฐาน · AI execution · moat · ทำไมหุ้นตก · ควรสะสมจังหวะย่อไหม" },
     "/accumulation-center": { category: "Strategic Intelligence", title: "🧺 Accumulation Center", subtitle: "จังหวะย่อตัวไหนควรค่าแก่การสะสมวันนี้ — จัดอันดับ 7 ปัจจัย (Thesis นำ · เทคนิคเป็นแค่เครื่องมือจับจังหวะ)" },
     "/portfolio-manager": { category: "AI Portfolio Manager", title: "💼 AI Portfolio Manager", subtitle: "Portfolio Decision Layer — เงินก้อนถัดไปควรไปที่ไหน · Tier · Dynamic Target · Entry Ladder · Cash Deployment · Risk Rules" }

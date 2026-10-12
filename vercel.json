@@ -117,6 +117,14 @@
       "destination": "/asset-allocation.html"
     },
     {
+      "source": "/thai-dr-monitor",
+      "destination": "/thai-dr-monitor.html"
+    },
+    {
+      "source": "/api/market-data",
+      "destination": "/api/price-history"
+    },
+    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }

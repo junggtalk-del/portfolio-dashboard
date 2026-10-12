@@ -481,8 +481,17 @@ console.log("== §24 full universe — นับผลรวมได้ แล�
     fs.readdirSync(process.cwd() + "/public").filter(function (f) {
       return /\.html$/.test(f) && /sma200|reclaim|technical/i.test(f);
     }).length === 0);
-  t("§2 จำนวนหน้า HTML เท่าเดิม (18 หน้า)",
-    fs.readdirSync(process.cwd() + "/public").filter(function (f) { return /\.html$/.test(f); }).length === 18);
+  // เดิมตรึงไว้ที่ 18 หน้า แต่ตัวเลขดิบจะพังทุกครั้งที่มีฟีเจอร์อื่นเพิ่มหน้าโดยชอบ
+  // (Thai DR Monitor เป็นเมนูที่อนุมัติแยกต่างหาก → 19 หน้า)
+  // สิ่งที่ §2 ต้องการจริงคือ "SMA200 ต้องไม่งอกหน้าของตัวเอง" ซึ่งเช็คไว้แล้วข้างบน
+  // จึงล็อกเป็นรายชื่อหน้าที่ต้องมีอยู่แทน — จับการลบหน้าทิ้งได้ และไม่พังเมื่อมีหน้าใหม่ที่ตั้งใจเพิ่ม
+  t("§2 หน้าเว็บเดิมต้องยังอยู่ครบ ไม่ถูกลบหรือเปลี่ยนชื่อ", (function () {
+    var must = ["catalyst-hunter.html", "index.html", "home.html", "thesis.html",
+      "action-center.html", "portfolio.html", "bitcoin-monitor.html"];
+    var have = fs.readdirSync(process.cwd() + "/public").filter(function (f) { return /\.html$/.test(f); });
+    for (var i = 0; i < must.length; i++) if (have.indexOf(must[i]) < 0) return false;
+    return have.length >= 18;
+  })());
 }
 
 console.log("== เงื่อนไขวอลุ่ม: สูงกว่าค่าเฉลี่ย 10 วันก่อนหน้าเกิน 20% ==");
