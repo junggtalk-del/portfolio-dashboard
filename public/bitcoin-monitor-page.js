@@ -18,7 +18,7 @@
   const API_CACHE_KEY = "btc_monitor_api_v1";                   // last successful /api/bitcoin payload
 
   let range = "1Y";
-  let activeTab = "monitor"; // "monitor" | "intelligence" (Phase 2 tab)
+  let activeTab = "monitor"; // "monitor" | "intelligence" | "liquidity"
   let apiData = null;       // /api/bitcoin payload (Binance + Glassnode + CryptoQuant)
   let apiState = "idle";    // idle | loading | ready | error
   let apiError = null;
@@ -595,12 +595,27 @@
     return `<div class="btc-tabs" id="btcTabs">
       <button type="button" class="btc-tab${activeTab === "monitor" ? " is-active" : ""}" data-tab="monitor">₿ Monitor · ถูกหรือแพง?</button>
       <button type="button" class="btc-tab${activeTab === "intelligence" ? " is-active" : ""}" data-tab="intelligence">🧠 Intelligence · 6 สัญญาณ + คาดการณ์</button>
+      <button type="button" class="btc-tab${activeTab === "liquidity" ? " is-active" : ""}" data-tab="liquidity">🌊 สภาพคล่อง · BALI นำ BTC?</button>
     </div>`;
   }
   function biCycle(snap) { return (snap && snap.bitcoinIntelligence && snap.bitcoinIntelligence.cycle) || null; }
 
   function render() {
     const snap = readSnapshot();
+    // แท็บสภาพคล่องมีโมดูลของตัวเอง และดึงข้อมูลเองตอนเปิดแท็บครั้งแรก
+    // (ไม่ดึงตอนโหลดหน้า เพราะผู้ใช้ส่วนใหญ่เปิดมาดูแท็บ Monitor)
+    if (activeTab === "liquidity") {
+      const glBody = (window.GlobalLiquidityUI && window.GlobalLiquidityUI.html)
+        ? window.GlobalLiquidityUI.html()
+        : `<div class="mc-empty"><strong>กำลังโหลดโมดูลสภาพคล่อง…</strong></div>`;
+      root.innerHTML = tabBar() + `<div id="btcTabBody">${glBody}</div>`;
+      wire();
+      if (window.GlobalLiquidityUI) {
+        window.GlobalLiquidityUI.ensure();
+        if (window.GlobalLiquidityUI.wire) window.GlobalLiquidityUI.wire(document.getElementById("btcTabBody"));
+      }
+      return;
+    }
     // Phase 2 — delegate the Intelligence tab to its own read-only UI module.
     if (activeTab === "intelligence") {
       const body = (window.BitcoinIntelligenceUI && window.BitcoinIntelligenceUI.html)
@@ -1123,6 +1138,7 @@
     }
     render();
   }
+  window.addEventListener("global-liquidity-updated", function () { if (activeTab === "liquidity") render(); });
 
   window.addEventListener("portfolio-data-snapshot", render);
   window.addEventListener("btc-onchain-live", render);
