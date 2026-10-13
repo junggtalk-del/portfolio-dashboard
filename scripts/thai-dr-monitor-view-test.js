@@ -553,6 +553,63 @@ win.ThaiDrPage.load(false).then(function () {
   t("มีปุ่มโหลดราคา", hc.indexOf("data-dr-loadstats") >= 0);
   t("ปุ่มบอกจำนวนที่ต้องโหลด", /โหลดราคา \d+ ตัว/.test(hc), (/โหลดราคา[^<]*/.exec(hc) || [])[0]);
 
+  // ---- ทุกตัวในรายการดึงราคาไม่ได้ (เช่น กรองเฉพาะเวียดนาม 13 ตัว) ----
+  // ของจริง: ตลาด Hochiminh แปลง ticker ไม่ได้เลย 17/17 → ทุกแถวเป็น unsupported
+  // เดิม need/have นับแต่ ok กับ error ทำให้ unsupported ตกสำรวจ → ปุ่มหายเงียบ ๆ
+  // ผู้ใช้เห็นแค่ "—" สามช่อง ไม่มีอะไรบอกว่าทำไม
+  (function () {
+    var vis = win.ThaiDrPage._visible();
+    var saved = {};
+    for (var i = 0; i < vis.length; i++) {
+      saved[vis[i].canonicalKey] = win.ThaiDrPage._state.stats[vis[i].canonicalKey];
+      win.ThaiDrPage._state.stats[vis[i].canonicalKey] = {
+        state: "unsupported", ticker: null, note: "ตลาดนี้ยังดึงราคาย้อนหลังไม่ได้"
+      };
+    }
+    win.ThaiDrPage.render();
+    var hu = html();
+    t("ทุกตัวดึงราคาไม่ได้ → ยังบอกผู้ใช้ว่าเกิดอะไรขึ้น",
+      /ดึงราคาไม่ได้|ยังดึงราคา|ไม่รองรับ/.test(hu),
+      (/(ดึงราคา|รองรับ)[^<]{0,40}/.exec(hu) || [])[0] || "(ไม่มีข้อความอะไรเลย)");
+    t("ทุกตัวดึงราคาไม่ได้ → บอกจำนวนด้วย",
+      /[0-9]+ ตัว/.test(hu),
+      (/[0-9]+ ตัว[^<]{0,20}/.exec(hu) || [])[0]);
+    t("ทุกตัวดึงราคาไม่ได้ → ไม่โชว์ปุ่มที่กดแล้วไม่เกิดอะไร",
+      hu.indexOf("data-dr-loadstats") < 0,
+      (/data-dr-loadstats[^>]{0,30}/.exec(hu) || [])[0]);
+
+    // เคสที่เจอจริงบ่อยสุด: โหลดได้บางส่วน + ดึงไม่ได้บางส่วน
+    // (ทั้งตาราง 341 = โหลดได้ 248 · ดึงไม่ได้ 93 จาก 15 ตลาด)
+    // ห้ามบอกแค่ "ราคาครบแล้ว 248 ตัว" เพราะอ่านแล้วเข้าใจว่าครบทุกตัว
+    var vis2 = win.ThaiDrPage._visible();
+    var saved2 = {};
+    for (var m = 0; m < vis2.length; m++) {
+      saved2[vis2[m].canonicalKey] = win.ThaiDrPage._state.stats[vis2[m].canonicalKey];
+      win.ThaiDrPage._state.stats[vis2[m].canonicalKey] = (m % 2 === 0)
+        ? { state: "ok", ticker: "X", data: { last: 10, lastDate: "2026-10-09",
+            currency: "USD", ath: 20, athDate: "2020-01-01", fromAthPct: -50,
+            ath1y: 15, ath1yDate: "2026-01-01", fromAth1yPct: -33,
+            coversFullYear: true, athReliable: true, historyDays: 4000,
+            firstDate: "2015-01-02", bars: 2500, yearBars: 252 } }
+        : { state: "unsupported", ticker: null, note: "ตลาดนี้ยังดึงราคาย้อนหลังไม่ได้" };
+    }
+    win.ThaiDrPage.render();
+    var hmix = html();
+    t("โหลดได้บางส่วน → ต้องบอกด้วยว่าอีกกี่ตัวดึงไม่ได้ ไม่ใช่บอกแค่ว่าครบ",
+      /ราคาครบแล้ว[^<]*ดึงราคาไม่ได้/.test(hmix),
+      (/ราคาครบแล้ว[^<]{0,70}/.exec(hmix) || [])[0]);
+    for (var k2 in saved2) {
+      if (saved2[k2] === undefined) delete win.ThaiDrPage._state.stats[k2];
+      else win.ThaiDrPage._state.stats[k2] = saved2[k2];
+    }
+    win.ThaiDrPage.render();
+    for (var k in saved) {
+      if (saved[k] === undefined) delete win.ThaiDrPage._state.stats[k];
+      else win.ThaiDrPage._state.stats[k] = saved[k];
+    }
+    win.ThaiDrPage.render();
+  })();
+
   // ใส่สถิติจำลองแล้วตรวจว่าแสดงถูก
   var aaplKey = key;
   win.ThaiDrPage._state.stats[aaplKey] = {

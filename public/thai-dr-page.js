@@ -643,10 +643,15 @@
     if (f.q) active.push("“" + f.q + "”");
     // ปุ่มโหลดราคา + ความคืบหน้า
     var run = state.statsRun;
-    var need = 0, have = 0;
+    // นับแยก 3 อย่าง: โหลดได้แล้ว · ยังต้องโหลด · ดึงไม่ได้เพราะไม่รองรับตลาด
+    // unsupported ต้องนับด้วย ไม่งั้นพอกรองเจอแต่ตลาดที่ไม่รองรับ (เช่น เวียดนาม
+    // ซึ่งแปลง ticker ไม่ได้เลย 17/17) ทั้ง need และ have จะเป็น 0 แล้วแถบสรุป
+    // จะว่างเปล่า — ผู้ใช้เห็นแค่ "—" สามช่องโดยไม่มีอะไรบอกว่าทำไม
+    var need = 0, have = 0, unsup = 0;
     for (var i = 0; i < list.length; i++) {
       var s = state.stats[list[i].canonicalKey];
       if (s && s.state === "ok") have++;
+      else if (s && s.state === "unsupported") unsup++;
       else if (!s || s.state === "error") need++;
     }
     var priceBtn;
@@ -658,7 +663,12 @@
         ico(ICON.download) + "โหลดราคา " + need + " ตัว</button>";
     } else if (have > 0) {
       priceBtn = '<span class="dr-dim">ราคาครบแล้ว ' + have + " ตัว" +
+        (unsup > 0 ? " · อีก " + unsup + " ตัวดึงราคาไม่ได้ (ตลาดต้นทางยังไม่รองรับ)" : "") +
         (state.statsAt ? " · " + esc(thDateTime(new Date(state.statsAt).toISOString())) : "") + "</span>";
+    } else if (unsup > 0) {
+      // ไม่มีปุ่มให้กด เพราะกดแล้วก็ดึงไม่ได้ — แต่ต้องบอกเหตุผล ไม่ใช่เงียบ
+      priceBtn = '<span class="dr-dim">' + unsup +
+        " ตัวนี้ดึงราคาไม่ได้ · ตลาดต้นทางยังไม่รองรับการดึงราคาย้อนหลัง</span>";
     } else {
       priceBtn = "";
     }
