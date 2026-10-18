@@ -901,58 +901,156 @@ win.ThaiDrPage.load(false).then(function () {
   t("ติ๊ก Top pick ได้ผ่าน handler จริง", setCheck("data-dr-pick", pickA, true) === true);
   setCheck("data-dr-pick", pickB, true);
   var hp1 = html();
-  t("เกิดตาราง Top pick ขึ้นมา", hp1.indexOf("dr-pickwrap") >= 0);
-  t("หัวตารางชื่อ Top pick", /<h3>Top pick<\/h3>/.test(hp1));
-  t("บอกจำนวนที่เลือก", /dr-pick-head[\s\S]{0,400}>2</.test(hp1), (/dr-count[^>]*>\d+</.exec(hp1) || [])[0]);
-  t("ตาราง Top pick มี 2 แถว", (function () {
-    var seg = /<section class="dr-pickwrap">[\s\S]*?<\/section>/.exec(hp1);
-    if (!seg) return false;
-    return (seg[0].match(/data-dr-row="/g) || []).length === 2;
+  // Top pick อยู่ในแท็บของตัวเองแล้ว ตัวเลขบนแท็บต้องขึ้นทันทีที่ติ๊ก
+  t("แท็บ Top pick นับจำนวนที่ติ๊กได้", /data-dr-tab="pick"[\s\S]{0,160}>2</.test(hp1),
+    (/data-dr-tab="pick"[\s\S]{0,160}/.exec(hp1) || [])[0]);
+  t("เปิดแท็บ Top pick เห็น 2 แถว", (function () {
+    clickAttr("data-dr-tab", "pick");
+    var h = html();
+    var ok = (h.match(/data-dr-row="/g) || []).length === 2;
+    clickAttr("data-dr-tab", "all");
+    return ok;
   })());
-  t("ตาราง Top pick อยู่เหนือตารางหลัก",
-    hp1.indexOf("dr-pickwrap") < hp1.indexOf('class="dr-card dr-tablewrap"'));
   t("ดาวเปลี่ยนเป็นทึบ", countOf(/★/g) >= 2, countOf(/★/g));
   t("แถวในตารางหลักมีเส้นทอง", countOf(/dr-row--pick/g) >= 2, countOf(/dr-row--pick/g));
   t("ยังอยู่ในตารางหลักด้วย (ไม่ได้ย้ายออก)",
     win.ThaiDrPage._visible().length === before0, [win.ThaiDrPage._visible().length, before0]);
-  t("มีปุ่มล้างทั้งหมด", hp1.indexOf("data-dr-clearpicks") >= 0);
+  t("มีปุ่มล้างทั้งหมดในแท็บ Top pick", (function () {
+    clickAttr("data-dr-tab", "pick");
+    var ok = html().indexOf("data-dr-clearpicks") >= 0;
+    clickAttr("data-dr-tab", "all");
+    return ok;
+  })());
+
+  // ---------------- คอลัมน์ "ใน Port" + แท็บ 3 หน้า ----------------
+  // ต่างจาก Top pick ตรงความหมาย: Top pick = กำลังสนใจ · Port = ถืออยู่จริง
+  // จึงต้องเก็บแยกคนละ key และติ๊กพร้อมกันได้ทั้งสองอัน
+  console.log("== Port: ติ๊กว่าถืออยู่ แล้วแยกเป็นแท็บ ==");
+  win.ThaiDrPage._state.filters.q = "";
+  win.ThaiDrPage._state.tab = "all";
+  win.ThaiDrPage.render();
+  var hb = html();
+  t("มีคอลัมน์ Port ในหัวตาราง", /<th[^>]*>\s*Port\s*<\/th>/.test(hb),
+    (/<th[^>]*dr-port-col[^>]*>[^<]{0,20}/.exec(hb) || [])[0]);
+  t("ทุกแถวมี checkbox Port",
+    countOf(/data-dr-port="/g) === win.ThaiDrPage._visible().length,
+    [countOf(/data-dr-port="/g), win.ThaiDrPage._visible().length]);
+
+  // ติ๊ก Port 2 ตัว โดยตัวแรกเป็นตัวเดียวกับที่ติ๊ก Top pick ไว้แล้ว
+  var portA = pickA;                                   // ซ้ำกับ Top pick โดยตั้งใจ
+  var portB = win.ThaiDrPage._visible()[5].canonicalKey;
+  t("ติ๊ก Port ได้ผ่าน handler จริง", setCheck("data-dr-port", portA, true) === true);
+  setCheck("data-dr-port", portB, true);
+  t("ติ๊ก Port แล้ว Top pick ของตัวเดียวกันไม่หาย (คนละความหมาย)",
+    win.ThaiDrPage._state.picked[portA] === true && win.ThaiDrPage._state.port[portA] === true,
+    [win.ThaiDrPage._state.picked[portA], win.ThaiDrPage._state.port[portA]]);
+
+  // ---- แท็บ ----
+  var ht = html();
+  t("มีแท็บครบ 3 อัน", countOf(/data-dr-tab="/g) === 3, countOf(/data-dr-tab="/g));
+  t("แท็บมีชื่อ Port", /data-dr-tab="port"/.test(ht));
+  t("แท็บมีชื่อ Top pick", /data-dr-tab="pick"/.test(ht));
+  t("แท็บมีชื่อ DR ทั้งหมด", /data-dr-tab="all"/.test(ht));
+  t("แท็บบอกจำนวนในแต่ละหน้า", /data-dr-tab="port"[\s\S]{0,160}>2</.test(ht),
+    (/data-dr-tab="port"[\s\S]{0,160}/.exec(ht) || [])[0]);
+
+  // สลับไปแท็บ Port: ต้องเห็นเฉพาะ 2 ตัวที่ติ๊ก
+  t("กดแท็บ Port ได้", (function () {
+    if (!clickAttr("data-dr-tab", "port")) return false;
+    return win.ThaiDrPage._state.tab === "port";
+  })(), win.ThaiDrPage._state.tab);
+  var hPort = html();
+  t("แท็บ Port แสดงเฉพาะตัวที่ถืออยู่", (function () {
+    var n = (hPort.match(/data-dr-row="/g) || []).length;
+    return n === 2;
+  })(), (hPort.match(/data-dr-row="/g) || []).length);
+  t("แท็บ Port ไม่แสดงตาราง DR ทั้งหมดซ้อนอยู่ด้วย",
+    (hPort.match(/dr-tablewrap/g) || []).length === 1,
+    (hPort.match(/dr-tablewrap/g) || []).length);
+
+  // สลับไปแท็บ Top pick
+  clickAttr("data-dr-tab", "pick");
+  var hPick = html();
+  t("แท็บ Top pick แสดงเฉพาะตัวที่ติ๊กดาว", (hPick.match(/data-dr-row="/g) || []).length === 2,
+    (hPick.match(/data-dr-row="/g) || []).length);
+
+  // กลับไปแท็บทั้งหมด
+  clickAttr("data-dr-tab", "all");
+  t("กลับแท็บ DR ทั้งหมด เห็นครบเหมือนเดิม",
+    (html().match(/data-dr-row="/g) || []).length === win.ThaiDrPage._visible().length,
+    [(html().match(/data-dr-row="/g) || []).length, win.ThaiDrPage._visible().length]);
+
+  // แท็บว่างต้องบอกวิธีใช้ ไม่ใช่เงียบ
+  (function () {
+    var saved = {}, k;
+    for (k in win.ThaiDrPage._state.port) {
+      if (Object.prototype.hasOwnProperty.call(win.ThaiDrPage._state.port, k)) saved[k] = 1;
+    }
+    for (k in saved) delete win.ThaiDrPage._state.port[k];
+    // ต้องสั่ง render เอง: clickAttr จะ return ทันทีถ้าแท็บนั้นเปิดอยู่แล้ว
+    // ถ้าพึ่ง clickAttr อย่างเดียว hEmpty จะเป็น HTML เก่าค้าง แล้วเทสต์ผ่านทั้งที่ของพัง
+    win.ThaiDrPage._state.tab = "port";
+    win.ThaiDrPage.render();
+    var hEmpty = html();
+    // ต้องตรวจว่า "เรนเดอร์ออกมาจริง" ไม่ใช่แค่มีข้อความอยู่ในไฟล์
+    // (ข้อความที่อยู่ใน <!-- comment --> ก็ match regex ได้ แต่ผู้ใช้ไม่เห็น)
+    t("แท็บ Port ว่าง → บอกวิธีเพิ่ม ไม่ใช่หน้าเปล่า",
+      /<section class="dr-card dr-empty-tab">[\s\S]{0,400}ยังไม่ได้[\s\S]{0,200}Port/.test(hEmpty),
+      (/dr-empty-tab[\s\S]{0,80}/.exec(hEmpty) || [])[0] || "(ไม่มีบล็อกว่างเลย)");
+    t("แท็บ Port ว่าง → ไม่แสดงตารางเปล่า", hEmpty.indexOf("dr-tablewrap") < 0,
+      (hEmpty.match(/dr-tablewrap/g) || []).length);
+    for (k in saved) win.ThaiDrPage._state.port[k] = true;
+    clickAttr("data-dr-tab", "all");
+  })();
+
+  // Port ต้องรอดข้ามการโหลดใหม่ เหมือน Top pick
+  t("Port ถูกบันทึกลง storage", (function () {
+    var raw = win.localStorage.getItem("thai_dr_port_v1");
+    if (!raw) return false;
+    var j = JSON.parse(raw);
+    return j[portA] === true && j[portB] === true;
+  })(), win.localStorage.getItem("thai_dr_port_v1"));
+  t("export ไฟล์สำรองมี port ไปด้วย", (function () {
+    var snap = win.ThaiDrPage._exportPayload ? win.ThaiDrPage._exportPayload() : null;
+    if (!snap) return "ไม่มี _exportPayload";
+    return !!(snap.port && snap.port[portA]);
+  })() === true);
 
   // ไม่ขึ้นกับตัวกรอง — นี่คือจุดสำคัญของฟีเจอร์
   win.ThaiDrPage._state.filters.q = "ไม่มีทางเจอสิ่งนี้";
   win.ThaiDrPage.render();
   var hFiltered = html();
-  t("กรองจนตารางหลักว่าง แต่ตาราง Top pick ยังอยู่ครบ", (function () {
-    var seg = /<section class="dr-pickwrap">[\s\S]*?<\/section>/.exec(hFiltered);
-    return seg && (seg[0].match(/data-dr-row="/g) || []).length === 2;
-  })(), hFiltered.indexOf("dr-pickwrap") >= 0);
-  t("ตารางหลักขึ้นข้อความว่างตามปกติ", hFiltered.indexOf("ไม่มีรายการที่ตรงกับตัวกรอง") >= 0);
+  t("กรองจนตารางหลักว่าง แต่แท็บ Top pick ยังครบ", (function () {
+    clickAttr("data-dr-tab", "pick");
+    var n2 = (html().match(/data-dr-row="/g) || []).length;
+    clickAttr("data-dr-tab", "all");
+    return n2 === 2;
+  })());
+  // คืนค่าช่องค้นหา ไม่งั้นเทสต์ถัดไปที่อ่าน _visible()[0] จะเจอลิสต์ว่าง
   win.ThaiDrPage._state.filters.q = "";
   win.ThaiDrPage.render();
-
-  // ติ๊ก "ไม่สนใจ" ให้ตัวที่เป็น Top pick → ต้องยังอยู่ในตาราง Top pick
-  setCheck("data-dr-ignore", pickA, true);
-  t("ติ๊กไม่สนใจแล้วยังอยู่ในตาราง Top pick", (function () {
-    var seg = /<section class="dr-pickwrap">[\s\S]*?<\/section>/.exec(html());
-    return seg && seg[0].indexOf(pickA) >= 0;
-  })());
   setCheck("data-dr-ignore", pickA, false);
 
   // จัดกลุ่ม: ตาราง Top pick ต้องไม่ถูกจัดกลุ่มด้วย
   win.ThaiDrPage._state.group = "geography";
   win.ThaiDrPage.render();
-  t("ตาราง Top pick ไม่จัดกลุ่ม (เป็นลิสต์สั้นอยู่แล้ว)", (function () {
-    var seg = /<section class="dr-pickwrap">[\s\S]*?<\/section>/.exec(html());
-    return seg && seg[0].indexOf('class="dr-group"') < 0;
+  t("แท็บ Top pick ไม่จัดกลุ่ม (เป็นลิสต์สั้นอยู่แล้ว)", (function () {
+    clickAttr("data-dr-tab", "pick");
+    var ok = html().indexOf('class="dr-group"') < 0;
+    clickAttr("data-dr-tab", "all");
+    return ok;
   })());
-  t("แต่ตารางหลักยังจัดกลุ่มตามปกติ", html().indexOf('class="dr-group"') >= 0);
+  t("แต่แท็บ DR ทั้งหมดยังจัดกลุ่มตามปกติ", html().indexOf('class="dr-group"') >= 0);
   win.ThaiDrPage._state.group = "none";
   win.ThaiDrPage.render();
 
   // เอาออก
   setCheck("data-dr-pick", pickB, false);
-  t("เอาออกแล้วเหลือ 1 แถว", (function () {
-    var seg = /<section class="dr-pickwrap">[\s\S]*?<\/section>/.exec(html());
-    return seg && (seg[0].match(/data-dr-row="/g) || []).length === 1;
+  t("เอาออกแล้วเหลือ 1 แถวในแท็บ Top pick", (function () {
+    clickAttr("data-dr-tab", "pick");
+    var n = (html().match(/data-dr-row="/g) || []).length;
+    clickAttr("data-dr-tab", "all");
+    return n === 1;
   })());
 
   // เก็บลงเครื่อง + จำข้ามการเปิดหน้า

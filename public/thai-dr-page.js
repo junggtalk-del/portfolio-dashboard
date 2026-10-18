@@ -40,11 +40,20 @@
     ignored: {},           // canonicalKey → true
     showIgnored: true,     // false = ซ่อนไปเลย ไม่ใช่แค่ดันลงล่าง
     // สินทรัพย์ที่ติ๊ก "Top pick" → ยกขึ้นเป็นตารางแยกด้านบน
-    picked: {}             // canonicalKey → true
+    picked: {},            // canonicalKey → true
+    // สินทรัพย์ที่ "ถืออยู่ในพอร์ตจริง" — คนละความหมายกับ Top pick
+    //   Top pick = กำลังสนใจ ยังไม่ได้ซื้อก็ได้
+    //   Port     = ถืออยู่จริง ต้องตามดูทุกวัน
+    // ติ๊กพร้อมกันทั้งสองอันได้ จึงแยก key ไม่ยุบรวม
+    port: {},              // canonicalKey → true
+    // แท็บที่เปิดอยู่: "port" | "pick" | "all"
+    tab: "all"
   };
 
   var IGNORE_KEY = "thai_dr_ignored_v1";
   var PICK_KEY = "thai_dr_toppick_v1";
+  var PORT_KEY = "thai_dr_port_v1";
+  var TAB_KEY = "thai_dr_tab_v1";
 
   var STATS_KEY = "thai_dr_price_stats_v1";
   var STATS_TTL_MS = 12 * 60 * 60 * 1000;  // ราคาปิดรายวัน — วันละ 2 ครั้งพอ
@@ -864,7 +873,7 @@
         esc(a.sourceValues.canonicalName || "—") + " · " + esc(a.sourceValues.geography) + " · " +
         esc(a.sourceValues.instrumentTypeTh) + "</div>"
       : "";
-    return '<tr class="dr-detail"><td colspan="13"><div class="dr-detail__panel">' +
+    return '<tr class="dr-detail"><td colspan="14"><div class="dr-detail__panel">' +
       kpiStrip(a, priced) +
       '<p class="dr-detail__title">DR ที่อ้างอิง ' + esc(a.underlyingSymbol || "—") +
       ' <span class="dr-count">' + a.drCount + "</span></p>" +
@@ -1026,11 +1035,14 @@
 
       var ign = !!state.ignored[a.canonicalKey];
       var pick = !!state.picked[a.canonicalKey];
+      var inPort = !!state.port[a.canonicalKey];
       // แถวที่ไม่สนใจ: จางลงและไม่เอาพื้นสีทอง "ใหม่" มาดึงสายตาอีก
+      // ถือในพอร์ตมาก่อน Top pick เพราะ "ถืออยู่จริง" สำคัญกว่า "กำลังสนใจ"
       var rowCls = "dr-row" + (open ? " is-open" : "") +
         (a.hasNewListing && !open && !ign ? " dr-row--new" : "") +
         (ign ? " dr-row--ignored" : "") +
-        (pick && !open ? " dr-row--pick" : "");
+        (inPort && !open ? " dr-row--port" : "") +
+        (pick && !inPort && !open ? " dr-row--pick" : "");
       html += '<tr class="' + rowCls + '" data-dr-row="' + esc(a.canonicalKey) + '">' +
         '<td><span class="dr-chev">' + ico(ICON.chevron) + "</span></td>" +
         '<td><div class="dr-asset">' +
@@ -1060,6 +1072,12 @@
         (a.reviewStatus !== "needs-review" && !a.hasMissing
           ? '<span class="dr-badge dr-badge--accent">ปกติ</span>' : "") +
         "</td>" +
+        // ติ๊ก "ถืออยู่ในพอร์ต" — แยกจาก Top pick เพราะคนละความหมาย
+        '<td class="dr-port-col"><label class="dr-port' + (inPort ? " is-on" : "") +
+        '" title="ติ๊กว่าถือตัวนี้อยู่ในพอร์ต">' +
+        '<input type="checkbox" data-dr-port="' + esc(a.canonicalKey) + '"' +
+        (inPort ? " checked" : "") + " />" +
+        '<span class="dr-portmark" aria-hidden="true">' + (inPort ? "●" : "○") + "</span></label></td>" +
         // ดาว Top pick — ติ๊กแล้วยกขึ้นตารางด้านบน
         '<td class="dr-pick-col"><label class="dr-pick' + (pick ? " is-on" : "") +
         '" title="ยกขึ้นตาราง Top pick">' +
@@ -1086,27 +1104,65 @@
       esc(label) + '<span class="dr-arrow">' + arrow + "</span></th>";
   }
 
-  // ตาราง Top pick — อยู่เหนือตารางหลัก
-  // ตั้งใจให้ "ไม่ขึ้นกับตัวกรอง": กรองตารางล่างยังไง รายการที่ติ๊กไว้ก็ยังอยู่ครบ
+  // รายการที่ติ๊กไว้ ไม่ว่าจะเป็น Port หรือ Top pick
+  // ตั้งใจให้ "ไม่ขึ้นกับตัวกรอง": กรองยังไงรายการที่ติ๊กไว้ก็ยังอยู่ครบ
   // เพราะจุดประสงค์คือ "โฟกัสรายการที่เลือกไว้" ไม่ใช่ผลการค้นหา
-  function topPickBlock() {
-    var picks = [];
+  function markedAssets(map) {
+    var out = [];
     for (var i = 0; i < state.view.assets.length; i++) {
-      if (state.picked[state.view.assets[i].canonicalKey]) picks.push(state.view.assets[i]);
+      if (map[state.view.assets[i].canonicalKey]) out.push(state.view.assets[i]);
     }
-    if (!picks.length) return "";
-    picks.sort(makeComparator(state.sort, state.sortDir));
+    out.sort(makeComparator(state.sort, state.sortDir));
+    return out;
+  }
 
-    return '<section class="dr-pickwrap">' +
-      '<div class="dr-pick-head">' +
-      '<span class="dr-tile dr-tile--highlight">' + ico(ICON.star) + "</span>" +
-      "<div><h3>Top pick</h3>" +
-      '<p>รายการที่เลือกไว้เพื่อโฟกัส · ไม่ขึ้นกับตัวกรองด้านล่าง</p></div>' +
-      '<span class="dr-count dr-count--many">' + picks.length + "</span>" +
-      '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clearpicks="1">ล้างทั้งหมด</button>' +
-      "</div>" +
-      tableBlock(picks, true) +
-      "</section>";
+  // แท็บ 3 หน้า — Port / Top pick / DR ทั้งหมด
+  // ตัวเลขบนแท็บมาจากของที่ติ๊กไว้จริง ไม่ใช่ผลการกรอง จึงไม่กระพริบตามการค้นหา
+  var TABS = [
+    { id: "port", label: "Port", hint: "ถืออยู่จริง" },
+    { id: "pick", label: "Top pick", hint: "กำลังสนใจ" },
+    { id: "all", label: "DR ทั้งหมด", hint: "" }
+  ];
+  function tabsBlock() {
+    var n = {
+      port: markedAssets(state.port).length,
+      pick: markedAssets(state.picked).length,
+      all: state.view.assets.length
+    };
+    var out = '<div class="dr-tabs" role="tablist">';
+    for (var i = 0; i < TABS.length; i++) {
+      var t = TABS[i], on = state.tab === t.id;
+      out += '<button type="button" class="dr-tab' + (on ? " is-on" : "") +
+        '" data-dr-tab="' + t.id + '" role="tab" aria-selected="' + (on ? "true" : "false") + '"' +
+        (t.hint ? ' title="' + esc(t.hint) + '"' : "") + ">" +
+        esc(t.label) + '<span class="dr-tab-n">' + n[t.id] + "</span></button>";
+    }
+    return out + "</div>";
+  }
+
+  // เนื้อหาของแท็บที่เปิดอยู่
+  function tabBody(list) {
+    if (state.tab === "port") return markedBody(state.port, "Port", "ถือ");
+    if (state.tab === "pick") return markedBody(state.picked, "Top pick", "ติ๊กดาว");
+    return resultsBlock(list) + tableBlock(list);
+  }
+
+  // ตารางของแท็บ Port / Top pick — ว่างแล้วต้องบอกวิธีเพิ่ม ไม่ใช่หน้าเปล่า
+  function markedBody(map, label, verb) {
+    var rows = markedAssets(map);
+    if (!rows.length) {
+      return '<section class="dr-card dr-empty-tab">' +
+        "<h3>ยังไม่ได้เลือกรายการเข้า " + esc(label) + "</h3>" +
+        "<p>ไปที่แท็บ <b>DR ทั้งหมด</b> แล้วติ๊กช่อง <b>" + esc(label) +
+        "</b> ท้ายแถวของตัวที่" + esc(verb) + " รายการจะมารวมกันที่นี่</p>" +
+        "</section>";
+    }
+    return '<div class="dr-results"><span>' + esc(label) + " <b class=\"dr-num\">" +
+      rows.length + "</b> รายการ · ไม่ขึ้นกับตัวกรอง</span>" +
+      (map === state.picked
+        ? '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clearpicks="1">ล้างทั้งหมด</button>'
+        : '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clearport="1">ล้างทั้งหมด</button>') +
+      "</div>" + tableBlock(rows, true);
   }
 
   // ตารางว่าง — ต้องบอกให้ตรงว่า "ตัวกรองไหน" เป็นตัวตัดทิ้ง
@@ -1173,6 +1229,7 @@
         "เพราะ ATH ของมันคือสูงสุดเท่าที่มีข้อมูล เทียบกับตัวอื่นไม่ได้") +
       th("ลงจาก ATH 1 ปี", "fromAth1y", "dr-num-cell") +
       th("จดทะเบียนล่าสุด", "newest") + th("สถานะ", "status") +
+      '<th class="dr-port-col" title="ติ๊กว่าถือตัวนี้อยู่จริง แล้วดูรวมกันในแท็บ Port">Port</th>' +
       '<th class="dr-pick-col" title="ติ๊กเพื่อยกขึ้นตาราง Top pick ด้านบน">Top pick</th>' +
       '<th class="dr-ign-col" title="ติ๊กเพื่อดันไปท้ายตาราง">ไม่สนใจ</th>' +
       "</tr></thead><tbody>";
@@ -1197,11 +1254,11 @@
     var body = "";
     for (var g = 0; g < order.length; g++) {
       var label = field === "instrumentType" ? (E().TYPE_TH[order[g]] || order[g]) : order[g];
-      body += '<tr class="dr-group"><td colspan="13"><b>' + esc(label) + "</b> · " +
+      body += '<tr class="dr-group"><td colspan="14"><b>' + esc(label) + "</b> · " +
         map[order[g]].length + " สินทรัพย์</td></tr>" + assetRows(map[order[g]]);
     }
     if (ignoredList.length) {
-      body += '<tr class="dr-group dr-group--ignored"><td colspan="13">' +
+      body += '<tr class="dr-group dr-group--ignored"><td colspan="14">' +
         "<b>ไม่สนใจ</b> · " + ignoredList.length + " สินทรัพย์</td></tr>" +
         assetRows(ignoredList);
     }
@@ -1234,10 +1291,11 @@
       '<div class="dr-body">' +
       freshnessBlock() +
       summaryBlock() +
-      filterBlock() +
-      resultsBlock(list) +
-      topPickBlock() +
-      tableBlock(list) +
+      tabsBlock() +
+      // ตัวกรองมีผลกับแท็บ "DR ทั้งหมด" เท่านั้น แท็บ Port/Top pick
+      // ตั้งใจให้ไม่ขึ้นกับตัวกรอง จึงซ่อนแถบกรองไปเลยกันเข้าใจผิด
+      (state.tab === "all" ? filterBlock() : "") +
+      tabBody(list) +
       footBlock() +
       "</div>";
     wire(root);
@@ -1388,6 +1446,44 @@
         writeJson(PICK_KEY, state.picked);
         render();
       });
+    }
+
+    // ติ๊ก "ถืออยู่ในพอร์ต" — กลไกเดียวกับ Top pick แต่คนละ key
+    var pt = root.querySelectorAll("[data-dr-port]");
+    for (i = 0; i < pt.length; i++) {
+      (function (el) {
+        var k = el.getAttribute("data-dr-port");
+        el.addEventListener("click", function (ev) { ev.stopPropagation(); });
+        el.addEventListener("change", function (ev) {
+          ev.stopPropagation();
+          if (el.checked) state.port[k] = true;
+          else delete state.port[k];
+          writeJson(PORT_KEY, state.port);
+          render();
+        });
+      })(pt[i]);
+    }
+    var cpo = root.querySelectorAll("[data-dr-clearport]");
+    for (i = 0; i < cpo.length; i++) {
+      cpo[i].addEventListener("click", function () {
+        state.port = {};
+        writeJson(PORT_KEY, state.port);
+        render();
+      });
+    }
+
+    // สลับแท็บ — จำไว้ข้ามการโหลดหน้า เพราะคนที่ถือพอร์ตอยู่มักเปิดมาดูแท็บเดิมทุกวัน
+    var tb = root.querySelectorAll("[data-dr-tab]");
+    for (i = 0; i < tb.length; i++) {
+      (function (el) {
+        el.addEventListener("click", function () {
+          var id = el.getAttribute("data-dr-tab");
+          if (id === state.tab) return;
+          state.tab = id;
+          try { localStorage.setItem(TAB_KEY, id); } catch (e) {}
+          render();
+        });
+      })(tb[i]);
     }
 
     // ติ๊ก "ไม่สนใจ" — ต้องหยุด event ไม่ให้ลามไปกางแถว
@@ -1546,16 +1642,23 @@
     render();
   }
 
+  // รูปร่างไฟล์สำรอง — แยกออกมาเพราะต้องถูกตรวจว่าครบทุก key ที่ผู้ใช้ติ๊กเอง
+  // ถ้าลืมเพิ่ม key ใหม่ตรงนี้ ของที่ผู้ใช้ติ๊กไว้จะหายตอนย้ายเครื่องโดยไม่มีใครรู้
+  function exportPayload() {
+    return {
+      v: 1,
+      exportedAt: new Date().toISOString(),
+      sync: state.sync || null,
+      overrides: state.overrides || {},
+      ignored: state.ignored || {},
+      picked: state.picked || {},
+      port: state.port || {}
+    };
+  }
+
   function exportAll() {
     try {
-      var payload = {
-        v: 1,
-        exportedAt: new Date().toISOString(),
-        sync: state.sync || null,
-        overrides: state.overrides || {},
-        ignored: state.ignored || {},
-        picked: state.picked || {}
-      };
+      var payload = exportPayload();
       var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
@@ -1588,6 +1691,16 @@
               }
             }
             writeJson(PICK_KEY, state.picked);
+          }
+          // รายการในพอร์ต รวมกับของเดิม ไม่ทับทิ้ง
+          if (j && j.port && typeof j.port === "object") {
+            var po2;
+            for (po2 in j.port) {
+              if (Object.prototype.hasOwnProperty.call(j.port, po2) && j.port[po2]) {
+                state.port[po2] = true;
+              }
+            }
+            writeJson(PORT_KEY, state.port);
           }
           // รายการ "ไม่สนใจ" รวมกับของเดิม ไม่ทับทิ้ง
           if (j && j.ignored && typeof j.ignored === "object") {
@@ -1640,10 +1753,19 @@
     var pk = readJson(PICK_KEY);
     if (pk && typeof pk === "object") state.picked = pk;
   }
+  function hydratePort() {
+    var po = readJson(PORT_KEY);
+    if (po && typeof po === "object") state.port = po;
+    // แท็บที่เปิดค้างไว้ครั้งก่อน — ค่าที่ไม่รู้จักให้ตกกลับเป็น "all"
+    var tb = null;
+    try { tb = localStorage.getItem(TAB_KEY); } catch (e) { tb = null; }
+    state.tab = (tb === "port" || tb === "pick" || tb === "all") ? tb : "all";
+  }
 
   function boot() {
     hydrateStats();   // ราคาที่เคยโหลดไว้ (อายุไม่เกิน 12 ชม.) ใช้ต่อได้เลย
     hydrateIgnored();
+    hydratePort();
     hydratePicked();
     render();
     load(false);
@@ -1654,7 +1776,8 @@
     _buildView: buildView, _applySync: applySync,
     _loadQuote: loadQuote, _loadFx: loadFx, _visible: visibleAssets,
     _loadStats: loadAllStats, _loadStatsFor: loadStatsFor, _hydrateStats: hydrateStats,
-    _hydrateIgnored: hydrateIgnored, _hydratePicked: hydratePicked
+    _hydrateIgnored: hydrateIgnored, _hydratePicked: hydratePicked,
+    _hydratePort: hydratePort, _exportPayload: exportPayload
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();

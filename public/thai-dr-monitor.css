@@ -542,6 +542,54 @@ html[data-theme="light"] .dr-page {
 .dr-chip--ai[aria-pressed="true"] { background: var(--violet); border-color: transparent; color: var(--on-accent); }
 .dr-chip--ai[aria-pressed="true"] .dr-chip__count { background: var(--on-accent); color: var(--violet); }
 
+/* ---- แท็บ Port / Top pick / DR ทั้งหมด ---- */
+.dr-tabs {
+  display: flex; gap: var(--space-2); flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+.dr-tab {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: transparent; border: 0; border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font: 600 13.5px/20px var(--font-sans); color: var(--text-muted);
+  cursor: pointer;
+}
+.dr-tab:hover { color: var(--text); }
+.dr-tab.is-on { color: var(--accent); border-bottom-color: var(--accent); }
+.dr-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* ตัวเลขบนแท็บ — บอกว่าติ๊กไว้กี่ตัว ไม่ใช่ผลการกรอง */
+.dr-tab-n {
+  min-width: 20px; padding: 0 6px; border-radius: 999px;
+  background: var(--surface-2); color: var(--text-muted);
+  font: 600 11.5px/18px var(--font-sans); text-align: center;
+}
+.dr-tab.is-on .dr-tab-n { background: var(--accent-soft); color: var(--accent); }
+
+/* แท็บที่ยังไม่มีรายการ — บอกวิธีเพิ่ม ไม่ปล่อยหน้าว่าง */
+.dr-empty-tab { padding: var(--space-6) var(--space-5); text-align: center; }
+.dr-empty-tab h3 { margin: 0; font: 600 15px/22px var(--font-sans); color: var(--text); }
+.dr-empty-tab p { margin: var(--space-2) 0 0; font-size: 13px; line-height: 20px; color: var(--text-muted); }
+
+/* ---- คอลัมน์ Port ---- */
+/* ใช้ --accent (เขียวน้ำทะเล) ส่วน Top pick ใช้ --highlight (ทอง)
+   คนละสีเพราะติ๊กพร้อมกันได้ ต้องแยกออกจากกันด้วยตาในแถวเดียว */
+.dr-port-col { width: 60px; text-align: center; }
+.dr-table thead th.dr-port-col { text-align: center; }
+.dr-port {
+  display: inline-grid; place-items: center; width: 28px; height: 28px;
+  border-radius: var(--radius-sm); cursor: pointer; position: relative;
+}
+.dr-port:hover { background: var(--surface-2); }
+.dr-port input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; }
+.dr-portmark { font-size: 15px; line-height: 1; color: var(--text-subtle); }
+.dr-port.is-on .dr-portmark { color: var(--accent); }
+.dr-port:hover .dr-portmark { color: var(--accent); }
+.dr-port input:focus-visible + .dr-portmark { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* แถวที่ถือในพอร์ต — เส้นเขียวน้ำทะเล ชนะเส้นทองของ Top pick เพราะถือจริงสำคัญกว่า */
+.dr-table tbody tr.dr-row--port td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
 /* ---- คอลัมน์ Top pick + ตารางแยก ---- */
 .dr-pick-col { width: 76px; text-align: center; }
 .dr-table thead th.dr-pick-col { text-align: center; }
