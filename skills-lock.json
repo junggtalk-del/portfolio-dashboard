@@ -7,6 +7,12 @@
       "skillPath": "skills/engineering/debug-mantra/SKILL.md",
       "computedHash": "85875eb0c8570b163a3ff79c8ecc1bfb54152c1431b2d3ac247be176d951aa78"
     },
+    "humanize": {
+      "source": "marian-kamenistak/humanize-writing",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "369c1d52e09c98fbd3a882cd45fa2b5fecba281bae564bde8615c9b0b250d1f0"
+    },
     "management-talk": {
       "source": "thananon/9arm-skills",
       "sourceType": "github",
