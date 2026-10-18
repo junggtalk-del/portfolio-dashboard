@@ -311,5 +311,45 @@ const OPTS = (over = {}) => Object.assign({ data: DATA(mkCfg(over.cfg || {})), m
   check("compute() ไม่มี nextEarnings → earnings.state=stale (asOf 2026-01)", (() => { const o = OPTS(); o.nowMs = now; return TE.compute("TEST", snap(dipSeries(10)), o); })().earnings.state === "stale");
 })();
 
+
+// ---- ฐาน EPS ของ consensus ต้องตรงกับฐานของตาราง KB ----
+// เคสจริง: CBRS เขียน epsBasis ว่า "GAAP ... ไม่ได้เผยแพร่ EPS แบบ non-GAAP"
+// basisMatches() ใน thesis-page.js จับคำ non-GAAP ด้วย regex แบบหาทั้งข้อความ
+// คำในประโยคปฏิเสธจึงทำให้ระบบตีว่า KB เป็นฐาน non-GAAP แล้วขึ้นข้อความว่า
+// "EPS คาดเป็นคนละฐานกับตาราง KB" ทั้งที่ consensus กับ KB เป็น GAAP เหมือนกัน
+(() => {
+  const DATA = require("../public/thesis-data.js");
+  // ตรรกะคัดลอกตรงจาก thesis-page.js — ถ้าที่นั่นเปลี่ยน ต้องมาแก้ที่นี่ด้วย
+  const basisMatches = (b, kb) => {
+    if (!b || b === "unknown" || !kb) return false;
+    const kbNon = /non[- ]?gaap/i.test(kb);
+    const kbGaap = /gaap/i.test(kb) && !kbNon;
+    return (b === "non-GAAP" && kbNon) || (b === "GAAP" && kbGaap);
+  };
+  Object.keys(DATA.companies).forEach((t) => {
+    const c = DATA.companies[t];
+    const kb = (c.history && c.history.epsBasis) || "";
+    if (!kb) return;
+    const startsGaap = /^\s*GAAP/i.test(kb);
+    const readsNon = /non[- ]?gaap/i.test(kb);
+    check(t + ": epsBasis ที่ขึ้นต้นว่า GAAP ต้องไม่ถูกอ่านเป็น non-GAAP",
+      !(startsGaap && readsNon), kb.slice(0, 60));
+  });
+  Object.keys(DATA.companies).forEach((t) => {
+    const c = DATA.companies[t];
+    const kb = (c.history && c.history.epsBasis) || "";
+    const rows = (c.forwardView && c.forwardView.consensus) || [];
+    rows.forEach((r) => {
+      if (!r.basis || r.basis === "unknown" || !kb) return;
+      const kbNon = /non[- ]?gaap/i.test(kb);
+      const kbLabel = kbNon ? "non-GAAP" : (/gaap/i.test(kb) ? "GAAP" : "unknown");
+      if (r.basis === kbLabel) {
+        check(t + " " + r.fy + ": ฐานตรงกัน (" + r.basis + ") ต้องต่อเส้นกราฟได้",
+          basisMatches(r.basis, kb) === true, [r.basis, kbLabel]);
+      }
+    });
+  });
+})();
+
 console.log(`\n${passed + failed} checks · ${passed} passed · ${failed} failed`);
 process.exit(failed ? 1 : 0);
