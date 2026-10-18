@@ -30,7 +30,9 @@
   }
   function bar(pct, tone) {
     pct = Math.max(0, Math.min(100, pct || 0));
-    var col = tone === "rot" ? "linear-gradient(90deg,#38bdf8,#34d399)" : "linear-gradient(90deg,#a78bfa,#38bdf8)";
+    // ความยาวแถบคือตัวบอกค่าอยู่แล้ว สีจึงมีหน้าที่แค่แยกสองชุดออกจากกัน
+    // เดิมใช้ไล่เฉด (ฟ้า→เขียว / ม่วง→ฟ้า) ซึ่งอ่านค่าไม่ได้เพิ่มและม่วงไม่อยู่ในชุดสีของหน้านี้
+    var col = tone === "rot" ? "#34d399" : "#38bdf8";
     return '<span class="aic-bar"><i style="width:' + pct + '%;background:' + col + '"></i></span>';
   }
   function why(list) {

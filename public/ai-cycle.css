@@ -17,7 +17,10 @@
 .aic-hero-right { text-align: center; }
 .aic-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mc-muted); }
 .aic-phase-now { margin-top: 12px; font-size: 12px; color: var(--mc-muted); }
-.aic-phase-title { margin: 2px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -0.02em; background: linear-gradient(90deg, #a78bfa, #38bdf8, #34d399); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+/* สีบนหน้านี้ใช้สื่อความหมาย (เขียว=ขึ้น แดง=ลง เหลือง=เตือน) ชื่อเฟสจึงใช้
+   สีตัวอักษรปกติ แล้วให้ชิปเฟสข้าง ๆ เป็นตัวบอกสถานะแทน — ไล่เฉดบนตัวหนังสือ
+   ไม่ได้บอกอะไรเลย มันแค่แย่งสายตาจากสีที่มีความหมายจริง */
+.aic-phase-title { margin: 2px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -0.02em; color: var(--mc-text); }
 .aic-phase-thesis { margin: 8px 0 0; font-size: 14px; color: var(--mc-text-2); max-width: 560px; line-height: 1.6; }
 .aic-phase-next { margin-top: 12px; font-size: 13px; color: var(--mc-text-2); }
 .aic-phase-next b { color: var(--mc-text); }
@@ -88,7 +91,9 @@
 .aic-exp-row { display: grid; grid-template-columns: minmax(110px, 1fr) 2.2fr auto auto; align-items: center; gap: 12px; }
 .aic-exp-name { font-size: 12.5px; font-weight: 600; }
 .aic-exp-track { position: relative; height: 12px; background: var(--aic-chip); border-radius: 6px; overflow: visible; }
-.aic-exp-track i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #38bdf8, #818cf8); }
+/* แถบสัดส่วน: เดิมไล่ฟ้า→คราม ซึ่งครามไม่อยู่ในชุดสีของหน้านี้
+   ใช้ --aic-hot ที่ประกาศไว้แล้วเป็นสีเดียว ความยาวแถบคือตัวบอกค่า ไม่ใช่เฉดสี */
+.aic-exp-track i { display: block; height: 100%; border-radius: 6px; background: var(--aic-hot); }
 .aic-exp-sug { position: absolute; top: -3px; width: 3px; height: 18px; background: var(--mc-text); border-radius: 2px; transform: translateX(-50%); box-shadow: 0 0 0 1.5px var(--mc-bg); }
 .aic-exp-nums { font-size: 12px; font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .aic-exp-nums small { color: var(--mc-muted); font-weight: 400; }
@@ -206,7 +211,9 @@
 .aic-radar-legend { display: flex; gap: 18px; margin-top: 10px; font-size: 11.5px; color: var(--mc-text-2); }
 .aic-radar-legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
 .aic-lg-rot { background: #34d399; }
-.aic-lg-exp { background: repeating-linear-gradient(90deg, #a78bfa 0 4px, transparent 4px 7px); height: 2px !important; }
+/* เส้นประในคำอธิบายกราฟ — คู่กับ .aic-lg-rot (เขียว) ต้องแยกออกจากกันได้
+   ใช้ --aic-hot (ฟ้า) แทนม่วง ให้อยู่ในชุดสีเดียวกับเส้นจริงบนกราฟ */
+.aic-lg-exp { background: repeating-linear-gradient(90deg, var(--aic-hot) 0 4px, transparent 4px 7px); height: 2px !important; }
 
 /* Value-chain exposure line */
 .aic-vc-exp { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--mc-border); font-size: 12px; }

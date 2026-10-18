@@ -44,6 +44,11 @@
   --mc-sidebar-w: 260px;
   --mc-rail-w: 64px;
   --mc-header-h: 72px;
+  /* Inter คู่กับ Noto Sans Thai โดยตั้งใจ ไม่ใช่ค่า default ที่ติดมา:
+     ทั้งแอปเป็นภาษาไทย Noto Sans Thai เป็นหนึ่งในไม่กี่ฟอนต์ที่ครอบคลุมไทยครบ
+     และ Inter มีความสูง x-height กับความกว้างตัวเลขใกล้เคียงกัน จึงเรียงปนกัน
+     ในตารางราคาได้โดยบรรทัดไม่เต้น · ตัวเลขใช้ tabular-nums ทั้งระบบ
+     avoid-ai-design-ignore: T1 */
   --mc-font: "Inter", "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -187,8 +192,11 @@ html, body {
 }
 .mc-assistant-badge {
   width: 36px; height: 36px; border-radius: 10px;
-  background: linear-gradient(135deg, var(--mc-violet), var(--mc-blue));
-  display: grid; place-items: center; font-weight: 800; color: #fff; margin-bottom: 10px;
+  /* ป้าย "AI" เคยเป็นไล่เฉดม่วง-ฟ้า ซึ่งเป็นสีที่ไม่ได้สื่ออะไรในหน้านี้
+     เปลี่ยนมาใช้สี accent ของระบบ ให้เป็นสีเดียวกับตัวอื่นที่กดได้ */
+  background: rgba(20, 184, 166, 0.14);
+  border: 1px solid var(--mc-teal);
+  display: grid; place-items: center; font-weight: 800; color: var(--mc-teal); margin-bottom: 10px;
 }
 .mc-assistant strong { font-size: 13px; display: block; }
 .mc-assistant p { font-size: 11.5px; color: var(--mc-muted); margin: 4px 0 12px; }
@@ -254,7 +262,7 @@ html, body {
   width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
   border: 1px solid var(--mc-border); background: var(--mc-elevated); color: var(--mc-text-2); cursor: pointer;
 }
-.mc-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--mc-violet), var(--mc-cyan)); display: grid; place-items: center; font-weight: 700; color: #fff; }
+.mc-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--mc-elevated); border: 1px solid var(--mc-border); display: grid; place-items: center; font-weight: 700; color: var(--mc-text-2); }
 
 /* ---------------- Cards / panels ---------------- */
 .mc-card {
@@ -297,8 +305,10 @@ html, body {
 .mc-hero::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background:
+    /* แสงเรืองหลังหัวเรื่อง — เดิมเป็นฟ้า+ม่วง แต่ม่วงไม่ได้สื่ออะไรในระบบนี้
+       เปลี่ยนเป็นฟ้า+เขียวมิ้นต์ให้อยู่ในวงสีเดียวกับ accent หลัก */
     radial-gradient(120% 80% at 50% 120%, rgba(34, 211, 238, 0.22), transparent 60%),
-    radial-gradient(60% 50% at 85% -10%, rgba(168, 85, 247, 0.18), transparent 60%);
+    radial-gradient(60% 50% at 85% -10%, rgba(20, 184, 166, 0.16), transparent 60%);
 }
 .mc-hero-left { position: relative; z-index: 1; }
 .mc-hero-left h1 { font-size: 40px; line-height: 1.1; font-weight: 800; margin: 0 0 10px; }
