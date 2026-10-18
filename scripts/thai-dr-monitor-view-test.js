@@ -1010,6 +1010,49 @@ win.ThaiDrPage.load(false).then(function () {
     var j = JSON.parse(raw);
     return j[portA] === true && j[portB] === true;
   })(), win.localStorage.getItem("thai_dr_port_v1"));
+
+  // ---- ปุ่มโหลดราคาต้องมีในทุกแท็บ ----
+  // ของจริงที่เจอ: เปิดแท็บ Top pick แล้วราคาเป็น "—" ทั้งสามช่อง
+  // แต่ไม่มีปุ่มให้กดโหลด เพราะปุ่มอยู่ใน resultsBlock() ซึ่งเรียกเฉพาะแท็บ all
+  (function () {
+    // ล้างราคาที่โหลดไว้ ให้กลับไปอยู่สภาพ "ยังไม่มีข้อมูล"
+    var savedStats = win.ThaiDrPage._state.stats;
+    win.ThaiDrPage._state.stats = {};
+
+    win.ThaiDrPage._state.tab = "pick";
+    win.ThaiDrPage.render();
+    var hPick = html();
+    t("แท็บ Top pick มีปุ่มโหลดราคา", hPick.indexOf("data-dr-loadstats") >= 0,
+      (/โหลดราคา[^<]{0,20}/.exec(hPick) || [])[0] || "(ไม่มีปุ่มเลย)");
+
+    win.ThaiDrPage._state.tab = "port";
+    win.ThaiDrPage.render();
+    var hPort2 = html();
+    t("แท็บ Port มีปุ่มโหลดราคา", hPort2.indexOf("data-dr-loadstats") >= 0,
+      (/โหลดราคา[^<]{0,20}/.exec(hPort2) || [])[0] || "(ไม่มีปุ่มเลย)");
+
+    // จำนวนบนปุ่มต้องเป็นของแท็บนั้น ไม่ใช่ทั้ง 361 ตัว
+    var nPort = win.ThaiDrPage._state.port
+      ? Object.keys(win.ThaiDrPage._state.port).length : 0;
+    t("ปุ่มในแท็บ Port บอกจำนวนเฉพาะตัวในพอร์ต ไม่ใช่ทั้งตาราง",
+      hPort2.indexOf("โหลดราคา " + nPort + " ตัว") >= 0,
+      [(/โหลดราคา [0-9]+ ตัว/.exec(hPort2) || [])[0], "ควรเป็น " + nPort]);
+
+    // กดปุ่มในแท็บ Port ต้องยิงเฉพาะตัวในพอร์ต
+    t("กดโหลดในแท็บ Port แล้วคิวมีเท่าจำนวนในพอร์ต", (function () {
+      if (!clickAttr("data-dr-loadstats", "1")) return "กดไม่ได้";
+      var run = win.ThaiDrPage._state.statsRun;
+      return !!run && run.total === nPort;
+    })() === true, (function () {
+      var r = win.ThaiDrPage._state.statsRun;
+      return r ? [r.total, "ควรเป็น " + nPort] : "ไม่มี statsRun";
+    })());
+
+    win.ThaiDrPage._state.statsRun = null;
+    win.ThaiDrPage._state.stats = savedStats;
+    win.ThaiDrPage._state.tab = "all";
+    win.ThaiDrPage.render();
+  })();
   t("export ไฟล์สำรองมี port ไปด้วย", (function () {
     var snap = win.ThaiDrPage._exportPayload ? win.ThaiDrPage._exportPayload() : null;
     if (!snap) return "ไม่มี _exportPayload";

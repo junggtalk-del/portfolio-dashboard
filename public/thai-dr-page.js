@@ -349,7 +349,9 @@
   // ดึงทั้งชุดที่แสดงอยู่ — ทีละ STATS_CONCURRENCY ตัว กดหยุดได้
   function loadAllStats() {
     if (state.statsRun && state.statsRun.running) { stopStats(); return; }
-    var list = visibleAssets().filter(function (a) {
+    // ยิงเฉพาะรายการที่แท็บปัจจุบันแสดงอยู่ ไม่ใช่ทั้งตาราง
+    // อยู่แท็บ Port ที่มี 4 ตัวแล้วกดโหลด ต้องยิง 4 ครั้ง ไม่ใช่ 361 ครั้ง
+    var list = tabAssets().filter(function (a) {
       var s = state.stats[a.canonicalKey];
       return !s || s.state === "error";   // ที่ได้แล้ว/ไม่รองรับ ไม่ต้องยิงซ้ำ
     });
@@ -641,16 +643,11 @@
   }
 
   // แถบบอกว่ากรองเหลือเท่าไร + ปุ่มล้างตัวกรอง
-  function resultsBlock(list) {
-    var f = state.filters;
-    var active = [];
-    if (f.geo) active.push(f.geo);
-    if (f.type) active.push(E().TYPE_TH[f.type] || f.type);
-    if (f.multi) active.push("มี DR > 1");
-    if (f.isNew) active.push("จดทะเบียนใหม่");
-    if (f.review) active.push("รอตรวจ");
-    if (f.q) active.push("“" + f.q + "”");
-    // ปุ่มโหลดราคา + ความคืบหน้า
+  // ปุ่มโหลดราคา / สถานะราคา ของ "รายการที่ส่งเข้ามา" เท่านั้น
+  // แยกออกมาเพราะต้องใช้ทั้งแท็บ DR ทั้งหมด และแท็บ Port / Top pick
+  // เดิมฝังอยู่ใน resultsBlock() ซึ่งเรียกเฉพาะแท็บ all ทำให้สองแท็บนั้น
+  // ไม่มีปุ่มให้กดเลย ทั้งที่ราคายังเป็น "—"
+  function priceButton(list) {
     var run = state.statsRun;
     // นับแยก 3 อย่าง: โหลดได้แล้ว · ยังต้องโหลด · ดึงไม่ได้เพราะไม่รองรับตลาด
     // unsupported ต้องนับด้วย ไม่งั้นพอกรองเจอแต่ตลาดที่ไม่รองรับ (เช่น เวียดนาม
@@ -663,24 +660,38 @@
       else if (s && s.state === "unsupported") unsup++;
       else if (!s || s.state === "error") need++;
     }
-    var priceBtn;
     if (run && run.running) {
-      priceBtn = '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm" data-dr-loadstats="1">' +
+      return '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm" data-dr-loadstats="1">' +
         "หยุด (" + run.done + "/" + run.total + ")</button>";
-    } else if (need > 0) {
-      priceBtn = '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm" data-dr-loadstats="1">' +
+    }
+    if (need > 0) {
+      return '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm" data-dr-loadstats="1">' +
         ico(ICON.download) + "โหลดราคา " + need + " ตัว</button>";
-    } else if (have > 0) {
-      priceBtn = '<span class="dr-dim">ราคาครบแล้ว ' + have + " ตัว" +
+    }
+    if (have > 0) {
+      return '<span class="dr-dim">ราคาครบแล้ว ' + have + " ตัว" +
         (unsup > 0 ? " · อีก " + unsup + " ตัวดึงราคาไม่ได้ (ตลาดต้นทางยังไม่รองรับ)" : "") +
         (state.statsAt ? " · " + esc(thDateTime(new Date(state.statsAt).toISOString())) : "") + "</span>";
-    } else if (unsup > 0) {
-      // ไม่มีปุ่มให้กด เพราะกดแล้วก็ดึงไม่ได้ — แต่ต้องบอกเหตุผล ไม่ใช่เงียบ
-      priceBtn = '<span class="dr-dim">' + unsup +
-        " ตัวนี้ดึงราคาไม่ได้ · ตลาดต้นทางยังไม่รองรับการดึงราคาย้อนหลัง</span>";
-    } else {
-      priceBtn = "";
     }
+    if (unsup > 0) {
+      // ไม่มีปุ่มให้กด เพราะกดแล้วก็ดึงไม่ได้ — แต่ต้องบอกเหตุผล ไม่ใช่เงียบ
+      return '<span class="dr-dim">' + unsup +
+        " ตัวนี้ดึงราคาไม่ได้ · ตลาดต้นทางยังไม่รองรับการดึงราคาย้อนหลัง</span>";
+    }
+    return "";
+  }
+
+  function resultsBlock(list) {
+    var f = state.filters;
+    var active = [];
+    if (f.geo) active.push(f.geo);
+    if (f.type) active.push(E().TYPE_TH[f.type] || f.type);
+    if (f.multi) active.push("มี DR > 1");
+    if (f.isNew) active.push("จดทะเบียนใหม่");
+    if (f.review) active.push("รอตรวจ");
+    if (f.q) active.push("“" + f.q + "”");
+    // ปุ่มโหลดราคา + ความคืบหน้า
+    var priceBtn = priceButton(list);
 
     // จำนวนที่ติ๊กไม่สนใจ + ปุ่มซ่อน/แสดง
     var ignCount = 0, kk;
@@ -1147,6 +1158,14 @@
     return resultsBlock(list) + tableBlock(list);
   }
 
+  // รายการที่ "แท็บที่เปิดอยู่" แสดงจริง — ใช้เป็นฐานเดียวกันทั้งการวาดปุ่ม
+  // และการยิงโหลดราคา ไม่งั้นปุ่มบอกจำนวนหนึ่งแต่โหลดอีกจำนวนหนึ่ง
+  function tabAssets() {
+    if (state.tab === "port") return markedAssets(state.port);
+    if (state.tab === "pick") return markedAssets(state.picked);
+    return visibleAssets();
+  }
+
   // ตารางของแท็บ Port / Top pick — ว่างแล้วต้องบอกวิธีเพิ่ม ไม่ใช่หน้าเปล่า
   function markedBody(map, label, verb) {
     var rows = markedAssets(map);
@@ -1159,6 +1178,8 @@
     }
     return '<div class="dr-results"><span>' + esc(label) + " <b class=\"dr-num\">" +
       rows.length + "</b> รายการ · ไม่ขึ้นกับตัวกรอง</span>" +
+      // ปุ่มโหลดราคาต้องมีที่นี่ด้วย ไม่งั้นแท็บนี้เห็นราคาเป็น "—" แล้วกดอะไรไม่ได้
+      priceButton(rows) +
       (map === state.picked
         ? '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clearpicks="1">ล้างทั้งหมด</button>'
         : '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clearport="1">ล้างทั้งหมด</button>') +
