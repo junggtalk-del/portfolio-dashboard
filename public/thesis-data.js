@@ -2965,51 +2965,51 @@
       "name": "Taiwan Semiconductor Manufacturing Company",
       "layer": "foundry",
       "thesis": {
-        "statement": "TSMC คือโรงหลอมของยุค AI — ชิป AI ระดับแนวหน้าเกือบทั้งหมดของโลก (Nvidia, AMD, custom ASIC ของ Google/Amazon/Meta) ผลิตได้ที่ TSMC เท่านั้น บริษัทกินส่วนแบ่ง node ขั้นสูงราว ~90% มี pricing power และ margin ที่ขยับขึ้นต่อเนื่อง ขณะที่ demand จาก AI accelerator ถูกคาดว่าจะโตราว mid-40s% ต่อปีถึง 2029 — เป็นธุรกิจผูกขาดโดยพฤตินัยที่ยังซื้อขายในราคาสมเหตุสมผลเมื่อเทียบกับการเติบโต",
+        "statement": "TSMC คือโรงหลอมของยุค AI — ชิป AI ระดับแนวหน้าเกือบทั้งหมดของโลก (Nvidia, AMD, custom ASIC ของ Google/Amazon/Meta) ผลิตได้ที่ TSMC เท่านั้น บริษัทกินส่วนแบ่ง node ขั้นสูงราว ~90% มี pricing power และ margin ที่ขยับขึ้นต่อเนื่อง ขณะที่ demand จาก AI accelerator ถูกคาดว่าจะโตราว mid-to-high 50s% ต่อปีถึง 2029 (บริษัทยกจาก mid-40s% เมื่อ ต.ค. 2026) — เป็นธุรกิจผูกขาดโดยพฤตินัยที่ยังซื้อขายในราคาสมเหตุสมผลเมื่อเทียบกับการเติบโต",
         "pillars": [
           "ผูกขาดโดยพฤตินัย: ส่วนแบ่ง foundry ~70% และ ~90%+ ใน advanced node — ลูกค้า AI รายใหญ่ทุกรายไม่มีทางเลือกอื่น",
-          "AI accelerator เป็นเครื่องยนต์หลัก: บริษัทให้เป้าโต ~mid-40s% CAGR (2024-2029) และปี 2025 ทำได้ตามสัญญา",
+          "AI accelerator เป็นเครื่องยนต์หลัก: บริษัทยกเป้าโตเป็น ~mid-to-high 50s% CAGR (2024-2029) จาก mid-40s% เดิม · HPC ขึ้นเป็น 68% ของรายได้ Q3 2026",
           "Roadmap นำหน้าคู่แข่ง 1-2 ปี: N2 เข้าสู่ volume production ปลายปี 2025, A16 ตามมา H2/2026",
           "คุมคอขวด advanced packaging (CoWoS/SoIC) ของทั้งอุตสาหกรรม AI",
-          "การเงินระดับป้อมปราการ: gross margin ~59-60%, net cash แม้ลงทุน CapEx ~$40B+/ปี"
+          "การเงินระดับป้อมปราการ: gross margin ~66%, operating margin ~59% และยังเป็น net cash แม้ CapEx 2026 สูงเป็นสถิติ $60-64B"
         ]
       },
       "fundamentals": [
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+36% YoY (Q2 2026 — US$40.2B สถิติ, +12% QoQ) · FY2026 guide ยกเป็น >+40% YoY",
+          "current": "~+41% YoY ใน USD (Q3 2026 — US$46.7B สถิติ, +16% QoQ, สูงกว่าบนของ guidance) · FY2026 ยกเป็น ~+44%",
           "trend": "up",
-          "score": 92,
+          "score": 94,
           "impact": "positive",
-          "why": "รายได้ทำสถิติจากดีมานด์ AI — HPC โต +20% QoQ เป็น 66% ของรายได้ · TSMC ยก guidance ทั้งปีเป็น >+40% สะท้อนคอขวด AI ที่ยังตึง"
+          "why": "AI ทำให้รายได้เร่งทั้งที่ฐานใหญ่มากแล้ว — Q3 ทะลุบนของ guidance และ HPC ขึ้นเป็น 68% ของรายได้ · บริษัทยกเป้าทั้งปีเป็น ~44% และยก CAGR ของ AI accelerator เป็น mid-to-high 50s%"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "EPS US$4.31/ADR (Q2 2026) เร่งจาก $3.49 (Q1) — โตตามรายได้ + margin สถิติ",
+          "current": "EPS US$4.60/ADR (Q3 2026) จาก $4.31 (Q2) · +69% YoY ในสกุล NT$",
           "trend": "up",
-          "score": 91,
+          "score": 92,
           "impact": "positive",
-          "why": "กำไรเร่งตามรายได้และ margin ที่ทำ all-time high — operating leverage ของ node ล้ำสมัยชัดเจน"
+          "why": "กำไรโตเร็วกว่ารายได้จาก operating leverage ของ node ล้ำ — ยังเร่งต่อแม้ margin ถูกต้นทุน ramp 2nm กดลงเล็กน้อย"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "OCF สูงมาก แต่ CapEx 2026 ยกเป็นสถิติ ~$56B รองรับ AI — FCF ยังบวกแต่ถูกกดจาก capex",
+          "current": "CapEx 2026 ยืนสถิติ $60-64B · FCF ยังเป็นบวกแต่ถูก capex กดหนัก",
           "trend": "flat",
-          "score": 78,
+          "score": 76,
           "impact": "positive",
-          "why": "capex เร่งจาก ~$42B เป็น ~$56B เพื่อขยาย node ล้ำ/CoWoS — กด FCF ระยะสั้นแต่เป็นการลงทุนตามดีมานด์ที่ล็อกไว้แล้ว"
+          "why": "capex ปีนี้สูงสุดเป็นประวัติการณ์ และบริษัทบอกว่าปี 2026-2028 จะลงทุนสูงกว่า 3 ปีก่อนหน้ามาก — FCF ระยะสั้นถูกกด แต่เป็นการลงทุนตามดีมานด์ที่ลูกค้าจองไว้แล้ว"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "Gross margin 67.7% · operating margin 60.3% (Q2 2026) — ทั้งคู่ทำ all-time high",
-          "trend": "up",
-          "score": 94,
+          "current": "Gross 66.4% · operating 58.7% (Q3 2026) — ลดจากจุดสูงสุด Q2 (67.7% / 60.3%) เพราะต้นทุน ramp 2nm",
+          "trend": "flat",
+          "score": 91,
           "impact": "positive",
-          "why": "margin สูงสุดในประวัติศาสตร์จาก utilization เต็ม + ขึ้นราคา node ล้ำ + คุมต้นทุน — แม้ถูกกดบางส่วนจาก fab ต่างประเทศและ NT$ แข็ง"
+          "why": "margin ยังสูงระดับประวัติศาสตร์ แต่ช่วงนี้ถูกกดจากต้นทุน ramp 2nm และ fab ต่างประเทศ — guide Q4 ที่ 65-67% บอกว่าจะทรงตัว ไม่ใช่ขยายต่อ"
         },
         {
           "key": "roic",
@@ -3050,7 +3050,7 @@
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรเงินทุน",
-          "current": "CapEx ~$40B+ (2025) + ปันผลที่โตต่อเนื่อง",
+          "current": "CapEx 2026 $60-64B (สถิติ) + ปันผลที่โตต่อเนื่อง",
           "trend": "up",
           "score": 85,
           "impact": "positive",
@@ -3059,11 +3059,11 @@
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "forward P/E ~20-25x (mcap ~$1.83T) — ยังถูกกว่าหุ้น AI สหรัฐแทบทุกตัวเทียบการเติบโต",
+          "current": "forward P/E ~21-22x จาก consensus EPS ปี 2027 ~$21.9/ADR (ราคา ADR ~$470 · mcap ~$2.4T, ต.ค. 2026)",
           "trend": "flat",
           "score": 70,
           "impact": "positive",
-          "why": "~20-25x สำหรับบริษัทโต ~40% margin ~60% ผูกขาดคอขวด AI ทั้งโลก — ส่วนลดหลักคือความเสี่ยงภูมิรัฐศาสตร์ไต้หวัน ไม่ใช่คุณภาพธุรกิจ"
+          "why": "ราคาขึ้นเกือบ 60% ในปีนี้ แต่กำไรที่นักวิเคราะห์คาดปีหน้าก็ถูกยกขึ้นตาม — multiple จึงยังไม่แพงเทียบการเติบโต ส่วนลดหลักยังเป็นความเสี่ยงภูมิรัฐศาสตร์ไต้หวัน ไม่ใช่คุณภาพธุรกิจ"
         }
       ],
       "revenueQuality": {
@@ -3074,14 +3074,14 @@
         "segments": [
           {
             "name": "HPC (AI accelerator, CPU/GPU ดาต้าเซ็นเตอร์)",
-            "sharePct": 66,
-            "growthNote": "+20% QoQ — เครื่องยนต์หลัก · AI accelerator ดีมานด์ล้น node N3/N2 · advanced nodes = 77% ของ wafer",
+            "sharePct": 68,
+            "growthNote": "68% ของรายได้ Q3 2026 (จาก 66% ใน Q2) — AI accelerator + CPU ดาต้าเซ็นเตอร์",
             "trend": "up"
           },
           {
             "name": "Smartphone",
-            "sharePct": 25,
-            "growthNote": "iPhone/Android เรือธงใช้ N3/N2 — โตตามฤดูกาล ไม่ใช่ตัวขับหลักอีกต่อไป",
+            "sharePct": 23,
+            "growthNote": "~23% ของรายได้ Q3 2026 (ส่วนที่เหลือหลังหัก HPC/IoT/Auto/DCE) — สัดส่วนลดลงเพราะ HPC โตเร็วกว่า",
             "trend": "flat"
           },
           {
@@ -3105,17 +3105,17 @@
         ]
       },
       "aiExecution": {
-        "score": 92,
+        "score": 93,
         "items": [
           {
             "item": "AI accelerator ramp (Nvidia, AMD, custom ASIC ของ hyperscaler)",
             "status": "executing",
-            "evidence": "HPC = 66% ของรายได้ (+20% QoQ) · AI accelerator ดีมานด์ล้นจนต้องยก guidance ทั้งปีเป็น >+40% — เป็นคอขวดที่ NVIDIA/AMD/hyperscaler ทุกรายต้องผ่าน"
+            "evidence": "HPC = 68% ของรายได้ Q3 2026 · บริษัทยก CAGR ของ AI accelerator (2024-29) เป็น mid-to-high 50s% และยกเป้ารายได้ทั้งปี 2026 เป็น ~44%"
           },
           {
             "item": "N2 (2nm) เข้าสู่ volume production",
             "status": "executing",
-            "evidence": "N2 (2nm) เข้า volume production · advanced nodes (7nm ลงไป) = 77% ของ wafer revenue — ครองการผลิต node ล้ำเกือบเบ็ดเสร็จ"
+            "evidence": "2nm ขึ้นเป็น 8% ของ wafer revenue ใน Q3 2026 · advanced nodes (7nm ลงไป) = 79% — ครองการผลิต node ล้ำเกือบเบ็ดเสร็จ"
           },
           {
             "item": "Advanced packaging (CoWoS / SoIC)",
@@ -3125,7 +3125,7 @@
           {
             "item": "ขยายกำลังผลิตทั่วโลก (Arizona ~$165B, Japan, Germany)",
             "status": "on-track",
-            "evidence": "CapEx 2026 ยกเป็นสถิติ ~$56B (Arizona, Japan, Germany) — ลงทุนตามดีมานด์ AI ที่ล็อกไว้แล้ว"
+            "evidence": "CapEx 2026 ยืน $60-64B · มี fab ใหม่ราว 20 แห่งกำลังสร้าง (ส่วนใหญ่ในไต้หวัน) — ลงทุนตามดีมานด์ AI ที่ล็อกไว้แล้ว"
           },
           {
             "item": "Roadmap A16 / Super Power Rail (กำหนด H2/2026)",
@@ -3194,7 +3194,7 @@
         "items": [
           {
             "label": "CapEx",
-            "current": "~$40B+ ปี 2025 และมีแนวโน้มเพิ่มขึ้นในปี 2026",
+            "current": "$60-64B ปี 2026 (สถิติ) และจะสูงขึ้นอีกในปี 2027-2028",
             "assessment": "good",
             "why": "ลงทุนตาม demand ที่ลูกค้าจองล่วงหน้าจริง ไม่ใช่การเก็งกำไร — track record ความแม่นยำของการลงทุนดีมากมาหลายรอบวัฏจักร"
           },
@@ -3232,44 +3232,44 @@
       },
       "valuationView": {
         "level": "fair",
-        "note": "forward P/E ~20-25x (mcap ~$1.83T) สำหรับบริษัทที่รายได้โต ~40% margin ~68% และผูกขาดคอขวดการผลิตชิป AI ทั้งโลก — ถูกกว่าหุ้น AI สหรัฐแทบทุกตัวเทียบการเติบโต · ส่วนลดถาวรมาจากความเสี่ยงภูมิรัฐศาสตร์ไต้หวัน (tail risk) ไม่ใช่ปัญหาธุรกิจ — เหมาะกับผู้ที่รับความเสี่ยงภูมิรัฐศาสตร์ได้"
+        "note": "forward P/E ~21-22x จาก consensus EPS ปี 2027 ~$21.9/ADR (ราคา ADR ~$470, mcap ~$2.4T, ต.ค. 2026) สำหรับบริษัทที่รายได้โต ~44% margin ~66% และผูกขาดคอขวดการผลิตชิป AI — ยังถูกกว่าหุ้น AI สหรัฐส่วนใหญ่เทียบการเติบโต · ส่วนลดถาวรมาจากความเสี่ยงภูมิรัฐศาสตร์ไต้หวัน (tail risk) ไม่ใช่ปัญหาธุรกิจ"
       },
       "whatChanged": [
         {
-          "metric": "รายได้ (Q1 → Q2 2026, USD)",
-          "prev": "$35.9B",
-          "now": "$40.2B (+36% YoY, +12% QoQ) — สถิติใหม่",
+          "metric": "รายได้ (Q2 → Q3 2026, USD)",
+          "prev": "$40.2B",
+          "now": "$46.7B (+41% YoY, +16% QoQ) — สูงกว่าบนของ guidance $44.6-45.8B",
           "direction": "positive"
         },
         {
           "metric": "Gross margin",
-          "prev": "66.2%",
-          "now": "67.7% — all-time high",
-          "direction": "positive"
+          "prev": "67.7%",
+          "now": "66.4% — ต้นทุน ramp 2nm กดลง",
+          "direction": "negative"
         },
         {
           "metric": "Operating margin",
-          "prev": "~59%",
-          "now": "60.3% — all-time high",
-          "direction": "positive"
+          "prev": "60.3%",
+          "now": "58.7%",
+          "direction": "negative"
         },
         {
           "metric": "HPC/AI (สัดส่วนรายได้)",
-          "prev": "~57%",
-          "now": "66% (+20% QoQ)",
+          "prev": "66%",
+          "now": "68%",
           "direction": "positive"
         },
         {
           "metric": "เป้ารายได้ทั้งปี 2026",
-          "prev": "~mid-30s% YoY",
-          "now": "ยกเป็น >+40% YoY",
+          "prev": "สูงกว่า 40% เล็กน้อย",
+          "now": "~+44% YoY",
           "direction": "positive"
         },
         {
-          "metric": "CapEx 2026",
-          "prev": "~$42B",
-          "now": "~$56B — สถิติ รองรับ AI",
-          "direction": "neutral"
+          "metric": "CAGR ของ AI accelerator (2024-2029)",
+          "prev": "mid-40s%",
+          "now": "mid-to-high 50s%",
+          "direction": "positive"
         }
       ],
       "risks": [
@@ -3279,7 +3279,7 @@
         "การกระจุกตัวของลูกค้า: Apple และ Nvidia รวมกันคิดเป็นสัดส่วนรายได้ที่สูงมาก อำนาจต่อรองและชะตากรรมผูกกันแน่น",
         "ค่าเงิน NT$ แข็งและ margin dilution จาก fab ต่างประเทศ กัด gross margin ต่อเนื่องราว 2-4 จุดในปีข้างหน้า"
       ],
-      "asOf": "2026-08",
+      "asOf": "2026-10",
       "history": {
         "fyNote": "ปีบัญชีตรงกับปีปฏิทิน สิ้นสุดเดือนธันวาคม (FY2025 = ม.ค.–ธ.ค. 2025 รายงานผลครบแล้วเมื่อ ม.ค. 2026)",
         "epsBasis": "diluted EPS ต่อ 1 ADR ในสกุล USD (1 ADR = 5 หุ้นสามัญ), ADR ไม่เคยแตกหุ้น จึงไม่มี split adjustment",
@@ -3338,7 +3338,9 @@
           "https://stockanalysis.com/stocks/tsm/financials/cash-flow-statement/",
           "https://www.macrotrends.net/stocks/charts/TSM/taiwan-semiconductor-manufacturing/free-cash-flow",
           "https://www.statmuse.com/money/ask/tsm-stock-closing-price-december-31-2025",
-          "https://query1.finance.yahoo.com/v8/finance/chart/TSM (year-end unadjusted closes)"
+          "https://query1.finance.yahoo.com/v8/finance/chart/TSM (year-end unadjusted closes)",
+          "https://www.sec.gov/Archives/edgar/data/0001046179/000104617926000726/a3q26e_withguidancexfinal.htm",
+          "https://stockanalysis.com/stocks/tsm/history/"
         ],
         "quarters": [
           {
@@ -3460,6 +3462,16 @@
             "fcfB": 9.27,
             "priceQEnd": 330,
             "endDate": "2026-06-30"
+          },
+          {
+            "q": "Q3'26",
+            "endYm": "2026-09",
+            "revenueB": 46.72,
+            "epsAdj": 4.6,
+            "opMarginPct": 58.7,
+            "fcfB": null,
+            "priceQEnd": 456.19,
+            "endDate": "2026-09-30"
           }
         ],
         "instrument": {
@@ -3470,11 +3482,26 @@
         },
         "revenueBasis": "รายได้เป็นตัวเลข US$ ที่ TSMC รายงานอย่างเป็นทางการในตาราง guidance/actual ของแต่ละไตรมาส (investor.tsmc.com) — ไม่ใช่การแปลง NT$ ด้วยเรตตลาด · ตัวเลขรายปีอยู่ฐานเดียวกันอยู่แล้ว (ผลรวม 4 ไตรมาส ≈ ทั้งปี: FY2024 ~90.1 · FY2025 ~122.4)"
       },
-      "nextEarnings": "2026-10",
+      "nextEarnings": "2027-01",
       "forwardView": {
-        "asOf": "2026-08",
-        "estimateHistory": [],
+        "asOf": "2026-10",
+        "estimateHistory": [
+          {
+            "asOf": "2026-10",
+            "fy": "FY2027",
+            "eps": 21.93,
+            "revenue": null
+          }
+        ],
         "guidanceTrack": [
+          {
+            "quarter": "Q3 2026",
+            "metric": "revenue",
+            "guided": "~$44.6-45.8B",
+            "actual": "~$46.72B",
+            "result": "beat",
+            "magnitudePct": 3.4
+          },
           {
             "quarter": "Q2 2026",
             "metric": "revenue",
@@ -3503,13 +3530,20 @@
         "consensus": [
           {
             "fy": "FY2026",
-            "revenue": null,
+            "revenue": 176,
             "eps": null,
             "confidence": "low",
             "basis": "unknown"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": null,
+            "eps": 21.93,
+            "confidence": "medium",
+            "basis": "unknown"
           }
         ],
-        "note": "TSMC ให้ guidance รายได้เป็นช่วง US$ ทุกไตรมาส — ยืนยันได้ 3 ไตรมาส (Q4'25, Q1'26, Q2'26) beat ทุกครั้งแต่ขนาดเล็กลงเรื่อย ๆ (2.8% → 2.0% → 1.5%) · guidance Q3 2026 = ~$44.6-45.8B (+37% YoY ที่จุดกึ่งกลาง) · ทั้งปี 2026 บริษัทยกเป้าโตเป็น 'สูงกว่า 40% เล็กน้อย' · CapEx 2026 ~$60-64B · consensus ที่หาได้เป็นสกุล TWD (5.43 ล้านล้าน TWD · EPS 107.39 · 38 นักวิเคราะห์) ซึ่งเป็นคนละฐานกับ ADR USD ใน KB จึงไม่บันทึกตัวเลข เพราะแปลงเองจะเป็นการเดา · หมายเหตุ: รายได้ Q2'26 ที่ TSMC รายงานอย่างเป็นทางการคือ US$40.20B ขณะที่ตาราง KB บันทึก 40.98 (น่าจะแปลงจาก NT$ ด้วยเรตตลาดคนละตัว) — ต้องเลือกฐานให้ตรงกันทั้งชุดก่อนแก้"
+        "note": "TSMC ให้ guidance รายได้เป็นช่วง US$ ทุกไตรมาส — ยืนยันได้ 4 ไตรมาส beat ทุกครั้ง (2.8% → 2.0% → 1.5% → 3.4% จากจุดกึ่งกลาง) · guidance Q4 2026 = $52.3-54.3B · รายได้ FY2026 ~$176B คำนวณจากผลจริง 3 ไตรมาส + จุดกึ่งกลาง guidance Q4 จึงให้ความมั่นใจต่ำ · EPS ปี 2027 ~$21.9/ADR จาก 13 นักวิเคราะห์ (ต.ค. 2026; 90 วันก่อน ~$19.7) แหล่งเดียวและไม่ระบุฐานบัญชี"
       }
     },
     "AVGO": {
@@ -5728,9 +5762,9 @@
         "statement": "ASML คือผู้ผลิตเครื่อง EUV lithography เพียงรายเดียวในโลก — เครื่องที่ทำให้การผลิตชิปล้ำสมัยที่สุด (ต่ำกว่า 7nm) เกิดขึ้นได้จริงในเชิงฟิสิกส์ ชิป AI ทุกตัว (GPU ของ NVIDIA ที่ TSMC ผลิต) สุดท้ายพึ่งเครื่องของ ASML ทั้งสิ้น นี่คือ 'คนขายจอบเสียม' ที่ผูกขาดที่สุดของยุค AI: de-facto monopoly บน EUV และกำลังดัน High-NA EUV สำหรับ node ถัดไป รายได้เป็นวัฏจักร (ผูกกับรอบ capex ของโรงงานชิป) แต่คูเมืองลึกที่สุดในวงการเทค — R&D หลายทศวรรษ + ซัพพลายเออร์เฉพาะ (เลนส์ Zeiss) ที่ลอกเลียนไม่ได้ เดิมพันคือดีมานด์ AI ยืดรอบสร้างโรงงานออกไปหลายปี และ ASML เก็บเกี่ยวทั้งจากการขายเครื่องและธุรกิจบริการ (Installed Base) margin สูงที่โตตามฐานเครื่องที่ติดตั้ง",
         "pillars": [
           "ผูกขาด EUV — ผู้ผลิตเครื่อง EUV รายเดียว ไม่มีคู่แข่งสำหรับ lithography ต่ำกว่า 7nm · High-NA EUV ต่อยอดความนำอีกทศวรรษ",
-          "ดีมานด์ AI ดัน guidance ขึ้น 2 ครั้งในปี 2026 — FY2026 ยอดขายสุทธิ €43-45B (จาก €36-40B) เมื่อ capex fab ล้ำสมัย (TSMC/Samsung/Intel) เร่งเพื่อ AI",
-          "Installed Base Management (บริการ/อัปเกรด) ~€2.8B/ไตรมาส — recurring, margin สูงมาก, โตทุกครั้งที่ขายเครื่อง ช่วยกลบวัฏจักรของยอดขายเครื่อง",
-          "Gross margin 54%+ และสูงขึ้น — พลังตั้งราคาของผู้ผูกขาด (guide GM 54-56%)",
+          "ดีมานด์ AI ดัน guidance ขึ้นต่อเนื่อง — FY2026 ยอดขายสุทธิ €44-45B (จาก €36-40B ต้นปี) และลูกค้าเริ่มคุยออร์เดอร์ปี 2029-2030 จนบริษัทต้องหาทางเพิ่มกำลังผลิตปี 2028 เกินแผนเดิม",
+          "Installed Base Management (บริการ/อัปเกรด) ~€3.3B/ไตรมาส — recurring, margin สูงมาก, โตทุกครั้งที่ขายเครื่อง ช่วยกลบวัฏจักรของยอดขายเครื่อง",
+          "Gross margin 57.5% ใน Q3 2026 และยังมีแรงหนุน — พลังตั้งราคาของผู้ผูกขาด (ข้อตกลงราคาใหม่กับลูกค้าหลักเริ่มมีผลปี 2027 เต็มที่ปี 2028)",
           "แรงหนุนเชิงโครงสร้าง: ชิป AI ทุกตัวต้องใช้ ASML — ยิ่งโลกสร้าง compute มากเท่าไร ยิ่งต้องใช้เวเฟอร์ node ล้ำ ยิ่งต้องใช้เครื่อง ASML"
         ]
       },
@@ -5738,36 +5772,36 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "FY2026 guide €43-45B (~+35% YoY) ยกขึ้น 2 ครั้ง · Q2 2026 €9.3B",
+          "current": "Q3 2026 €11.7B (+55% YoY) · FY2026 guide €44-45B (~+36% YoY)",
           "trend": "up",
-          "score": 85,
+          "score": 87,
           "impact": "positive",
-          "why": "กลับมาเร่งแรงหลังช่วง digestion 2024-25 — ดีมานด์ AI ทำให้ลูกค้าเร่งสั่งเครื่อง node ล้ำ การยก guidance 2 ครั้งในปีเดียวเป็นสัญญาณดีมานด์ที่หายาก"
+          "why": "ลูกค้าเพิ่มประมาณการความต้องการเครื่องทั้งระยะสั้นและกลางจากการลงทุน AI — บริษัทบอกว่ากำลังผลิตที่วางไว้สำหรับปี 2027-2028 อาจไม่พอ"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "EPS €7.59 (Q2 2026) · net income €2.9B — โตตามรายได้ + margin ที่สูงขึ้น",
+          "current": "EPS €12.93 (~$14.9) ใน Q3 2026 จาก €7.58 (Q2) — รวมกำไรพิเศษ Mistral ~€0.5B · ตัดออกแล้วยังโต ~+50% QoQ",
           "trend": "up",
-          "score": 82,
+          "score": 86,
           "impact": "positive",
-          "why": "กำไรเร่งตามยอดขายเครื่องและบริการ margin สูง — operating leverage ของธุรกิจผูกขาดทำให้กำไรโตเร็วกว่ารายได้ในขาขึ้นของวัฏจักร"
+          "why": "กำไรโตเร็วกว่ายอดขายจาก margin ที่ขยาย — แม้ตัดกำไรตีมูลค่า Mistral ออก กำไรก็ยังเร่งชัดเจน"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "Q2 2026 FCF ~€1.3B — เป็นบวกแต่ผันผวนสูงตามจังหวะรับเงินลูกค้า/สินค้าคงคลัง",
-          "trend": "flat",
-          "score": 68,
-          "impact": "neutral",
-          "why": "FCF ของ ASML แกว่งแรงรายไตรมาส (prepayment ลูกค้า + inventory เครื่องราคาสูง) — ดูเป็นรายปีจะเห็นกระแสเงินสดแข็งแรง แต่เดา timing รายไตรมาสยาก"
+          "current": "FCF €11.4B ใน Q3 2026 จากเงินมัดจำลูกค้า (contract liabilities ระยะยาว €3.6B → €9.3B)",
+          "trend": "up",
+          "score": 80,
+          "impact": "positive",
+          "why": "เงินสดเข้าก้อนใหญ่เพราะลูกค้าจ่ายมัดจำล่วงหน้าเพื่อจองเครื่องปี 2027-2028 — สะท้อนดีมานด์จริง แต่เป็นจังหวะรับเงิน ไม่ใช่ระดับที่จะเกิดทุกไตรมาส"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "Gross margin 54.0% · operating margin 37.1% (Q2 2026) — สูงมากสำหรับธุรกิจฮาร์ดแวร์",
+          "current": "Gross margin 57.5% · operating margin ~44% (Q3 2026) — สูงสุดเป็นประวัติการณ์",
           "trend": "up",
-          "score": 88,
+          "score": 90,
           "impact": "positive",
           "why": "margin ระดับซอฟต์แวร์บนธุรกิจเครื่องจักร — พลังตั้งราคาของผู้ผูกขาด + สัดส่วนบริการ margin สูง guide ยกเป็น 54-56%"
         },
@@ -5783,7 +5817,7 @@
         {
           "key": "cash",
           "label": "เงินสดในมือ",
-          "current": "งบดุลแข็ง สถานะใกล้ net cash",
+          "current": "เงินสด+เงินลงทุนระยะสั้น €12.7B (สิ้น Q3 2026)",
           "trend": "flat",
           "score": 80,
           "impact": "positive",
@@ -5810,50 +5844,50 @@
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรเงินทุน",
-          "current": "R&D หนัก (High-NA EUV) + ปันผลเพิ่ม + buyback ต่อเนื่อง",
-          "trend": "flat",
-          "score": 80,
+          "current": "ซื้อหุ้นคืน €4.1B ใน Q3 2026 (โครงการ 2026-2028) + ปันผลระหว่างกาล €1.88/หุ้น",
+          "trend": "up",
+          "score": 84,
           "impact": "positive",
           "why": "ลงทุน R&D เพื่อรักษาความนำทางเทคโนโลยี (คูเมือง) ควบคู่คืนเงินผู้ถือหุ้นอย่างมีวินัย — จัดสรรทุนระดับตัวอย่างของอุตสาหกรรม"
         },
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "forward P/E ~40x (ราคา ADR ~$1,815 · mcap ~$700B, ก.ค. 2026)",
-          "trend": "down",
-          "score": 38,
-          "impact": "negative",
-          "why": "แพงเทียบค่าเฉลี่ยตัวเอง (~30-35x) — ตลาดจ่ายพรีเมียมให้การผูกขาด + reaccel จาก AI ราคาระดับนี้ฝังการเติบโตหลายปี และหุ้นไวต่อสัญญาณ order/วัฏจักรมาก"
+          "current": "forward P/E (12 เดือนข้างหน้า) ~30x (ราคา ADR ~$1,600-1,780 · ต.ค. 2026)",
+          "trend": "up",
+          "score": 55,
+          "impact": "neutral",
+          "why": "กำไรโตเร็วกว่าราคาหุ้นจน multiple ลดจาก ~40x กลางปีเหลือ ~30x — อยู่ในกรอบค่าเฉลี่ยตัวเอง (~30-35x) ไม่ได้ตึงเท่าช่วงกลางปี แต่ยังไวต่อสัญญาณวัฏจักร"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
         "consistency": 65,
         "recurringPct": 30,
-        "note": "รายได้เร่งตัวจากดีมานด์ AI (ยก guidance 2 ครั้ง) แต่มีลักษณะ 'วัฏจักร' สูงเชิงโครงสร้าง — ยอดขายเครื่องขึ้นกับรอบ capex ของโรงงานชิปไม่กี่ราย (จุดอ่อนด้าน consistency) · ตัวถ่วงคือ Installed Base Management (~30% ของยอดขาย) ที่เป็น recurring margin สูงและโตตามฐานเครื่องที่ติดตั้ง ช่วยกลบความผันผวน · หมายเหตุ: ASML เลิกเปิดตัวเลข net bookings รายไตรมาสแล้ว (ล่าสุด Q4'25 €13.2B, EUV €7.4B)",
+        "note": "รายได้เร่งตัวจากดีมานด์ AI แต่มีลักษณะ 'วัฏจักร' สูงเชิงโครงสร้าง — ยอดขายเครื่องขึ้นกับรอบ capex ของโรงงานชิปไม่กี่ราย (จุดอ่อนด้าน consistency) · ตัวถ่วงคือ Installed Base Management (~28% ของยอดขาย) ที่เป็น recurring margin สูง · ASML เลิกเปิดตัวเลข net bookings รายไตรมาสแล้ว — สัญญาณแทนคือเงินมัดจำลูกค้า (contract liabilities ระยะยาวเพิ่มจาก €3.6B เป็น €9.3B ใน Q3 2026)",
         "segments": [
           {
             "name": "Net system sales — EUV (รวม High-NA)",
-            "sharePct": 40,
-            "growthNote": "เครื่องยนต์การโต — node ล้ำสำหรับ AI/HPC · High-NA เริ่มส่งมอบลูกค้าชั้นนำ",
+            "sharePct": 35,
+            "growthNote": "€4.1B ใน Q3 2026 (รวม High-NA 1 เครื่อง)",
             "trend": "up"
           },
           {
             "name": "Net system sales — DUV + metrology",
-            "sharePct": 30,
-            "growthNote": "ฐานกว้างสำหรับ node ผู้ใหญ่/mature — โตตามการขยายกำลังการผลิตทั่วไป",
-            "trend": "flat"
+            "sharePct": 37,
+            "growthNote": "€4.3B ใน Q3 2026 — DUV ยังขายดีตามการขยายกำลังผลิตทั้ง logic และ memory",
+            "trend": "up"
           },
           {
             "name": "Installed Base Management (บริการ + อัปเกรด)",
-            "sharePct": 30,
-            "growthNote": "~€2.8B/ไตรมาส — recurring, margin สูงมาก, โตทุกครั้งที่ขายเครื่องเพิ่ม",
+            "sharePct": 28,
+            "growthNote": "€3.3B ใน Q3 2026 (จาก €2.8B ใน Q2) — โตตามฐานเครื่องที่ติดตั้งสะสม",
             "trend": "up"
           }
         ]
       },
       "aiExecution": {
-        "score": 85,
+        "score": 88,
         "items": [
           {
             "item": "ผูกขาด EUV — ผู้เปิดทางเดียวสู่ชิปต่ำกว่า 7nm",
@@ -5868,12 +5902,12 @@
           {
             "item": "Installed Base Management — บริการ margin สูง recurring",
             "status": "executing",
-            "evidence": "~€2.8B/ไตรมาส และโตตามฐานเครื่องที่ติดตั้งสะสม — เปลี่ยนธุรกิจวัฏจักรให้มีขา recurring ที่คาดการณ์ได้และกำไรสูง"
+            "evidence": "€3.3B ใน Q3 2026 (จาก €2.8B ใน Q2) และโตตามฐานเครื่องที่ติดตั้งสะสม — ขา recurring ที่คาดการณ์ได้และกำไรสูง"
           },
           {
-            "item": "ดีมานด์ AI → ยก guidance 2 ครั้งในปี 2026",
+            "item": "ดีมานด์ AI → ยก guidance และกำลังผลิตต่อเนื่อง",
             "status": "executing",
-            "evidence": "FY2026 ยอดขายสุทธิยกจาก €36-40B เป็น €43-45B และ GM เป็น 54-56% — หลักฐานตรงว่ารอบ capex ล้ำสมัยกำลังเร่งจริงเพื่อ AI"
+            "evidence": "FY2026 €44-45B (ยกขอบล่างอีกครั้ง) · ลูกค้าเริ่มคุยออร์เดอร์ปี 2029-2030 และบริษัทกำลังหาทางเพิ่มกำลังผลิตปี 2028 เกินแผนเดิม"
           },
           {
             "item": "คูเมือง R&D + ซัพพลายเชน (Zeiss optics)",
@@ -5942,7 +5976,7 @@
         ]
       },
       "capitalAllocation": {
-        "score": 80,
+        "score": 84,
         "verdict": "จัดสรรทุนระดับตัวอย่าง — ลงทุน R&D หนักเพื่อรักษาคูเมือง (High-NA) ควบคู่คืนเงินผู้ถือหุ้นอย่างมีวินัย (ปันผลเพิ่ม + buyback ลดจำนวนหุ้น) บนงบดุลที่แข็ง จุดที่ต้องยอมรับคือรายได้เป็นวัฏจักร ทำให้ผลตอบแทนแต่ละปีไม่สม่ำเสมอ",
         "items": [
           {
@@ -5953,13 +5987,13 @@
           },
           {
             "label": "เงินปันผล",
-            "current": "เพิ่มต่อเนื่อง",
+            "current": "ปันผลระหว่างกาล €1.88/หุ้น (จ่าย 4 พ.ย. 2026) และเพิ่มต่อเนื่อง",
             "assessment": "good",
             "why": "ประวัติปันผลเพิ่มสม่ำเสมอแบบ compounder — เป็นมิตรต่อผู้ถือหุ้นระยะยาว"
           },
           {
             "label": "Buyback",
-            "current": "ซื้อหุ้นคืนต่อเนื่องจนจำนวนหุ้นลดสุทธิ",
+            "current": "€4.1B ใน Q3 2026 ภายใต้โครงการ 2026-2028 — จำนวนหุ้นลดสุทธิ",
             "assessment": "good",
             "why": "คืนเงินส่วนเกินอย่างมีวินัยและเพิ่มมูลค่าต่อหุ้น"
           },
@@ -5972,59 +6006,59 @@
         ]
       },
       "valuationView": {
-        "level": "expensive",
-        "note": "forward P/E ~40x (ราคา ADR ~$1,815, mcap ~$700B) — แพงเทียบค่าเฉลี่ยตัวเอง (~30-35x) ตลาดจ่ายพรีเมียมให้การผูกขาดที่แทบไม่มีความเสี่ยงถูกแทนที่ + reaccel จาก AI · ราคาระดับนี้ฝังการเติบโตหลายปีและทำให้หุ้นไวต่อสัญญาณ order/วัฏจักร fab มาก — คุณภาพธุรกิจสูงสุด แต่ 'ราคาของคุณภาพ' ก็สูงตาม เหมาะสะสมจังหวะย่อของวัฏจักรมากกว่าไล่ราคาช่วง guidance พุ่ง"
+        "level": "fair",
+        "note": "forward P/E ~30x (12 เดือนข้างหน้า, ราคา ADR ~$1,600-1,780 ต.ค. 2026 · mcap ~$620-680B) — ลดจาก ~40x กลางปีเพราะกำไรโตเร็วกว่าราคา และอยู่ในกรอบค่าเฉลี่ยตัวเอง (~30-35x) · ตัวเลข trailing ยังสูงกว่านี้เพราะรวมกำไรพิเศษ Mistral · คุณภาพธุรกิจสูงสุด แต่หุ้นยังแกว่งแรงตามสัญญาณวัฏจักร เหมาะสะสมจังหวะย่อมากกว่าไล่ราคา"
       },
       "whatChanged": [
         {
-          "metric": "รายได้ (Q1 → Q2 2026)",
-          "prev": "€8.8B",
-          "now": "€9.3B — net income €2.9B, op margin 37.1%",
+          "metric": "รายได้ (Q2 → Q3 2026)",
+          "prev": "€9.3B",
+          "now": "€11.7B (+55% YoY) — ในกรอบ guidance €11.0-12.0B",
           "direction": "positive"
         },
         {
-          "metric": "Guidance FY2026 (ยอดขายสุทธิ)",
-          "prev": "€36-40B",
-          "now": "€43-45B — ยกครั้งที่ 2 จากดีมานด์ AI",
+          "metric": "Gross margin",
+          "prev": "54.0%",
+          "now": "57.5% — สูงกว่ากรอบ 55-57% ที่ให้ไว้",
           "direction": "positive"
         },
         {
-          "metric": "Guidance gross margin FY2026",
-          "prev": "51-53%",
-          "now": "54-56%",
+          "metric": "กำไรสุทธิ",
+          "prev": "€2.9B",
+          "now": "€5.0B (รวมกำไรตีมูลค่า Mistral ~€0.5B)",
           "direction": "positive"
         },
         {
-          "metric": "Gross margin (จริง)",
-          "prev": "ตาม guide",
-          "now": "54.0% (เหนือ guide จากสัดส่วนบริการ margin สูง)",
+          "metric": "Free cash flow",
+          "prev": "~€1.3B",
+          "now": "€11.4B — เงินมัดจำลูกค้าจองเครื่องปี 2027-28",
+          "direction": "positive"
+        },
+        {
+          "metric": "Guidance FY2026",
+          "prev": "€43-45B · GM 54-56%",
+          "now": "€44-45B · GM ~56%",
           "direction": "positive"
         },
         {
           "metric": "Installed Base Management",
-          "prev": "โตตามฐานเครื่อง",
-          "now": "€2.8B/ไตรมาส — recurring margin สูง",
+          "prev": "€2.8B",
+          "now": "€3.3B",
           "direction": "positive"
-        },
-        {
-          "metric": "จีน (สัดส่วนยอดขาย)",
-          "prev": "—",
-          "now": "~20% ภายใต้ export controls สหรัฐ/เนเธอร์แลนด์",
-          "direction": "negative"
         }
       ],
       "risks": [
         "วัฏจักร (cyclicality): รายได้ผูกกับรอบ capex ของโรงงานชิป (TSMC/Samsung/Intel) — ถ้ารอบลงทุนชะลอ ยอดขายเครื่องหดแรงและเร็ว (เคยเกิดช่วง digestion 2023-2024) และหุ้น multiple สูงจะโดนลงโทษหนัก",
         "จีน + export controls: ~20% ของยอดขายอยู่ภายใต้กฎจำกัดของสหรัฐ/เนเธอร์แลนด์ — ความตึงเครียดภูมิรัฐศาสตร์เพิ่มความเสี่ยงถูกตัดตลาดเพิ่ม และเร่งให้จีนพยายามสร้าง lithography เอง (SMEE)",
         "การกระจุกตัวของลูกค้า: พึ่งลูกค้าไม่กี่ราย (TSMC เป็นรายใหญ่สุด) — ถ้าลูกค้าหลักเลื่อนแผน fab หรือสะดุด order ก้อนใหญ่กระทบทันที",
-        "Valuation ~40x: แพงเทียบประวัติตัวเอง — หุ้นไวมากต่อทุกสัญญาณ order/guidance และจุดกลับของวัฏจักร แม้พื้นฐานผูกขาดไม่เปลี่ยน",
+        "Valuation ~30x (forward 12 เดือน): อยู่ในกรอบค่าเฉลี่ยตัวเองแต่ยังไวต่อทุกสัญญาณ order/วัฏจักร — หลังงบ Q3 ราคาแกว่งเพราะรายได้ต่ำกว่าที่ตลาดคาดเล็กน้อย แม้พื้นฐานผูกขาดไม่เปลี่ยน",
         "High-NA adoption: เครื่องรุ่นถัดไปแพงมาก (~€350M/เครื่อง) — ถ้าลูกค้าชะลอรับ High-NA หรือ node ถัดไปสะดุดทางเทคนิค การเติบโตระยะยาวจะช้าลง"
       ],
-      "asOf": "2026-08",
-      "nextEarnings": "2026-10",
+      "asOf": "2026-10",
+      "nextEarnings": "2027-01",
       "history": {
         "fyNote": "ปีบัญชี = ปีปฏิทิน (สิ้นสุด ธ.ค.) — FY2021-FY2025 · ตัวเลขแปลงเป็น USD (ADR)",
-        "epsBasis": "diluted GAAP, USD (ADR) — ASML รายงาน EUR แปลงด้วยอัตราเฉลี่ยรายปี · ไม่มี split",
+        "epsBasis": "diluted GAAP, USD (ADR) — ASML รายงาน EUR · รายปีแปลงด้วยอัตราเฉลี่ยรายปี · รายไตรมาสแปลงด้วยอัตราเฉลี่ยรายไตรมาส (แก้ ต.ค. 2026: เดิมตารางรายไตรมาสเป็นตัวเลข EUR ทำให้ P/E ย้อนหลังสูงเกินจริงราว 15%) · ไม่มี split",
         "years": [
           {
             "fy": "FY2021",
@@ -6072,119 +6106,132 @@
             "priceFYEnd": 1064.74
           }
         ],
-        "notes": "ตัวเลขแปลง USD จากงบ EUR ด้วยอัตราเฉลี่ยรายปี (~2-3% ความคลาด) · operating margin เป็นอัตราส่วนจึงไม่ขึ้นกับ FX · FCF ผันผวนสูง: พุ่งปี 2021 (prepayment ลูกค้า) ต่ำสุด ~$4.7B ปี 2023 (สต๊อก/WIP) แล้วฟื้นเป็น ~$14B ปี 2025 · ราคาเป็น ADR (Nasdaq) ปิดสิ้นปีจริง USD ไม่มี split · จำนวนหุ้นลดจาก ~410M เป็น ~389M จาก buyback",
+        "notes": "ตัวเลขแปลง USD จากงบ EUR ด้วยอัตราเฉลี่ยรายปี (~2-3% ความคลาด) · operating margin เป็นอัตราส่วนจึงไม่ขึ้นกับ FX · FCF ผันผวนสูง: พุ่งปี 2021 (prepayment ลูกค้า) ต่ำสุด ~$4.7B ปี 2023 (สต๊อก/WIP) แล้วฟื้นเป็น ~$14B ปี 2025 · ราคาเป็น ADR (Nasdaq) ปิดสิ้นปีจริง USD ไม่มี split · จำนวนหุ้นลดจาก ~410M เป็น ~389M จาก buyback · ต.ค. 2026: แปลงตารางรายไตรมาสทั้งหมดจาก EUR เป็น USD (รายได้ / EPS / FCF) ด้วยอัตราเฉลี่ยรายไตรมาส EUR/USD ~1.05-1.17 ที่ได้จาก EPS สกุล USD ของ alphaquery เทียบ EPS EUR ของบริษัท (Q2'25 ใช้ 1.134 เพราะแหล่งนั้นให้ตัวเลขผิด) · ผลรวม 4 ไตรมาสปี 2025 หลังแปลง ~$37.0B ตรงกับรายได้ทั้งปี ~$36.9B ในตาราง",
         "sources": [
           "https://stockanalysis.com/stocks/asml/financials/",
-          "https://www.asml.com/en/news/press-releases/2026/q2-2026-financial-results"
+          "https://www.asml.com/en/news/press-releases/2026/q2-2026-financial-results",
+          "https://www.sec.gov/Archives/edgar/data/0000937966/000162828026065813/pressreleasefinancialresul.htm",
+          "https://www.alphaquery.com/stock/ASML/earnings-history",
+          "https://stockanalysis.com/stocks/asml/history/"
         ],
         "quarters": [
           {
             "q": "Q3'23",
             "endYm": "2023-09",
-            "revenueB": 6.67,
-            "epsAdj": 4.81,
+            "revenueB": 7.25,
+            "epsAdj": 5.23,
             "opMarginPct": 32.7,
-            "fcfB": 0.63,
+            "fcfB": 0.68,
             "priceQEnd": 580
           },
           {
             "q": "Q4'23",
             "endYm": "2023-12",
-            "revenueB": 7.24,
-            "epsAdj": 5.2,
+            "revenueB": 7.8,
+            "epsAdj": 5.6,
             "opMarginPct": 33.1,
-            "fcfB": 2.61,
+            "fcfB": 2.81,
             "priceQEnd": 755
           },
           {
             "q": "Q1'24",
             "endYm": "2024-03",
-            "revenueB": 5.29,
-            "epsAdj": 3.11,
+            "revenueB": 5.75,
+            "epsAdj": 3.38,
             "opMarginPct": 26.3,
-            "fcfB": -0.67,
+            "fcfB": -0.73,
             "priceQEnd": 1020
           },
           {
             "q": "Q2'24",
             "endYm": "2024-06",
-            "revenueB": 6.24,
-            "epsAdj": 4.01,
+            "revenueB": 6.72,
+            "epsAdj": 4.32,
             "opMarginPct": 29.4,
-            "fcfB": 0.39,
+            "fcfB": 0.42,
             "priceQEnd": 1035
           },
           {
             "q": "Q3'24",
             "endYm": "2024-09",
-            "revenueB": 7.47,
-            "epsAdj": 5.28,
+            "revenueB": 8.2,
+            "epsAdj": 5.8,
             "opMarginPct": 32.7,
-            "fcfB": 0.54,
+            "fcfB": 0.59,
             "priceQEnd": 845
           },
           {
             "q": "Q4'24",
             "endYm": "2024-12",
-            "revenueB": 9.26,
-            "epsAdj": 6.84,
+            "revenueB": 9.88,
+            "epsAdj": 7.3,
             "opMarginPct": 36.2,
-            "fcfB": 8.84,
+            "fcfB": 9.43,
             "priceQEnd": 683
           },
           {
             "q": "Q1'25",
             "endYm": "2025-03",
-            "revenueB": 7.74,
-            "epsAdj": 5.99,
+            "revenueB": 8.15,
+            "epsAdj": 6.31,
             "opMarginPct": 35.4,
-            "fcfB": -0.47,
+            "fcfB": -0.49,
             "priceQEnd": 690
           },
           {
             "q": "Q2'25",
             "endYm": "2025-06",
-            "revenueB": 7.69,
-            "epsAdj": 5.9,
+            "revenueB": 8.72,
+            "epsAdj": 6.69,
             "opMarginPct": 34.6,
-            "fcfB": 0.33,
+            "fcfB": 0.37,
             "priceQEnd": 785
           },
           {
             "q": "Q3'25",
             "endYm": "2025-09",
-            "revenueB": 7.52,
-            "epsAdj": 5.48,
+            "revenueB": 8.8,
+            "epsAdj": 6.41,
             "opMarginPct": 32.8,
-            "fcfB": 0.26,
+            "fcfB": 0.3,
             "priceQEnd": 960
           },
           {
             "q": "Q4'25",
             "endYm": "2025-12",
-            "revenueB": 9.72,
-            "epsAdj": 7.34,
+            "revenueB": 11.32,
+            "epsAdj": 8.55,
             "opMarginPct": 35.3,
-            "fcfB": 10.96,
+            "fcfB": 12.77,
             "priceQEnd": 1080
           },
           {
             "q": "Q1'26",
             "endYm": "2026-03",
-            "revenueB": 8.77,
-            "epsAdj": 7.15,
+            "revenueB": 10.27,
+            "epsAdj": 8.37,
             "opMarginPct": 36,
-            "fcfB": -2.59,
+            "fcfB": -3.03,
             "priceQEnd": 1250
           },
           {
             "q": "Q2'26",
             "endYm": "2026-06",
-            "revenueB": 9.33,
-            "epsAdj": 7.58,
+            "revenueB": 10.84,
+            "epsAdj": 8.81,
             "opMarginPct": 37.1,
-            "fcfB": 1.4,
+            "fcfB": 1.63,
             "priceQEnd": 1987
+          },
+          {
+            "q": "Q3'26",
+            "endYm": "2026-09",
+            "revenueB": 13.42,
+            "epsAdj": 14.88,
+            "opMarginPct": 44.3,
+            "fcfB": 13.07,
+            "priceQEnd": 1811.67,
+            "epsNote": "รวมกำไรจากการตีมูลค่าเงินลงทุนใน Mistral AI ~€0.5B (~$1.5 ต่อหุ้น) · ตัดรายการนี้ออก EPS ราว $13.4 — ยังโตแรงจาก Q2 แต่ไม่ถึงตัวเลขพาดหัว"
           }
         ],
         "instrument": {
@@ -6195,16 +6242,30 @@
         }
       },
       "forwardView": {
-        "asOf": "2026-08",
+        "asOf": "2026-10",
         "estimateHistory": [
           {
             "asOf": "2026-08",
             "fy": "FY2026",
             "eps": null,
             "revenue": 43.21
+          },
+          {
+            "asOf": "2026-10",
+            "fy": "FY2027",
+            "eps": 58.05,
+            "revenue": null
           }
         ],
         "guidanceTrack": [
+          {
+            "quarter": "Q3 2026",
+            "metric": "revenue",
+            "guided": "~€11.0-12.0B",
+            "actual": "~€11.66B",
+            "result": "beat",
+            "magnitudePct": 1.4
+          },
           {
             "quarter": "Q2 2026",
             "metric": "revenue",
@@ -6217,20 +6278,20 @@
         "consensus": [
           {
             "fy": "FY2026",
-            "revenue": 43.21,
+            "revenue": 44.5,
             "eps": null,
-            "confidence": "high",
-            "basis": "non-GAAP"
+            "confidence": "low",
+            "basis": "unknown"
           },
           {
             "fy": "FY2027",
             "revenue": 54.33,
-            "eps": null,
-            "confidence": "high",
-            "basis": "non-GAAP"
+            "eps": 58.05,
+            "confidence": "medium",
+            "basis": "unknown"
           }
         ],
-        "note": "ASML ให้ guidance รายได้เป็นช่วง EUR ทุกไตรมาส + เป้าทั้งปี — ยืนยัน guidance→ผลจริงได้ 1 ไตรมาส (Q2 2026: คาด €8.4-9.0B ทำได้ €9.3B) ไตรมาสก่อนหน้ายังยืนยันตัวเลขไม่ได้จึงไม่บันทึก · <b>บริษัทยกเป้าทั้งปี 2026 สองรอบ: €36-40B → €43-45B</b> (gross margin 51-53% → 54-56%) · guidance Q3 2026 = €11.0-12.0B · ASML เลิกประกาศยอด bookings รายไตรมาสตั้งแต่ Q1 2026 · consensus 37 นักวิเคราะห์เป็นสกุล EUR (rev €43.21B/€54.33B · EPS €38.03/€51.42) — บันทึกเฉพาะ revenue เพราะฐานตรงกับตาราง KB ส่วน EPS เว้นไว้ เนื่องจาก KB ใช้ EPS สกุล USD (ADR) ถ้าใส่ตัวเลข EUR ลงไป Forward P/E จะคำนวณข้ามสกุลและผิด"
+        "note": "ASML ให้ guidance รายได้เป็นช่วง EUR ทุกไตรมาส — ยืนยันได้ 2 ไตรมาส beat ทั้งคู่ (Q2 +6.9%, Q3 +1.4% จากจุดกึ่งกลาง) · guidance Q4 2026 = €14.2-15.2B · รายได้ใน block นี้เป็น EUR (FY2026 €44.5B = จุดกึ่งกลาง guidance บริษัท จึงมั่นใจต่ำ · FY2027 €54.3B เป็น consensus ณ ส.ค.) ส่วน EPS ปี 2027 ~$58/ADR เป็น USD จาก 7 นักวิเคราะห์ (ต.ค. 2026) ฐานเดียวกับตาราง KB ที่แปลงเป็น USD แล้ว จึงใช้คิด forward P/E ได้"
       }
     },
     "QQQM": {
@@ -8947,7 +9008,7 @@
         "ความเสี่ยงเชิงการเมือง — รัฐบาลสหรัฐเป็นผู้ถือหุ้นรายใหญ่ ซึ่งช่วยเรื่องเงินทุนและนโยบาย แต่ก็แปลว่าการตัดสินใจทางธุรกิจอาจถูกกดดันด้วยเป้าหมายเชิงยุทธศาสตร์ของประเทศ และเปลี่ยนได้เมื่อรัฐบาลเปลี่ยน"
       ],
       "asOf": "2026-09",
-      "nextEarnings": "2026-10",
+      "nextEarnings": "2026-10-29",
       "history": {
         "epsBasis": "diluted GAAP (ปีบัญชี = ปีปฏิทิน แต่จบวันเสาร์ตามรอบ 52/53 สัปดาห์ เช่น FY2025 จบ 27 ธ.ค. 2025)",
         "years": [
@@ -11613,6 +11674,430 @@
           }
         ],
         "note": "ประมาณการทั้งสองปีมาจากนักวิเคราะห์ ~30 ราย และปี 2570 ถูกปรับขึ้นจาก ~8.81 เป็น ~9.19 ดอลลาร์ในช่วง 3 เดือน · ที่ต้องสังเกตคือ Q2/69 กำไรและอัตรากำไรเกินเป้าแต่ยอดขายต่ำกว่าจุดกึ่งกลาง ~2% แปลว่าแรงหนุนมาจากอัตรากำไรมากกว่าปริมาณ · วันประกาศงบ Q3 ที่ระบุไว้ (28 ต.ค.) เป็นวันที่ประมาณจากรอบปีก่อน บริษัทยังไม่ยืนยันอย่างเป็นทางการ"
+      }
+    },
+    "SPCX": {
+      "ticker": "SPCX",
+      "name": "SpaceX (Space Exploration Technologies)",
+      "layer": "cloud",
+      "thesis": {
+        "statement": "SpaceX หลังรวมกับ xAI คือบริษัทเดียวที่ถือทั้งเครือข่ายดาวเทียมใหญ่ที่สุดในโลก (Starlink) ระบบขนส่งอวกาศต้นทุนต่ำที่สุด (Falcon/Starship) และธุรกิจ AI ที่โตเร็วมาก (Super Intelligence: ปล่อยเช่า compute จาก Colossus ให้ Anthropic/Google + Grok + Cursor) — Starlink เป็นเครื่องผลิตเงินสดที่กำไรแล้ว ส่วน AI เพิ่งพลิกเป็นกำไรจากการดำเนินงานใน Q3 2026 เดิมพันคือบริษัทเปลี่ยนเงินจาก IPO ~$86B และ capex เกือบ $20B ต่อไตรมาส ให้เป็นรายได้ AI ที่ยั่งยืนได้ทันก่อนเงินสดลดลง",
+        "pillars": [
+          "Starlink ครองอินเทอร์เน็ตดาวเทียมวงโคจรต่ำ: ผู้ใช้ 13.6 ล้านราย (+89% YoY) ใน 174 ประเทศ ดาวเทียม ~11,100 ดวง — กำไรจากการดำเนินงาน ~$2.4B/ไตรมาส เป็นขาเงินสดหลักของกลุ่ม",
+          "AI กลายเป็นรายได้ครึ่งหนึ่งของกลุ่ม: Super Intelligence $7.6B ใน Q3 2026 (+830% YoY) จากสัญญาเช่า compute (Anthropic $1.25B/เดือน · Google $920M/เดือนเริ่ม ต.ค. 2026) + Cursor + Grok",
+          "ต้นทุนส่งของขึ้นวงโคจรต่ำที่สุดในโลกและเป็นเจ้าของเอง: ปีนี้บินแล้ว 113 เที่ยวใน 9 เดือน · Starship เริ่มบินเที่ยวที่มีรายได้ (Flight 14) — ทำให้ Starlink ขยายเครือข่ายได้ถูกกว่าคู่แข่งทุกราย",
+          "เงินทุนหนา: สภาพคล่อง ~$90B หลัง IPO ใหญ่ที่สุดในประวัติศาสตร์ ($85.7B) + หุ้นกู้ $25B — รองรับ capex AI ได้หลายไตรมาส",
+          "ธุรกิจเกื้อหนุนกัน: Starlink ใช้จรวดของตัวเอง, AI ใช้กระแสเงินสดจาก Starlink, X/Grok ใช้ผู้ใช้และข้อมูลร่วมกัน — โมเดลที่คู่แข่งรายเดียวเลียนแบบได้ยาก"
+        ]
+      },
+      "fundamentals": [
+        {
+          "key": "revenueGrowth",
+          "label": "การเติบโตของรายได้",
+          "current": "+161% YoY (Q3 2026 — $14.6B) · 9 เดือนแรก $27.1B เกือบ 2 เท่าของปีก่อน",
+          "trend": "up",
+          "score": 96,
+          "impact": "positive",
+          "why": "โตแรงจาก 3 ขาพร้อมกัน แต่ส่วนใหญ่มาจาก AI ที่เพิ่งเริ่มรับรู้สัญญาเช่า compute และรวม Cursor เข้ามา (~$0.6B) — อัตราโตระดับนี้จะลดลงเมื่อฐานใหญ่ขึ้น"
+        },
+        {
+          "key": "epsGrowth",
+          "label": "การเติบโตของกำไรต่อหุ้น",
+          "current": "EPS $0.35 (Q3 2026) พลิกจากขาดทุน $0.09 (Q2) — ไตรมาสแรกที่มีกำไรหลัง IPO",
+          "trend": "up",
+          "score": 70,
+          "impact": "positive",
+          "why": "กำไรสุทธิ $4.4B สูงกว่ากำไรจากการดำเนินงาน $2.8B เพราะดอกเบี้ยรับ ~$0.9B รายได้อื่น ~$1.0B และเครดิตภาษี ~$0.4B — กำไรที่ยั่งยืนจริงยังต่ำกว่าตัวเลขพาดหัว"
+        },
+        {
+          "key": "fcf",
+          "label": "กระแสเงินสดอิสระ",
+          "current": "ติดลบหนัก — capex Q3 $19.6B (AI $16.4B) สูงกว่ารายได้ทั้งไตรมาส · 9 เดือน capex $48.1B",
+          "trend": "down",
+          "score": 20,
+          "impact": "negative",
+          "why": "กระแสเงินสดจากการดำเนินงานไม่พอจ่าย capex AI — ครึ่งปีแรก FCF ติดลบ ~$25B และ Q3 ลงทุนอีก $19.6B โดยอาศัยเงินจาก IPO และหุ้นกู้"
+        },
+        {
+          "key": "margin",
+          "label": "อัตรากำไร",
+          "current": "Operating margin ~19% (Q3 2026) จาก −2% (Q2) และ −41% (Q1) · Adjusted EBITDA $8.8B",
+          "trend": "up",
+          "score": 62,
+          "impact": "positive",
+          "why": "Starlink มีกำไรจากการดำเนินงานราว 45% ของรายได้ และ AI เพิ่งพลิกเป็นกำไร $431M ส่วนธุรกิจอวกาศยังขาดทุนเล็กน้อย — ทิศทางดีแต่เพิ่งเริ่ม"
+        },
+        {
+          "key": "roic",
+          "label": "ผลตอบแทนต่อเงินลงทุน",
+          "current": "ยังต่ำ — ลงทุนหลายหมื่นล้านในศูนย์ข้อมูลที่เพิ่งเริ่มสร้างรายได้",
+          "trend": "flat",
+          "score": 35,
+          "impact": "neutral",
+          "why": "Starlink ให้ผลตอบแทนต่อทุนสูง แต่ทุนก้อนใหญ่ของกลุ่มถูกใส่ใน compute AI ที่ยังไม่พิสูจน์ผลตอบแทนเต็มรอบ"
+        },
+        {
+          "key": "cash",
+          "label": "เงินสด",
+          "current": "เงินสด+หลักทรัพย์ ~$89.9B (สิ้น Q3 2026) ลดจาก ~$100B ใน Q2",
+          "trend": "down",
+          "score": 82,
+          "impact": "positive",
+          "why": "หนาที่สุดชุดหนึ่งในตลาด แต่ลดลงราว $10B ในไตรมาสเดียวจาก capex — ถ้ายังลงทุนระดับนี้ต่อเนื่อง จะต้องพึ่งรายได้ AI หรือระดมทุนเพิ่มภายในไม่กี่ปี"
+        },
+        {
+          "key": "debt",
+          "label": "หนี้สิน",
+          "current": "หุ้นกู้ ~$25B (ออก มิ.ย. 2026) — ยังน้อยเทียบเงินสด",
+          "trend": "flat",
+          "score": 70,
+          "impact": "neutral",
+          "why": "มีหนี้ระยะยาวจากการระดมทุนทำศูนย์ข้อมูล แต่สภาพคล่องสูงกว่าหนี้หลายเท่า ความเสี่ยงงบดุลยังต่ำ"
+        },
+        {
+          "key": "dilution",
+          "label": "การเพิ่มจำนวนหุ้น",
+          "current": "จำนวนหุ้นเพิ่มเป็นเท่าตัวในปีเดียวจาก IPO + ค่าตอบแทนเป็นหุ้นสูง (Cursor ~$1.2B ใน Q3)",
+          "trend": "down",
+          "score": 30,
+          "impact": "negative",
+          "why": "จำนวนหุ้นเฉลี่ยเพิ่มมากหลัง IPO และค่าตอบแทนเป็นหุ้นยังสูงตามการซื้อกิจการ — ผู้ถือหุ้นเดิมถูกลดสัดส่วนต่อเนื่อง"
+        },
+        {
+          "key": "capitalAllocation",
+          "label": "การจัดสรรเงินทุน",
+          "current": "capex ~$20B/ไตรมาส เกือบทั้งหมดเป็น AI + ซื้อ Cursor ~$60B + ดีลคลื่นความถี่ 800 MHz",
+          "trend": "flat",
+          "score": 48,
+          "impact": "neutral",
+          "why": "ทุ่มเงินตามโอกาส AI ที่มีสัญญารองรับบางส่วน (Anthropic/Google) แต่ขนาดและความเร็วของการลงทุนสูงมาก ผลตอบแทนยังต้องพิสูจน์"
+        },
+        {
+          "key": "valuation",
+          "label": "ความน่าสนใจของราคา",
+          "current": "mcap ~$1.9T ที่ราคา ~$148 (ต.ค. 2026) · ~42 เท่าของรายได้ปี 2026 ที่คาด และ ~80 เท่าของ EPS ปี 2027 ที่คาด",
+          "trend": "flat",
+          "score": 18,
+          "impact": "negative",
+          "why": "ราคาฝังการเติบโตหลายปีไว้ล่วงหน้าแล้ว — แม้รายได้โตเร็วมาก multiple ระดับนี้ทำให้หุ้นไวต่อทุกสัญญาณชะลอของ AI หรือ capex ที่ไม่ได้ผล"
+        }
+      ],
+      "revenueQuality": {
+        "acceleration": "accelerating",
+        "consistency": 45,
+        "recurringPct": null,
+        "note": "รายได้เร่งตัวแรงแต่ส่วนผสมเปลี่ยนเร็วมาก — Starlink เป็นรายได้สมาชิกรายเดือนที่คาดการณ์ได้ ขณะที่ AI มาจากสัญญาเช่า compute หลายปีกับลูกค้าไม่กี่ราย (Anthropic, Google) บวก Cursor ที่เพิ่งรวมเข้ามา · อยู่ในตลาดเพียง 2 ไตรมาส ความสม่ำเสมอจึงยังประเมินได้น้อย",
+        "segments": [
+          {
+            "name": "Super Intelligence (เช่า compute, Grok, Cursor, X)",
+            "sharePct": 52,
+            "growthNote": "$7.6B ใน Q3 2026 (+830% YoY, +195% QoQ) — สัญญาเช่า compute + Cursor ~$0.6B + โฆษณา X ~$0.5B",
+            "trend": "up"
+          },
+          {
+            "name": "Connectivity (Starlink)",
+            "sharePct": 36,
+            "growthNote": "$5.25B (+69% YoY) — ผู้ใช้ทั่วไป $3.1B · องค์กร/รัฐ $2.1B · ARPU $69/เดือน",
+            "trend": "up"
+          },
+          {
+            "name": "Space Operations (Falcon, Starship, Dragon)",
+            "sharePct": 12,
+            "growthNote": "$1.8B (+84% QoQ) — งานยิงจรวดให้ลูกค้า $1.13B · Starship เที่ยวแรกที่มีรายได้",
+            "trend": "up"
+          }
+        ]
+      },
+      "aiExecution": {
+        "score": 74,
+        "items": [
+          {
+            "item": "เปลี่ยนกำลัง compute เป็นรายได้ (เช่า Colossus ให้ผู้อื่น)",
+            "status": "executing",
+            "evidence": "Anthropic เช่า compute เทียบ GPU ~220,000 ตัว $1.25B/เดือน และ Google ~110,000 ตัว $920M/เดือน (ต.ค. 2026-มิ.ย. 2029) · กำลังติดตั้ง 1.7 GW จาก 0.6 GW เมื่อปีก่อน"
+          },
+          {
+            "item": "ทำให้ธุรกิจ AI มีกำไร",
+            "status": "executing",
+            "evidence": "Super Intelligence พลิกเป็นกำไรจากการดำเนินงาน $431M ใน Q3 2026 จากขาดทุน $1.26B ใน Q2 · Adjusted EBITDA $5.0B"
+          },
+          {
+            "item": "Grok / Cursor — ผลิตภัณฑ์ AI ของตัวเอง",
+            "status": "on-track",
+            "evidence": "ปิดดีล Cursor 14 ส.ค. 2026 (มูลค่า ~$60B) สร้างรายได้ ~$608M ในไตรมาสแรก · ออก Grok 4.5 ก.ค. 2026"
+          },
+          {
+            "item": "Starlink เป็นเครื่องผลิตเงินสดให้ทั้งกลุ่ม",
+            "status": "executing",
+            "evidence": "กำไรจากการดำเนินงาน $2.37B (+99% YoY) ใน Q3 2026 · ผู้ใช้ 13.6 ล้านราย ARPU $69"
+          },
+          {
+            "item": "คุม capex ให้สร้างผลตอบแทนทัน",
+            "status": "at-risk",
+            "evidence": "capex Q3 $19.6B สูงกว่ารายได้ทั้งไตรมาส และเงินสดลดลงราว $10B ในไตรมาสเดียว — ยังพึ่งเงินที่ระดมมา"
+          },
+          {
+            "item": "ลดการพึ่งลูกค้า AI ไม่กี่ราย",
+            "status": "at-risk",
+            "evidence": "รายได้เช่า compute ส่วนใหญ่มาจาก Anthropic และ Google — ถ้ารายใหญ่ย้ายไปสร้างศูนย์ข้อมูลเองหรือหาผู้ให้เช่ารายอื่น รายได้กระทบแรง"
+          }
+        ]
+      },
+      "competitive": {
+        "overall": "strengthening",
+        "moat": "เป็นเจ้าของทั้งจรวดต้นทุนต่ำ เครือข่ายดาวเทียมใหญ่ที่สุดในโลก และศูนย์ข้อมูล AI ระดับกิกะวัตต์ — ฝั่ง Starlink/อวกาศแทบไม่มีคู่แข่งใกล้เคียง แต่ฝั่ง AI แข่งกับ hyperscaler และแล็บโมเดลที่ทุนหนาพอกัน",
+        "factors": [
+          {
+            "key": "marketLeadership",
+            "label": "ความเป็นผู้นำตลาด",
+            "status": "strengthening",
+            "note": "Starlink ครองตลาดอินเทอร์เน็ตดาวเทียม LEO และ Falcon ครองตลาดยิงจรวดเชิงพาณิชย์ของโลก"
+          },
+          {
+            "key": "techLeadership",
+            "label": "ความนำทางเทคโนโลยี",
+            "status": "strengthening",
+            "note": "จรวดนำกลับมาใช้ซ้ำ + Starship เริ่มบินเชิงพาณิชย์ · ฝั่ง AI มี Grok แต่ไม่ได้นำโมเดลชั้นแนวหน้าทุกด้าน"
+          },
+          {
+            "key": "executionSpeed",
+            "label": "ความเร็วในการลงมือ",
+            "status": "strengthening",
+            "note": "เพิ่มกำลัง compute จาก 0.6 เป็น 1.7 GW ภายในปีเดียว — ความเร็วสร้างศูนย์ข้อมูลเป็นจุดขายต่อลูกค้าเช่า compute"
+          },
+          {
+            "key": "switchingCost",
+            "label": "ต้นทุนการเปลี่ยนผู้ให้บริการ",
+            "status": "stable",
+            "note": "ผู้ใช้ Starlink ย้ายออกได้ถ้ามีทางเลือก แต่ในพื้นที่ห่างไกลยังไม่มีทางเลือกจริง · สัญญาเช่า compute เป็นระยะยาวหลายปี"
+          },
+          {
+            "key": "ecosystem",
+            "label": "ระบบนิเวศ",
+            "status": "strengthening",
+            "note": "Starlink + X + Grok + Cursor + Tesla (โรงงานชิป Terafab ร่วมกัน) เชื่อมกันเป็นระบบ ใช้ข้อมูลและฐานผู้ใช้ร่วมกัน"
+          },
+          {
+            "key": "developerAdoption",
+            "label": "การยอมรับจากนักพัฒนา",
+            "status": "stable",
+            "note": "Cursor เพิ่มฐานนักพัฒนาโดยตรง แต่ Grok API ยังเล็กเทียบผู้นำตลาดโมเดล"
+          },
+          {
+            "key": "customerLockin",
+            "label": "การผูกลูกค้า",
+            "status": "stable",
+            "note": "ลูกค้ารัฐ/กองทัพและสายการบิน (เครื่องบิน 3,800+ ลำ) ผูกกับ Starlink · ลูกค้า AI กระจุกไม่กี่รายและมีทางเลือก"
+          },
+          {
+            "key": "moat",
+            "label": "คูเมือง",
+            "status": "strengthening",
+            "note": "ต้นทุนส่งของขึ้นวงโคจรต่ำกว่าคู่แข่งมาก ทำให้เครือข่าย Starlink ขยายได้ถูกกว่าใคร — คูเมืองที่ลอกเลียนยาก"
+          }
+        ]
+      },
+      "capitalAllocation": {
+        "score": 48,
+        "verdict": "ทุ่มเงินเกือบทั้งหมดไปที่ AI ด้วยความเร็วสูง มีสัญญาเช่ารองรับบางส่วนแล้ว แต่ขนาดเงินและการลดสัดส่วนผู้ถือหุ้นยังสูง — ต้องดูว่ารายได้ AI ตามทันเงินที่ลงไปหรือไม่",
+        "items": [
+          {
+            "label": "Capex ศูนย์ข้อมูล AI",
+            "current": "$16.4B ใน Q3 2026 (จาก capex รวม $19.6B)",
+            "assessment": "neutral",
+            "why": "จำเป็นต่อสัญญาเช่า compute ที่เซ็นแล้ว แต่สูงกว่ารายได้ทั้งบริษัทในไตรมาส — ถ้าลูกค้าชะลอจะเหลือสินทรัพย์ราคาแพงที่ใช้ไม่เต็ม"
+          },
+          {
+            "label": "ซื้อ Cursor",
+            "current": "มูลค่า ~$60B ปิดดีล ส.ค. 2026",
+            "assessment": "neutral",
+            "why": "ได้รายได้ซอฟต์แวร์และฐานนักพัฒนาทันที (~$608M ไตรมาสแรก) แต่ราคาสูงมากเทียบรายได้"
+          },
+          {
+            "label": "ระดมทุน IPO + หุ้นกู้",
+            "current": "IPO $85.7B (มิ.ย. 2026) + หุ้นกู้ $25B",
+            "assessment": "good",
+            "why": "ระดมทุนในจังหวะตลาดเปิดรับเต็มที่ ได้เงินสำรองที่รองรับการลงทุนหลายไตรมาสโดยไม่ต้องพึ่งตลาดในยามลำบาก"
+          },
+          {
+            "label": "ค่าตอบแทนเป็นหุ้น",
+            "current": "~$0.8B (Q2) และเฉพาะ Cursor ~$1.2B (Q3)",
+            "assessment": "poor",
+            "why": "สูงและเพิ่มขึ้นตามการซื้อกิจการ — ผู้ถือหุ้นจ่ายจริงผ่านการถูกลดสัดส่วน"
+          },
+          {
+            "label": "การคืนเงินผู้ถือหุ้น",
+            "current": "ไม่มีปันผลหรือซื้อหุ้นคืน",
+            "assessment": "good",
+            "why": "เหมาะกับบริษัทที่ยังต้องใช้เงินลงทุนมหาศาล"
+          }
+        ]
+      },
+      "valuationView": {
+        "level": "expensive",
+        "note": "มูลค่าตลาด ~$1.9T ที่ราคา ~$148 (19 ต.ค. 2026, สูงกว่าราคา IPO $135 ราว 10%) — ประมาณ 42 เท่าของรายได้ปี 2026 ที่นักวิเคราะห์คาด (~$45.5B) และ ~80 เท่าของ EPS ปี 2027 ที่คาด (~$1.83) · ราคาฝังความสำเร็จของ AI และ Starship ไว้ล่วงหน้าหลายปี เหมาะทยอยสะสมช่วงราคาย่อมากกว่าไล่ตามข่าว"
+      },
+      "whatChanged": [
+        {
+          "metric": "รายได้รวม (Q2 → Q3 2026)",
+          "prev": "$7.8B",
+          "now": "$14.6B (+161% YoY) — สูงกว่าที่คาด ~$12.9B",
+          "direction": "positive"
+        },
+        {
+          "metric": "Super Intelligence",
+          "prev": "$2.6B · ขาดทุนจากการดำเนินงาน $1.26B",
+          "now": "$7.6B · กำไรจากการดำเนินงาน $431M",
+          "direction": "positive"
+        },
+        {
+          "metric": "กำไรสุทธิ / EPS",
+          "prev": "ขาดทุน $541M (−$0.09)",
+          "now": "กำไร $4.4B ($0.35) — รวมรายได้อื่น+เครดิตภาษี ~$1.4B",
+          "direction": "positive"
+        },
+        {
+          "metric": "Starlink ผู้ใช้ / ARPU",
+          "prev": "12.0 ล้าน · $66",
+          "now": "13.6 ล้าน · $69",
+          "direction": "positive"
+        },
+        {
+          "metric": "Capex ต่อไตรมาส",
+          "prev": "~$14B (ครึ่งปีแรก $28.5B)",
+          "now": "$19.6B (AI $16.4B)",
+          "direction": "negative"
+        },
+        {
+          "metric": "เงินสด + หลักทรัพย์",
+          "prev": "~$100B",
+          "now": "~$89.9B",
+          "direction": "negative"
+        }
+      ],
+      "risks": [
+        "เงินสดลดเร็ว: capex ~$20B ต่อไตรมาสสูงกว่ารายได้ — ถ้ารายได้ AI โตช้ากว่าแผน ต้องระดมทุนเพิ่มหรือชะลอการลงทุน",
+        "ลูกค้า AI กระจุกตัว: รายได้เช่า compute พึ่ง Anthropic และ Google เป็นหลัก ทั้งคู่มีทางเลือกและกำลังสร้างกำลังประมวลผลของตัวเอง",
+        "การตัดสินใจรวมศูนย์ที่ผู้ก่อตั้ง และธุรกรรมกับบริษัทในเครือ (Tesla, X) — ผู้ถือหุ้นรายย่อยมีอำนาจจำกัด",
+        "ความเสี่ยงเทคโนโลยีและกฎระเบียบ: Starship ยังอยู่ช่วงพิสูจน์ · คลื่นความถี่ การจราจรในวงโคจร และสัญญารัฐบาลขึ้นกับนโยบาย",
+        "Valuation สูงมาก (~42 เท่าของรายได้ที่คาด) และประวัติในตลาดสั้น — ราคาแกว่งแรง เคยลง 23% ใน 3 วันหลังประกาศออกหุ้นกู้เมื่อ มิ.ย. 2026"
+      ],
+      "asOf": "2026-10",
+      "nextEarnings": "2027-01",
+      "history": {
+        "fyNote": "ปีบัญชี = ปีปฏิทิน (สิ้นสุด ธ.ค.) · เข้าตลาด Nasdaq 12 มิ.ย. 2026 ราคา IPO $135 · ข้อมูลก่อน IPO มาจาก S-1",
+        "epsBasis": "GAAP diluted EPS — ปีก่อนเข้าตลาดไม่มี EPS ที่เทียบกับฐานหุ้นปัจจุบันได้จึงเว้นไว้ · Q2/69 คิดจากจำนวนหุ้นเฉลี่ยที่รวมช่วงก่อน IPO (~5.9B หุ้น) ส่วน Q3/69 เป็นฐานหลัง IPO (~12.6B หุ้น) เทียบกันตรง ๆ ไม่ได้",
+        "instrument": {
+          "shareBasis": "common",
+          "currency": "USD",
+          "note": "หุ้นสามัญ Nasdaq: SPCX — ราคาและ EPS ฐานเดียวกัน"
+        },
+        "years": [
+          {
+            "fy": "FY2024",
+            "endYm": "2024-12",
+            "revenueB": 14,
+            "epsAdj": null,
+            "opMarginPct": null,
+            "fcfB": null,
+            "priceFYEnd": null
+          },
+          {
+            "fy": "FY2025",
+            "endYm": "2025-12",
+            "revenueB": 18.67,
+            "epsAdj": null,
+            "opMarginPct": -13.9,
+            "fcfB": null,
+            "priceFYEnd": null
+          }
+        ],
+        "quarters": [
+          {
+            "q": "Q1/26",
+            "endYm": "2026-03",
+            "revenueB": 4.69,
+            "epsAdj": null,
+            "opMarginPct": -41.4,
+            "fcfB": null,
+            "priceQEnd": null
+          },
+          {
+            "q": "Q2/26",
+            "endYm": "2026-06",
+            "revenueB": 7.81,
+            "epsAdj": -0.09,
+            "opMarginPct": -1.8,
+            "fcfB": null,
+            "priceQEnd": null,
+            "epsNote": "ขาดทุนต่อหุ้นคิดจากจำนวนหุ้นเฉลี่ย ~5.9B หุ้นที่รวมช่วงก่อน IPO (เข้าตลาดกลางไตรมาส) จึงเทียบกับ Q3 ที่ฐานหุ้นหลัง IPO ตรง ๆ ไม่ได้"
+          },
+          {
+            "q": "Q3/26",
+            "endYm": "2026-09",
+            "revenueB": 14.58,
+            "epsAdj": 0.35,
+            "opMarginPct": 19.1,
+            "fcfB": null,
+            "priceQEnd": 150.86,
+            "epsNote": "กำไรสุทธิ $4.4B สูงกว่ากำไรจากการดำเนินงาน $2.8B เพราะรายได้อื่น ~$1.0B และเครดิตภาษี ~$0.39B (รวม ~$0.11 ต่อหุ้น) บวกดอกเบี้ยรับ ~$0.87B จากเงินสด IPO · ตัดรายได้อื่นและเครดิตภาษีออก EPS ราว $0.24"
+          }
+        ],
+        "notes": "ข้อมูลรายปีจาก S-1 (รายได้ 2025 $18.67B +33.2% → 2024 ~$14.0B · ขาดทุนจากการดำเนินงาน 2025 $2.589B) · รายไตรมาสจาก earnings release Q2 และ Q3 2026 (Q1 จากตารางเปรียบเทียบใน release Q2) · FCF รายไตรมาสไม่ได้เปิดเผยแยก (ครึ่งปีแรก 2026 ติดลบ $25.0B) จึงเว้นไว้ · ยังไม่ใส่วันสิ้นงวดเพราะไม่พบในเอกสารที่อ้าง",
+        "sources": [
+          "https://www.sec.gov/Archives/edgar/data/1181412/000162828026036936/spaceexplorationtechnologi.htm",
+          "https://www.sec.gov/Archives/edgar/data/0001181412/000162828026052515/earningsreleaseq22608042.htm",
+          "https://s21.q4cdn.com/184289198/files/content_files/SpaceX-Reports-Third-Quarter-2026-Results.pdf",
+          "https://teslanorth.com/2026/10/20/spacex-q3-2026-results/",
+          "https://investinglive.com/stocks/spacex-beats-q3-forecasts-across-all-three-segments-as-ai-revenue-tops-7-5-billion/",
+          "https://stockanalysis.com/stocks/spcx/history/"
+        ]
+      },
+      "forwardView": {
+        "asOf": "2026-10",
+        "estimateHistory": [
+          {
+            "asOf": "2026-10",
+            "fy": "FY2027",
+            "eps": 1.83,
+            "revenue": 111.65
+          }
+        ],
+        "guidanceTrack": [
+          {
+            "quarter": "2026Q3",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance เป็นตัวเลข",
+            "actual": "~$14.58B",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "2026Q2",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance เป็นตัวเลข",
+            "actual": "~$7.81B",
+            "result": "noGuidance",
+            "magnitudePct": null
+          }
+        ],
+        "consensus": [
+          {
+            "fy": "FY2026",
+            "revenue": 45.53,
+            "eps": -0.02,
+            "confidence": "medium",
+            "basis": "unknown"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": 111.65,
+            "eps": 1.83,
+            "confidence": "medium",
+            "basis": "unknown"
+          }
+        ],
+        "note": "SpaceX ไม่ให้ guidance เป็นตัวเลข (ชี้ทิศทางผ่าน webcast) จึงบันทึกเป็น noGuidance · consensus จาก ~35 นักวิเคราะห์ผ่านแหล่งรวบรวมแหล่งเดียว — ปี 2027 คาดรายได้เพิ่ม ~2.5 เท่าจากสัญญาเช่า compute ที่เซ็นแล้ว (Anthropic/Google) จึงอ่อนไหวต่อการต่ออายุสัญญามาก"
       }
     }
   }

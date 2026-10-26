@@ -239,7 +239,10 @@ console.log("== Phase 15: cache/method metadata ==");
 console.log("== Phase 12: TSM regression (ราคา fixture — ห้ามผลิตเลข stale แบบเงียบ) ==");
 {
   const ttm = KB.companies.TSM.history.quarters.slice(-4).reduce((a, q) => a + q.epsAdj, 0); // จาก KB ไม่ hard-code
-  const freshPrice = 426.35; // fixture สดจาก provider จริง ณ วันเขียน test (asOf 2026-08-14)
+  // ราคา fixture ต้องทำให้ P/E สูงกว่าทุกจุดในประวัติ FY-end ชัด ๆ โดยไม่ขึ้นกับว่า KB อัปเดตถึงไตรมาสไหน
+  // (เดิมตรึง $426.35 ณ ส.ค. 2026 — พอ KB เพิ่ม Q3'26 กำไร TTM สูงขึ้น P/E ที่ราคานั้นจึงตกมาอยู่กลางกลุ่มจริง ๆ และเทสต์แดงเพราะข้อมูล ไม่ใช่เพราะ engine)
+  const yrsPe = KB.companies.TSM.history.years.map((y) => y.priceFYEnd / y.epsAdj).filter((x) => isFinite(x) && x > 0);
+  const freshPrice = Math.round(ttm * Math.max.apply(null, yrsPe) * 1.15 * 100) / 100;
   const V = VE.compute("TSM", snapWith2("TSM", freshPrice, "2026-08-14"), { data: KB, nowMs: NOW });
   const expectedPe = Math.round(freshPrice / ttm * 100) / 100;
   check("TSM: ราคาสด → pe = price/TTM = " + expectedPe + " (ไม่ใช่ค่า stale ~24.4)", V.pe.current === expectedPe && Math.abs(V.pe.current - 24.4) > 3);
