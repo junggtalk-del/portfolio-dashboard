@@ -385,5 +385,63 @@ function allocSum(out) {
     outBear.rows[0].zone.key === "D" && outBear.overview.recommendation.key === "wait" && outBear.risk[0].active);
 }
 
+
+// ---- Increase Position ต้องไม่ขัดกับหน้า Asset 360 โดยไม่บอก ----
+// เคสจริง NVDA: Thesis 85 + Zone B -> PM บอก "Increase Position"
+// แต่หน้า Asset 360 บอก "ลดน้ำหนัก / สัญญาณอ่อน" (signal 39, EMA12 < EMA26)
+// ทั้งสองจริง แต่ผู้ใช้เห็นทีละหน้าแล้วคิดว่าระบบขัดแย้งกันเอง
+// PM ต้องติดธงบอกว่าเทคนิคยังไม่ยืนยัน ไม่ใช่เงียบ
+(function () {
+  var PMx = require("../public/portfolio-manager-engine.js");
+  var TEx = require("../public/thesis-engine.js");
+  var DATAx = require("../public/thesis-data.js");
+  function runCase(e12, e26, close, sma) {
+    var snap = {
+      technicalSignals: { NVDA: { ema12: e12, ema26: e26, latestClose: close == null ? 214 : close, sma200: sma == null ? 203 : sma, volumeRatio: 1.25 } },
+      rsiSignals: { NVDA: { rsi14: 48 } }
+    };
+    var out = PMx.compute(snap, {
+      TE: TEx, teOpts: { data: DATAx, mega: null, regime: null, R: null },
+      positions: [{ ticker: "NVDA", name: "NVIDIA", held: true, weightPct: 8.8, tierKey: "A", entryDone: {} }],
+      megaStance: "bullish", indexTicker: "QQQM"
+    });
+    return (out.rows || []).filter(function (r) { return r.ticker === "NVDA"; })[0];
+  }
+  var bear = runCase(100, 110);   // EMA12 < EMA26 = ตรงกับภาพที่ผู้ใช้เจอ
+  var bull = runCase(115, 108);   // EMA12 > EMA26
+
+  t("PM ให้ผลต่างกันเมื่อ EMA ต่างกัน (ไม่ใช่เมินเทคนิคทิ้ง)",
+    JSON.stringify(bear) !== JSON.stringify(bull));
+  t("เคสฐาน: Thesis สูง + Zone B -> action = increase",
+    !!(bear && bear.action && bear.action.key === "increase"));
+  t("Increase ขณะ EMA ขาลง -> ต้องติดธง techConflict",
+    !!(bear && bear.techConflict === true));
+  t("ธงต้องมีเหตุผลเป็นข้อความให้ผู้ใช้อ่าน",
+    !!(bear && bear.techConflictWhy && String(bear.techConflictWhy).length > 5));
+  t("EMA ขาขึ้น -> ไม่ติดธง (ไม่ใช่ติดทุกตัวจนไร้ความหมาย)",
+    !!(bull && bull.techConflict !== true));
+
+  // --- ราคาใต้ SMA200 ก็ต้องติดธง แม้ EMA จะกลับขึ้นแล้ว ---
+  // (กันกรณีลบเงื่อนไข SMA200 ทิ้งแล้วเทสต์ยังเขียว)
+  var underSma = runCase(115, 108, 190, 203);   // EMA bull แต่ราคาใต้ SMA200
+  t("ราคาใต้ SMA200 -> ติดธงแม้ EMA กลับขึ้นแล้ว",
+    !!(underSma && underSma.action && underSma.action.key === "increase" && underSma.techConflict === true));
+  t("เหตุผลระบุ SMA200 ตรง ๆ",
+    !!(underSma && /SMA200/.test(String(underSma.techConflictWhy || ""))));
+  t("เหตุผลของเคส EMA ขาลง ระบุ EMA ตรง ๆ",
+    !!(bear && /EMA/.test(String(bear.techConflictWhy || ""))));
+
+  // --- action ที่ไม่ใช่ increase ต้องไม่ติดธง แม้เทคนิคจะแย่ ---
+  // ธงมีไว้เตือนตอน "จะลงเงินเพิ่ม" ถ้าติดทุก action มันจะกลายเป็นสัญญาณรบกวน
+  t("action ที่ไม่ใช่ increase ไม่ติดธง แม้เทคนิคแย่", (function () {
+    var PMy = require("../public/portfolio-manager-engine.js");
+    var tr = { tech: { ema12: 100, ema26: 110, latestClose: 190, sma200: 203 }, rsi: 40 };
+    return PMy.techConflictOf("maintain", tr) === null &&
+           PMy.techConflictOf("wait", tr) === null &&
+           PMy.techConflictOf("review", tr) === null &&
+           PMy.techConflictOf("increase", tr) !== null;
+  })());
+
+})();
 console.log(pass + fail + " checks · " + pass + " passed" + (fail ? " · " + fail + " FAILED" : ""));
 process.exit(fail ? 1 : 0);

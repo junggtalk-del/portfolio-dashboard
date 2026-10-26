@@ -433,7 +433,30 @@
     var action = positionAction(row.zone.key, row.gap);
     if (action.key === "increase" && row.pendingPp <= 0) action = ACTIONS.maintain;
     row.action = action;
+    // ธงเตือนเมื่อบอกให้เพิ่มน้ำหนักขณะที่โมเมนตัมยังสวนอยู่
+    var cw = row.tr ? techConflictOf(action.key, row.tr) : null;
+    row.techConflict = !!cw;
+    row.techConflictWhy = cw;
     return row;
+  }
+
+  // ---------------- ธงเตือนเมื่อเทคนิคสวนกับคำตัดสิน ----------------
+  // หน้านี้ตอบว่า "เงินก้อนถัดไปควรไปที่ไหน" จึงตัดสินจากพื้นฐาน + โซน + ช่องว่างน้ำหนัก
+  // ส่วนหน้า Asset 360 ตอบว่า "ตอนนี้โมเมนตัมเป็นยังไง" ซึ่งใช้ EMA/SMA200/วอลุ่ม
+  // สองคำถามนี้ตอบคนละอย่างได้โดยที่ทั้งคู่ถูก เช่น NVDA: Thesis 85 แต่ EMA ยังขาลง
+  //
+  // เราไม่กลบข้างใดข้างหนึ่ง เพราะทั้งคู่เป็นข้อมูลจริง แต่ต้องไม่ปล่อยให้ผู้ใช้
+  // ไปเจอความขัดแย้งเองตอนคลิกเข้าหน้า Asset แล้วคิดว่าระบบพัง
+  // จึงติดธงไว้ตรงนี้ให้หน้าเว็บเอาไปแสดงคู่กับคำว่า Increase
+  function techConflictOf(actionKey, tr) {
+    if (actionKey !== "increase") return null;
+    var emaBull = emaBullish(tr);
+    var dist = smaDistPct(tr);
+    var reasons = [];
+    if (emaBull === false) reasons.push("EMA12 ยังต่ำกว่า EMA26");
+    if (dist != null && dist < 0) reasons.push("ราคายังอยู่ใต้ SMA200");
+    if (!reasons.length) return null;
+    return reasons.join(" · ") + " — โมเมนตัมยังไม่ยืนยัน ดูหน้า Asset 360 ประกอบก่อนลงเงิน";
   }
 
   // ---------------- Position action (4 คำเท่านั้น) ----------------
@@ -482,6 +505,7 @@
       regimeScore: o.inputs && o.inputs.regime ? fin(o.inputs.regime.score) : null,
       ratesSevere: !!(o.inputs && o.inputs.rates && o.inputs.rates.severe),
       acc: acc, accScore: acc.score, zone: zr.zone, zoneWhy: zr.why,
+      tr: tr,   // เก็บไว้ให้ applyTarget ตรวจว่าเทคนิคสวนกับ action หรือไม่
       why: whyChecklist(o, acc.timing, acc.valLevel, growth),
       growth: growth, growthScore: growth.score, growthLabel: growth.label,
       ladder: ladder, targetInfo: ti, rawConviction: ti.raw,
@@ -665,7 +689,7 @@
     quarterlyBuckets: quarterlyBuckets,
     zoneOf: zoneOf, entryLadder: entryLadder, targetFor: targetFor,
     allocationPolicy: allocationPolicy, applyTarget: applyTarget,
-    positionAction: positionAction, evaluate: evaluate,
+    positionAction: positionAction, techConflictOf: techConflictOf, evaluate: evaluate,
     deploymentPlan: deploymentPlan, riskRules: riskRules, overview: overview,
     compute: compute
   };

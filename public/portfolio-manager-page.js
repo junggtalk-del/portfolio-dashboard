@@ -249,7 +249,17 @@
   // ---------------- UI helpers ----------------
   function toneClass(tone) { return tone === "bull" ? "pm-bull" : tone === "bear" ? "pm-bear" : tone === "watch" ? "pm-watch" : "pm-neutral"; }
   function zoneChip(zone) { return '<span class="pm-zone pm-zone-' + zone.key.toLowerCase() + '">' + zone.icon + " " + esc(zone.label) + "</span>"; }
-  function actionChip(a) { return '<span class="pm-action ' + toneClass(a.tone) + '">' + esc(a.label) + "</span>"; }
+  // row ไม่บังคับ — ใส่มาเมื่อไหร่จะติดป้ายเตือนให้ถ้าเทคนิคสวนกับคำตัดสิน
+  // (PM ตัดสินจากพื้นฐาน+โซน ส่วนหน้า Asset 360 ดูโมเมนตัม สองอย่างขัดกันได้โดยที่ทั้งคู่จริง
+  //  ต้องบอกตรงนี้ ไม่ปล่อยให้ผู้ใช้ไปเจอเองตอนคลิกเข้าหน้า Asset แล้วคิดว่าระบบพัง)
+  function actionChip(a, row) {
+    var chip = '<span class="pm-action ' + toneClass(a.tone) + '">' + esc(a.label) + "</span>";
+    if (row && row.techConflict && row.techConflictWhy) {
+      chip += ' <span class="pm-techwarn" title="' + esc(row.techConflictWhy) +
+        '">เทคนิคยังไม่ยืนยัน</span>';
+    }
+    return chip;
+  }
   function whyList(why) {
     return why.map(function (a) {
       return '<div class="pm-why ' + (a.ok ? "pm-ok" : "pm-no") + '">' + (a.ok ? "✓" : "✗") + " " + esc(a.txt) + "</div>";
@@ -423,7 +433,7 @@
         mvCell(r) +
         '<td class="pm-num">' + wcell + "</td>" +
         "<td>" + (r.covered ? (function () { var gz = gatedZone(r); return zoneChip(gz.zone) + (gz.gated ? ' <span class="pm-ii-gate" title="' + esc(gz.why) + '">⛔ gated</span>' : "") + healthChip(r.ticker); })() : '<span class="pm-dim">ไม่มี thesis</span>') + "</td>" +
-        "<td>" + (r.covered ? actionChip((function () { var gz2 = gatedZone(r); return gz2.gated && gz2.zone.key === "E" && window.PMEngine ? window.PMEngine.ACTIONS.review : r.action; })()) : '<a class="pm-dim" href="/thesis">/thesis-update ' + esc(r.ticker) + "</a>") + "</td></tr>";
+        "<td>" + (r.covered ? actionChip((function () { var gz2 = gatedZone(r); return gz2.gated && gz2.zone.key === "E" && window.PMEngine ? window.PMEngine.ACTIONS.review : r.action; })(), r) : '<a class="pm-dim" href="/thesis">/thesis-update ' + esc(r.ticker) + "</a>") + "</td></tr>";
     }).join("");
     // แถวเงินสด = Portfolio Value (หุ้นต่างประเทศ) − ผลรวมมูลค่าหุ้นที่ลงทุน — ให้ครบ 100%
     if (!stocksOnly && inp && inp.cashBaht != null && inp.gross != null) {
@@ -588,7 +598,7 @@
       var gzM = gatedZone(r);
       var mgrGate = gzM.gated ? '<div class="pm-ii-gateline">⛔ ' + esc(gzM.why) + " — entry ladder ด้านล่างคิดจาก zone เดิมของ engine อย่าใช้จนกว่าหลักฐานจะเคลียร์</div>" : "";
       return '<article class="pm-mgr">' +
-        '<div class="pm-mgr-head">' + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">Index core</span>' : "") + zoneChip(gatedZone(r).zone) + actionChip(gatedZone(r).gated && gatedZone(r).zone.key === "E" && window.PMEngine ? window.PMEngine.ACTIONS.review : r.action) + healthChip(r.ticker) + "</div>" +
+        '<div class="pm-mgr-head">' + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">Index core</span>' : "") + zoneChip(gatedZone(r).zone) + actionChip(gatedZone(r).gated && gatedZone(r).zone.key === "E" && window.PMEngine ? window.PMEngine.ACTIONS.review : r.action, r) + healthChip(r.ticker) + "</div>" +
         '<div class="pm-mgr-nums">' +
         mnum("น้ำหนักปัจจุบัน", pct(r.weightPct)) + mnum(r.isIndex ? "ประเภท" : "Tier", r.isIndex ? "Index" : r.tier.key) +
         "</div>" + mgrGate +

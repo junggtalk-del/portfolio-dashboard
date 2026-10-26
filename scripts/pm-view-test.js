@@ -214,5 +214,26 @@ var hMany = mod.sectionCurrent({ allocationRows: many, policy: out.policy },
 ok("edge 13 หุ้น: สีวนได้ ไม่มี undefined", hMany.indexOf("undefined") < 0 && hMany.indexOf("NaN") < 0);
 ok("edge 13 หุ้น: pie มี 14 ชิ้น", pieSlices(hMany).length === 14, pieSlices(hMany).length);
 
+
+// ---- ป้าย "เทคนิคยังไม่ยืนยัน" ต้องออกถึงหน้าจอจริง ----
+// เอนจินรู้ไม่พอ ถ้าหน้าเว็บไม่แสดง ผู้ใช้ก็ยังเจอความขัดแย้งอยู่ดี
+(function () {
+  var fsx = require("fs");
+  var src = fsx.readFileSync(__dirname + "/../public/portfolio-manager-page.js", "utf8");
+  var RE_SIG = new RegExp("function actionChip\\(a, row\\)");
+  var RE_DRAW = new RegExp("row\\.techConflict[\\s\\S]{0,200}pm-techwarn");
+  var RE_CALL = new RegExp("actionChip\\(", "g");
+  var RE_WITHROW = new RegExp("actionChip\\([\\s\\S]{0,300}?, r\\)", "g");
+  var RE_CSS = new RegExp("\\.pm-techwarn\\s*\\{");
+
+  ok("actionChip รับ row เข้ามาด้วย", RE_SIG.test(src));
+  ok("actionChip วาดป้าย pm-techwarn เมื่อมี techConflict", RE_DRAW.test(src));
+  var calls = (src.match(RE_CALL) || []).length;      // นับรวมบรรทัดนิยามฟังก์ชันด้วย
+  var withRow = (src.match(RE_WITHROW) || []).length;
+  ok("ทุกจุดที่เรียก actionChip ส่ง row ไปด้วย (ไม่งั้นป้ายไม่ขึ้น)",
+    withRow >= calls - 1, calls + " เรียก · ส่ง row " + withRow);
+  var css = fsx.readFileSync(__dirname + "/../public/portfolio-manager.css", "utf8");
+  ok("มี style ของ pm-techwarn", RE_CSS.test(css));
+})();
 console.log((fail ? "✗ FAIL" : "✓ PASS") + " — pm-view-test: " + pass + " ผ่าน, " + fail + " ไม่ผ่าน");
 process.exit(fail ? 1 : 0);
