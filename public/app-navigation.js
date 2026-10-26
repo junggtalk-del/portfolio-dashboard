@@ -513,6 +513,7 @@
     ] },
     { label: "Portfolio", items: [
       // Asset Allocation ถูกรวมเข้าไปอยู่ท้ายหน้า /portfolio แล้ว จึงไม่มีเมนูของตัวเอง
+      { p: "/decision-journal", i: "📓", t: "Decision Journal" },
       { p: "/portfolio", i: "📊", t: "Portfolio Position" },
       { p: "/", i: "🗓️", t: "Quarterly Editor" }
     ] },
@@ -552,6 +553,7 @@
     "/thai-dr-monitor": { category: "Thai Market", title: "🌏 Thai DR Monitor", subtitle: "DR ที่จดทะเบียนในไทยมีอะไรบ้าง — ยุบรวมตามสินทรัพย์อ้างอิง · แยกตลาด/ประเภท · ตัวไหนเพิ่งจดทะเบียน · ข้อมูลไหนยังต้องตรวจ" },
     "/thesis": { category: "AI Portfolio Manager", title: "🧾 Investment Thesis", subtitle: "บริษัทนี้ยังเดินตาม thesis ระยะยาวอยู่ไหม — พื้นฐาน · AI execution · moat · ทำไมหุ้นตก · ควรสะสมจังหวะย่อไหม" },
     "/accumulation-center": { category: "Strategic Intelligence", title: "🧺 Accumulation Center", subtitle: "จังหวะย่อตัวไหนควรค่าแก่การสะสมวันนี้ — จัดอันดับ 7 ปัจจัย (Thesis นำ · เทคนิคเป็นแค่เครื่องมือจับจังหวะ)" },
+    "/decision-journal": { category: "Portfolio", title: "📓 Decision Journal", subtitle: "บันทึกสิ่งที่คิดตอนตัดสินใจ — กฎบอกว่าอะไร · ทำจริงอะไร · ผ่านไปแล้วถูกหรือผิด · ไม้จริงกำไรหรือขาดทุน" },
     "/portfolio-manager": { category: "AI Portfolio Manager", title: "💼 AI Portfolio Manager", subtitle: "Portfolio Decision Layer — เงินก้อนถัดไปควรไปที่ไหน · Tier · Dynamic Target · Entry Ladder · Cash Deployment · Risk Rules" }
   };
 

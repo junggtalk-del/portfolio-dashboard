@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { loadLocalEnv } = require("./local-env");
 const { isValidPortfolioData } = require("./lib/portfolio-validation");
+const { isValidJournalDoc, JOURNAL_STATE_ID } = require("./lib/journal-validation");
 const { fetchWithTimeout, yahooChartJson } = require("./lib/http");
 const marketDataApiHandler = require("./api/price-history");
 const backtestApiHandler = require("./api/backtest");
@@ -22,8 +23,9 @@ loadLocalEnv();
 
 const PORT = Number(process.env.PORT || 4173);
 const PUBLIC_DIR = path.join(__dirname, "public");
-const LOCAL_DATA_DIR = path.join(__dirname, ".local-data");
+const LOCAL_DATA_DIR = process.env.LOCAL_DATA_DIR ? path.resolve(process.env.LOCAL_DATA_DIR) : path.join(__dirname, ".local-data");
 const LOCAL_PORTFOLIO_FILE = path.join(LOCAL_DATA_DIR, "portfolio.json");
+const LOCAL_JOURNAL_FILE = path.join(LOCAL_DATA_DIR, "decision-journal.json");
 const LOCAL_AI_UNIVERSE_FILE = path.join(LOCAL_DATA_DIR, "ai-universe.json");
 const LOCAL_THAI_NAV_CACHE_FILE = path.join(LOCAL_DATA_DIR, "thai-fund-nav-cache.json");
 const LOCAL_MARKET_DATA_CACHE_FILE = path.join(LOCAL_DATA_DIR, "market-data-cache.json");
@@ -310,17 +312,44 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
+// Collects the raw Buffer chunks and decodes UTF-8 once at the end: decoding
+// per chunk turned a Thai character split across two socket chunks into U+FFFD
+// (review-1 #3). Transport cap is 1,000,000 bytes; past it the rest of the body
+// is drained but not kept, and `end` rejects with a 413 error so the client
+// gets a JSON answer instead of a connection reset (review-1 #14). The Decision
+// Journal's own cap (lib/journal-validation JOURNAL_MAX_BYTES, 900,000 bytes)
+// is below this one, so an oversize journal normally gets the validator's 400.
+// Errors carry `statusCode` (413 too large, 400 bad JSON) for the caller.
+const REQUEST_BODY_MAX_BYTES = 1_000_000;
+
+function requestBodyError(message, statusCode) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
 function getRequestBody(req) {
   return new Promise((resolve, reject) => {
-    let body = "";
+    const chunks = [];
+    let bytes = 0;
+    let tooLarge = false;
     req.on("data", (chunk) => {
-      body += chunk;
-      if (body.length > 1_000_000) {
-        req.destroy();
-        reject(new Error("Request body is too large."));
+      if (tooLarge) return;
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk));
+      bytes += buffer.length;
+      if (bytes > REQUEST_BODY_MAX_BYTES) {
+        tooLarge = true;
+        chunks.length = 0;
+        return;
       }
+      chunks.push(buffer);
     });
     req.on("end", () => {
+      if (tooLarge) {
+        reject(requestBodyError("Request body is too large.", 413));
+        return;
+      }
+      const body = Buffer.concat(chunks).toString("utf8");
       if (!body) {
         resolve({});
         return;
@@ -328,7 +357,7 @@ function getRequestBody(req) {
       try {
         resolve(JSON.parse(body));
       } catch (error) {
-        reject(new Error("Invalid JSON body."));
+        reject(requestBodyError("Invalid JSON body.", 400));
       }
     });
     req.on("error", reject);
@@ -393,6 +422,30 @@ function writeLocalPortfolioData(data) {
   fs.mkdirSync(LOCAL_DATA_DIR, { recursive: true });
   fs.writeFileSync(
     LOCAL_PORTFOLIO_FILE,
+    JSON.stringify({ data, updatedAt: new Date().toISOString() }, null, 2),
+    "utf8"
+  );
+}
+
+// Decision Journal local-fallback store (?doc=journal): same shape as the
+// portfolio file but kept in its own file so the two docs never overwrite
+// each other.
+function readLocalJournalData() {
+  try {
+    if (!fs.existsSync(LOCAL_JOURNAL_FILE)) return null;
+    const raw = fs.readFileSync(LOCAL_JOURNAL_FILE, "utf8");
+    if (!raw.trim()) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.data ?? null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeLocalJournalData(data) {
+  fs.mkdirSync(LOCAL_DATA_DIR, { recursive: true });
+  fs.writeFileSync(
+    LOCAL_JOURNAL_FILE,
     JSON.stringify({ data, updatedAt: new Date().toISOString() }, null, 2),
     "utf8"
   );
@@ -510,19 +563,40 @@ async function handlePortfolio(req, res) {
   const useSupabase = hasSupabaseConfig();
 
   try {
+    // Mirrors api/portfolio.js (spec §6): `?doc=journal` addresses the Decision
+    // Journal (separate app_state row / local file, own validator); no `doc` is
+    // the portfolio blob with unchanged behaviour; any other value is rejected
+    // before any I/O. Keep this switch in sync with api/portfolio.js.
+    const doc = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`).searchParams.get("doc");
+    const unknownDoc = Boolean(doc) && doc !== "journal";
+
     if (!useSupabase && ENABLE_LOCAL_FALLBACK) {
+      if (unknownDoc) {
+        sendJson(res, 400, { error: "Unknown doc." });
+        return;
+      }
+
       if (req.method === "GET") {
-        sendJson(res, 200, { data: readLocalPortfolioData(), mode: "local-fallback" });
+        const data = doc === "journal" ? readLocalJournalData() : readLocalPortfolioData();
+        sendJson(res, 200, { data, mode: "local-fallback" });
         return;
       }
 
       if (req.method === "PUT") {
         const body = await getRequestBody(req);
-        if (!isValidPortfolioData(body?.data)) {
-          sendJson(res, 400, { error: "Refusing to save: portfolio data is empty or malformed." });
-          return;
+        if (doc === "journal") {
+          if (!isValidJournalDoc(body?.data)) {
+            sendJson(res, 400, { error: "Refusing to save: journal data is malformed." });
+            return;
+          }
+          writeLocalJournalData(body.data);
+        } else {
+          if (!isValidPortfolioData(body?.data)) {
+            sendJson(res, 400, { error: "Refusing to save: portfolio data is empty or malformed." });
+            return;
+          }
+          writeLocalPortfolioData(body?.data ?? null);
         }
-        writeLocalPortfolioData(body?.data ?? null);
         sendJson(res, 200, { ok: true, mode: "local-fallback" });
         return;
       }
@@ -544,8 +618,15 @@ async function handlePortfolio(req, res) {
       return;
     }
 
+    // Auth precedes doc parsing, same as api/portfolio.js.
+    if (unknownDoc) {
+      sendJson(res, 400, { error: "Unknown doc." });
+      return;
+    }
+
     if (req.method === "GET") {
-      const endpoint = `${getSupabaseUrl()}/rest/v1/app_state?id=eq.${PORTFOLIO_STATE_ID}&select=data`;
+      const stateId = doc === "journal" ? JOURNAL_STATE_ID : PORTFOLIO_STATE_ID;
+      const endpoint = `${getSupabaseUrl()}/rest/v1/app_state?id=eq.${stateId}&select=data`;
       const response = await fetch(endpoint, { headers: portfolioHeaders() });
       if (!response.ok) throw new Error(await response.text());
       const rows = await response.json();
@@ -555,15 +636,21 @@ async function handlePortfolio(req, res) {
 
     if (req.method === "PUT") {
       const body = await getRequestBody(req);
-      if (!isValidPortfolioData(body?.data)) {
+      if (doc === "journal") {
+        if (!isValidJournalDoc(body?.data)) {
+          sendJson(res, 400, { error: "Refusing to save: journal data is malformed." });
+          return;
+        }
+      } else if (!isValidPortfolioData(body?.data)) {
         sendJson(res, 400, { error: "Refusing to save: portfolio data is empty or malformed." });
         return;
       }
+      const stateId = doc === "journal" ? JOURNAL_STATE_ID : PORTFOLIO_STATE_ID;
       const endpoint = `${getSupabaseUrl()}/rest/v1/app_state`;
       const response = await fetch(endpoint, {
         method: "POST",
         headers: portfolioHeaders({ prefer: "resolution=merge-duplicates,return=minimal" }),
-        body: JSON.stringify([{ id: PORTFOLIO_STATE_ID, data: body?.data, updated_at: new Date().toISOString() }])
+        body: JSON.stringify([{ id: stateId, data: body?.data, updated_at: new Date().toISOString() }])
       });
       if (!response.ok) throw new Error(await response.text());
       sendJson(res, 200, { ok: true });
@@ -572,7 +659,8 @@ async function handlePortfolio(req, res) {
 
     sendJson(res, 405, { error: "Method not allowed." });
   } catch (error) {
-    sendJson(res, 500, { error: error.message });
+    // getRequestBody errors carry 413 (too large) / 400 (bad JSON).
+    sendJson(res, error.statusCode || 500, { error: error.message });
   }
 }
 
@@ -1048,6 +1136,12 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Investment dashboard running at http://localhost:${PORT}`);
-});
+// Listen only when run directly (`node server.js`). A `require("./server.js")`
+// (scripts/server-portfolio-test.js) gets the handlers without opening a port.
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`Investment dashboard running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = { handlePortfolio, getRequestBody, server };

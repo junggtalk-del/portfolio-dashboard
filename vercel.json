@@ -121,6 +121,10 @@
       "destination": "/thai-dr-monitor.html"
     },
     {
+      "source": "/decision-journal",
+      "destination": "/decision-journal.html"
+    },
+    {
       "source": "/api/market-data",
       "destination": "/api/price-history"
     },

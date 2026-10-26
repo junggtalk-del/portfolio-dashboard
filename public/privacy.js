@@ -103,13 +103,16 @@
     if (locked) walkMask(document.body); else unmaskAll();
     updateButton();
   }
+  // หน้าที่ render จำนวนเงินเอง (เช่น Decision Journal ที่ต้องซ่อน $ ด้วย) ฟัง event นี้แล้ว render ใหม่
   function lock() {
     locked = true;
+    try { document.dispatchEvent(new CustomEvent("portfolio-privacy-changed", { detail: { locked: locked } })); } catch (e) {}
     try { sessionStorage.removeItem(UNLOCK_KEY); } catch (e) {}
     apply();
   }
   function doUnlock() {
     locked = false;
+    try { document.dispatchEvent(new CustomEvent("portfolio-privacy-changed", { detail: { locked: locked } })); } catch (e) {}
     try { sessionStorage.setItem(UNLOCK_KEY, "1"); } catch (e) {}
     apply();
   }
