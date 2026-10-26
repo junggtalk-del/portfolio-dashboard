@@ -506,6 +506,20 @@ console.log("== แปลง ticker ของตลาดต้นทางจ�
   t("ตลาดที่ยังไม่รองรับ → null ไม่เดา",
     E.providerTickerOf({ underlyingUrl: "https://live.euronext.com/en/product/equities/NL0000235190-XPAR" }) === null);
   t("ไม่มี URL → null", E.providerTickerOf({}) === null && E.providerTickerOf(null) === null);
+  // ตัวที่คนยืนยันเอง: SET ให้ลิงก์หน้ากองทุน ไม่มี ticker ให้อ่าน
+  var DIAMOND = { symbol: "FUEVFVND01", underlying: "DCVFMVN DIAMOND ETF", underlyingExchange: "Hochiminh Stock Exchange",
+    underlyingUrl: "https://dragoncapital.com.vn/en/vfmvn-diamond-etf-fund-fuevfdmd/overview/" };
+  t("FUEVFVND01 → FUEVFVND.VN (VND) ตามที่ผู้ใช้ยืนยันจาก Yahoo", (function () {
+    var x = E.providerTickerOf(DIAMOND);
+    return x && x.ticker === "FUEVFVND.VN" && x.ccy === "VND";
+  })(), JSON.stringify(E.providerTickerOf(DIAMOND)));
+  t("…สกุลตรงกับสกุลของตลาดโฮจิมินห์", E.currencyOf("Hochiminh Stock Exchange") === E.providerTickerOf(DIAMOND).ccy);
+  t("…เว้นวรรค/ตัวพิมพ์ต่างก็ยังเป็นตัวเดียวกัน (normalize แบบ canonicalKeyOf)",
+    (E.providerTickerOf({ underlying: " dcvfmvn  diamond etf ", underlyingExchange: "HOCHIMINH STOCK EXCHANGE" }) || {}).ticker === "FUEVFVND.VN");
+  t("กองชื่อคล้ายในตลาดเดียวกัน (KIM VN DIAMOND ETF) → null ไม่เดา",
+    E.providerTickerOf({ underlying: "KIM VN DIAMOND ETF", underlyingExchange: "Hochiminh Stock Exchange",
+      underlyingUrl: "https://koreainvestment.com.vn/en/kim-fund/kim-growth-vndiamond-etf" }) === null);
+  t("ชื่อเดียวกันแต่คนละตลาด → null", E.providerTickerOf({ underlying: "DCVFMVN DIAMOND ETF", underlyingExchange: "Singapore Exchange" }) === null);
 }
 
 console.log("== priceListings: เทียบราคาทุก DR ของหุ้นตัวเดียวกัน ==");

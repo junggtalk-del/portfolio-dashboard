@@ -549,10 +549,21 @@
     return EXCHANGE_CCY[trim(exchange)] || null;
   }
 
+  // ticker ที่คนยืนยันเองทีละตัว — สำหรับตัวที่ SET ให้ underlyingUrl เป็นหน้าเว็บกองทุน (ไม่มี ticker ให้อ่าน)
+  // คีย์ = underlying + ตลาด ทางการของ SET แบบเดียวกับ canonicalKeyOf ต้องตรงทั้งคู่
+  // ห้ามจับคู่จากชื่อคล้าย (KIM VN DIAMOND ETF เป็นคนละกองกับ DCVFMVN DIAMOND ETF)
+  var CONFIRMED_TICKERS = {
+    // FUEVFVND01 — SET ลิงก์ไปหน้ากองทุนของ Dragon Capital · ผู้ใช้ยืนยัน Yahoo FUEVFVND.VN (2026-10-25)
+    "DCVFMVN DIAMOND ETF@HOCHIMINH STOCK EXCHANGE": { ticker: "FUEVFVND.VN", ccy: "VND" }
+  };
+
   // ดึง ticker ของตลาดต้นทางจาก underlyingUrl ที่ SET ให้มา
   // ใช้ URL ทางการเท่านั้น ไม่เดาจากชื่อย่อที่ SET ตั้งเอง
   // (SET ใช้ "AIA" แต่ตลาดฮ่องกงใช้ 1299 — เดาเองจะได้ราคาผิดตัว)
+  // ยกเว้นตัวที่คนยืนยันไว้ใน CONFIRMED_TICKERS
   function providerTickerOf(row) {
+    var confirmed = CONFIRMED_TICKERS[norm(row && row.underlying) + "@" + norm(row && row.underlyingExchange)];
+    if (confirmed) return { ticker: confirmed.ticker, ccy: confirmed.ccy };
     var u = str(row && row.underlyingUrl).replace(/\s+/g, "");
     var m;
     if ((m = /nasdaq\.com\/market-activity\/stocks\/([A-Za-z0-9.\-]+)/.exec(u))) {
