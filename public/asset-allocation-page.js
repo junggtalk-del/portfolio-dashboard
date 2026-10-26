@@ -220,6 +220,12 @@
           draftNotice = null;
           conflict = null;
           setSaveState("saved");
+          // บอกส่วน Portfolio Position (หน้าเดียวกัน) ให้ใช้ข้อมูลชุดนี้ ไม่งั้นหัวหน้ายังใช้ allocation เก่า
+          try {
+            if (typeof window.CustomEvent === "function" && typeof window.dispatchEvent === "function") {
+              window.dispatchEvent(new window.CustomEvent("portfolio-allocation-saved", { detail: { data: next } }));
+            }
+          } catch (e) {}
         });
       })
       .catch(function (e) {
@@ -275,13 +281,18 @@
   // ตั้งค่าแผนเกษียณ: เงินเฟ้อ · ปีที่จะทำงานต่อ · ปีหลังเกษียณ · เงินเติมต่อปี
   function setRetirement(field, v) {
     if (!allocation) return;
-    var ok = ["inflationPct", "workYears", "retireYears", "annualContribution", "currentAge", "postReturnPct"];
+    var ok = ["inflationPct", "workYears", "retireYears", "annualContribution", "currentAge", "postReturnPct", "targetReturnPct"];
+    // ช่อง "เติมเงินเข้าพอร์ตไตรมาสละ" กรอกรายไตรมาส แต่เก็บ ×4 เป็นรายปี (แผนเกษียณคิดรายปี)
+    // เอนจิน ÷4 กลับเป็นค่าที่พิมพ์เป๊ะ — คูณ/หารด้วย 4 ไม่ทำให้ทศนิยมเพี้ยน
+    var mult = 1;
+    if (field === "quarterlyContribution") { field = "annualContribution"; mult = 4; }
     if (ok.indexOf(field) < 0) return;
-    var s = String(v == null ? "" : v).replace(/^\s+|\s+$/g, "");
+    // รับ "250,000" / "฿250,000" ได้ — ตัดจุลภาค ช่องว่าง และ ฿ ก่อนแปลงเป็นตัวเลข
+    var s = String(v == null ? "" : v).replace(/[\s,฿]/g, "");
     var n = s === "" ? null : Number(s);
     if (n !== null && (!isFinite(n) || n < 0)) n = null;
     if (!allocation.retirement) allocation.retirement = {};
-    allocation.retirement[field] = n;
+    allocation.retirement[field] = n === null ? null : n * mult;
     scheduleSave();
   }
   function setMonthlyExpense(v) {
@@ -372,7 +383,20 @@
   }
 
   // ---------------------------------------------------------------- sections
+  // ผลตอบแทนจริง (ไม่รวมเงินเติม) ของปีล่าสุดเทียบเป้าพอร์ตเกษียณ — มาจาก record.whole ตัวเดียวกับตารางบันทึก
+  // แสดงที่หัวหน้าและใต้ช่องตั้งเป้า เพราะแก้เป้าแล้วต้องเห็นผลตรงที่แก้ (เดิมเปลี่ยนแค่ป้ายในตารางท้ายหน้า)
+  var TARGET_TH = { ahead: "เกินเป้า", on: "ตามเป้า", behind: "ต่ำกว่าเป้า" };
+  function targetVerdict(R) {
+    var W = R.record && R.record.whole;
+    if (!W || !W.yearly || !W.yearly.length) return null;
+    var y = W.yearly[W.yearly.length - 1];
+    if (y.real === null || y.target === null || !TARGET_TH[y.status]) return null;
+    return { year: y.year, full: y.full, n: y.n, real: y.real, target: y.target, status: y.status, annualPct: W.target.annualPct };
+  }
+  function targetSpan(TV) { return TV.full ? "ทั้งปี" : "YTD " + TV.n + " ไตรมาส"; }
+
   function heroSection(R) {
+    var TV = targetVerdict(R);
     var h = headline(R);
     var fresh = psFetchedAt ? "ข้อมูลพอร์ตดึงเมื่อ " + esc(timeAgo(psFetchedAt)) : "";
     return '<section class="aa-hero"><div class="aa-hero-inner">' +
@@ -393,6 +417,10 @@
         '<div class="aa-stat"><div class="aa-stat-n aa-num">' + R.quarters.length + '</div>' +
           '<div class="aa-stat-l">ไตรมาสที่มีข้อมูล</div>' +
           '<div class="aa-stat-s">' + esc(fresh) + "</div></div>" +
+        (TV ? '<div class="aa-stat aa-stat-target is-' + TV.status + '" title="' + esc("ผลตอบแทนจริงทั้งพอร์ต หักเงินเติม/ถอนแล้ว เทียบเป้าพอร์ตเกษียณ " + tgtNum(TV.annualPct) + "%/ปี (ปรับตามจำนวนไตรมาสที่ผ่านไป)") + '">' +
+          '<div class="aa-stat-n">' + pctSigned(TV.real) + '</div>' +
+          '<div class="aa-stat-l">ผลตอบแทนจริงปี ' + TV.year + ' (' + targetSpan(TV) + ')</div>' +
+          '<div class="aa-stat-s">เป้า ' + pctSigned(TV.target) + ' · <b>' + TARGET_TH[TV.status] + "</b></div></div>" : "") +
       "</div></div></section>";
   }
 
@@ -448,9 +476,14 @@
     "</article>";
   }
 
+  // มีไตรมาสที่แบ่งเงินเติมไตรมาสละเข้ารายพอร์ต → บอกไว้ที่หัวการ์ด/หัวข้อ "จากนี้" ว่าตัวเลขหักแบบไหน
+  function splitSub(R) {
+    return R.record && lastSplitRow(R.record) ? " · เงินเติมไตรมาสละแบ่งตามสัดส่วนมูลค่าแต่ละพอร์ต" : "";
+  }
+
   function cardsSection(R) {
     return '<section class="aa-block"><div class="aa-block-head"><h2>เงินอยู่ตรงไหน และทำได้ตามเป้าหรือไม่</h2>' +
-      '<span class="aa-block-sub">ผลตอบแทนจริงหักเงินเติม/ถอนแล้ว · “~” = ค่าประมาณ</span></div>' +
+      '<span class="aa-block-sub">ผลตอบแทนจริงหักเงินเติม/ถอนแล้ว' + splitSub(R) + " · “~” = ค่าประมาณ</span></div>" +
       '<div class="aa-cards">' + AA().PORTS.map(function (p) { return portCard(R.ports[p]); }).join("") + "</div></section>";
   }
 
@@ -472,7 +505,7 @@
       return '<div class="aa-fh"><div class="aa-fh-name"><span class="aa-dot" style="background:' + P.color + '"></span>' + esc(P.label) + "</div>" + body + "</div>";
     }).join("");
     return '<section class="aa-block"><div class="aa-block-head"><h2>จากนี้ต้องทำได้เท่าไหร่</h2>' +
-      '<span class="aa-block-sub">คำนวณโดย engine จากดัชนีผลตอบแทนจริงเทียบเส้นคาดหวัง</span>' +
+      '<span class="aa-block-sub">จากดัชนีผลตอบแทนจริง (หักเงินเติมแล้ว' + splitSub(R) + ") เทียบเส้นคาดหวัง</span>" +
       '<span class="aa-horizon"><label for="aaHorizon">ภายใน</label>' +
       '<select class="aa-select" id="aaHorizon" data-horizon>' + opts + "</select></span></div>" +
       '<div class="aa-fromhere">' + cards + "</div></section>";
@@ -488,7 +521,7 @@
   // กราฟเงินตามเวลา: ช่วงทำงานเงินโต · ช่วงเกษียณเงินลด · แตะศูนย์เมื่อไหร่คือเงินหมด
   function retireChart(RT) {
     var lines = [];
-    if (RT.expected) lines.push({ s: RT.expected.series, color: "#22d3ee", label: "ถ้าทำได้ตามเป้า (~" + num(RT.expectedRatePct) + "%/ปี)", dash: "" });
+    if (RT.expected) lines.push({ s: RT.expected.series, color: "#22d3ee", label: "ถ้าได้ผลตอบแทนตามที่คาด (~" + num(RT.expectedRatePct) + "%/ปี)", dash: "" });
     if (RT.actual) lines.push({ s: RT.actual.series, color: "#f59e0b", label: "ถ้าทำได้เท่าที่ผ่านมาจริง (~" + num(RT.actualRatePct) + "%/ปี)", dash: "5 4" });
     if (!lines.length) return "";
     var total = RT.workYears + RT.retireYears;
@@ -564,28 +597,49 @@
   }
 
 
-  function retireInputs(RT) {
-    function f(id, label, field, val, hint, step) {
-      return '<div class="aa-field"><label class="aa-field-l" for="' + id + '">' + esc(label) + "</label>" +
-        '<input class="aa-input" id="' + id + '" type="number" min="0" step="' + (step || 1) + '" inputmode="decimal" ' +
+  function retireInputs(RT, TV) {
+    // hint = ข้อความสั้นใต้ช่อง (ให้การ์ดทั้ง 8 ใบสูงพอ ๆ กันและเรียงได้บรรทัดเดียว) · tip = คำอธิบายเต็มเมื่อชี้เมาส์
+    function f(id, label, field, val, hint, step, tip) {
+      return '<div class="aa-field"' + (tip ? ' title="' + esc(tip) + '"' : "") + '><label class="aa-field-l" for="' + id + '">' + esc(label) + "</label>" +
+        // เงินเติมไตรมาสละมักพิมพ์ "250,000" — type=number ของ Chrome คืนค่าว่างเมื่อมีจุลภาค (ค่าที่ตั้งจะหายเงียบ ๆ)
+        // จึงใช้ช่องข้อความ + แป้นตัวเลข แล้วให้ setRetirement ตัดจุลภาคเอง
+        '<input class="aa-input" id="' + id + '" ' + (field === "quarterlyContribution"
+          ? 'type="text" inputmode="numeric" autocomplete="off" '
+          : 'type="number" min="0" step="' + (step || 1) + '" inputmode="decimal" ') +
         (field === "monthlyExpense" ? "data-monthly-expense" : 'data-retire="' + field + '"') +
-        ' value="' + (val === null || val === undefined ? "" : esc(val)) + '" />' +
+        ' value="' + (val === null || val === undefined ? "" : esc(field === "quarterlyContribution" ? Number(val).toLocaleString("en-US") : val)) + '" />' +
         '<div class="aa-field-h">' + hint + "</div></div>";
     }
+    // เก็บเป็นรายปี (แผนเกษียณคิดรายปี) แต่กรอก/แสดงเป็น "ไตรมาสละ"
     var contribVal = allocation.retirement && allocation.retirement.annualContribution !== null
-      ? allocation.retirement.annualContribution : null;
-    var contribHint = contribVal === null && RT.observedAnnualFlow !== null
-      ? "เว้นว่างไว้ = ใช้ค่าที่ระบบเห็นจากเงินเติม/ถอนจริง 4 ไตรมาสล่าสุด (" + thb(RT.observedAnnualFlow) + "/ปี)"
-      : "เงินที่ตั้งใจเติมเข้าพอร์ตต่อปี · สมมติว่าโตตามเงินเฟ้อ";
+      ? allocation.retirement.annualContribution / 4 : null;
+    var contribHint = contribVal !== null
+      ? "หักออกจากผลตอบแทนทุกไตรมาส · แผนเกษียณคิดปีละ " + thb(contribVal * 4)
+      : (RT.observedAnnualFlow !== null
+        ? "ว่าง = ไม่หักรายไตรมาส · แผนเกษียณใช้ ~" + thb(RT.observedAnnualFlow / 4) + "/ไตรมาส"
+        : "ใส่แล้วหักออกจากผลตอบแทนทุกไตรมาส");
+    var contribTip = "เงินที่เติมเข้าพอร์ตทุกไตรมาส — หักออกจากผลตอบแทนทุกไตรมาส (ไตรมาสที่กรอก netFlow ในรายการไว้ ใช้ยอดที่กรอกแทน) · แผนเกษียณคิดเป็นรายปี (×4) และโตตามเงินเฟ้อ";
+    var targetHint = TV
+      ? '<span class="aa-tv is-' + TV.status + '">ปี ' + TV.year + " (" + targetSpan(TV) + ") ทำได้ " + pctSigned(TV.real) + " · เป้า " + pctSigned(TV.target) + " → <b>" + TARGET_TH[TV.status] + "</b></span>"
+      : "ใช้เทียบผลตอบแทนจริงทุกไตรมาส/ปี";
     return '<div class="aa-retire-in">' +
-      f("aaAge", "อายุตอนนี้ (ปี)", "currentAge", allocation.retirement.currentAge, "ใส่แล้วทุกอย่างจะแสดงเป็นอายุ ไม่ใช่แค่จำนวนปี", 1) +
-      f("aaExpense", "ต้องใช้เงินเดือนละ (บาท · ค่าวันนี้)", "monthlyExpense", allocation.monthlyExpense, "ค่าใช้จ่ายที่ต้องการต่อเดือนในราคาปัจจุบัน ใช้คำนวณทั้ง runway และแผนเกษียณ", 1000) +
-      f("aaInfl", "เงินเฟ้อ (%/ปี)", "inflationPct", allocation.retirement.inflationPct, "ค่าใช้จ่ายจะโตขึ้นปีละเท่านี้ · ไทยระยะยาวมักอยู่แถว 2-3%", 0.1) +
-      f("aaWork", "จะทำงานต่ออีกกี่ปี", "workYears", allocation.retirement.workYears, "ช่วงที่ยังเติมเงินเข้าพอร์ตได้", 1) +
-      f("aaRetire", "ใช้ชีวิตหลังเกษียณกี่ปี", "retireYears", allocation.retirement.retireYears, "ช่วงที่ต้องถอนเงินออกมาใช้", 1) +
-      f("aaContrib", "เติมเงินเข้าพอร์ตปีละ (บาท)", "annualContribution", contribVal, contribHint, 10000) +
+      f("aaAge", "อายุตอนนี้ (ปี)", "currentAge", allocation.retirement.currentAge, "แสดงเป็นอายุแทนจำนวนปี", 1,
+        "ใส่แล้วทุกอย่างจะแสดงเป็นอายุ ไม่ใช่แค่จำนวนปี") +
+      f("aaExpense", "ต้องใช้เงินเดือนละ (บาท · ค่าวันนี้)", "monthlyExpense", allocation.monthlyExpense, "ราคาวันนี้ · ใช้คิด runway และแผนเกษียณ", 1000,
+        "ค่าใช้จ่ายที่ต้องการต่อเดือนในราคาปัจจุบัน ใช้คำนวณทั้ง runway และแผนเกษียณ") +
+      f("aaInfl", "เงินเฟ้อ (%/ปี)", "inflationPct", allocation.retirement.inflationPct, "ไทยระยะยาว ~2-3%", 0.1,
+        "ค่าใช้จ่ายจะโตขึ้นปีละเท่านี้ · ไทยระยะยาวมักอยู่แถว 2-3%") +
+      f("aaWork", "จะทำงานต่ออีกกี่ปี", "workYears", allocation.retirement.workYears, "ช่วงที่ยังเติมเงินได้", 1,
+        "ช่วงที่ยังเติมเงินเข้าพอร์ตได้") +
+      f("aaRetire", "ใช้ชีวิตหลังเกษียณกี่ปี", "retireYears", allocation.retirement.retireYears, "ช่วงที่ถอนเงินมาใช้", 1,
+        "ช่วงที่ต้องถอนเงินออกมาใช้") +
+      f("aaContrib", "เติมเงินเข้าพอร์ตไตรมาสละ (บาท)", "quarterlyContribution", contribVal, contribHint, 10000, contribTip) +
       f("aaPostRet", "ผลตอบแทนคาดหวังหลังเกษียณ (%/ปี)", "postReturnPct", allocation.retirement.postReturnPct,
-        "เว้นว่าง = ใช้เท่ากับก่อนเกษียณ (" + num(RT.expectedRatePct) + "%/ปี) · ส่วนใหญ่หลังเกษียณจะลดความเสี่ยงลง ผลตอบแทนจึงต่ำกว่า", 0.1) +
+        "ว่าง = เท่าก่อนเกษียณ (" + num(RT.expectedRatePct) + "%)", 0.1,
+        "เว้นว่าง = ใช้เท่ากับก่อนเกษียณ (" + num(RT.expectedRatePct) + "%/ปี) · ส่วนใหญ่หลังเกษียณจะลดความเสี่ยงลง ผลตอบแทนจึงต่ำกว่า") +
+      f("aaTarget", "เป้าผลตอบแทนพอร์ตเกษียณ (%/ปี)", "targetReturnPct", allocation.retirement.targetReturnPct, targetHint, 0.5,
+        "ต้องทำให้ได้เท่านี้ไปตลอด เพราะจะใช้กำไรเป็นค่าใช้จ่ายหลังเกษียณ · เทียบกับผลตอบแทนจริงที่หักเงินเติม/ถอนแล้ว (ใต้ช่องนี้ · หัวหน้า · ตารางบันทึกผลตอบแทน) · " +
+        "เว้นว่าง = 10 · คนละตัวกับผลตอบแทนคาดหวังของ 3 พอร์ตที่ใช้ฉายภาพแผนเกษียณ") +
       "</div>";
   }
 
@@ -599,7 +653,9 @@
       '<div class="aa-gapcell"><div class="aa-vs-l">ต้องมี ณ วันเกษียณ</div><div class="aa-gap-n">' + thb(sc.requiredAtRetirement) + "</div>" +
         '<div class="aa-vs-s">เพื่อใช้ไปอีก ' + num(RT.retireYears, 0) + " ปี</div></div>" +
       '<div class="aa-gapcell"><div class="aa-vs-l">คาดว่าจะมี</div><div class="aa-gap-n">' + thb(sc.wealthAtRetirement) + "</div>" +
-        '<div class="aa-vs-s">จากวันนี้ ' + thb(RT.startWealth) + " + เติมปีละ " + thb(RT.annualContribution) + "</div></div>" +
+        '<div class="aa-vs-s">จากวันนี้ ' + thb(RT.startWealth) + (RT.contributionSource === "user"
+          ? " + เติมไตรมาสละ " + thb(RT.annualContribution / 4) + " (ปีละ " + thb(RT.annualContribution) + ")"
+          : " + เติมปีละ " + thb(RT.annualContribution)) + "</div></div>" +
       '<div class="aa-gapcell ' + (enough ? "is-ok" : "is-short") + '"><div class="aa-vs-l">' + (enough ? "เกินเป้า" : "ยังขาดอีก") + "</div>" +
         '<div class="aa-gap-n">' + thb(enough ? Math.abs(sc.gapAtRetirement) : short) + "</div>" +
         '<div class="aa-vs-s">' + (enough ? "มากกว่าที่ต้องมี" : "คิดเป็น " + pctOf(short / sc.requiredAtRetirement, 0) + " ของเป้า") + "</div></div>";
@@ -680,10 +736,10 @@
       if (RT.expected) {
         var v = VERDICT_TH[RT.expected.verdict] || VERDICT_TH.tight;
         var msg = RT.expected.runsOutInYear !== null
-          ? "ถ้าทำได้ตามเป้า เงินจะหมดก่อนครบกำหนด " + RT.expected.yearsShort + " ปี"
+          ? "ถ้าได้ผลตอบแทนตามที่คาด (" + num(RT.expectedRatePct) + "%/ปี) เงินจะหมดก่อนครบกำหนด " + RT.expected.yearsShort + " ปี"
           : (RT.expected.verdict === "comfortable"
-            ? "ถ้าทำได้ตามเป้า เงินพอใช้ครบ " + RT.retireYears + " ปี และยังเหลือ " + thb(RT.expected.endWealth)
-            : "ถ้าทำได้ตามเป้า เงินพอใช้ครบ " + RT.retireYears + " ปี แต่เหลือไม่มาก");
+            ? "ถ้าได้ผลตอบแทนตามที่คาด (" + num(RT.expectedRatePct) + "%/ปี) เงินพอใช้ครบ " + RT.retireYears + " ปี และยังเหลือ " + thb(RT.expected.endWealth)
+            : "ถ้าได้ผลตอบแทนตามที่คาด (" + num(RT.expectedRatePct) + "%/ปี) เงินพอใช้ครบ " + RT.retireYears + " ปี แต่เหลือไม่มาก");
         head = '<div class="aa-headline is-' + (RT.expected.verdict === "short" ? "behind" : RT.expected.verdict === "comfortable" ? "ahead" : "on") + '">' +
           "<b>" + esc(v.label) + "</b> — " + esc(msg) + "</div>";
       }
@@ -705,7 +761,7 @@
       " · ผลตอบแทนคาดหวังก่อนเกษียณ " + num(RT.expectedRatePct) + "%/ปี" +
       (RT.postRateUsedPct === null ? "" : " · หลังเกษียณ " + num(RT.postRateUsedPct) + "%/ปี") +
       " · ถ่วงตามสัดส่วนพอร์ตจริง · ทุกตัวเลขเป็นค่าประมาณ</span></div>" +
-      '<div class="aa-retire">' + body + retireInputs(RT) + "</div></section>";
+      '<div class="aa-retire">' + body + retireInputs(RT, targetVerdict(R)) + "</div></section>";
   }
 
 
@@ -811,59 +867,204 @@
       '<div class="aa-settings">' + fields + "</div></section>";
   }
 
-  // ── บันทึกผลตอบแทนย้อนหลัง: 3 พอร์ต + ทั้งพอร์ต เรียงในตารางเดียว
-  // มีไว้เพื่อตอบว่า "ที่ผ่านมาแต่ละพอร์ตทำได้จริงเท่าไหร่" — ใช้ตรวจว่าเป้าที่ตั้งไว้สมจริงไหม
+  // ── บันทึกผลตอบแทนย้อนหลัง
+  //   1) ทั้งพอร์ต (ทุกรายการ) — ตารางหลัก: ต้นงวด · ปลายงวด · รวมเงินเติม · เงินเติม · ไม่รวมเงินเติม + เทียบเป้าพอร์ตเกษียณ
+  //   2) แยกรายพอร์ต สั้น/กลาง/ยาว (ตารางเดิม) — พับไว้ · หักเงินเติมไตรมาสละที่แบ่งตามสัดส่วนมูลค่าต้นงวด
+  //      (ไตรมาสที่กรอก netFlow ≠ 0 ใช้ยอดที่กรอกแทน — เอนจินตัดสินจาก record.whole แถวเดียวกัน)
+  //      ไม่มีคอลัมน์ "ทั้งพอร์ต" ในตารางนี้แล้ว เพื่อไม่ให้มีตัวเลขทั้งพอร์ต 2 ชุดที่ไม่ตรงกันบนหน้าเดียว
   function recordSection(R) {
-    var R2 = R.record;
-    if (!R2 || !R2.rows.length) {
+    var R2 = R.record, W = R2 && R2.whole;
+    if (!R2 || !W || !W.rows.length) {
       return '<section class="aa-block" id="aaRecord"><div class="aa-block-head"><h2>บันทึกผลตอบแทนย้อนหลัง</h2></div>' +
         '<div class="aa-quality"><div class="aa-q-line">ต้องมีอย่างน้อย 2 ไตรมาสที่มีมูลค่า จึงจะเริ่มบันทึกผลตอบแทนได้</div></div></section>';
     }
-    function cell(x, flow, status, reason) {
+    return '<section class="aa-block" id="aaRecord"><div class="aa-block-head"><h2>บันทึกผลตอบแทนย้อนหลัง</h2>' +
+      '<span class="aa-block-sub">ทั้งพอร์ตแต่ละไตรมาส: รวมเงินเติม · เงินเติม · ไม่รวมเงินเติม (ผลตอบแทนจริง) เทียบเป้าพอร์ตเกษียณ</span></div>' +
+      wholeTable(W) + portBreakdown(R, R2) + "</section>";
+  }
+
+  // เป้าเป็นจำนวนเต็มให้แสดง "10%" ไม่ใช่ "10.0%" · มีทศนิยมจึงแสดง 1 ตำแหน่ง
+  function tgtNum(v) { return num(v, Number(v) % 1 === 0 ? 0 : 1); }
+  function recPct(x, extra, naTitle) {
+    if (x === null || x === undefined) return '<td class="aa-rec-na"' + (naTitle ? ' title="' + esc(naTitle) + '"' : "") + ">—</td>";
+    var cls = x > 0.0005 ? "is-up" : (x < -0.0005 ? "is-down" : "");
+    return '<td class="' + cls + '">' + pctSigned(x) + (extra || "") + "</td>";
+  }
+  // เกิน/ขาดเป้ากี่ % — ลบจากตัวเลขที่แสดง (ปัด 1 ตำแหน่ง) ให้คนบวกลบบนจอแล้วได้ตรงกัน
+  // เช่น ทำได้ −1.1% เป้า +4.7% ต้องขึ้น −5.8% ไม่ใช่ −5.7% จากค่าดิบ (ต่างจากค่าดิบไม่เกิน 0.1)
+  // ป้ายสถานะยังตัดสินจากค่าดิบในเอนจิน (เกินเป้าต้องห่าง ≥ 0.5% จึงไม่มีทางปัดจนเครื่องหมายกลับ)
+  function shownDiff(real, target) {
+    if (real === null || real === undefined || target === null || target === undefined) return null;
+    var d = Number((Number(real) * 100).toFixed(1)) - Number((Number(target) * 100).toFixed(1));
+    return isFinite(d) ? d : null;
+  }
+  // ป้ายเทียบเป้าพอร์ตเกษียณ — เป้าทบต้นตามช่วงที่วัด (1 ไตรมาส / n ไตรมาส / ทั้งปี) · เกิน/ต่ำกว่าเป้าบอกส่วนต่างในป้าย
+  function recPill(st, real, target, TGT, spanLabel) {
+    if (!st || st === "no-data" || TGT.annualPct === null) return "";
+    var lab = st === "ahead" ? "เกินเป้า" : (st === "behind" ? "ต่ำกว่าเป้า" : "ตามเป้า");
+    var d = shownDiff(real, target);
+    var dTxt = d === null ? "" : (d > 0 ? "+" : d < 0 ? "-" : "") + Math.abs(d).toFixed(1) + "%";
+    return '<span class="aa-rec-pill is-' + st + '" title="' +
+      esc("เป้าพอร์ตเกษียณ " + tgtNum(TGT.annualPct) + "%/ปี → " + spanLabel + " " + pctSigned(target) + " (ทบต้น) · ทำได้ " + pctSigned(real) + (dTxt ? " · ต่างจากเป้า " + dTxt : "")) +
+      '">' + lab + (st !== "on" && dTxt ? " " + dTxt : "") + "</span>";
+  }
+  // เกิน/ขาดเป็นเงิน = มูลค่าปลายงวดจริง − มูลค่าที่ควรมีถ้าได้ตามเป้าพอดี (เอนจินคิด) · title ห้ามมี ฿ (Privacy Lock ไม่ซ่อน title)
+  function recGapAmt(st, amount) {
+    if ((st !== "ahead" && st !== "behind") || amount === null || amount === undefined || !isFinite(amount)) return "";
+    // แถวปีคิดเงินจากเส้นมูลค่า ป้ายคิดจากดัชนี — ถ้าเงินเติมก้อนใหญ่ทำให้สองทางชี้คนละทิศ ไม่แสดงเงิน ดีกว่าขัดกับป้าย
+    if ((st === "ahead") !== (amount > 0)) return "";
+    return '<span class="aa-rec-gap is-' + st + '" title="มูลค่าปลายงวดจริง เทียบกับมูลค่าที่ควรมีถ้าได้ผลตอบแทนตามเป้าพอดี (ต้นงวดและเงินเติมเท่าเดิม)">' +
+      (amount > 0 ? "เกิน " : "ขาด ") + thb(Math.abs(amount)) + "</span>";
+  }
+  // ช่องเงินเติม: บอกที่มาของยอดเสมอ — ตั้งไว้ไตรมาสละ / กรอกในรายการ / ระบบประมาณ / ยังไม่มี
+  function recFlowCell(row, W) {
+    var src = row.flowSource, q = W.quarterly.amount, title, tag = "";
+    if (src === "setting") {
+      title = "ตามที่ตั้ง “เติมเงินเข้าพอร์ตไตรมาสละ” " + thb(q) + (row.span > 1 ? " × " + row.span + " ไตรมาส (เทียบกับ " + row.prevKey + ")" : "");
+      if (row.span > 1) tag = '<span class="aa-rec-src">×' + row.span + "</span>";
+    } else if (src === "recorded") {
+      title = "ยอดที่กรอก netFlow ในรายการ" + (row.settingOverridden ? " — ใช้แทนยอดไตรมาสละ " + thb(row.settingAmount) : "");
+      tag = '<span class="aa-rec-src">กรอก</span>';
+    } else if (src === "partial") {
+      title = "กรอก netFlow ไว้บางรายการ" + (row.imputedFlow ? " · ระบบประมาณจากรายการที่เพิ่งเข้าพอร์ต " + thb(row.imputedFlow) : "") +
+        (row.settingOverridden ? " — ใช้แทนยอดไตรมาสละ " + thb(row.settingAmount) : "");
+      tag = '<span class="aa-rec-flag">*</span>';
+    } else if (src === "imputed") {
+      title = "ไม่ได้กรอก — ระบบประมาณจากรายการที่เพิ่งเข้าพอร์ต (ข้อมูลก่อนมี netFlow)";
+      tag = '<span class="aa-rec-flag">*</span>';
+    } else {
+      return '<td class="aa-rec-na" title="ยังไม่ได้ตั้งเงินเติมไตรมาสละ และไม่ได้กรอก netFlow — ช่องไม่รวมเงินเติมจึงเท่ากับรวมเงินเติม">—</td>';
+    }
+    return '<td title="' + esc(title) + '">' + thbSigned(row.flow) + tag + "</td>";
+  }
+  function wholeTable(W) {
+    var TGT = W.target, q = W.quarterly.amount, S = W.summary;
+    var yearAfter = {};
+    W.yearly.forEach(function (y) { yearAfter[y.lastKey] = y; });
+    // ทุกแถวมี 6 ช่องเท่ากัน (ไม่มี colspan) — บนมือถือซ่อนต้นงวด/ปลายงวด (.aa-rec-v) ได้โดยตารางไม่เบี้ยว
+    function vals(a, b) { return '<td class="aa-rec-v">' + a + '</td><td class="aa-rec-v">' + b + "</td>"; }
+    function label(text, sub) { return "<td>" + text + (sub ? '<span class="aa-rec-sub">' + esc(sub) + "</span>" : "") + "</td>"; }
+    function yearRow(y) {
+      var span = y.full ? "ทั้งปี" : y.n + " ไตรมาส";
+      return '<tr class="aa-rec-year">' + label(y.year + (y.full ? " ทั้งปี" : " (YTD)"), y.note) +
+        vals(thb(y.startValue), thb(y.endValue)) +
+        recPct(y.naive) + "<td>" + thbSigned(y.flow) + "</td>" +
+        recPct(y.real, recPill(y.status, y.real, y.target, TGT, span) + recGapAmt(y.status, y.targetDiffAmount) +
+          (y.target === null ? "" : '<span class="aa-rec-tgt">เป้า ' + pctSigned(y.target) + "</span>"), "มีไตรมาสที่คำนวณไม่ได้") +
+        "</tr>";
+    }
+    var body = W.rows.map(function (row) {
+      var tr = "<tr><td>" + esc(row.key) +
+        (row.span > 1 ? '<span class="aa-rec-src" title="ไม่มีข้อมูลไตรมาสระหว่างทาง">จาก ' + esc(row.prevKey) + "</span>" : "") + "</td>" +
+        vals(thb(row.vStart), thb(row.vEnd)) +
+        recPct(row.naive) + recFlowCell(row, W) +
+        recPct(row.real, recPill(row.status, row.real, row.target, TGT, row.span > 1 ? row.span + " ไตรมาส" : "ต่อไตรมาส") +
+          recGapAmt(row.status, row.targetDiffAmount), "คำนวณไม่ได้ — ถอนมากกว่ามูลค่าที่มี") +
+        "</tr>";
+      var y = yearAfter[row.key];
+      return y ? tr + yearRow(y) : tr;
+    }).join("");
+    var sums =
+      '<tr class="aa-rec-sum">' + label("สะสมทั้งช่วง") + vals(thb(S.startValue), thb(S.endValue)) +
+        recPct(S.naiveCum) + "<td>" + thbSigned(S.flowTotal) + "</td>" + recPct(S.realCum, "", "มีไตรมาสที่คำนวณไม่ได้") + "</tr>" +
+      '<tr class="aa-rec-sum">' + label("เฉลี่ยต่อปี", S.realAnn === null ? (S.annNote || "ยังคำนวณไม่ได้") : "ไม่รวมเงินเติม ทบต้นเป็นต่อปี") +
+        vals("", "") + "<td></td><td></td>" + recPct(S.realAnn) + "</tr>" +
+      (TGT.annualPct === null ? "" : '<tr class="aa-rec-sum">' +
+        label("เป้าเกษียณ " + tgtNum(TGT.annualPct) + "%/ปี", "ต่อไตรมาส " + pctSigned(TGT.quarterly) + " (ทบต้น ไม่ใช่ " + tgtNum(TGT.annualPct) + " ÷ 4)") +
+        vals("", "") + "<td></td><td></td>" + recPct(TGT.annualPct / 100) + "</tr>");
+    var anyNone = W.rows.some(function (r) { return r.flowSource === "none"; });
+    var anyStar = W.rows.some(function (r) { return r.flowSource === "partial" || r.flowSource === "imputed"; });
+    var anySpan = W.rows.some(function (r) { return r.span > 1; });
+    var anyOver = W.rows.some(function (r) { return r.settingOverridden; });
+    var anyGap = W.rows.concat(W.yearly).some(function (r) { return r.status === "ahead" || r.status === "behind"; });
+    return '<div class="aa-table-wrap aa-rec-wrap"><table class="aa-table aa-rec aa-rec-whole"><thead><tr><th>ไตรมาส</th>' +
+      '<th class="aa-rec-v">ต้นงวด</th><th class="aa-rec-v">ปลายงวด</th>' +
+      "<th>รวมเงินเติม</th><th>เงินเติม</th><th>ไม่รวมเงินเติม</th></tr></thead><tbody>" + body + sums + "</tbody></table></div>" +
+      (q !== null
+        ? '<div class="aa-q-line">เงินเติม = ตามที่ตั้ง “เติมเงินเข้าพอร์ตไตรมาสละ” ' + thb(q) + " (แก้ได้ที่ช่องตั้งค่าด้านล่าง)" +
+          (anyOver ? " · ไตรมาสที่มีป้าย “กรอก” ใช้ยอด netFlow ที่กรอกในรายการแทน" : "") + "</div>"
+        : (anyNone ? '<div class="aa-q-line is-warn">ยังไม่ได้ตั้ง “เติมเงินเข้าพอร์ตไตรมาสละ” — ไตรมาสที่ไม่ได้กรอก netFlow ช่องไม่รวมเงินเติมจึงเท่ากับรวมเงินเติม</div>' : "")) +
+      (anyStar ? '<div class="aa-q-line">* กรอก netFlow ไว้ไม่ครบ หรือระบบประมาณจากรายการที่เพิ่งเข้าพอร์ต — ชี้ที่ช่องเงินเติมเพื่อดูรายละเอียด</div>' : "") +
+      (anySpan ? '<div class="aa-q-line">ไตรมาสที่ไม่มีข้อมูลระหว่างทาง: หักเงินเติมตามจำนวนไตรมาสที่ผ่านไป และเทียบเป้าตามช่วงนั้น</div>' : "") +
+      (anyGap && TGT.annualPct !== null ? '<div class="aa-q-line">เกิน/ต่ำกว่าเป้า: ตัวเลขในป้าย = ผลตอบแทนไม่รวมเงินเติม − เป้าของช่วงนั้น · เกิน/ขาดเป็นเงิน = มูลค่าปลายงวดจริง − มูลค่าที่ควรมีถ้าได้ตามเป้าพอดี (ต้นงวดและเงินเติมเท่าเดิม) · แถวปีเทียบกับเส้นที่ได้ตามเป้าทุกไตรมาสตั้งแต่ต้นปี</div>' : "") +
+      '<div class="aa-q-line">ไม่รวมเงินเติม = (ปลายงวด − ต้นงวด − เงินเติม) ÷ (ต้นงวด + ครึ่งหนึ่งของเงินเติม) · คิดจากทุกรายการใน Quarterly Editor รวมรายการที่ยังไม่จัดพอร์ต</div>';
+  }
+  // ที่มาของเงินเติมในตัวเลขรายพอร์ต — ยกไตรมาสล่าสุดที่แบ่งยอดไตรมาสละเป็นตัวอย่างจริง (ยอดจากเอนจิน ไม่คิดใหม่)
+  function lastSplitRow(R2) {
+    for (var i = R2.rows.length - 1; i >= 0; i--) {
+      var row = R2.rows[i];
+      if (AA().PORTS.some(function (p) { return row.ports[p].flowStatus === "setting" && row.ports[p].alloc; })) return row;
+    }
+    return null;
+  }
+  function portFlowNote(R2) {
+    var q = R2.whole ? R2.whole.quarterly.amount : null;
+    if (q === null || q === undefined) {
+      return '<div class="aa-q-line">ตัวเลขรายพอร์ตหักเฉพาะ netFlow ที่กรอกในแต่ละรายการ — ยังไม่ได้ตั้ง “เติมเงินเข้าพอร์ตไตรมาสละ”</div>';
+    }
+    var last = lastSplitRow(R2);
+    if (!last) {
+      return '<div class="aa-q-line">ทุกไตรมาสมี netFlow ที่กรอกในรายการ ตัวเลขรายพอร์ตจึงหักตามยอดที่กรอก ไม่ได้ใช้ยอดไตรมาสละ</div>';
+    }
+    var parts = [], given = 0, total = null;
+    AA().PORTS.forEach(function (p) {
+      var c = last.ports[p];
+      if (c.flowStatus !== "setting" || !c.alloc) return;
+      parts.push(esc(AA().PORT_META[p].label) + " " + thb(c.flow));
+      given += c.flow; total = c.alloc.total;
+    });
+    var rest = total === null ? 0 : total - given;
+    if (rest > 0.5) parts.push("ยังไม่จัดพอร์ต " + thb(rest));
+    return '<div class="aa-q-line">ตัวเลขรายพอร์ตหักเงินเติมไตรมาสละแล้ว โดยแบ่งตามสัดส่วนมูลค่าต้นงวดของแต่ละพอร์ต — เช่น ' + esc(last.key) + ": " + parts.join(" · ") +
+      " · ไม่รู้ว่าเงินเข้าพอร์ตไหนจริง จึงเป็นสมมติฐาน ถ้ากรอก netFlow ในรายการ ไตรมาสนั้นจะใช้ยอดที่กรอกแทน (ชี้ที่ตัวเลขเพื่อดูยอดที่หัก)</div>";
+  }
+  // ตารางเดิม (รายพอร์ต) — พับไว้ · ไม่มีคอลัมน์ทั้งพอร์ต
+  function portBreakdown(R, R2) {
+    if (!R2.rows.length) return "";
+    function cell(x, flow, status, reason, alloc) {
       if (x === null) {
         return '<td class="aa-rec-na" title="' + esc(reason === "empty-start" ? "พอร์ตยังไม่มีเงินในไตรมาสก่อนหน้า" : reason === "inconsistent" ? "ถอนมากกว่ามูลค่าที่มี" : "ยังไม่มีข้อมูล") + '">—</td>';
       }
       var cls = x > 0.0005 ? "is-up" : (x < -0.0005 ? "is-down" : "");
       var mark = status === "missing" ? '<span class="aa-rec-flag" title="ไตรมาสนี้ไม่มีข้อมูลเงินเติม/ถอน — คิดเป็น 0">*</span>'
         : (status === "partial" ? '<span class="aa-rec-flag" title="มีข้อมูลเงินเติม/ถอนบางรายการ">*</span>' : "");
-      return '<td class="' + cls + '" title="' + esc("เงินเติม/ถอน " + thbSigned(flow || 0)) + '">~' + pctSigned(x) + mark + "</td>";
+      // ยอดที่แบ่งจากเงินเติมไตรมาสละ: บอกทั้งยอดเต็ม สัดส่วน และยอดที่หักจากพอร์ตนี้
+      var title = status === "setting" && alloc
+        ? "หักเงินเติม " + thb(flow || 0) + " = ไตรมาสละ " + thb(alloc.total) + " × " + num(alloc.share * 100, 1) + "% (สัดส่วนมูลค่าต้นงวดของพอร์ตนี้)"
+        : "เงินเติม/ถอน " + thbSigned(flow || 0);
+      return '<td class="' + cls + '" title="' + esc(title) + '">~' + pctSigned(x) + mark + "</td>";
     }
     var body = R2.rows.map(function (row) {
       return "<tr><td>" + esc(row.key) + "</td>" +
         AA().PORTS.map(function (p) {
           var c = row.ports[p];
-          return cell(c.r, c.flow, c.flowStatus, c.rReason);
+          return cell(c.r, c.flow, c.flowStatus, c.rReason, c.alloc);
         }).join("") +
-        cell(row.overall, row.overallFlow, "recorded", null) +
         "<td>" + thb(row.overallValue) + "</td></tr>";
     }).join("");
-    function sumRow(label, pick, pickAll, note) {
+    function sumRow(label, pick, note) {
       return '<tr class="aa-rec-sum"><td>' + label + "</td>" +
         AA().PORTS.map(function (p) {
           var v = pick(R.ports[p]);
           return "<td" + (v === null ? "" : ' class="' + (v > 0 ? "is-up" : v < 0 ? "is-down" : "") + '"') + ">" +
             (v === null ? "—" : "~" + pctSigned(v)) + "</td>";
         }).join("") +
-        "<td" + (pickAll === null ? "" : ' class="' + (pickAll > 0 ? "is-up" : pickAll < 0 ? "is-down" : "") + '"') + ">" +
-        (pickAll === null ? "—" : "~" + pctSigned(pickAll)) + "</td><td>" + (note || "") + "</td></tr>";
+        "<td>" + (note || "") + "</td></tr>";
     }
     var anyMissing = R2.rows.some(function (row) {
       return AA().PORTS.some(function (p) { return row.ports[p].flowStatus === "missing" || row.ports[p].flowStatus === "partial"; });
     });
-    return '<section class="aa-block" id="aaRecord"><div class="aa-block-head"><h2>บันทึกผลตอบแทนย้อนหลัง</h2>' +
-      '<span class="aa-block-sub">แต่ละไตรมาสที่ผ่านมา แต่ละพอร์ตทำได้เท่าไหร่ (หักเงินเติม/ถอนแล้ว) · ใช้ตรวจว่าเป้าที่ตั้งไว้สมจริงไหม</span></div>' +
+    return '<details class="aa-details aa-rec-ports"><summary>ดูแยกรายพอร์ต สั้น / กลาง / ยาว (' + R2.rows.length + " ไตรมาส)</summary>" +
       '<div class="aa-table-wrap aa-rec-wrap"><table class="aa-table aa-rec"><thead><tr><th>ไตรมาส</th>' +
       AA().PORTS.map(function (p) { return '<th><span class="aa-dot" style="background:' + AA().PORT_META[p].color + '"></span> ' + esc(AA().PORT_META[p].label) + "</th>"; }).join("") +
-      "<th>ทั้งพอร์ต</th><th title=\"ผลรวมของ 3 พอร์ต ไม่รวมรายการที่ยังไม่จัด\">มูลค่าที่จัดแล้ว</th></tr></thead><tbody>" + body +
-      sumRow("สะสมทั้งช่วง", function (P) { return P.cumReturn; }, R2.overall.cumReturn, "") +
-      sumRow("เฉลี่ยต่อปี", function (P) { return P.annReturn; }, R2.overall.annReturn,
-        R2.overall.annReturn === null ? esc(R2.overall.annNote || "ยังไม่ครบปี") : "") +
-      sumRow("เป้าที่ตั้งไว้", function (P) { return P.expectedReturnPct === null ? null : P.expectedReturnPct / 100; },
-        R.retirement.expectedRatePct === null ? null : R.retirement.expectedRatePct / 100, "ถ่วงตามมูลค่าพอร์ต") +
+      "<th title=\"ผลรวมของ 3 พอร์ต ไม่รวมรายการที่ยังไม่จัด\">มูลค่าที่จัดแล้ว</th></tr></thead><tbody>" + body +
+      sumRow("สะสมทั้งช่วง", function (P) { return P.cumReturn; }, "") +
+      sumRow("เฉลี่ยต่อปี", function (P) { return P.annReturn; }, "") +
+      sumRow("เป้าที่ตั้งไว้", function (P) { return P.expectedReturnPct === null ? null : P.expectedReturnPct / 100; }, "") +
       "</tbody></table></div>" +
       (anyMissing ? '<div class="aa-q-line">* ไตรมาสที่ไม่มีข้อมูลเงินเติม/ถอนครบ — ระบบคิดส่วนที่ขาดเป็น 0 ตัวเลขจึงอาจคลาดเคลื่อน</div>' : "") +
-      '<div class="aa-q-line">“ทั้งพอร์ต” คิดจากมูลค่าและเงินเติม/ถอนรวมของทั้ง 3 พอร์ต ไม่ใช่การเฉลี่ยผลตอบแทน 3 ตัว</div>' +
-      "</section>";
+      portFlowNote(R2) +
+      "</details>";
   }
 
   function qualitySection(R) {
@@ -956,6 +1157,7 @@
     catch (e) { root.innerHTML = '<div class="mc-empty"><strong>คำนวณไม่สำเร็จ:</strong> ' + esc(e && e.message) + "</div>"; return; }
 
     if (!R.available) { root.innerHTML = emptyState(R); return; }
+    notifyAllocationChanged();
 
     var banner = conflict
       ? '<div class="aa-banner">มีการแก้ไขการจัดพอร์ตจากที่อื่นใหม่กว่าของคุณ (' +
@@ -1056,6 +1258,22 @@
     }
   }
 
+  // หน้า Portfolio Position (หน้าเดียวกัน) อ่าน allocation จากที่นี่ — รวมค่าที่เพิ่งพิมพ์แต่ยังบันทึกไม่สำเร็จ
+  // ไม่งั้นหัวหน้ากับตารางจะใช้คนละชุดตอนบันทึกล้มเหลว · null = ยังโหลดไม่เสร็จ (ให้หน้านั้นใช้ของตัวเอง)
+  function currentAllocation() { return psCache && allocation ? allocation : null; }
+  var lastNotified = null;
+  function notifyAllocationChanged() {
+    var sig = null;
+    try { sig = JSON.stringify(allocation); } catch (e) { sig = null; }
+    if (sig === lastNotified) return;
+    lastNotified = sig;
+    try {
+      if (typeof window.CustomEvent === "function" && typeof window.dispatchEvent === "function") {
+        window.dispatchEvent(new window.CustomEvent("portfolio-allocation-changed"));
+      }
+    } catch (e) {}
+  }
+
   function init() {
     horizonQuarters = readHorizon();
     allocation = AA() ? AA().normalizeAllocation(null) : null;
@@ -1084,7 +1302,8 @@
       discardDraft: discardDraft,
       overwriteRemote: overwriteRemote,
       takeRemote: takeRemote,
-      persistNow: persist
+      persistNow: persist,
+      currentAllocation: currentAllocation
     };
   }
 })();

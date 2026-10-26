@@ -30,6 +30,19 @@
 .pp-stat-n { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .pp-stat-l { font-size: 11.5px; color: var(--mc-muted); margin-top: 2px; font-weight: 600; }
 .pp-stat-s { font-size: 11.5px; margin-top: 4px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+/* ผลตอบแทนไตรมาสนี้: รวมเงินเติม · เงินเติม · ไม่รวมเงินเติม — แสดงคู่กันเสมอ */
+.pp-grow { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 3px 10px; align-items: baseline; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.pp-grow-k { font-size: 11.5px; font-weight: 600; color: var(--mc-muted); white-space: nowrap; }
+.pp-grow-v { font-size: 13px; font-weight: 800; white-space: nowrap; }
+.pp-grow-n { font-size: 11px; color: var(--mc-text-2); min-width: 0; }
+.pp-nw { white-space: nowrap; }
+.pp-grow-st { white-space: nowrap; font-weight: 800; }
+.pp-grow-st.is-ahead { color: var(--pp-bull); }
+.pp-grow-st.is-on { color: var(--mc-text); }
+.pp-grow-st.is-behind { color: var(--pp-mid); }
+.pp-dim { color: var(--mc-muted); font-weight: 500; }
+/* คำเตือนใต้ตัวเลข: ไตรมาสไม่มี/มีบางส่วนของข้อมูลเงินเติม — อำพัน ไม่ใช่แดง เพราะไม่ใช่ความผิดพลาด แต่เป็นข้อมูลที่ขาด */
+.pp-warn { color: var(--mc-amber, #fbbf24); }
 .pp-invbar { height: 12px; border-radius: 7px; background: var(--pp-track); overflow: hidden; margin-top: 16px; }
 .pp-invbar i { display: block; height: 100%; background: linear-gradient(90deg, #38bdf8, var(--pp-bull)); border-radius: 7px; }
 .pp-invbar-cap { display: flex; justify-content: space-between; font-size: 11px; color: var(--mc-muted); margin-top: 5px; }

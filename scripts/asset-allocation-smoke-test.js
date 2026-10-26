@@ -669,5 +669,338 @@ var D1 = PP.deriveQuarterly(withFlow), D2 = PP.deriveQuarterly(noFlow);
 t("deriveQuarterly total เท่าเดิม", D1.total === D2.total, D1.total + " vs " + D2.total);
 t("deriveQuarterly output เหมือนเดิมทุก byte", JSON.stringify(D1) === JSON.stringify(D2));
 
+
+// ============================================================
+console.log("\n[W1] เป้าพอร์ตเกษียณ — ทบต้นเป็นรายไตรมาส ไม่ใช่ 10 ÷ 4");
+// เป้า 10%/ปี ต้องทบต้นลงเป็นรายไตรมาส = 1.10^(1/4)−1 ≈ 2.411% ไม่ใช่ 10/4 = 2.5%
+// ถ้าใช้ 2.5% คูณกัน 4 ไตรมาสจะได้ 10.38% ซึ่งไม่ใช่เป้าที่ตั้งไว้
+tNear("เป้าต่อไตรมาสทบต้นจาก 10%/ปี", AA.quarterTarget(10), Math.pow(1.10, 0.25) - 1, 1e-12);
+t("เป้าต่อไตรมาสไม่ใช่ 2.5% (10/4)", Math.abs(AA.quarterTarget(10) - 0.025) > 1e-4);
+t("เป้า null → null ไม่ใช่ NaN", AA.quarterTarget(null) === null && AA.quarterTarget("") === null);
+tNear("เป้า 2 ไตรมาส = 1.10^(2/4)−1", AA.targetFor(10, 2), Math.pow(1.10, 0.5) - 1, 1e-12);
+t("เป้า 0 ไตรมาส → null", AA.targetFor(10, 0) === null);
+t("quarterIndexOf นับต่อเนื่องข้ามปี", AA.quarterIndexOf("2026-Q1") - AA.quarterIndexOf("2025-Q4") === 1 && AA.quarterIndexOf("abc") === null);
+
+console.log("\n[W2] ทั้งพอร์ต: รายไตรมาส + รายปี (ไม่ได้ตั้งเงินเติมไตรมาสละ)");
+// ปีเต็ม 2 ปี + ปีปัจจุบันครึ่งปี · เงินเติมก้อนใหญ่ที่กรอกไว้ใน 2025-Q3
+//   2024: 100k → 102.4 → 104.9 → 107.4 → 110.0   (≈2.411%/ไตรมาส = ครบ 10% พอดี)
+//   2025: 110.0 → 112.0 → 164.0 (กรอกเติม 50k) → 166.0 → 168.0
+//   2026: 168.0 → 170.0 → 172.0 (ยังไม่ครบปี)
+var EXY = {};
+var yq = Math.pow(1.10, 0.25);
+EXY["2024-Q1"] = [row("foreign-stock", "US", 100000, 0)];
+EXY["2024-Q2"] = [row("foreign-stock", "US", 100000 * yq, 0)];
+EXY["2024-Q3"] = [row("foreign-stock", "US", 100000 * yq * yq, 0)];
+EXY["2024-Q4"] = [row("foreign-stock", "US", 100000 * yq * yq * yq, 0)];
+EXY["2025-Q1"] = [row("foreign-stock", "US", 110000, 0)];
+EXY["2025-Q2"] = [row("foreign-stock", "US", 112000, 0)];
+EXY["2025-Q3"] = [row("foreign-stock", "US", 164000, 50000)];   // โต 52k แต่ 50k คือเงินใหม่ที่กรอกไว้
+EXY["2025-Q4"] = [row("foreign-stock", "US", 166000, 0)];
+EXY["2026-Q1"] = [row("foreign-stock", "US", 168000, 0)];
+EXY["2026-Q2"] = [row("foreign-stock", "US", 170000, 0)];
+var ALLOCY = {
+  version: 1, map: { "foreign-stock::US": { short: 0, mid: 0, long: 100 } },
+  ports: { short: { expectedReturnPct: null }, mid: { expectedReturnPct: null }, long: { expectedReturnPct: 8 } },
+  monthlyExpense: null, updatedAt: null, retirement: {}
+};
+var RY = AA.compute(blob(EXY, "2026-Q2"), ALLOCY);
+var WY = RY.record.whole;
+function wRow(W, k) { return W.rows.filter(function (r) { return r.key === k; })[0]; }
+function wYear(W, y) { return W.yearly.filter(function (x) { return x.year === y; })[0]; }
+
+t("ไม่ตั้งค่า → เป้าเกษียณ default 10%/ปี", RY.allocation.retirement.targetReturnPct === 10, RY.allocation.retirement.targetReturnPct);
+t("record.whole มีและคิดจากทุกรายการ", !!WY && WY.basis === "all-items", WY && WY.basis);
+t("record.target = เป้าของ record.whole", RY.record.target === WY.target && WY.target.annualPct === 10, JSON.stringify(RY.record.target));
+t("ไม่ตั้งเงินเติมไตรมาสละ → quarterly.amount = null", WY.quarterly.amount === null && WY.quarterly.source === "none");
+t("ไตรมาสฐาน (แรกสุด) ไม่มีแถว", WY.baseKey === "2024-Q1" && !wRow(WY, "2024-Q1"));
+t("ทุกแถวมี naive / flow / real / status", WY.rows.every(function (r) {
+  return typeof r.naive === "number" && typeof r.flow === "number" && (r.real === null || typeof r.real === "number") &&
+    ["ahead", "on", "behind", "no-data"].indexOf(r.status) >= 0;
+}));
+var w25q3 = wRow(WY, "2025-Q3");
+t("2025-Q3 ใช้ยอดที่กรอก 50,000 (recorded)", w25q3.flow === 50000 && w25q3.flowSource === "recorded" && w25q3.recordedFlow === 50000, [w25q3.flow, w25q3.flowSource]);
+tNear("2025-Q3 ไม่รวมเงินเติม = Modified Dietz", w25q3.real, AA.dietz(112000, 164000, 50000, 0.5), 1e-12);
+tNear("2025-Q3 รวมเงินเติม = ปลายงวด ÷ ต้นงวด − 1", w25q3.naive, 164000 / 112000 - 1, 1e-12);
+t("2025-Q3 หักเงินเติมแล้วต่ำกว่าเป้า 2.4% → behind", w25q3.status === "behind", w25q3.status);
+var w24q2 = wRow(WY, "2024-Q2");
+t("netFlow 0 ทุกรายการ + ไม่ตั้งไตรมาสละ → ไม่มีอะไรให้หัก (source none)", w24q2.flowSource === "none" && w24q2.flow === 0 && w24q2.recordedFlow === null, [w24q2.flowSource, w24q2.flow]);
+tNear("…ไม่รวมเงินเติม = รวมเงินเติม", w24q2.real, w24q2.naive, 1e-12);
+t("ไตรมาสที่โตตามเป้าพอดี → on", w24q2.status === "on", w24q2.status);
+
+var Y24 = wYear(WY, 2024), Y25 = wYear(WY, 2025), Y26 = wYear(WY, 2026);
+t("มีแถวปี 2024 / 2025 / 2026", !!Y24 && !!Y25 && !!Y26, WY.yearly.map(function (y) { return y.year; }).join(","));
+t("ปีฐาน (2024) มีผลตอบแทนแค่ 3 ไตรมาส ไม่ใช่ปีเต็ม", Y24.n === 3 && Y24.full === false, Y24.n + "/" + Y24.full);
+t("ปี 2025 ครบ 4 ไตรมาส = ปีเต็ม", Y25.n === 4 && Y25.full === true, Y25.n + "/" + Y25.full);
+var naive25 = 166000 / (100000 * yq * yq * yq) - 1;   // ต้นปี = ปลาย 2024-Q4 · ปลายปี = 2025-Q4
+tNear("ปี 2025 รวมเงินเติม = ปลายปี ÷ ต้นปี − 1", Y25.naive, naive25, 1e-12);
+t("ปี 2025 ไม่รวมเงินเติม ต่ำกว่าแบบรวมเงินเติมชัดเจน", Y25.real !== null && Y25.real < naive25 - 0.25, Y25.real + " vs " + naive25);
+var chain25 = 1;
+WY.rows.filter(function (r) { return r.key.indexOf("2025-") === 0; }).forEach(function (r) { chain25 *= 1 + r.real; });
+tNear("ปี 2025 = ต่อ (chain) ของไตรมาสในปีนั้น", Y25.real, chain25 - 1, 1e-12);
+t("ปี 2025 เงินเติมรวม = 50,000", Y25.flow === 50000, Y25.flow);
+t("ปี 2026 ยังไม่ครบปี (2 ไตรมาส)", Y26.n === 2 && Y26.full === false, Y26.n + "/" + Y26.full);
+tNear("เป้า YTD 2 ไตรมาส = 1.10^(2/4)−1", Y26.target, Math.pow(1.10, 0.5) - 1, 1e-12);
+tNear("เป้าปีเต็ม = 10%", Y25.target, 0.10, 1e-12);
+t("ปี 2025 ต่ำกว่าเป้า → behind", Y25.status === "behind", Y25.status);
+t("ปีที่ยังไม่ได้หักเงินเติมบอกไว้ใน note", /ยังไม่ได้หักเงินเติม/.test(Y24.note || ""), Y24.note);
+
+var ALLOC6 = JSON.parse(JSON.stringify(ALLOCY)); ALLOC6.retirement = { targetReturnPct: 6 };
+var R6 = AA.compute(blob(EXY, "2026-Q2"), ALLOC6);
+t("ตั้งเป้า 6% → target.annualPct = 6", R6.record.whole.target.annualPct === 6);
+tNear("ตั้งเป้า 6% → เป้าไตรมาส 1.06^(1/4)−1", R6.record.whole.target.quarterly, Math.pow(1.06, 0.25) - 1, 1e-12);
+t("ตั้งเป้า 6% → 2024-Q2 (โต 2.411%) กลายเป็น ahead", wRow(R6.record.whole, "2024-Q2").status === "ahead");
+var ALLOCBAD = JSON.parse(JSON.stringify(ALLOCY)); ALLOCBAD.retirement = { targetReturnPct: "abc" };
+var RB = AA.compute(blob(EXY, "2026-Q2"), ALLOCBAD);
+t("เป้าเป็นตัวหนังสือ → ตกกลับ default 10 ไม่ใช่ NaN", RB.record.whole.target.annualPct === 10, RB.record.whole.target.annualPct);
+t("ไม่มี NaN/Infinity ใน record.whole", !/NaN|Infinity/.test(JSON.stringify(RB.record.whole)));
+var RE = AA.compute(blob({}, null), ALLOCY);
+t("ไม่มีข้อมูล → available=false และไม่ throw", RE.available === false);
+
+console.log("\n[W3] ปีที่มีไตรมาสคำนวณไม่ได้");
+// ถอนมากกว่ามูลค่า → dietz คืน null · ปีนั้นต้องสรุปไม่ได้ ห้ามนับเป็น 0% แล้วสรุปสวย ๆ
+var EXN = JSON.parse(JSON.stringify(EXY));
+EXN["2025-Q3"] = [row("foreign-stock", "US", 164000, -1000000)];
+var WN = AA.compute(blob(EXN, "2026-Q2"), ALLOCY).record.whole;
+var qN = wRow(WN, "2025-Q3");
+t("ไตรมาสที่ถอนเกินมูลค่า → real = null + เหตุผล", qN.real === null && qN.rReason === "inconsistent", [qN.real, qN.rReason]);
+t("…สถานะ no-data ไม่ใช่ behind/ahead", qN.status === "no-data", qN.status);
+var YN = wYear(WN, 2025);
+t("ปี 2025 real = null และบอกว่าคำนวณไม่ได้", YN.real === null && /คำนวณไม่ได้/.test(YN.note || "") && YN.status === "no-data", [YN.real, YN.note, YN.status]);
+t("ปีอื่นไม่ถูกกระทบ (2024 ยังมีตัวเลข)", wYear(WN, 2024).real !== null);
+t("สรุปทั้งช่วง realCum = null เมื่อมีไตรมาสคำนวณไม่ได้", WN.summary.realCum === null);
+
+console.log("\n[W4] เคสจริงของผู้ใช้: เติมเงินไตรมาสละ ฿250,000 · Quarterly Editor เขียน netFlow: 0 ให้ทุกรายการ");
+// ช่องหน้าเว็บกรอกเป็น "ไตรมาสละ" แล้วเก็บ ×4 ลง retirement.annualContribution (แผนเกษียณคิดรายปี)
+function edRow(type, name, value, nf, copied) { var a = row(type, name, value, nf === undefined ? 0 : nf); if (copied) a.copiedFrom = copied; return a; }
+var ED = {};
+ED["2026-Q1"] = [edRow("foreign-stock", "US", 9500000)];
+ED["2026-Q2"] = [edRow("foreign-stock", "US", 10050000, 0, "2026-Q1")];
+ED["2026-Q3"] = [edRow("foreign-stock", "US", 10420000, 0, "2026-Q2")];
+ED["2026-Q4"] = [edRow("foreign-stock", "US", 10930000, 0, "2026-Q3")];
+var ALLOCD = {
+  version: 1, map: { "foreign-stock::US": { long: 100 } },
+  ports: { short: { expectedReturnPct: 2 }, mid: { expectedReturnPct: null }, long: { expectedReturnPct: 8 } },
+  monthlyExpense: null, updatedAt: null, retirement: { annualContribution: 1000000 }
+};
+var RD = AA.compute(blob(ED, "2026-Q4"), ALLOCD), WD = RD.record.whole;
+t("เติมเงินไตรมาสละ = 250,000 พอดี (เก็บปีละ 1,000,000)", WD.quarterly.amount === 250000 && WD.quarterly.source === "setting", JSON.stringify(WD.quarterly));
+t("ทุกไตรมาสหัก 250,000 ตามที่ตั้ง", WD.rows.length === 3 && WD.rows.every(function (r) { return r.flow === 250000 && r.flowSource === "setting" && r.settingAmount === 250000 && r.settingOverridden === false; }),
+  JSON.stringify(WD.rows.map(function (r) { return [r.key, r.flow, r.flowSource]; })));
+var d2 = wRow(WD, "2026-Q2"), d3 = wRow(WD, "2026-Q3"), d4 = wRow(WD, "2026-Q4");
+// คิดมือ ไม่อ่านจากเอนจิน: (ปลาย − ต้น − เงินเติม) ÷ (ต้น + ครึ่งหนึ่งของเงินเติม)
+tNear("2026-Q2 ไม่รวมเงินเติม = (10.05M − 9.5M − 250k) ÷ (9.5M + 125k) ≈ 3.12%", d2.real, 300000 / 9625000, 1e-12);
+tNear("2026-Q3 ≈ 1.18%", d3.real, 120000 / 10175000, 1e-12);
+tNear("2026-Q4 ≈ 2.47%", d4.real, 260000 / 10545000, 1e-12);
+tNear("2026-Q2 รวมเงินเติม ≈ 5.79%", d2.naive, 10050000 / 9500000 - 1, 1e-12);
+t("มูลค่าเพิ่ม (change) = ปลายงวด − ต้นงวด", d4.change === 510000 && d4.vStart === 10420000 && d4.vEnd === 10930000, [d4.change, d4.vStart, d4.vEnd]);
+t("เทียบเป้า 2.41%: Q2 เกิน · Q3 ต่ำกว่า · Q4 ตามเป้า", d2.status === "ahead" && d3.status === "behind" && d4.status === "on", [d2.status, d3.status, d4.status]);
+var YD = wYear(WD, 2026);
+t("ปี 2026: 3 ไตรมาส · เงินเติมรวม 750,000", YD.n === 3 && YD.flow === 750000 && YD.settingQuarters === 3, [YD.n, YD.flow, YD.settingQuarters]);
+tNear("ปี 2026 รวมเงินเติม = 10.93M ÷ 9.5M − 1", YD.naive, 10930000 / 9500000 - 1, 1e-12);
+tNear("ปี 2026 ไม่รวมเงินเติม = chain ของ 3 ไตรมาส", YD.real, (1 + d2.real) * (1 + d3.real) * (1 + d4.real) - 1, 1e-12);
+tNear("เป้า YTD 3 ไตรมาส = 1.10^(3/4)−1", YD.target, Math.pow(1.10, 0.75) - 1, 1e-12);
+t("สรุปทั้งช่วง: เงินเติมรวม 750,000 และรวม/ไม่รวมเงินเติมแยกกัน", WD.summary.flowTotal === 750000 && WD.summary.naiveCum > WD.summary.realCum, JSON.stringify(WD.summary));
+t("ไม่มี NaN/Infinity", !/NaN|Infinity/.test(JSON.stringify(WD)));
+// รายพอร์ตก็หักเงินเติมไตรมาสละด้วย — พอร์ตเดียวที่ถือทุกรายการ 100% ต้องได้ตัวเลขเท่าทั้งพอร์ตทุกไตรมาส
+var RD0 = AA.compute(blob(ED, "2026-Q4"), (function () { var a = JSON.parse(JSON.stringify(ALLOCD)); a.retirement = {}; return a; })());
+t("พอร์ตยาวถือ 100% → ผลตอบแทนรายพอร์ตเท่ากับทั้งพอร์ต (หักเงินเติมแล้ว)", RD.ports.long.quarters.length === 3 &&
+  RD.ports.long.quarters.every(function (q) { var w = wRow(WD, q.key); return Math.abs(q.r - w.real) < 1e-12 && q.flow === 250000 && q.flowStatus === "setting"; }),
+  JSON.stringify(RD.ports.long.quarters.map(function (q) { return [q.key, q.flow, q.flowStatus, q.r]; })));
+t("ไม่ตั้งไตรมาสละ → รายพอร์ตไม่หัก (เท่ารวมเงินเติม)", RD0.ports.long.quarters.every(function (q) { return q.flow === 0 && q.flowStatus === "recorded" && q.alloc === null; }));
+t("ตั้งแล้วผลตอบแทนสะสม/ต่อปีของพอร์ตต่ำลง (ไม่นับเงินเติมเป็นกำไร)", RD.ports.long.cumReturn < RD0.ports.long.cumReturn);
+
+t("ไม่ตั้ง → ไม่หัก (source none) และไม่รวมเงินเติม = รวมเงินเติม", RD0.record.whole.rows.every(function (r) { return r.flowSource === "none" && r.flow === 0 && Math.abs(r.real - r.naive) < 1e-12; }));
+// ค่าที่พิมพ์ต้องกลับมาเป๊ะ ไม่เพี้ยนจากการเก็บ ×4
+var ALLOCQ = JSON.parse(JSON.stringify(ALLOCD)); ALLOCQ.retirement = { annualContribution: 333333.33 * 4 };
+t("พิมพ์ 333,333.33 → ได้ 333,333.33 เป๊ะ", AA.compute(blob(ED, "2026-Q4"), ALLOCQ).record.whole.quarterly.amount === 333333.33);
+// ตั้งไว้ 0 = ผู้ใช้บอกเองว่าไม่เติม → หัก 0 (ไม่ใช่ "ยังไม่ได้ตั้ง")
+var ALLOCZ = JSON.parse(JSON.stringify(ALLOCD)); ALLOCZ.retirement = { annualContribution: 0 };
+var WZ = AA.compute(blob(ED, "2026-Q4"), ALLOCZ).record.whole;
+t("ตั้งไว้ 0 → source setting · หัก 0", WZ.quarterly.amount === 0 && WZ.rows.every(function (r) { return r.flowSource === "setting" && r.flow === 0; }));
+
+// รายการใหม่ที่ซื้อด้วยเงินเติมแต่ยังไม่ได้จัดพอร์ต ต้องอยู่ในฐานด้วย ไม่งั้นหักเงินเติมจากฐานที่ไม่มีเงินก้อนนั้น
+var EDU = JSON.parse(JSON.stringify(ED));
+EDU["2026-Q4"] = [edRow("foreign-stock", "US", 10680000, 0, "2026-Q3"), edRow("bitcoin", "Bitcoin", 250000, 0)];
+var du = wRow(AA.compute(blob(EDU, "2026-Q4"), ALLOCD).record.whole, "2026-Q4");
+t("รายการที่ยังไม่จัดพอร์ตอยู่ในฐานทั้งพอร์ต", du.vEnd === 10930000, du.vEnd);
+tNear("…ผลตอบแทนเท่ากับกรณีจัดครบ (ไม่ติดลบเกินจริง)", du.real, 260000 / 10545000, 1e-12);
+
+// ยอดที่กรอกในรายการชนะยอดไตรมาสละ (บอกไว้ด้วยว่าทับยอดที่ตั้ง)
+var EDT = JSON.parse(JSON.stringify(ED)); EDT["2026-Q3"][0].netFlow = 400000;
+var WT = AA.compute(blob(EDT, "2026-Q4"), ALLOCD).record.whole, dt3 = wRow(WT, "2026-Q3");
+t("กรอก netFlow 400,000 → ใช้ 400,000 ไม่ใช่ 250,000", dt3.flow === 400000 && dt3.flowSource === "recorded" && dt3.recordedFlow === 400000, [dt3.flow, dt3.flowSource]);
+t("…และบอกว่าทับยอดไตรมาสละที่ตั้งไว้", dt3.settingOverridden === true && dt3.settingAmount === 250000);
+t("…ไตรมาสอื่นยังใช้ยอดไตรมาสละ", wRow(WT, "2026-Q2").flowSource === "setting" && wRow(WT, "2026-Q4").flowSource === "setting");
+// ย้ายเงินระหว่างรายการ (+X/−X) = กรอกจริง แม้รวมได้ 0
+var EDX = JSON.parse(JSON.stringify(ED)); EDX["2026-Q3"] = [edRow("foreign-stock", "US", 10370000, -50000), edRow("cash", "เงินสด", 50000, 50000)];
+var dx3 = wRow(AA.compute(blob(EDX, "2026-Q4"), ALLOCD).record.whole, "2026-Q3");
+t("ย้ายเงิน +50k/−50k → นับว่ากรอก ใช้ 0 ไม่ใช่ 250,000", dx3.flowSource === "recorded" && dx3.flow === 0 && dx3.settingOverridden === true, [dx3.flowSource, dx3.flow]);
+// รายการชื่อซ้ำ +20k/−20k ถูกรวมเป็นแถวเดียวใน buildSeries (flow = 0) → ยังต้องนับว่ากรอก
+var EDD = JSON.parse(JSON.stringify(ED)); EDD["2026-Q3"][0].netFlow = 20000; EDD["2026-Q3"].push(edRow("foreign-stock", "US", 0, -20000));
+var dd3 = wRow(AA.compute(blob(EDD, "2026-Q4"), ALLOCD).record.whole, "2026-Q3");
+t("รายการชื่อซ้ำ +20k/−20k → ยังนับว่ากรอก (ไม่ถูกหักลบจนกลายเป็นไม่ได้กรอก)", dd3.flowSource === "recorded", dd3.flowSource);
+// กรอก netFlow ไว้ในรายการที่ยังไม่จัดพอร์ต ก็นับ (ทั้งพอร์ต = ทุกรายการ)
+var EDB = JSON.parse(JSON.stringify(EDU)); EDB["2026-Q4"][1].netFlow = 250000;
+t("netFlow ในรายการที่ยังไม่จัดพอร์ตก็นับว่ากรอก", wRow(AA.compute(blob(EDB, "2026-Q4"), ALLOCD).record.whole, "2026-Q4").flowSource === "recorded");
+
+// ไตรมาสที่ข้ามไป: หักเงินเติมตามจำนวนไตรมาสที่ผ่านไป และเทียบเป้าตามช่วงนั้น
+var EDG = JSON.parse(JSON.stringify(ED)); delete EDG["2026-Q3"];
+var WG = AA.compute(blob(EDG, "2026-Q4"), ALLOCD).record.whole, dg4 = wRow(WG, "2026-Q4");
+t("ข้าม 2026-Q3 → แถว 2026-Q4 ครอบ 2 ไตรมาส (เทียบกับ 2026-Q2)", dg4.span === 2 && dg4.prevKey === "2026-Q2", [dg4.span, dg4.prevKey]);
+t("…หักเงินเติม 2 ไตรมาส = 500,000", dg4.flow === 500000 && dg4.settingAmount === 500000, dg4.flow);
+tNear("…เทียบเป้า 2 ไตรมาส", dg4.target, Math.pow(1.10, 0.5) - 1, 1e-12);
+t("…ปี 2026 ยังนับเป็น 3 ไตรมาส", wYear(WG, 2026).n === 3, wYear(WG, 2026).n);
+// ไตรมาสที่มีแต่ key แต่ไม่มีมูลค่า (สร้างไว้ล่วงหน้า) ต้องเท่ากับข้ามไป ไม่ใช่ −100%
+var EDE = JSON.parse(JSON.stringify(EDG)); EDE["2026-Q3"] = [];
+t("ไตรมาสว่าง = ข้ามไป ไม่ใช่ −100%", wRow(AA.compute(blob(EDE, "2026-Q4"), ALLOCD).record.whole, "2026-Q4").span === 2 &&
+  !wRow(AA.compute(blob(EDE, "2026-Q4"), ALLOCD).record.whole, "2026-Q3"));
+// คร่อมปี: 2025-Q3 → 2026-Q1 ครอบ 2025-Q4 ด้วย → ปี 2026 นับ 1 ไตรมาส และบอกว่ามีช่วงคร่อมจากปีก่อน
+var EDC = { "2025-Q3": [edRow("foreign-stock", "US", 9000000)], "2026-Q1": [edRow("foreign-stock", "US", 9800000)] };
+var WC = AA.compute(blob(EDC, "2026-Q1"), ALLOCD).record.whole;
+t("คร่อมปี → span 2 · ปี 2026 n = 1 · note บอกว่าคร่อม", wRow(WC, "2026-Q1").span === 2 && wYear(WC, 2026).n === 1 && /คร่อม/.test(wYear(WC, 2026).note || ""),
+  [wRow(WC, "2026-Q1").span, wYear(WC, 2026).n, wYear(WC, 2026).note]);
+
+// ข้อมูลยุคก่อนมี netFlow (ไม่มี field): ไม่ตั้งไตรมาสละ → ระบบเดาเงินเติมจากรายการใหม่ · ตั้งไว้ → ใช้ยอดที่ตั้งแทน
+var EL = { "2025-Q4": [row("foreign-stock", "US", 1000000)], "2026-Q1": [row("foreign-stock", "US", 1030000), row("rmf-tum", "RMF-ตุ๋ม", 300000)] };
+var ALLOCL = { version: 1, map: { "foreign-stock::US": { long: 100 }, "rmf-tum::RMF-ตุ๋ม": { long: 100 } }, ports: {}, retirement: {} };
+var el0 = wRow(AA.compute(blob(EL, "2026-Q1"), ALLOCL).record.whole, "2026-Q1");
+t("ข้อมูลเก่า + ไม่ตั้ง → source imputed · เงินเติม = มูลค่ารายการใหม่ 300,000", el0.flowSource === "imputed" && el0.flow === 300000 && el0.imputedFlow === 300000, [el0.flowSource, el0.flow]);
+var ALLOCL1 = JSON.parse(JSON.stringify(ALLOCL)); ALLOCL1.retirement = { annualContribution: 1000000 };
+var el1 = wRow(AA.compute(blob(EL, "2026-Q1"), ALLOCL1).record.whole, "2026-Q1");
+t("ข้อมูลเก่า + ตั้งไตรมาสละ → ใช้ยอดที่ตั้ง 250,000 (ตั้งใจ: ผู้ใช้บอกยอดจริงเอง)", el1.flowSource === "setting" && el1.flow === 250000 && el1.imputedFlow === 300000, [el1.flowSource, el1.flow]);
+// กรอกไว้บางรายการ + รายการเก่าไม่มี field → partial
+var EP = { "2025-Q4": [row("foreign-stock", "US", 1000000), row("cash", "เงินสด", 100000)],
+  "2026-Q1": [row("foreign-stock", "US", 1030000), row("cash", "เงินสด", 150000, 50000)] };
+var ep = wRow(AA.compute(blob(EP, "2026-Q1"), ALLOCL).record.whole, "2026-Q1");
+t("กรอกไว้บางรายการ → partial", ep.flowSource === "partial" && ep.flow === 50000, [ep.flowSource, ep.flow]);
+
+console.log("\n[W5] แบ่งเงินเติมไตรมาสละเข้ารายพอร์ต ตามสัดส่วนมูลค่าต้นงวด (ฐาน = ทุกรายการ)");
+var MALLOC = {
+  version: 1, map: { "foreign-stock::US": { long: 100 }, "thai-stock::หุ้นไทย": { mid: 100 }, "cash::เงินสด": { short: 100 } },
+  ports: { short: { expectedReturnPct: 2 }, mid: { expectedReturnPct: 6 }, long: { expectedReturnPct: 9 } },
+  monthlyExpense: 120000, updatedAt: null,
+  retirement: { inflationPct: 4, workYears: 3, retireYears: 30, annualContribution: 1000000, currentAge: 50, targetReturnPct: 10 }
+};
+// Bitcoin ยังไม่จัดพอร์ต: อยู่ในฐานทั้งพอร์ต และได้ส่วนแบ่งเงินเติมของตัวเอง (ไม่ตกเป็นของพอร์ตไหน)
+var EM = {
+  "2026-Q1": [edRow("foreign-stock", "US", 6000000), edRow("thai-stock", "หุ้นไทย", 3000000), edRow("cash", "เงินสด", 1000000), edRow("bitcoin", "Bitcoin", 500000)],
+  "2026-Q2": [edRow("foreign-stock", "US", 6300000), edRow("thai-stock", "หุ้นไทย", 3100000), edRow("cash", "เงินสด", 1050000), edRow("bitcoin", "Bitcoin", 520000)]
+};
+var RM = AA.compute(blob(EM, "2026-Q2"), MALLOC);
+var mL = RM.ports.long.quarters[0], mM = RM.ports.mid.quarters[0], mS = RM.ports.short.quarters[0];
+// คิดมือ: ต้นงวดทุกรายการ 10.5M → ยาว 6/10.5 · กลาง 3/10.5 · สั้น 1/10.5 ของ 250,000
+tNear("พอร์ตยาวได้เงินเติม 250,000 × 6M/10.5M", mL.flow, 250000 * 6000000 / 10500000, 1e-6);
+tNear("พอร์ตกลางได้ 250,000 × 3M/10.5M", mM.flow, 250000 * 3000000 / 10500000, 1e-6);
+tNear("พอร์ตสั้นได้ 250,000 × 1M/10.5M", mS.flow, 250000 * 1000000 / 10500000, 1e-6);
+tNear("รวม 3 พอร์ต + ส่วนของ Bitcoin (ยังไม่จัด) = 250,000 พอดี", mL.flow + mM.flow + mS.flow + 250000 * 500000 / 10500000, 250000, 1e-6);
+var fL = 250000 * 6 / 10.5, fM = 250000 * 3 / 10.5, fS = 250000 * 1 / 10.5;
+tNear("พอร์ตยาว = (6.3M − 6M − เงินเติม) ÷ (6M + ครึ่งหนึ่งของเงินเติม)", mL.r, (300000 - fL) / (6000000 + fL / 2), 1e-12);
+tNear("พอร์ตกลาง = (3.1M − 3M − เงินเติม) ÷ (3M + ครึ่งหนึ่ง)", mM.r, (100000 - fM) / (3000000 + fM / 2), 1e-12);
+tNear("พอร์ตสั้น = (1.05M − 1M − เงินเติม) ÷ (1M + ครึ่งหนึ่ง)", mS.r, (50000 - fS) / (1000000 + fS / 2), 1e-12);
+t("สถานะเงินเติมของทุกพอร์ต = setting พร้อมสัดส่วนที่ใช้", [mL, mM, mS].every(function (q) { return q.flowStatus === "setting" && q.alloc && q.alloc.total === 250000 && q.alloc.span === 1; }) &&
+  Math.abs(mL.alloc.share - 6 / 10.5) < 1e-12, JSON.stringify(mL.alloc));
+t("หมายเหตุรายไตรมาสบอกว่าเป็นสมมติฐาน ไม่ใช่ 'ไม่มีข้อมูลเงินเติม'", mL.flags.some(function (f) { return /ตามสัดส่วนมูลค่าต้นงวด/.test(f); }) && !mL.flags.some(function (f) { return /ไม่มีข้อมูลเงินเติม/.test(f); }), mL.flags);
+t("ความครบของข้อมูลนับไตรมาสที่ใช้ยอดไตรมาสละ และบอกว่ามาจากการแบ่ง", RM.ports.long.flowCoverage.recorded === 1 && RM.ports.long.flowCoverage.fromSetting === 1 &&
+  /แบ่งตามสัดส่วนมูลค่าต้นงวด/.test(RM.ports.long.flowCoverage.thai), RM.ports.long.flowCoverage.thai);
+t("ไม่มีคำเตือน 'ข้อมูลเงินเติม/ถอนครบเพียง'", !RM.ports.long.warnings.some(function (w) { return w.kind === "coverage"; }));
+t("บันทึกรายพอร์ต (record.rows) ใช้ตัวเลขเดียวกับพอร์ต", RM.record.rows[0].ports.long.r === mL.r && RM.record.rows[0].ports.long.flow === mL.flow && RM.record.rows[0].ports.long.flowStatus === "setting");
+// ไม่ตั้ง → ตัวเลขเดิม (นับเงินเติมเป็นกำไร) · อัตรา "ทำได้จริง" ในแผนเกษียณต้องลดลงเมื่อหักแล้ว
+var MALLOC0 = JSON.parse(JSON.stringify(MALLOC)); MALLOC0.retirement.annualContribution = null;
+var RM0 = AA.compute(blob(EM, "2026-Q2"), MALLOC0);
+tNear("ไม่ตั้ง → พอร์ตยาว = 6.3M ÷ 6M − 1", RM0.ports.long.quarters[0].r, 0.05, 1e-12);
+t("ไม่ตั้ง → สถานะ recorded (netFlow 0 ที่ editor เขียน)", RM0.ports.long.quarters[0].flowStatus === "recorded");
+// ข้อมูล 1 ไตรมาสยังไม่ครบปี → annReturn null · ใช้ชุด ED (3 ไตรมาส) ก็ยังไม่ครบ จึงขยายเป็น 5 ไตรมาสเพื่อทดสอบอัตราแผนเกษียณ
+var EM5 = JSON.parse(JSON.stringify(EM));
+EM5["2026-Q3"] = [edRow("foreign-stock", "US", 6700000), edRow("thai-stock", "หุ้นไทย", 3230000), edRow("cash", "เงินสด", 1100000), edRow("bitcoin", "Bitcoin", 540000)];
+EM5["2026-Q4"] = [edRow("foreign-stock", "US", 7050000), edRow("thai-stock", "หุ้นไทย", 3350000), edRow("cash", "เงินสด", 1150000), edRow("bitcoin", "Bitcoin", 560000)];
+EM5["2027-Q1"] = [edRow("foreign-stock", "US", 7400000), edRow("thai-stock", "หุ้นไทย", 3480000), edRow("cash", "เงินสด", 1200000), edRow("bitcoin", "Bitcoin", 580000)];
+var R5 = AA.compute(blob(EM5, "2027-Q1"), MALLOC), R50 = AA.compute(blob(EM5, "2027-Q1"), MALLOC0);
+t("4 ไตรมาส → มีผลตอบแทนต่อปีทั้งสองกรณี", R5.ports.long.annReturn !== null && R50.ports.long.annReturn !== null);
+t("หักเงินเติมแล้ว ผลตอบแทนต่อปีของทุกพอร์ตต่ำกว่าแบบไม่หัก", AA.PORTS.every(function (p) { return R5.ports[p].annReturn < R50.ports[p].annReturn; }),
+  JSON.stringify(AA.PORTS.map(function (p) { return [p, R5.ports[p].annReturn, R50.ports[p].annReturn]; })));
+t("อัตรา 'ทำได้จริง' ของแผนเกษียณใช้ตัวเลขที่หักแล้ว (ต่ำกว่า)", R5.retirement.actualRatePct < R50.retirement.actualRatePct, [R5.retirement.actualRatePct, R50.retirement.actualRatePct]);
+// ถ่วงตามมูลค่าพอร์ตล่าสุด (blendRate) จากผลต่อปีที่หักแล้ว — คิดใหม่จากตัวเลขของพอร์ต ไม่อ่านจากเอนจิน
+var bw = 0, bs = 0;
+AA.PORTS.forEach(function (p) { var P = R5.ports[p]; if (P.annReturn !== null && P.latestValue > 0) { bw += P.latestValue; bs += P.latestValue * P.annReturn; } });
+tNear("…อัตรานั้น = ถ่วงผลต่อปีที่หักแล้วด้วยมูลค่าพอร์ต", R5.retirement.actualRatePct, bs / bw * 100, 1e-9);
+t("'จากนี้ต้องทำได้เท่าไหร่' คิดจากดัชนีที่หักแล้ว (ต้องทำได้มากขึ้น)", AA.PORTS.every(function (p) { return R5.ports[p].required.requiredAnn > R50.ports[p].required.requiredAnn; }),
+  JSON.stringify(AA.PORTS.map(function (p) { return [p, R5.ports[p].required.requiredAnn, R50.ports[p].required.requiredAnn]; })));
+t("สถานะเทียบเส้นคาดหวัง (นำ/ตาม/ตาม) คิดจากดัชนีที่หักแล้ว", AA.PORTS.every(function (p) { return R5.ports[p].gapRatio < R50.ports[p].gapRatio; }));
+t("record.whole ไม่ถูกกระทบจากการแบ่ง (ทั้งพอร์ตยังเป็นยอดเต็ม)", R5.record.whole.rows.every(function (r) { return r.flow === 250000 && r.flowSource === "setting"; }));
+
+// กรอก netFlow ≠ 0 ในรายการไหนก็ตาม → ไตรมาสนั้นทั้งพอร์ตใช้ยอดที่กรอก → รายพอร์ตก็ใช้ยอดที่กรอก (ไม่แบ่งยอดไตรมาสละ)
+var EMT = JSON.parse(JSON.stringify(EM)); EMT["2026-Q2"][2].netFlow = 40000;   // เติมเงินสด 40,000
+var RMT = AA.compute(blob(EMT, "2026-Q2"), MALLOC);
+t("กรอก netFlow ในไตรมาสนั้น → ไม่แบ่งยอดไตรมาสละเข้ารายพอร์ต", AA.PORTS.every(function (p) { var q = RMT.ports[p].quarters[0]; return q.flowStatus !== "setting" && q.alloc === null; }));
+t("…พอร์ตสั้นใช้ยอดที่กรอก 40,000 · พอร์ตยาวใช้ 0 (ไม่ได้กรอก)", RMT.ports.short.quarters[0].flow === 40000 && RMT.ports.long.quarters[0].flow === 0,
+  [RMT.ports.short.quarters[0].flow, RMT.ports.long.quarters[0].flow]);
+t("…ตรงกับทั้งพอร์ต (recorded)", wRow(RMT.record.whole, "2026-Q2").flowSource === "recorded");
+
+// ไตรมาสที่ข้าม (span 2) → แบ่งยอด 2 ไตรมาส
+var EMG = JSON.parse(JSON.stringify(EM5)); delete EMG["2026-Q3"];
+var gL = AA.compute(blob(EMG, "2027-Q1"), MALLOC).ports.long.quarters.filter(function (q) { return q.key === "2026-Q4"; })[0];
+tNear("ข้าม 2026-Q3 → พอร์ตยาวได้ 500,000 × สัดส่วนต้นงวด (2026-Q2)", gL.flow, 500000 * 6300000 / (6300000 + 3100000 + 1050000 + 520000), 1e-6);
+t("…alloc.span = 2", gL.alloc && gL.alloc.span === 2 && gL.alloc.total === 500000);
+
+// ข้อมูลยุคก่อน netFlow + รายการใหม่ในพอร์ต: ตั้งไตรมาสละ → ใช้ยอดที่แบ่ง ไม่ใช่มูลค่ารายการใหม่ (กติกาเดียวกับทั้งพอร์ต)
+var ELP = { "2025-Q4": [row("foreign-stock", "US", 1000000)], "2026-Q1": [row("foreign-stock", "US", 1030000), row("rmf-tum", "RMF-ตุ๋ม", 300000)] };
+var ALP = { version: 1, map: { "foreign-stock::US": { long: 100 }, "rmf-tum::RMF-ตุ๋ม": { long: 100 } }, ports: {}, retirement: { annualContribution: 1000000 } };
+var lp = AA.compute(blob(ELP, "2026-Q1"), ALP).ports.long.quarters[0];
+t("ข้อมูลเก่า + ตั้งไตรมาสละ → รายพอร์ตใช้ 250,000 ไม่ใช่ 300,000 และไม่ขึ้นว่าประมาณเงินเริ่มต้น", lp.flow === 250000 && lp.flowStatus === "setting" && lp.imputed.length === 0, [lp.flow, lp.flowStatus, lp.imputed.length]);
+var ALP0 = JSON.parse(JSON.stringify(ALP)); ALP0.retirement = {};
+var lp0 = AA.compute(blob(ELP, "2026-Q1"), ALP0).ports.long.quarters[0];
+t("…ไม่ตั้ง → กลับไปใช้มูลค่ารายการใหม่ 300,000 (imputed) เหมือนเดิม", lp0.flow === 300000 && lp0.imputed.length === 1, [lp0.flow, lp0.imputed.length]);
+
+// พอร์ตที่ไม่เหลือรายการเลยในไตรมาสนั้นไม่ได้รับส่วนแบ่ง
+var EMX = JSON.parse(JSON.stringify(EM)); EMX["2026-Q2"] = EMX["2026-Q2"].filter(function (a) { return a.type !== "cash"; });
+var xS = AA.compute(blob(EMX, "2026-Q2"), MALLOC).ports.short.quarters[0];
+t("พอร์ตสั้นไม่เหลือรายการ → ไม่ได้ส่วนแบ่งเงินเติม (สถานะ none)", xS.flow === 0 && xS.flowStatus === "none" && xS.alloc === null, [xS.flow, xS.flowStatus]);
+
+// ตั้ง 0 = บอกว่าไม่ได้เติม → รายพอร์ตสถานะ setting และหัก 0
+var MALLOCZ = JSON.parse(JSON.stringify(MALLOC)); MALLOCZ.retirement.annualContribution = 0;
+var zL = AA.compute(blob(EM, "2026-Q2"), MALLOCZ).ports.long.quarters[0];
+t("ตั้งไว้ 0 → รายพอร์ตหัก 0 (สถานะ setting)", zL.flow === 0 && zL.flowStatus === "setting", [zL.flow, zL.flowStatus]);
+t("[W5] ไม่มี NaN/Infinity", !/NaN|Infinity/.test(JSON.stringify([RM, R5, RMT])));
+console.log("\n[W6] เกิน/ขาดเป้าเท่าไหร่ — เป็น % และเป็นเงิน");
+var TQ = Math.pow(1.10, 0.25) - 1;
+// คิดมือ: 2026-Q2 ต้นงวด 9.5M เติม 250k (กลางงวด) → ถ้าได้ตามเป้าพอดี ปลายงวด = 9.5M + 250k + เป้า × (9.5M + 125k)
+var e2 = 9500000 + 250000 + TQ * 9625000, e3 = 10050000 + 250000 + TQ * 10175000;
+tNear("2026-Q2 มูลค่าที่ควรมีถ้าได้ตามเป้า", d2.targetEndValue, e2, 1e-6);
+tNear("2026-Q2 เกินเป็นเงิน = 10.05M − มูลค่าตามเป้า", d2.targetDiffAmount, 10050000 - e2, 1e-6);
+tNear("2026-Q2 เกินเป็น % = ผลจริง − เป้า", d2.targetDiff, 300000 / 9625000 - TQ, 1e-12);
+tNear("2026-Q3 ขาดเป็นเงิน = 10.42M − มูลค่าตามเป้า", d3.targetDiffAmount, 10420000 - e3, 1e-6);
+t("…ติดลบ และป้ายเป็นต่ำกว่าเป้า", d3.targetDiffAmount < 0 && d3.status === "behind", [d3.targetDiffAmount, d3.status]);
+tNear("เงิน = (ผลจริง − เป้า) × (ต้นงวด + ครึ่งหนึ่งของเงินเติม)", d4.targetDiffAmount, (d4.real - TQ) * (10420000 + 125000), 1e-6);
+t("เครื่องหมายของเงินตรงกับป้ายทุกไตรมาส", WD.rows.every(function (r) { return r.status === "on" || (r.status === "ahead") === (r.targetDiffAmount > 0); }));
+// ทั้งปี: เดินเส้น "ได้ตามเป้าทุกไตรมาส" จากต้นปีจริง + เงินเติมจริง แล้วเทียบปลายปีจริง (ไม่ใช่ผลรวมรายไตรมาส)
+var TY = 9500000;
+[0, 1, 2].forEach(function () { TY = TY + 250000 + TQ * (TY + 125000); });
+tNear("ปี 2026 มูลค่าที่ควรมีถ้าได้ตามเป้าทุกไตรมาส", YD.targetEndValue, TY, 1e-6);
+tNear("ปี 2026 เกิน/ขาดเป็นเงิน = 10.93M − เส้นตามเป้า", YD.targetDiffAmount, 10930000 - TY, 1e-6);
+t("…ไม่ใช่ผลรวมของรายไตรมาส", Math.abs(YD.targetDiffAmount - (d2.targetDiffAmount + d3.targetDiffAmount + d4.targetDiffAmount)) > 1, [YD.targetDiffAmount, d2.targetDiffAmount + d3.targetDiffAmount + d4.targetDiffAmount]);
+tNear("ปี 2026 เกิน/ขาดเป็น % = ผลจริงทั้งปี − เป้า YTD", YD.targetDiff, YD.real - (Math.pow(1.1, 0.75) - 1), 1e-12);
+// น้ำหนักกลางงวดต้องมาจากตัวเลือกเดียวกับสูตร Dietz
+var dW1 = wRow(AA.compute(blob(ED, "2026-Q4"), ALLOCD, { dietzWeight: 1 }).record.whole, "2026-Q2");
+tNear("dietzWeight = 1 → ฐาน = ต้นงวด + เงินเติมทั้งก้อน", dW1.targetEndValue, 9500000 + 250000 + TQ * 9750000, 1e-6);
+var YW1 = wYear(AA.compute(blob(ED, "2026-Q4"), ALLOCD, { dietzWeight: 1 }).record.whole, 2026), TW1 = 9500000;
+[0, 1, 2].forEach(function () { TW1 = TW1 + 250000 + TQ * (TW1 + 250000); });
+tNear("…แถวปีก็ใช้น้ำหนักเดียวกัน", YW1.targetEndValue, TW1, 1e-6);
+// ไตรมาสข้าม (span 2) → เป้า 2 ไตรมาส เงินเติม 2 ไตรมาส
+var TQ2 = Math.pow(1.10, 0.5) - 1;
+tNear("ข้ามไตรมาส: มูลค่าตามเป้า = 10.05M + 500k + เป้า 2 ไตรมาส × (10.05M + 250k)", dg4.targetEndValue, 10050000 + 500000 + TQ2 * 10300000, 1e-6);
+// คำนวณไม่ได้ → null (ห้ามเป็น 0 หลอก)
+t("ไตรมาสที่ถอนเกินมูลค่า → ส่วนต่าง = null ทั้ง % และเงิน", qN.targetDiff === null && qN.targetDiffAmount === null && qN.targetEndValue === null);
+t("ปีที่มีไตรมาสคำนวณไม่ได้ → null", YN.targetDiff === null && YN.targetDiffAmount === null && YN.targetEndValue === null);
+t("[W6] ไม่มี NaN/Infinity", !/NaN|Infinity/.test(JSON.stringify([WD, WN, WG])));
+// ต้นปี 100k ขาดทุน −20% แล้วเติม 10M ในไตรมาสที่ได้ +26%: ต่อดัชนีได้ 0.8 × 1.26 − 1 = +0.8% < เป้า 2 ไตรมาส 4.88% (ต่ำกว่าเป้า)
+// แต่เส้นมูลค่าตามเป้า = 100k → 102,411 → +10M + 2.411% × (102,411 + 5M) = 10,225,450 < มีจริง 11,400,800 (เงินเกิน)
+// สองตัววัดคนละอย่างและถูกทั้งคู่ — เอนจินคืนค่าตามจริง ไม่บิดให้ตรงกัน (หน้าเว็บเลือกไม่แสดงเงินในแถวนั้น)
+var EMM = { "2026-Q1": [edRow("foreign-stock", "US", 100000)], "2026-Q2": [edRow("foreign-stock", "US", 80000)], "2026-Q3": [edRow("foreign-stock", "US", 11400800, 10000000)] };
+var ALMM = { version: 1, map: { "foreign-stock::US": { long: 100 } }, ports: {}, retirement: {} };
+var YMM = wYear(AA.compute(blob(EMM, "2026-Q3"), ALMM).record.whole, 2026);
+tNear("ปีที่เงินเติมก้อนใหญ่: % ต่อดัชนี = 0.8 × 1.26 − 1", YMM.real, 0.8 * (1 + 1320800 / 5080000) - 1, 1e-12);
+t("…ป้ายต่ำกว่าเป้า แต่เงินเกิน (ชี้คนละทิศ)", YMM.status === "behind" && YMM.targetDiffAmount > 0, [YMM.status, YMM.targetDiffAmount]);
+var TMM = 100000 + TQ * 100000; TMM = TMM + 10000000 + TQ * (TMM + 5000000);
+tNear("…เส้นมูลค่าตามเป้าคิดมือตรง", YMM.targetEndValue, TMM, 1e-6);
 console.log("\n" + (pass + fail) + " checks · " + pass + " passed · " + fail + " failed");
 process.exit(fail ? 1 : 0);

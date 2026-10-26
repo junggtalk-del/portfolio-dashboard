@@ -110,7 +110,20 @@
 .aa-sc-note { font-size: 12px; color: var(--mc-text-2); margin: 9px 0 0; line-height: 1.7; }
 .aa-sc-note.is-warn { color: var(--aa-behind); }
 .aa-retire-line { stroke: var(--mc-muted); stroke-width: 1.4; stroke-dasharray: 4 4; }
-.aa-retire-in { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--mc-border); }
+.aa-retire-in { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--mc-border); }
+/* ช่องตั้งค่า 8 ใบ: กว้างพอ = บรรทัดเดียว · กลาง = 4+4 · แคบ = 2 คอลัมน์ · มือถือ = 1 (ไม่มีแถวสุดท้ายเหลือใบเดียว) */
+.aa-retire { container-type: inline-size; }
+@container (min-width: 1280px) { .aa-retire-in { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+@container (max-width: 720px) { .aa-retire-in { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 380px) { .aa-retire-in { grid-template-columns: 1fr; } }
+.aa-retire-in .aa-field { min-width: 0; }
+.aa-retire-in .aa-input { width: 100%; box-sizing: border-box; }
+/* ผลเทียบเป้าใต้ช่องตั้งเป้า + การ์ดที่หัวหน้า */
+.aa-tv { color: var(--mc-text-2); font-weight: 600; }
+.aa-tv.is-ahead b, .aa-stat-target.is-ahead .aa-stat-s b { color: var(--aa-ahead); }
+.aa-tv.is-on b, .aa-stat-target.is-on .aa-stat-s b { color: var(--aa-on); }
+.aa-tv.is-behind b, .aa-stat-target.is-behind .aa-stat-s b { color: var(--aa-behind); }
+.aa-stat-target { cursor: help; }
 
 /* -------------------------------------------------- 4 · charts */
 .aa-port { border: 1px solid var(--mc-border); border-radius: 16px; background: var(--mc-card); padding: 15px 17px; margin-bottom: 14px; }
@@ -266,8 +279,38 @@
 .aa-rec td.is-down { color: var(--mc-red); font-weight: 700; }
 .aa-rec td.aa-rec-na { color: var(--mc-faint); }
 .aa-rec-flag { color: var(--aa-behind); font-weight: 800; margin-left: 2px; }
+/* ตารางทั้งพอร์ต: ป้ายที่มาของเงินเติม (ตั้งไว้ / กรอก) และเป้าในแถวปี */
+.aa-rec-src { display: inline-block; margin-left: 5px; padding: 0 5px; border-radius: 6px; font-size: 10px; font-weight: 700; color: var(--mc-muted); background: var(--aa-chip-bg); vertical-align: middle; cursor: help; }
+.aa-rec-tgt { margin-left: 6px; font-size: 10.5px; font-weight: 600; color: var(--mc-muted); }
+/* หมายเหตุใต้ชื่อแถว (ยังไม่ครบปี / เป้าต่อไตรมาส) — แทนแถว colspan เพื่อให้ทุกแถวมี 6 ช่องเท่ากัน */
+.aa-rec-sub { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 500; color: var(--mc-muted); white-space: normal; line-height: 1.45; }
+.aa-rec-whole { min-width: 560px; }
+.aa-rec-whole td:first-child { white-space: normal; min-width: 92px; }
+/* มือถือ: ซ่อนต้นงวด/ปลายงวด ให้ รวมเงินเติม · เงินเติม · ไม่รวมเงินเติม เห็นครบโดยไม่ต้องเลื่อน */
+@media (max-width: 600px) {
+  .aa-rec-whole { min-width: 0; }
+  .aa-rec-whole .aa-rec-v { display: none; }
+  .aa-rec-whole th, .aa-rec-whole td { padding: 7px 6px; }
+  .aa-rec-whole td:last-child, .aa-rec-whole th:last-child { min-width: 0; }
+  .aa-rec-whole td:last-child .aa-rec-pill { margin-left: 0; margin-top: 3px; }
+  .aa-rec-whole td:last-child .aa-rec-pill, .aa-rec-whole td:last-child .aa-rec-tgt, .aa-rec-whole td:last-child .aa-rec-gap { display: inline-block; }
+}
+.aa-rec-ports .aa-rec-wrap { margin: 0 12px 10px; }
+.aa-rec-ports .aa-q-line { padding: 0 14px 6px; }
 .aa-rec-sum td { border-top: 1px solid var(--mc-border); font-weight: 800; background: var(--aa-chip-bg); }
 .aa-rec-sum:first-of-type td { border-top: 2px solid var(--mc-border-active); }
+/* แถวสรุปรายปี — คั่นด้วยเส้นประให้รู้ว่าเป็นผลรวมของไตรมาสข้างบน ไม่ใช่ไตรมาสใหม่ */
+.aa-rec-year td { background: var(--aa-chip-bg); font-weight: 800; border-top: 1px dashed var(--mc-border-active); }
+.aa-rec-year-note { font-weight: 500; color: var(--mc-muted); text-align: left !important; white-space: normal !important; font-variant-numeric: normal; }
+/* ป้ายเทียบเป้าพอร์ตเกษียณ — ใช้ token ahead/on/behind ตัวเดียวกับเส้นคาดหวัง */
+.aa-rec-pill { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .2px; vertical-align: middle; border: 1px solid transparent; cursor: help; white-space: nowrap; }
+.aa-rec-pill.is-ahead { color: var(--aa-ahead); background: color-mix(in srgb, var(--aa-ahead) 14%, transparent); border-color: var(--aa-ahead); }
+.aa-rec-pill.is-on { color: var(--aa-on); background: color-mix(in srgb, var(--aa-on) 14%, transparent); border-color: var(--aa-on); }
+.aa-rec-pill.is-behind { color: var(--aa-behind); background: color-mix(in srgb, var(--aa-behind) 14%, transparent); border-color: var(--aa-behind); }
+/* เกิน/ขาดเป้าเป็นเงิน — ต่อท้ายป้าย สีเดียวกับป้าย */
+.aa-rec-gap { margin-left: 6px; font-size: 10.5px; font-weight: 700; white-space: nowrap; cursor: help; }
+.aa-rec-gap.is-ahead { color: var(--aa-ahead); }
+.aa-rec-gap.is-behind { color: var(--aa-behind); }
 
 /* ---------- ฝังต่อท้าย Portfolio Position บนหน้าเดียวกัน ----------
    เปลือกของ Mission Control มีกฎ `.mc-shell-active .mc-content > main` ที่ปลด

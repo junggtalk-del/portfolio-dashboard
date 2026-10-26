@@ -36,7 +36,7 @@
     long: { key: "long", label: "ระยะยาว", sub: "เสี่ยงสูง ถือยาว", color: "#a855f7" }
   };
 
-  var DEFAULTS = { dietzWeight: 0.5, horizonQuarters: 4, trailQuarters: 3, imputeEntries: true };
+  var DEFAULTS = { dietzWeight: 0.5, horizonQuarters: 4, trailQuarters: 3, imputeEntries: true, targetReturnPct: 10 };
   var GAP_BAND = 0.005; // ห่างจากเส้นคาดหวังน้อยกว่า 0.5% ถือว่า "ตามเป้า"
 
   // ---------------------------------------------------------------- helpers
@@ -127,7 +127,10 @@
       workYears: clampNum(safe(rt.workYears), 0, 80),
       retireYears: clampNum(safe(rt.retireYears), 0, 80),
       currentAge: clampNum(safe(rt.currentAge), 0, 120),  // ไม่บังคับ — ใส่แล้วหน้าเว็บจะแสดงเป็นอายุแทนจำนวนปี
-      postReturnPct: clampNum(safe(rt.postReturnPct), -50, 100)  // ผลตอบแทนคาดหวัง "หลังเกษียณ" · null = ใช้ค่าเดียวกับก่อนเกษียณ
+      postReturnPct: clampNum(safe(rt.postReturnPct), -50, 100),  // ผลตอบแทนคาดหวัง "หลังเกษียณ" · null = ใช้ค่าเดียวกับก่อนเกษียณ
+      // เป้าผลตอบแทนของพอร์ตเกษียณ (%/ปี) — คนละตัวกับ expectedRatePct ที่ถ่วงน้ำหนักจาก 3 พอร์ต
+      // ค่านี้คือ "ต้องได้เท่านี้ไปตลอด" จึงมี default (10) ไม่ใช่ null · ใส่ขยะมาก็ตกกลับ 10
+      targetReturnPct: (function () { var v = clampNum(safe(rt.targetReturnPct), -50, 100); return v === null ? DEFAULTS.targetReturnPct : v; })()
     };
     out.updatedAt = typeof src.updatedAt === "string" ? src.updatedAt : null;
     return out;
@@ -419,11 +422,13 @@
           r = rows[key] = {
             key: key, type: a.type == null ? "" : String(a.type),
             name: a.name ? String(a.name) : (TYPE_LABELS[a.type] || String(a.type || "")),
-            value: 0, flow: 0, hasFlow: false
+            value: 0, flow: 0, hasFlow: false, flowTyped: false
           };
         }
         r.value += v;
-        if (nf !== null) { r.flow += nf; r.hasFlow = true; }
+        // flowTyped = มียอดเงินเติม/ถอนที่ไม่ใช่ 0 — Quarterly Editor บันทึกช่องว่างเป็น 0 (app.js readAssetFromForm)
+        // และตอน "คัดลอกจากไตรมาสก่อน" เขียน netFlow: 0 ให้ทุกรายการ ดังนั้น 0 แยกไม่ออกจาก "ไม่ได้กรอก"
+        if (nf !== null) { r.flow += nf; r.hasFlow = true; if (nf !== 0) r.flowTyped = true; }
         total += v;
       });
       // ไตรมาสที่ทั้งไตรมาสเป็นศูนย์ (เช่นสร้างไตรมาสหน้าไว้ล่วงหน้าแต่ยังไม่กรอก)
@@ -439,6 +444,182 @@
       latestKey: kept.length ? kept[kept.length - 1] : null,
       impute: impute
     };
+  }
+
+  // ---------------------------------------------------------------- เป้าพอร์ตเกษียณ รายไตรมาส/รายปี
+  // เป้าต่อไตรมาสต้อง "ทบต้น" จากเป้าต่อปี: 1.10^(1/4)−1 ≈ 2.411% ไม่ใช่ 10/4 = 2.5%
+  // (2.5% คูณกัน 4 ไตรมาสได้ 10.38% ซึ่งไม่ใช่เป้าที่ตั้ง) — ใช้ expectedIndex ตัวเดียวกับเส้นคาดหวัง
+  function targetFor(annualPct, quarters) {
+    var a = fin(annualPct), q = fin(quarters);
+    if (a === null || q === null || !(q > 0)) return null;
+    var idx = expectedIndex(a / 100, q);
+    return idx === null ? null : idx / 100 - 1;
+  }
+  function quarterTarget(annualPct) { return targetFor(annualPct, 1); }
+  // สถานะเทียบเป้า — เกณฑ์เดียวกับเส้นคาดหวัง (GAP_BAND บนอัตราส่วนดัชนี) ไม่ตั้งเกณฑ์ใหม่
+  function targetStatus(r, target) {
+    var a = fin(r), e = fin(target);
+    if (a === null || e === null || !(1 + e > 0)) return { status: "no-data", gapRatio: null };
+    var g = (1 + a) / (1 + e) - 1;
+    if (!isFinite(g)) return { status: "no-data", gapRatio: null };
+    return { status: g >= GAP_BAND ? "ahead" : (g <= -GAP_BAND ? "behind" : "on"), gapRatio: g };
+  }
+  function quarterIndexOf(key) {
+    var m = /^(\d{4})-Q([1-4])$/.exec(String(key || ""));
+    return m ? Number(m[1]) * 4 + Number(m[2]) - 1 : null;
+  }
+
+  // ---------------------------------------------------------------- ทั้งพอร์ต: รวมเงินเติม vs ไม่รวมเงินเติม
+  // คิดจาก "ทุกรายการ" ใน Quarterly Editor (รวมรายการที่ยังไม่จัดพอร์ต) — ฐานเดียวกับ "ความมั่งคั่งรวม"
+  // ของหน้า Portfolio Position เพราะเงินเติมไตรมาสละเข้าพอร์ตทั้งก้อน ถ้าคิดเฉพาะส่วนที่จัดแล้ว
+  // เงินเติมที่ไปซื้อรายการใหม่ (ยังไม่จัด) จะถูกหักจากฐานที่ไม่มีเงินก้อนนั้น → ติดลบเกินจริง
+  //
+  // เงินเติมของแต่ละไตรมาส เลือกตามลำดับ:
+  //   1) มี netFlow ≠ 0 ที่ผู้ใช้กรอกในรายการ → ใช้ยอดที่กรอก (ของจริงชนะ แม้ตั้งไตรมาสละไว้)
+  //   2) ตั้ง "เติมเงินเข้าพอร์ตไตรมาสละ" ไว้ → ยอดนั้น × จำนวนไตรมาสที่ผ่านไป (ปกติ 1, ไตรมาสที่ข้ามไปนับด้วย)
+  //   3) ไม่มีทั้งคู่ → เงินเติมที่ระบบเดาจากรายการเก่าที่เพิ่งโผล่ (ข้อมูลก่อนมี netFlow) หรือ 0
+  // netFlow = 0 นับว่า "ไม่ได้กรอก" — Quarterly Editor เขียน 0 ให้เองทั้งช่องว่างและตอนคัดลอกไตรมาส
+  // ช่องหน้าเว็บกรอกเป็น "ไตรมาสละ" แล้วเก็บ ×4 ลง retirement.annualContribution (แผนเกษียณคิดรายปี)
+  // ÷4 ตรงนี้จึงคืนค่าที่ผู้ใช้พิมพ์เป๊ะ (คูณ/หารด้วย 4 ไม่ทำให้ทศนิยมเพี้ยน) ไม่ใช่การเฉลี่ย
+  function wholeRecord(S, allocation, dietzWeight) {
+    var keys = S.keys || [];
+    var rt = (allocation && allocation.retirement) || {};
+    var annualC = fin(rt.annualContribution);
+    var perQ = annualC === null ? null : annualC / 4;
+    var tPct = fin(rt.targetReturnPct);
+    var V = [], agg = [];
+    keys.forEach(function (k, i) {
+      var rows = S.perQuarter[k] || {}, prev = i > 0 ? S.perQuarter[keys[i - 1]] : null;
+      var v = 0, typedAny = false, typedSum = 0, withFlow = 0, cnt = 0, imputed = 0;
+      Object.keys(rows).forEach(function (kk) {
+        var r = rows[kk];
+        cnt++;
+        v += r.value;
+        if (r.hasFlow) { withFlow++; typedSum += r.flow; if (r.flowTyped) typedAny = true; }
+        else if (i > 0 && S.impute && r.value > 0 && !(prev && prev[kk])) imputed += r.value;
+      });
+      V.push(v);
+      agg.push({ typedAny: typedAny, typedSum: typedSum, withFlow: withFlow, count: cnt, imputed: imputed });
+    });
+    var rows = [];
+    for (var i = 1; i < keys.length; i++) {
+      var a = agg[i];
+      var qa = quarterIndexOf(keys[i - 1]), qb = quarterIndexOf(keys[i]);
+      var span = (qa === null || qb === null || qb - qa < 1) ? 1 : qb - qa;
+      var flow, source;
+      if (a.typedAny) {
+        flow = a.typedSum + a.imputed;
+        source = (a.withFlow === a.count && a.imputed === 0) ? "recorded" : "partial";
+      } else if (perQ !== null) {
+        flow = perQ * span; source = "setting";
+      } else if (a.imputed > 0) {
+        flow = a.imputed; source = "imputed";
+      } else {
+        flow = 0; source = "none";
+      }
+      var vS = V[i - 1], vE = V[i];
+      var real = dietz(vS, vE, flow, dietzWeight);
+      var naive = vS > 0 ? vE / vS - 1 : null;
+      if (naive !== null && !isFinite(naive)) naive = null;
+      var tq = targetFor(tPct, span);
+      var st = targetStatus(real, tq);
+      // เกิน/ขาดเป้าเท่าไหร่: เป็น % = ผลจริง − เป้า · เป็นเงิน = มูลค่าปลายงวดจริง − มูลค่าที่ควรมีถ้าได้ตามเป้าพอดี
+      // (ต้นงวดเดียวกัน เงินเติมเท่ากัน สมมติกลางงวดเหมือนสูตร Dietz) = (ผลจริง − เป้า) × (ต้นงวด + w × เงินเติม)
+      var tEnd = (real === null || tq === null) ? null : vS + flow + tq * (vS + dietzWeight * flow);
+      rows.push({
+        key: keys[i], prevKey: keys[i - 1], span: span,
+        vStart: vS, vEnd: vE, change: vE - vS, naive: naive,
+        flow: flow, flowSource: source,
+        settingAmount: perQ === null ? null : perQ * span,
+        settingOverridden: a.typedAny && perQ !== null,   // ตั้งไตรมาสละไว้ แต่ไตรมาสนี้มียอดที่กรอกในรายการ
+        recordedFlow: a.typedAny ? a.typedSum : null, imputedFlow: a.imputed,
+        real: real, rReason: real === null ? (vS > 0 ? "inconsistent" : "empty-start") : null,
+        target: tq, status: st.status, gapRatio: st.gapRatio,
+        targetDiff: tEnd === null ? null : real - tq,
+        targetEndValue: tEnd, targetDiffAmount: tEnd === null ? null : vE - tEnd
+      });
+    }
+    var nQ = 0, acc = 1, broken = false, flowTotal = 0;
+    rows.forEach(function (r) { nQ += r.span; flowTotal += r.flow; if (r.real === null) broken = true; else acc *= 1 + r.real; });
+    var realCum = rows.length && !broken ? acc - 1 : null;
+    var naiveCum = rows.length && V[0] > 0 ? V[V.length - 1] / V[0] - 1 : null;
+    var realAnn = annualize(realCum, nQ);
+    return {
+      basis: "all-items",
+      quarterly: { amount: perQ, source: perQ === null ? "none" : "setting" },
+      target: { annualPct: tPct, quarterly: targetFor(tPct, 1) },
+      baseKey: keys.length ? keys[0] : null,
+      rows: rows,
+      yearly: wholeYearly(rows, tPct, dietzWeight),
+      summary: {
+        quarters: nQ, startValue: V.length ? V[0] : null, endValue: V.length ? V[V.length - 1] : null,
+        naiveCum: naiveCum, flowTotal: flowTotal, realCum: realCum, realAnn: realAnn,
+        annNote: realAnn === null && realCum !== null ? "ยังไม่ครบปี (" + nQ + "/4 ไตรมาส)" : null
+      }
+    };
+  }
+
+  // จัดกลุ่มแถวทั้งพอร์ตเป็นรายปีปฏิทิน (แถวนับเป็นของปีที่ไตรมาสปลายงวดอยู่)
+  //   ผลตอบแทนปี = ต่อ (chain) ไตรมาสในปีนั้น · มีไตรมาสไหนคำนวณไม่ได้ ปีนั้น real = null
+  //   ปีที่ไม่ครบ 4 ไตรมาสเป็น YTD และเป้าปรับตามจำนวนไตรมาส ไม่เอาครึ่งปีไปเทียบกับ 10% เต็มปี
+  //   แถวที่ข้ามไตรมาส (span > 1) นับไตรมาสที่ผ่านไปด้วย · ถ้าคร่อมจากปีก่อน บอกไว้ใน note
+  //   เกิน/ขาดเป็นเงินของทั้งปี: เดินเส้น "ถ้าได้ตามเป้าทุกไตรมาส" จากต้นปีจริง + เงินเติมจริงของแต่ละไตรมาส
+  //   แล้วเทียบมูลค่าปลายปีจริง (ไม่ใช่ผลรวมรายไตรมาส — ไตรมาสหลังต้องโตจากฐานที่ได้ตามเป้าแล้ว)
+  function wholeYearly(rows, annualPct, dietzWeight) {
+    var w = fin(dietzWeight); if (w === null) w = DEFAULTS.dietzWeight;
+    var byYear = {}, order = [];
+    (rows || []).forEach(function (row) {
+      var m = /^(\d{4})-Q([1-4])$/.exec(String(row.key || ""));
+      if (!m) return;
+      var y = Number(m[1]), q = Number(m[2]), span = row.span || 1;
+      var g = byYear[y];
+      if (!g) { g = byYear[y] = { year: y, rows: [], n: 0, cross: false, setting: 0, none: 0, lastQ: q }; order.push(y); }
+      g.rows.push(row);
+      g.n += Math.min(span, q);
+      if (span > q) g.cross = true;
+      if (row.flowSource === "setting") g.setting++;
+      if (row.flowSource === "none") g.none++;
+      g.lastQ = q;
+    });
+    return order.map(function (y) {
+      var g = byYear[y];
+      var acc = 1, nacc = 1, broken = false, nbroken = false, flow = 0;
+      g.rows.forEach(function (r) {
+        if (r.real === null) broken = true; else acc *= 1 + r.real;
+        if (r.naive === null) nbroken = true; else nacc *= 1 + r.naive;
+        flow += r.flow;
+      });
+      var real = broken ? null : acc - 1;
+      var naive = nbroken ? null : nacc - 1;
+      var full = g.n >= 4 && g.lastQ === 4;
+      var target = targetFor(annualPct, g.n);
+      var st = targetStatus(real, target);
+      var tEnd = broken ? null : g.rows[0].vStart;
+      g.rows.forEach(function (r) {
+        if (tEnd === null || r.target === null) { tEnd = null; return; }
+        tEnd = tEnd + r.flow + r.target * (tEnd + w * r.flow);
+      });
+      if (tEnd !== null && !isFinite(tEnd)) tEnd = null;
+      var realY = real !== null && isFinite(real) ? real : null;
+      var notes = [];
+      if (broken) notes.push("มีไตรมาสที่คำนวณไม่ได้ จึงสรุปทั้งปีไม่ได้");
+      else if (!full) notes.push("ยังไม่ครบปี (" + g.n + "/4 ไตรมาส) — เป้าปรับตามจำนวนไตรมาส");
+      if (g.cross) notes.push("มีช่วงที่ไม่มีข้อมูลคร่อมจากปีก่อน ตัวเลขปีนี้จึงรวมช่วงนั้นด้วย");
+      if (g.none) notes.push(g.none + " ไตรมาสยังไม่ได้หักเงินเติม");
+      var last = g.rows[g.rows.length - 1];
+      return {
+        year: y, n: g.n, full: full,
+        keys: g.rows.map(function (r) { return r.key; }),
+        startValue: g.rows[0].vStart, endValue: last.vEnd,
+        naive: naive !== null && isFinite(naive) ? naive : null, flow: flow,
+        real: realY,
+        target: target, status: st.status, gapRatio: st.gapRatio,
+        targetDiff: realY === null || target === null ? null : realY - target,
+        targetEndValue: tEnd, targetDiffAmount: tEnd === null ? null : last.vEnd - tEnd,
+        lastKey: last.key, settingQuarters: g.setting, untypedQuarters: g.none,
+        note: notes.length ? notes.join(" · ") : null
+      };
+    });
   }
 
   // ---------------------------------------------------------------- compute
@@ -551,6 +732,10 @@
       };
     }).sort(function (a, b) { return b.latestValue - a.latestValue; });
 
+    // ทั้งพอร์ต (ทุกรายการ) คิดก่อน — ไตรมาสไหนใช้ "เติมเงินเข้าพอร์ตไตรมาสละ" ตัดสินที่นี่ที่เดียว
+    // แล้วรายพอร์ตใช้การตัดสินเดียวกัน ตัวเลขทั้งพอร์ตกับรายพอร์ตจึงไม่แยกกันคนละกติกา
+    var whole = wholeRecord(S, allocation, dietzWeight);
+
     // ---- ต่อพอร์ต
     var portsOut = {}, seriesByPort = {};
     PORTS.forEach(function (p) {
@@ -588,9 +773,21 @@
             disappeared.push({ key: kk, name: prevRows[kk].name, value: prevRows[kk].value * w });
           }
         });
+        // ไตรมาสที่ทั้งพอร์ตหัก "เงินเติมไตรมาสละ" (ไม่มี netFlow ≠ 0 กรอกไว้ในรายการไหนเลย):
+        // ไม่รู้ว่าเงินก้อนนั้นเข้าพอร์ตไหน → แบ่งตามสัดส่วนมูลค่าต้นงวดของพอร์ตนี้เทียบทุกรายการ
+        // (ส่วนของรายการที่ยังไม่จัดพอร์ตไม่ตกเป็นของพอร์ตไหน ผลรวมทุกพอร์ต + ส่วนนั้น = ยอดไตรมาสละพอดี)
+        // ยอดนี้ใช้แทนทั้ง netFlow 0 และเงินที่ระบบเดาจากรายการที่เพิ่งโผล่ — กติกาเดียวกับตารางทั้งพอร์ต
+        // พอร์ตที่ไม่เหลือรายการเลยในไตรมาสนี้ไม่ได้รับส่วนแบ่ง (เงินไม่ได้เข้าพอร์ตที่ว่าง)
+        var wr = i > 0 ? whole.rows[i - 1] : null, alloc = null;
+        if (wr && wr.key === k && wr.flowSource === "setting" && rowCount > 0) {
+          var share = wr.vStart > 0 && V[i - 1] > 0 ? V[i - 1] / wr.vStart : 0;
+          alloc = { share: share, amount: wr.flow * share, total: wr.flow, span: wr.span };
+          f = alloc.amount;
+          imputed = []; newZero = [];
+        }
         V.push(v); F.push(f);
-        status.push(rowCount === 0 ? "none" : (withFlow === rowCount ? "recorded" : (withFlow === 0 ? "missing" : "partial")));
-        notes.push({ imputed: imputed, disappeared: disappeared, newZero: newZero });
+        status.push(rowCount === 0 ? "none" : (alloc ? "setting" : (withFlow === rowCount ? "recorded" : (withFlow === 0 ? "missing" : "partial"))));
+        notes.push({ imputed: imputed, disappeared: disappeared, newZero: newZero, alloc: alloc });
       });
 
       seriesByPort[p] = { V: V, F: F, status: status };
@@ -617,15 +814,17 @@
       var expIdx = [];
       for (var e2 = 0; e2 <= n; e2++) expIdx.push(expectedIndex(E, e2));
 
-      var recorded = 0;
+      var recorded = 0, fromSetting = 0;
       for (var i3 = baseIdx + 1, j = 0; i3 < keys.length; i3++, j++) {
         if (status[i3] === "recorded") recorded++;
+        else if (status[i3] === "setting") { recorded++; fromSetting++; }
         var rr = rets[j];
         var reason2 = null;
         if (rr === null) reason2 = !(V[i3 - 1] > 0) ? "empty-start" : "inconsistent";
         var flags = [];
         if (status[i3] === "missing") flags.push("ไม่มีข้อมูลเงินเติม/ถอนในไตรมาสนี้ — คิดเป็น 0");
         else if (status[i3] === "partial") flags.push("มีข้อมูลเงินเติม/ถอนบางรายการ");
+        else if (status[i3] === "setting") flags.push("เงินเติมไตรมาสละแบ่งเข้าพอร์ตนี้ตามสัดส่วนมูลค่าต้นงวด (สมมติฐาน — กรอก netFlow ในรายการจะตรงกว่า)");
         if (notes[i3].imputed.length) flags.push("ประมาณเงินเริ่มต้นให้ " + notes[i3].imputed.length + " รายการที่เพิ่งเข้าพอร์ตและไม่มีข้อมูลเดิม");
         if (notes[i3].disappeared.length) flags.push("มี " + notes[i3].disappeared.length + " รายการหายจากพอร์ตโดยไม่ได้บันทึกการถอน");
         if (notes[i3].newZero.length) flags.push("รายการใหม่บันทึกเงินเติม = 0 — ถ้าซื้อด้วยเงินใหม่ควรบันทึกจำนวนเงิน");
@@ -633,7 +832,7 @@
         if (rr !== null && Math.abs(F[i3]) > V[i3 - 1] + V[i3]) flags.push("เงินเข้า/ออกก้อนใหญ่มากเทียบกับขนาดพอร์ต — ตัวเลขไวต่อสมมติฐานกลางงวด");
         qrows.push({
           key: keys[i3], vStart: V[i3 - 1], vEnd: V[i3], flow: F[i3],
-          flowStatus: status[i3], r: rr, rReason: reason2,
+          flowStatus: status[i3], alloc: notes[i3].alloc, r: rr, rReason: reason2,
           index: idx[j + 1], expectedIndex: expIdx[j + 1],
           imputed: notes[i3].imputed, disappeared: notes[i3].disappeared, newZero: notes[i3].newZero,
           flags: flags
@@ -694,7 +893,11 @@
         cumReturn: cumReturn, annReturn: annReturn, annNote: annNote,
         gapRatio: gapRatio, status: statusKey,
         required: required, trailing: trailing, drawdown: drawdown, runway: runway,
-        flowCoverage: { recorded: recorded, total: n, thai: recorded + "/" + n + " ไตรมาสมีข้อมูลเงินเติม/ถอน" },
+        flowCoverage: {
+          recorded: recorded, total: n, fromSetting: fromSetting,
+          thai: recorded + "/" + n + " ไตรมาสมีข้อมูลเงินเติม/ถอน" +
+            (fromSetting ? " (" + fromSetting + " ไตรมาสใช้เงินเติมไตรมาสละ แบ่งตามสัดส่วนมูลค่าต้นงวด)" : "")
+        },
         assets: memberKeys.map(function (k) {
           var s = seen[k], w = weightOf(k, p);
           return {
@@ -737,7 +940,7 @@
         var q = null;
         for (var qi = 0; qi < P.quarters.length; qi++) { if (P.quarters[qi].key === keys[ri]) { q = P.quarters[qi]; break; } }
         row.ports[p] = q
-          ? { r: q.r, flow: q.flow, vEnd: q.vEnd, flowStatus: q.flowStatus, rReason: q.rReason }
+          ? { r: q.r, flow: q.flow, vEnd: q.vEnd, flowStatus: q.flowStatus, alloc: q.alloc, rReason: q.rReason }
           : { r: null, flow: null, vEnd: seriesByPort[p].V[ri] || 0, flowStatus: "none", rReason: "no-data" };
       });
       if (totBase >= 0 && ri > totBase) { row.overall = totRets[ri - totBase - 1]; row.overallFlow = totF[ri]; }
@@ -753,6 +956,9 @@
         annNote: annualize(totCum, totN) === null && totCum !== null ? "ยังไม่ครบปี (" + totN + "/4 ไตรมาส)" : null
       }
     };
+    // ทั้งพอร์ต (ทุกรายการ) — รวมเงินเติม vs ไม่รวมเงินเติม + เป้าพอร์ตเกษียณรายไตรมาส/รายปี
+    record.whole = whole;
+    record.target = whole.target;
 
     // ---- เกษียณ: เงินพอหรือยัง
     var rtCfg = allocation.retirement || {};
@@ -943,6 +1149,12 @@
     perpetualAnnual: perpetualAnnual,
     blendRate: blendRate,
     trailingBehind: trailingBehind,
+    quarterTarget: quarterTarget,
+    targetFor: targetFor,
+    targetStatus: targetStatus,
+    quarterIndexOf: quarterIndexOf,
+    wholeRecord: wholeRecord,
+    wholeYearly: wholeYearly,
     PORTS: PORTS,
     PORT_META: PORT_META,
     TYPE_LABELS: TYPE_LABELS,

@@ -131,6 +131,7 @@ async function persistRemoteData() {
       ? "กำลังบันทึกลง local fallback..."
       : "กำลังบันทึกลง database...";
   try {
+    await adoptServerAllocation();
     const response = await fetch("/api/portfolio", {
       method: "PUT",
       headers: { "content-type": "application/json", ...portfolioHeaders() },
@@ -149,6 +150,21 @@ async function persistRemoteData() {
   } finally {
     state.saving = false;
     renderSummary();
+  }
+}
+
+// หน้านี้ไม่ได้แก้ allocation (แบ่งพอร์ต / แผนเกษียณ / เงินเติมไตรมาสละ ที่ตั้งในหน้า /portfolio)
+// จึงต้องใช้ฉบับล่าสุดบน server ทุกครั้งก่อนบันทึก ไม่งั้นแท็บนี้ที่เปิดค้างไว้จะเขียนทับค่าที่เพิ่งตั้งด้วยของเก่า
+// อ่านไม่ได้ (เช่นเน็ตหลุด) ก็บันทึกไตรมาสต่อด้วยข้อมูลที่มี — ไม่ขวางการบันทึก
+async function adoptServerAllocation() {
+  try {
+    const response = await fetch("/api/portfolio", { cache: "no-store", headers: portfolioHeaders() });
+    if (!response.ok) return;
+    const payload = await readJsonResponse(response);
+    const latest = payload && payload.data;
+    if (latest && Object.prototype.hasOwnProperty.call(latest, "allocation")) state.data.allocation = latest.allocation;
+  } catch (error) {
+    // อ่านไม่ได้ — บันทึกต่อด้วยข้อมูลที่มี
   }
 }
 
