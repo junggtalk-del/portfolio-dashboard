@@ -15,177 +15,177 @@
       "name": "Alphabet Inc.",
       "layer": "model",
       "thesis": {
-        "statement": "Alphabet คือบริษัท AI แบบ full-stack เพียงไม่กี่รายในโลก — มีโมเดลชั้นนำของตัวเอง (Gemini), ชิปของตัวเอง (TPU), cloud ของตัวเอง และช่องทางกระจายสู่ผู้ใช้หลายพันล้านคนผ่าน Search / Android / YouTube / Workspace ความกลัวว่า AI จะฆ่า Search พิสูจน์แล้วว่าเกินจริง: AI Overviews และ AI Mode กลับขยายการใช้งานและรักษาอัตราการทำเงินไว้ได้ ขณะที่ Google Cloud โตเร่งขึ้นจากดีมานด์ AI และ backlog พุ่งแรง ปี 2025 คือปีที่ตลาดเปลี่ยนมุมมองจาก 'ผู้แพ้ AI' เป็น 'ผู้นำ AI' และโครงสร้างกำไรยังแข็งแรงพอจะลงทุน CapEx มหาศาลโดยไม่ทำลายงบดุล",
+        "statement": "Alphabet คือบริษัท AI แบบ full-stack เพียงไม่กี่รายในโลก — มีโมเดลชั้นนำของตัวเอง (Gemini), ชิปของตัวเอง (TPU), cloud ของตัวเอง และช่องทางกระจายสู่ผู้ใช้หลายพันล้านคนผ่าน Search / Android / YouTube / Workspace ความกลัวว่า AI จะฆ่า Search พิสูจน์แล้วว่าเกินจริง: AI Overviews และ AI Mode กลับขยายการใช้งาน (query growth สูงสุดในรอบ 5 ปี) และรายได้ Search ยังโตสองหลัก แม้ Q3'26 ชะลอเหลือ +12% ขณะที่ Google Cloud โตเร่งขึ้นแรงจากดีมานด์ AI และ backlog พุ่งเกินครึ่งล้านล้านดอลลาร์ ปี 2025 คือปีที่ตลาดเปลี่ยนมุมมองจาก 'ผู้แพ้ AI' เป็น 'ผู้นำ AI' — แต่ปี 2026 ขนาด CapEx (~$200B) ใหญ่เกินกระแสเงินสดจนต้องระดมทุนภายนอกทั้งหุ้นใหม่และหุ้นกู้ ผู้ถือหุ้นจึงแลกการเติบโตของ Cloud กับ FCF ที่ติดลบและหุ้นที่เริ่มเจือจาง",
         "pillars": [
-          "Gemini 3 ขึ้นเป็นโมเดลระดับแนวหน้าของอุตสาหกรรม พร้อมผู้ใช้ Gemini app หลายร้อยล้านคนและโตเร็วมาก",
-          "Google Cloud โตเร่งขึ้น (~+30%+ YoY) พร้อม backlog ระดับ ~$150B+ — เป็นหลักฐานว่า CapEx สร้างรายได้จริง",
-          "TPU รุ่น Ironwood + ดีลลูกค้าภายนอกรายใหญ่ (เช่น Anthropic) ทำให้ Alphabet เป็น hyperscaler ที่พึ่งพา NVIDIA น้อยที่สุด → ได้เปรียบต้นทุน compute ระยะยาว",
-          "Search ยังเป็นเครื่องผลิตกระแสเงินสดที่ใหญ่และทนทาน โดย AI Overviews เข้าถึงผู้ใช้ ~2 พันล้านคน/เดือนและ monetize ได้ใกล้เคียงเดิม",
-          "งบดุลระดับป้อมปราการ + คดีความ antitrust ผ่านจุดเลวร้ายสุดไปแล้ว (คำตัดสิน remedy ปี 2025 เบากว่าที่ตลาดกลัว ไม่ต้องขาย Chrome)"
+          "Gemini 4 (Argon / Carbon) รักษาตำแหน่งโมเดลระดับแนวหน้า พร้อมผู้ใช้ Gemini app ทะลุ 1 พันล้านคน — โตเร็วที่สุดในประวัติศาสตร์ Google",
+          "Google Cloud โตเร่งขึ้นแรง (+103% YoY ใน Q3'26) พร้อม backlog ~$561B — เป็นหลักฐานว่า CapEx สร้างรายได้จริง",
+          "TPU รุ่น Ironwood + ดีลลูกค้าภายนอกรายใหญ่ (เช่น Anthropic) และลูกค้าใช้ TPU เกือบ 100 ราย ทำให้ Alphabet เป็น hyperscaler ที่พึ่งพา NVIDIA น้อยที่สุด → ได้เปรียบต้นทุน compute ระยะยาว",
+          "Search ยังเป็นเครื่องผลิตกระแสเงินสดที่ใหญ่และทนทาน โดย AI Overviews เข้าถึงผู้ใช้ ~2 พันล้านคน/เดือน และเริ่มขยายโฆษณาใน AI Mode ไปต่างประเทศ",
+          "งบดุลยังเป็น net cash (เงินสด ~$265B เทียบหนี้ระยะยาว ~$125B) แม้ปี 2026 ระดมทุนภายนอกหนัก + คดีความ antitrust ผ่านจุดเลวร้ายสุดไปแล้ว (คำตัดสิน remedy ปี 2025 เบากว่าที่ตลาดกลัว ไม่ต้องขาย Chrome)"
         ]
       },
       "fundamentals": [
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+24% YoY (Q2 2026 — $119.8B, beat consensus +2.5%)",
+          "current": "~+25% YoY (Q3 2026 — $127.6B ต่ำกว่าคาด ~$127.9B เล็กน้อย)",
           "trend": "up",
-          "score": 90,
+          "score": 88,
           "impact": "positive",
-          "why": "โตเร่งขึ้น 3 ไตรมาสติด (+18% → +22% → +24%) บนฐานแสนล้านดอลลาร์/ไตรมาส — Cloud +82% เป็นหัวหอก และ Search ยังโต +17% สองไตรมาสติด"
+          "why": "รายได้รวมยังเร่งขึ้น 4 ไตรมาสติด (+18% → +22% → +24% → +25%) แต่แรงส่งย้ายไปอยู่ที่ Cloud (+103%) เกือบทั้งหมด — Search ชะลอเหลือ +12% และ YouTube +9% ต่ำกว่าตลาดคาด จึงหักคะแนนเล็กน้อย"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "GAAP $9.11 (รวมกำไรพิเศษ unrealized ~$98B) · EPS ปกติ ~+26-30% YoY",
-          "trend": "up",
-          "score": 86,
-          "impact": "positive",
-          "why": "กำไรจากธุรกิจหลักยังโตแรงจาก operating leverage (op income +30%) — ระวังอ่าน GAAP ตรงๆ เพราะรวมกำไรตีมูลค่าเงินลงทุนครั้งเดียว ~$98B ที่ยังไม่รับรู้จริง"
+          "current": "GAAP $2.12 (-26% YoY) รวมขาดทุนเงินลงทุน -$0.55/หุ้น · ไม่รวมรายการนี้ ~$2.67 ยังต่ำกว่าคาด ~$3.02",
+          "trend": "down",
+          "score": 70,
+          "impact": "neutral",
+          "why": "กำไรจากการดำเนินงานยังโต +30% YoY แต่ EPS GAAP เหวี่ยงตามมูลค่าหุ้น SpaceX/Anthropic (Q2 +$6.26/หุ้น → Q3 -$0.55/หุ้น) และแม้ตัดรายการนี้ออกก็ยังต่ำกว่าคาด เพราะค่าเสื่อม (+49% YoY) และ R&D (+36%) โตเร็วกว่ารายได้ · consensus ปี 2027 (~$15) ต่ำกว่าปี 2026 (~$20.6) เพราะไม่มีกำไรพิเศษ"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "ถูกกดหนักขึ้น — CapEx 2026 ยกเป็น $195-205B (+2027 สูงกว่านี้)",
+          "current": "FCF Q3 -$9.1B (Q2 -$5.9B) · TTM ~$19.7B (-73% YoY) · CapEx 2026 คงกรอบ $195-205B",
           "trend": "down",
-          "score": 60,
-          "impact": "neutral",
-          "why": "OCF ยังแข็งแรงมากแต่ capex guidance ขยับขึ้น 2 ครั้งใน 6 เดือน (+$20B จากกรอบแรก) — ยอมรับได้เพราะ Cloud backlog $514B ยืนยันดีมานด์รองรับ แต่ FCF ปีนี้จะบาง ต้องจับตาใกล้ชิด"
+          "score": 45,
+          "impact": "negative",
+          "why": "OCF ยังแข็ง (~$42.3B/ไตรมาส) แต่ capex $51.4B (+114% YoY) กินหมดจน FCF ติดลบสองไตรมาสติด และผู้บริหารบอกว่า capex ปี 2027 จะเพิ่มขึ้นอย่างมีนัย — ส่วนต่างต้องเติมด้วยหุ้นใหม่และหุ้นกู้ ไม่ใช่กระแสเงินสดของตัวเองอีกต่อไป"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "Operating margin 34% (Q2 2026, +2pp YoY) · Cloud margin ~35.5%",
-          "trend": "up",
-          "score": 87,
+          "current": "Operating margin 31.8% (Q3 2026 ลดจาก 34.0% ใน Q2) · Cloud margin ~36.2%",
+          "trend": "down",
+          "score": 82,
           "impact": "positive",
-          "why": "Margin ขยายต่อแม้ลงทุนหนัก — Cloud พลิกเป็นเครื่องจักรกำไร (OI $8.8B จาก $2.8B ปีก่อน, margin ~20.6% → ~35.5%) ชดเชยค่าเสื่อม datacenter ที่พุ่ง"
+          "why": "Cloud ยังเป็นเครื่องจักรกำไร (OI $11.1B จาก $3.6B ปีก่อน, margin ~23.7% → ~36.2%) แต่ margin รวมลดลงสองไตรมาสติด (36.1% → 34.0% → 31.8%) จากค่าเสื่อม datacenter และต้นทุนส่วนกลางที่โตเร็ว — ผู้บริหารเตือนว่า Q4 จะมีแรงกดเพิ่มจากการเช่า compute ภายนอก (third-party capacity)"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "สูงระดับ ~25-30% — ท็อปของกลุ่ม mega-cap",
-          "trend": "flat",
-          "score": 85,
+          "current": "ยังสูงเทียบกลุ่ม mega-cap แต่เริ่มถูกเจือจาง — ฐานทุนโตเร็วกว่ากำไร",
+          "trend": "down",
+          "score": 80,
           "impact": "positive",
-          "why": "ธุรกิจโฆษณาแกนหลักใช้ทุนน้อยและกำไรสูงมาก ทำให้ ROIC โดยรวมยังสูงแม้เทเงินลงทุนเข้า AI infrastructure มหาศาล — ความเสี่ยงคือ ROIC จะถูกเจือจางถ้า AI CapEx ให้ผลตอบแทนช้ากว่าคาด"
+          "why": "ธุรกิจโฆษณาแกนหลักใช้ทุนน้อยและกำไรสูงมาก แต่ capex Q3 โต +114% YoY ขณะ operating income โต +30% และทุนที่ระดมเพิ่มใน 9 เดือน (หุ้นสามัญ+หุ้นบุริมสิทธิ ~$62B, หุ้นกู้ ~$85B) ขยายฐานทุนเร็ว — ROIC จะลดลงถ้ารายได้จาก AI infrastructure ตามไม่ทัน"
         },
         {
           "key": "cash",
           "label": "เงินสดในมือ",
-          "current": "เงินสดและหลักทรัพย์รวม ~$95-100B",
-          "trend": "flat",
+          "current": "เงินสดและหลักทรัพย์ ~$265B (Q2 ~$242B · สิ้นปี 2025 ~$127B)",
+          "trend": "up",
           "score": 90,
           "impact": "positive",
-          "why": "งบดุลระดับป้อมปราการ — เงินสดสุทธิเป็นบวกจำนวนมาก รองรับทั้ง CapEx มหาศาล ปันผล และซื้อหุ้นคืนพร้อมกันได้โดยไม่ตึง"
+          "why": "เงินสดเพิ่มเกินเท่าตัวในปีนี้ — แต่ส่วนใหญ่มาจากการระดมทุน (หุ้นใหม่ + หุ้นกู้) ไม่ใช่กระแสเงินสดอิสระ จึงเป็นกระสุนรองรับ capex มากกว่าสัญญาณกำไร · ยังมีเงินลงทุนนอกตลาด (non-marketable) อีก ~$135B"
         },
         {
           "key": "debt",
           "label": "หนี้สิน",
-          "current": "หนี้ต่ำมากเทียบขนาดบริษัท (เริ่มออกหุ้นกู้เพิ่มปลายปี 2025 เพื่อรองรับ CapEx)",
-          "trend": "flat",
-          "score": 85,
+          "current": "หนี้ระยะยาว ~$125B (Q2 ~$98B · สิ้นปี 2025 ~$47B) + หุ้นบุริมสิทธิ ~$18B · เงินสดยังมากกว่าหนี้ระยะยาว ~$140B",
+          "trend": "down",
+          "score": 75,
           "impact": "positive",
-          "why": "แม้เริ่มกู้ผ่านตลาดหุ้นกู้ครั้งใหญ่ปลายปี 2025 แต่ภาระหนี้ยังเล็กน้อยมากเมื่อเทียบกับกระแสเงินสดปีละแสนล้านดอลลาร์ — เครดิตระดับสูงสุดของตลาด ต้นทุนกู้ต่ำ"
+          "why": "ออกหุ้นกู้ ~$85B ใน 9 เดือนเพื่อรองรับ capex ภาระหนี้จึงโตเร็วมาก แต่เงินสดยังมากกว่าหนี้ชัดเจน และ operating income ~$40B/ไตรมาส ครอบคลุมดอกเบี้ยจ่าย (~$1B/ไตรมาส) ได้สบาย"
         },
         {
           "key": "dilution",
           "label": "การเจือจางของหุ้น",
-          "current": "SBC สูง (~$23-24B/ปี) แต่จำนวนหุ้นสุทธิลดลง ~1-2%/ปี",
-          "trend": "flat",
-          "score": 78,
-          "impact": "positive",
-          "why": "ค่าตอบแทนหุ้นพนักงานสูงตามแบบฉบับ big tech แต่การซื้อหุ้นคืนมากกว่าจนจำนวนหุ้นลดลงสุทธิทุกปี — ผู้ถือหุ้นระยะยาวไม่โดนเจือจางจริง"
+          "current": "diluted shares +1.4% YoY (12.20B → 12.37B) · ไม่ซื้อหุ้นคืนเลยปี 2026 · ขายหุ้นใหม่ผ่าน ATM + mandatory convertible preferred แปลงสภาพปี 2029",
+          "trend": "down",
+          "score": 50,
+          "impact": "negative",
+          "why": "พลิกจากจำนวนหุ้นลดลงสุทธิ ~1-2%/ปี เป็นเพิ่มขึ้น — ออกหุ้นสามัญ $18B + Berkshire $10B (มิ.ย.) และ ATM อีก ~$12.4B ใน Q3 (วงเงินเหลือ $27.6B) ขณะ SBC ~$8.6B/ไตรมาส และ buyback เป็นศูนย์ · capped call ช่วยจำกัดการเจือจางตอนแปลงสภาพหุ้นบุริมสิทธิ แต่ทิศทางไม่เป็นมิตรกับผู้ถือหุ้นแล้ว"
         },
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรเงินทุน",
-          "current": "CapEx เชิงรุก + buyback ~$70B authorization + ปันผลที่เริ่มปี 2024 และปรับขึ้นแล้ว",
-          "trend": "up",
-          "score": 80,
-          "impact": "positive",
-          "why": "เทเงินเข้า AI แรงขึ้นอีก ($195-205B) แต่มี backlog $514B พิสูจน์ว่าลงทุนตามดีมานด์จริง ไม่ใช่ overbuild — จุดหักคะแนนคือแรงกด FCF ระยะสั้นและ Other Bets ที่ยังเผาเงิน"
+          "current": "CapEx เชิงรุก ($195-205B) · ระดมทุนภายนอกแทน buyback · ปันผล $0.22/ไตรมาส",
+          "trend": "down",
+          "score": 68,
+          "impact": "neutral",
+          "why": "การลงทุนยังผูกกับดีมานด์จริง (backlog ~$561B, Cloud +103%) แต่โครงสร้างการจัดสรรทุนเปลี่ยน: หยุดซื้อหุ้นคืน ออกหุ้น ~$62B และหุ้นกู้ ~$85B ในปีเดียว ขณะ FCF ติดลบ — ผลตอบแทนต่อหุ้นขึ้นกับว่า capex ก้อนนี้แปลงเป็นกำไรได้เร็วแค่ไหน"
         },
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "Forward P/E ~21-24x หลังหุ้นย่อ ~5-7% จากข่าว capex (ราคา ~$330)",
-          "trend": "flat",
-          "score": 62,
+          "current": "Forward P/E ~19-22x หลังหุ้นร่วง ~8-11% after-hours หลังงบ (ราคา ~$290-300 จาก ~$322-325)",
+          "trend": "up",
+          "score": 68,
           "impact": "neutral",
-          "why": "การย่อจากข่าว capex ทำให้ multiple กลับมาใกล้ค่าเฉลี่ย S&P (~22x) ทั้งที่รายได้กำลังเร่ง +24% และ Cloud +82% — ความน่าสนใจเชิงราคาดีขึ้นจากไตรมาสก่อน margin of safety กลับมาบ้าง"
+          "why": "ราคาที่ย่อลงทำให้ multiple ต่ำลงอีก (ฐาน EPS ปี 2027 ~$15 ที่ไม่มีกำไรพิเศษ) ทั้งที่ Cloud +103% — ความน่าสนใจเชิงราคาดีขึ้น แต่ส่วนลดนี้มีเหตุผลรองรับบางส่วนจาก Search ที่ชะลอ FCF ติดลบ และหุ้นที่เริ่มเจือจาง"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
-        "consistency": 90,
-        "recurringPct": 30,
-        "note": "คุณภาพรายได้ดีขึ้นเร็ว — Cloud (สัญญาระยะยาว, backlog $514B) ขยับเป็น ~21% ของรายได้ และ subscriptions โตสองหลัก ส่วนโฆษณาแกนหลักพิสูจน์ความทนทานต่อ AI disruption แล้วสองไตรมาสติด",
+        "consistency": 85,
+        "recurringPct": 35,
+        "note": "รายได้รวมยังเร่ง (+25%) แต่ส่วนผสมเปลี่ยนเร็ว — Cloud (สัญญาระยะยาว, backlog ~$561B) ขยับเป็น ~24% ของรายได้ ขณะโฆษณาแกนหลักชะลอและต่ำกว่าตลาดคาด (Search +12%, YouTube +9%) — คุณภาพรายได้ดีขึ้นด้าน recurring แต่ความสม่ำเสมอของ Search ลดลง",
         "segments": [
           {
             "name": "Google Search & other",
-            "sharePct": 53,
-            "growthNote": "+17% YoY ($63.3B) — AI Overviews ~2 พันล้านผู้ใช้/เดือน monetize ได้ใกล้เดิม สองไตรมาสติดที่โตเร่ง",
-            "trend": "up"
+            "sharePct": 50,
+            "growthNote": "+12% YoY ($63.4B) ชะลอจาก +17% และต่ำกว่าตลาดคาด (~$65B) · ทรงตัวเทียบ Q2 — แม้ผู้บริหารยืนยัน query growth สูงสุดในรอบ 5 ปี",
+            "trend": "flat"
           },
           {
             "name": "Google Cloud",
-            "sharePct": 21,
-            "growthNote": "+82% YoY ($24.8B) เร่งขึ้น 5 ไตรมาสติด (32→34→48→63→82%) · backlog $514B เกือบเท่าตัว QoQ · margin ~35.5%",
+            "sharePct": 24,
+            "growthNote": "+103% YoY ($30.7B) เร่งขึ้นต่อเนื่อง (34→48→63→82→103%) · backlog ~$561B · margin ~36.2% · ยอดขาย TPU systems เริ่มเป็นตัวหนุนสำคัญ",
             "trend": "up"
           },
           {
             "name": "Subscriptions, platforms & devices",
             "sharePct": 11,
-            "growthNote": "+15% YoY ($12.9B) — Google One + แพ็กเกจ AI หนุนต่อเนื่อง",
+            "growthNote": "+11% YoY ($14.3B) ชะลอจาก +15% — YouTube Music/Premium เกิน 150M (รวมทดลองใช้) + แพ็กเกจ AI",
             "trend": "up"
           },
           {
             "name": "YouTube ads",
             "sharePct": 9,
-            "growthNote": "+13% YoY ($11.1B) — World Cup ผู้ชม 1.7 พันล้านคน (unique)",
-            "trend": "up"
+            "growthNote": "+9% YoY ($11.2B) ชะลอจาก +13% ในไตรมาสที่มี World Cup และต่ำกว่าตลาดคาด (~$11.4B)",
+            "trend": "flat"
           },
           {
             "name": "Google Network",
             "sharePct": 6,
-            "growthNote": "ทรงถึงหดเล็กน้อย — ขาลงเชิงโครงสร้าง สัดส่วนเล็กลงเรื่อยๆ",
-            "trend": "down"
+            "growthNote": "+1% YoY ($7.5B) — ทรงตัว สัดส่วนเล็กลงเรื่อยๆ ตามขาลงเชิงโครงสร้าง",
+            "trend": "flat"
           }
         ]
       },
       "aiExecution": {
-        "score": 93,
+        "score": 92,
         "items": [
           {
-            "item": "Gemini frontier models (Gemini 3)",
+            "item": "Gemini frontier models (Gemini 4)",
             "status": "executing",
-            "evidence": "Gemini app ทะลุ 950M MAU (จาก ~650M) · ประมวลผล 22B tokens/นาที — โมเมนตัมผู้ใช้หลัง Gemini 3 แรงต่อเนื่อง"
+            "evidence": "Gemini app ทะลุ 1 พันล้านผู้ใช้ (จาก 950M ไตรมาสก่อน) — โตเร็วที่สุดในประวัติศาสตร์ Google · first-party API ~32B tokens/นาที (+~40% QoQ) · เปิดตัว Gemini 4 Argon (ก.ย.) และ Carbon (ต.ค. 2026)"
           },
           {
             "item": "Google Cloud + Vertex AI",
             "status": "executing",
-            "evidence": "Q2 2026: Cloud +82% YoY ($24.8B) เร่งขึ้น 5 ไตรมาสติด · backlog เกือบเท่าตัว QoQ เป็น $514B · Cloud OI $8.8B margin ~35.5% — หลักฐานแปลง AI เป็นรายได้แข็งแรงที่สุดในกลุ่ม hyperscaler"
+            "evidence": "Q3 2026: Cloud +103% YoY ($30.7B) สูงกว่าคาด (~$29.2B) · backlog ~$561B (+~9% QoQ) คาดรับรู้ ~55% ใน 24 เดือน · Cloud OI $11.1B margin ~36.2% — ยังเป็นหลักฐานแปลง AI เป็นรายได้ที่แข็งแรงที่สุดในกลุ่ม hyperscaler"
           },
           {
             "item": "TPU / custom silicon (Ironwood)",
             "status": "executing",
-            "evidence": "TPU เจน 7 (Ironwood) เข้าสู่ตลาด พร้อมดีลลูกค้าภายนอกระดับประวัติการณ์ — Anthropic ตกลงใช้ TPU ระดับ ~1 ล้านชิป มูลค่าหลายหมื่นล้านดอลลาร์ ตอกย้ำว่า TPU เป็นทางเลือกจริงจังนอกเหนือจาก NVIDIA และให้ Alphabet ได้เปรียบต้นทุน compute"
+            "evidence": "TPU เจน 7 (Ironwood) พร้อมดีลลูกค้าภายนอกระดับประวัติการณ์ (Anthropic ใช้ TPU ระดับ ~1 ล้านชิป) · Q3'26 ลูกค้าใช้ TPU เกือบ 100 ราย และยอดขาย TPU systems เริ่มเป็นตัวหนุนรายได้ Cloud — ผู้บริหารคาดรายได้ส่วนนี้เร่งชัดขึ้นในปี 2027"
           },
           {
             "item": "Search AI transformation (AI Overviews / AI Mode)",
-            "status": "executing",
-            "evidence": "AI Overviews ใช้งานโดยผู้ใช้ ~2 พันล้านคน/เดือน, AI Mode มีผู้ใช้หลายสิบล้านคนต่อวันและเริ่ม monetize แล้ว — รายได้ Search ยังโตสองหลักแทนที่จะถูก cannibalize ตามที่หมีกลัว"
+            "status": "on-track",
+            "evidence": "query growth สูงสุดในรอบ 5 ปี · คำค้นใน AI Mode ยาวกว่าปกติ ~3 เท่าและส่วนใหญ่เป็น query ใหม่ · ขยายโฆษณาใน AI Mode ไปต่างประเทศ — แต่รายได้ Search Q3'26 ชะลอเหลือ +12% ต่ำกว่าคาด (~$65B) การ monetize ยังตามการใช้งานไม่ทัน"
           },
           {
             "item": "Consumer/Workspace AI subscriptions",
             "status": "on-track",
-            "evidence": "Gemini Enterprise เข้าถึง ~90% ของ Fortune 100 · subscriptions โต +15% — ช่องทาง recurring จาก AI ขยายทั้งฝั่งองค์กรและผู้บริโภค"
+            "evidence": "Gemini Enterprise เข้าถึง ~90% ของ Fortune 100 · YouTube Music/Premium เกิน 150M (รวมทดลองใช้) · subscriptions โต +11% (ชะลอจาก +15%)"
           },
           {
             "item": "Waymo (autonomous driving)",
             "status": "on-track",
-            "evidence": "ขยายบริการ robotaxi เชิงพาณิชย์หลายเมืองในสหรัฐฯ และยอดเที่ยววิ่งต่อสัปดาห์โตต่อเนื่องเป็นแสนเที่ยว — เป็น optionality ขนาดใหญ่ที่ตลาดยังตีมูลค่าให้ไม่เต็ม แต่ยังไม่ถึงจุดทำกำไร"
+            "evidence": "สะสมระยะทางขับอัตโนมัติเต็มรูปแบบเกิน 300 ล้านไมล์ ให้บริการใน 15 เมืองใหญ่ของสหรัฐฯ — optionality ขนาดใหญ่ แต่ Other Bets ยังขาดทุน ~$2.0B/ไตรมาส"
           }
         ]
       },
@@ -197,13 +197,13 @@
             "key": "marketLeadership",
             "label": "ผู้นำตลาด",
             "status": "strengthening",
-            "note": "Search ยังครองส่วนแบ่ง ~90% และรายได้ยังโตสองหลัก, YouTube เป็นผู้นำ streaming ตามเวลารับชม, Cloud เป็นเบอร์ 3 แต่โตเร็วสุดในกลุ่ม hyperscaler"
+            "note": "Search ยังครองส่วนแบ่ง ~90% และรายได้ยังโตสองหลัก (+12% แม้ชะลอ), YouTube เป็นผู้นำ streaming ตามเวลารับชม, Cloud เป็นเบอร์ 3 แต่โตเร็วสุดในกลุ่ม hyperscaler (+103%)"
           },
           {
             "key": "techLeadership",
             "label": "ผู้นำเทคโนโลยี",
             "status": "strengthening",
-            "note": "Gemini 3 พลิกภาพจากผู้ตามเป็นผู้นำ frontier model, DeepMind ยังเป็น lab วิจัยระดับท็อป และ TPU คือ custom AI silicon ที่ประสบความสำเร็จที่สุดนอก NVIDIA"
+            "note": "Gemini 4 (Argon / Carbon) ยืนระดับ frontier model, DeepMind ยังเป็น lab วิจัยระดับท็อป และ TPU คือ custom AI silicon ที่ประสบความสำเร็จที่สุดนอก NVIDIA"
           },
           {
             "key": "executionSpeed",
@@ -227,13 +227,13 @@
             "key": "developerAdoption",
             "label": "developer adoption",
             "status": "strengthening",
-            "note": "Gemini API / AI Studio มีนักพัฒนาใช้งานหลายล้านราย ปริมาณ token ประมวลผลโตก้าวกระโดด และ Vertex AI เป็นแพลตฟอร์มหลักของลูกค้า enterprise บน GCP"
+            "note": "first-party model API ประมวลผล ~32B tokens/นาที (+~40% QoQ), Gemini API / AI Studio มีนักพัฒนาหลายล้านราย และ Vertex AI เป็นแพลตฟอร์มหลักของลูกค้า enterprise บน GCP · ลูกค้าใช้ TPU เกือบ 100 ราย"
           },
           {
             "key": "customerLockin",
             "label": "การล็อกอินลูกค้า",
             "status": "stable",
-            "note": "Cloud backlog ระยะยาว ~$155B และสัญญา Workspace ผูกลูกค้าองค์กรแน่น แต่ผู้ลงโฆษณาย้ายงบตาม ROI ได้เสมอ — lock-in แข็งฝั่ง enterprise มากกว่าฝั่งโฆษณา"
+            "note": "Cloud backlog ~$561B (คาดรับรู้ ~55% ใน 24 เดือน) และสัญญา Workspace ผูกลูกค้าองค์กรแน่น แต่ผู้ลงโฆษณาย้ายงบตาม ROI ได้เสมอ — lock-in แข็งฝั่ง enterprise มากกว่าฝั่งโฆษณา"
           },
           {
             "key": "moat",
@@ -244,100 +244,100 @@
         ]
       },
       "capitalAllocation": {
-        "score": 82,
-        "verdict": "ยังจัดสรรทุนอย่างมีวินัยบนดีมานด์ที่พิสูจน์ได้ (backlog รองรับ) พร้อมคืนเงินผู้ถือหุ้นต่อเนื่อง — ความเสี่ยงเดียวคือขนาด capex ที่ใหญ่ขึ้นเร็วกว่าที่ตลาดย่อยทัน",
+        "score": 70,
+        "verdict": "ลงทุนเชิงรุกบนดีมานด์ที่พิสูจน์ได้ (Cloud +103%, backlog ~$561B) แต่ปี 2026 เปลี่ยนโหมดจาก self-fund + ซื้อหุ้นคืน เป็นระดมทุนภายนอก (หุ้นใหม่ + หุ้นกู้) ขณะ FCF ติดลบสองไตรมาส — ปิดดีล Wiz $32B แล้ว (มี.ค. 2026) ความเสี่ยงหลักคือขนาด capex ที่โตเร็วกว่ากระแสเงินสด",
         "items": [
           {
             "label": "CapEx (AI infrastructure)",
-            "current": "Guidance 2026: $195-205B (ยกขึ้น 2 ครั้งใน 6 เดือน) + ส่งสัญญาณ 2027 สูงกว่านี้",
+            "current": "Q3'26 $51.4B (+114% YoY) · Guidance 2026 คงที่ $195-205B · ปี 2027 'เพิ่มขึ้นอย่างมีนัย' (ยังไม่ให้ตัวเลข)",
             "assessment": "good",
-            "why": "ตลาดตกใจตัวเลข แต่ backlog $514B และ Cloud ที่ sold-out หมายความว่า capacity ที่สร้างมีลูกค้าจ่ายรออยู่แล้ว — เป็นการลงทุนตามดีมานด์ ไม่ใช่เผาเงินหวังลม"
+            "why": "capacity ที่สร้างมีลูกค้ารออยู่แล้ว (backlog ~$561B, Cloud margin ~36%) — เป็นการลงทุนตามดีมานด์ แต่ต้องพึ่งเงินทุนภายนอก จึงต้องเห็นรายได้ตามทันในปี 2027"
           },
           {
             "label": "R&D",
-            "current": "~$55B+/ปี — ใหญ่เป็นอันดับต้นของโลก",
+            "current": "Q3'26 ~$20.6B (+36% YoY) — ใหญ่เป็นอันดับต้นของโลก",
             "assessment": "good",
-            "why": "ให้ผลลัพธ์จับต้องได้: Gemini 3, Ironwood TPU, Waymo, ความก้าวหน้าจาก DeepMind — R&D ที่แปลงเป็นความได้เปรียบเชิงแข่งขันจริง ไม่ใช่แค่ต้นทุน"
+            "why": "ให้ผลลัพธ์จับต้องได้: Gemini 4, Ironwood TPU, Waymo, ความก้าวหน้าจาก DeepMind — R&D ที่แปลงเป็นความได้เปรียบเชิงแข่งขันจริง ไม่ใช่แค่ต้นทุน"
           },
           {
             "label": "Buyback",
-            "current": "Authorization ~$70B (2025) ซื้อคืนจริง ~$60B+/ปี",
-            "assessment": "good",
-            "why": "ซื้อคืนสม่ำเสมอจนจำนวนหุ้นลดลงสุทธิ ~1-2%/ปี — ช่วงที่ราคาถูกกดจากความกลัว AI/คดีความในปี 2024-2025 ถือเป็นการซื้อคืนที่คุ้มค่ามากเมื่อมองย้อนกลับ"
+            "current": "ไม่ซื้อหุ้นคืนเลยใน 9 เดือนแรกปี 2026 ($0 เทียบ ~$39.8B ช่วงเดียวกันปี 2025)",
+            "assessment": "neutral",
+            "why": "หยุดเพื่อเก็บเงินไว้ลงทุน AI — สมเหตุสมผลเชิงธุรกิจ แต่ตัดแรงหนุนต่อหุ้นที่เคยลดจำนวนหุ้นได้ ~1-2%/ปี ออกไป"
           },
           {
             "label": "Dividend",
-            "current": "เริ่มจ่ายปี 2024 และปรับขึ้น ~5% ในปี 2025 (yield ต่ำมาก ~0.3%)",
+            "current": "$0.22/หุ้น/ไตรมาส (~$0.88/ปี, yield ~0.3%) · จ่ายจริง ~$2.9B ใน Q3",
             "assessment": "neutral",
-            "why": "เป็นสัญญาณวินัยทางการเงินและเปิดฐานนักลงทุนกลุ่มใหม่ แต่ขนาดเล็กจนไม่มีนัยต่อผลตอบแทนรวม — เหมาะสมแล้วที่เก็บเงินส่วนใหญ่ไว้ลงทุน AI"
+            "why": "รักษาวินัยการจ่ายต่อเนื่อง แต่ขนาดเล็กจนไม่มีนัยต่อผลตอบแทนรวม และจ่ายขณะ FCF ติดลบ เท่ากับใช้เงินระดมทุนส่วนหนึ่งจ่ายปันผล"
           },
           {
             "label": "SBC / การเจือจาง",
-            "current": "SBC ~$23-24B/ปี แต่ net share count ลดลงทุกปี",
-            "assessment": "neutral",
-            "why": "SBC สูงตามมาตรฐานการแย่งตัว AI talent — ยอมรับได้เพราะ buyback ชดเชยเกินพอ แต่เป็นต้นทุนจริงที่นักลงทุนต้องหักออกจากกำไรเสมอ"
+            "current": "SBC ~$8.6B ใน Q3 (9 เดือน ~$23.3B) · diluted shares +1.4% YoY · ใช้ ATM ขายหุ้นใหม่จ่ายภาษีหุ้นพนักงาน (~$30B ในปี 2026)",
+            "assessment": "poor",
+            "why": "ก่อนหน้านี้ buyback ชดเชย SBC เกินพอ แต่ตอนนี้ไม่มี buyback และใช้ ATM ขายหุ้นใหม่แทนการหักภาษีด้วยเงินสด — SBC จึงกลายเป็นการเจือจางจริงที่ผู้ถือหุ้นแบกเอง"
           },
           {
-            "label": "M&A (ดีล Wiz)",
-            "current": "ดีลซื้อ Wiz ~$32B (ใหญ่สุดในประวัติศาสตร์บริษัท) ยังอยู่ระหว่างรอปิดดีล/ผ่านหน่วยงานกำกับ",
+            "label": "ระดมทุนภายนอก (มิ.ย. 2026)",
+            "current": "รวม $84.75B: หุ้นสามัญ $18B + Berkshire $10B + mandatory convertible preferred $16.75B (6.25%, แปลงสภาพ พ.ค. 2029) + ATM $40B (ใช้ ~$12.4B ใน Q3 เหลือ $27.6B) · หนี้ระยะยาว ~$47B → ~$125B ใน 9 เดือน",
             "assessment": "neutral",
-            "why": "เชิงกลยุทธ์สมเหตุสมผล (เสริม cloud security ซึ่งเป็นจุดขาย enterprise) แต่ราคาแพงและมีความเสี่ยง regulatory — ต้องรอดูการปิดดีลและ integration"
+            "why": "ทำให้ลงทุนต่อได้โดยไม่ต้องลด capex และมี Berkshire ร่วมลงทุน แต่เป็นจุดเปลี่ยนจากบริษัทที่ self-fund + ซื้อหุ้นคืน เป็นบริษัทที่ใช้เงินทุนภายนอก — ต้นทุนเงินทุนสูงขึ้นและผู้ถือหุ้นเดิมถูกเจือจาง"
           }
         ]
       },
       "valuationView": {
         "level": "fair",
-        "note": "หลังย่อ ~5-7% จากข่าว capex forward P/E เหลือ ~21-24x — ใกล้ค่าเฉลี่ย S&P ทั้งที่โตเร่ง +24% และ Cloud +82%: กลับจาก premium มาโซนสมเหตุสมผล margin of safety ดีขึ้น"
+        "note": "หลังงบ Q3'26 หุ้นร่วง ~8-11% after-hours (~$290-300 จาก ~$322-325, market cap ~$3.6T) — forward P/E ~19-22x บนฐาน EPS ปี 2027 ~$15 ที่ไม่มีกำไรพิเศษ ทั้งที่ Cloud +103%: ถูกลงจากไตรมาสก่อน แต่ส่วนลดมีเหตุผลรองรับจาก Search ที่ชะลอ FCF ติดลบ และหุ้นเริ่มเจือจาง — ยังอยู่โซนสมเหตุสมผล"
       },
       "whatChanged": [
         {
           "metric": "รายได้รวม",
-          "prev": "$109.9B (+22% YoY)",
-          "now": "$119.8B (+24% YoY, beat +2.5%)",
+          "prev": "$119.8B (+24% YoY)",
+          "now": "$127.6B (+25% YoY) — ต่ำกว่าคาด ~$127.9B เล็กน้อย",
           "direction": "positive"
         },
         {
-          "metric": "Google Cloud growth",
-          "prev": "+63% YoY ($20.0B)",
-          "now": "+82% YoY ($24.8B) — เร่งไตรมาสที่ 5 ติด",
-          "direction": "positive"
-        },
-        {
-          "metric": "Cloud backlog",
-          "prev": "~$260B",
-          "now": "$514B (เกือบเท่าตัว QoQ)",
-          "direction": "positive"
-        },
-        {
-          "metric": "Operating margin",
-          "prev": "~33%",
-          "now": "34% (+2pp YoY) · Cloud margin ~35.5%",
-          "direction": "positive"
-        },
-        {
-          "metric": "CapEx guidance 2026",
-          "prev": "$180-190B",
-          "now": "$195-205B + ปี 2027 สูงขึ้นอีก (หุ้นร่วง ~5-7%)",
+          "metric": "Google Search & other",
+          "prev": "+17% YoY ($63.3B)",
+          "now": "+12% YoY ($63.4B) — ต่ำกว่าคาด ~$65B",
           "direction": "negative"
         },
         {
-          "metric": "Gemini app MAU",
-          "prev": "~650-800M",
-          "now": "950M · 22B tokens/นาที · Gemini Enterprise ~90% ของ Fortune 100",
+          "metric": "Google Cloud",
+          "prev": "+82% YoY ($24.8B) · margin ~35.6% · backlog $514B",
+          "now": "+103% YoY ($30.7B) · margin ~36.2% · backlog ~$561B",
           "direction": "positive"
+        },
+        {
+          "metric": "EPS (GAAP) / Operating margin",
+          "prev": "$9.11 (gain +$6.26/หุ้น · ไม่รวม ~$2.85) · margin 34.0%",
+          "now": "$2.12 (ขาดทุน -$0.55/หุ้น · ไม่รวม ~$2.67 เทียบคาด ~$3.02) · margin 31.8%",
+          "direction": "negative"
+        },
+        {
+          "metric": "CapEx / FCF",
+          "prev": "capex $44.9B · FCF -$5.9B",
+          "now": "capex $51.4B · FCF -$9.1B · กรอบปี 2026 คงที่ $195-205B, ปี 2027 เพิ่มอย่างมีนัย",
+          "direction": "negative"
+        },
+        {
+          "metric": "Buyback / การออกหุ้น",
+          "prev": "buyback $0 · ออกหุ้นสามัญ ~$30.5B (รวม Berkshire $10B) · หนี้ระยะยาว ~$98B",
+          "now": "buyback $0 · ขายหุ้นผ่าน ATM ~$12.4B · หนี้ระยะยาว ~$125B · diluted shares +1.4% YoY",
+          "direction": "negative"
         }
       ],
       "risks": [
-        "CapEx cycle risk — guidance ขยับขึ้น 2 ครั้งใน 6 เดือน ถ้าไตรมาสหน้า Cloud/backlog เริ่มชะลอขณะ capex ยังพุ่ง เรื่องเล่าจะพลิกเป็น 'overbuild' และหุ้นถูก de-rate แรง",
-        "กำไรพิเศษผันผวน — เงินลงทุน unrealized ~$98B ที่ mark ขึ้นได้ก็ mark ลงได้ ทำให้ EPS GAAP เหวี่ยงแรงตามมูลค่าบริษัทเอกชน/ตลาด",
-        "การแข่งขัน AI — OpenAI/Microsoft ฝั่ง consumer agent และ AWS/Azure ฝั่ง cloud ยังกดดัน ต้องรักษาความได้เปรียบ TPU ให้ได้ทุกเจน",
-        "Regulatory tail — คดี antitrust ผ่านจุดเลวร้ายสุดแต่ remedies ยังมีเงื่อนไขติดตาม + ความเสี่ยง EU/AI regulation",
-        "ฐานเปรียบเทียบสูง — Cloud +82% สร้างฐานที่โหดมากสำหรับปี 2027"
+        "CapEx/FCF — FCF ติดลบสองไตรมาสติด (-$5.9B → -$9.1B) และ capex ปี 2027 จะเพิ่มอีกอย่างมีนัย ถ้า Cloud/backlog ชะลอขณะ capex ยังพุ่ง เรื่องเล่าจะพลิกเป็น 'overbuild' และหุ้นถูก de-rate แรง",
+        "การเจือจางและต้นทุนเงินทุน — ระดมทุนหุ้น/หุ้นบุริมสิทธิ ~$62B + หุ้นกู้ ~$85B ใน 9 เดือน หยุด buyback และยังเหลือวงเงิน ATM $27.6B — ถ้าต้องระดมทุนต่อในปี 2027 กำไรต่อหุ้นจะโตช้ากว่ากำไรรวม",
+        "กำไรพิเศษผันผวน — Q2 กำไรตีมูลค่าเงินลงทุน ~$99B (+$6.26/หุ้น) แต่ Q3 กลับเป็นขาดทุน ~$8.7B (-$0.55/หุ้น) จากราคาหุ้น SpaceX — EPS GAAP เหวี่ยงแรงตามมูลค่า SpaceX/Anthropic และเงินลงทุนนอกตลาดอีก ~$135B",
+        "Search ชะลอ + การแข่งขัน AI — Search โตเหลือ +12% ต่ำกว่าคาด ขณะ OpenAI/Microsoft ฝั่ง consumer agent และ AWS/Azure ฝั่ง cloud ยังกดดัน · คดี antitrust ผ่านจุดเลวร้ายสุดแต่ remedies ยังมีเงื่อนไขติดตาม + ความเสี่ยง EU/AI regulation",
+        "Margin headwind — ค่าเสื่อมโต +49% YoY และผู้บริหารเตือนแรงกด margin จากการเช่า compute ภายนอกใน Q4 · Cloud +103% สร้างฐานเปรียบเทียบที่โหดมากสำหรับปี 2027"
       ],
-      "asOf": "2026-08",
+      "asOf": "2026-10",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดเดือนธันวาคม (ตรงกับปีปฏิทิน) — FY2025 สิ้นสุด ธ.ค. 2025 รายงานผลครบแล้วเมื่อต้นปี 2026",
-        "epsBasis": "diluted GAAP, split-adjusted (หลัง stock split 20:1 เดือน ก.ค. 2022) · หมายเหตุ: Q1'26-Q2'26 มี unrealized mark-to-market gain จากหุ้น Anthropic/SpaceX (other income ~$37.7B ใน Q1'26) ดันกำไรสูงผิดปกติ — TTM EPS และ P/E ปัจจุบันจึงดูถูกกว่าฐานธุรกิจจริง",
+        "epsBasis": "diluted GAAP, split-adjusted (หลัง stock split 20:1 เดือน ก.ค. 2022) · หมายเหตุ: Q1'26-Q2'26 มี unrealized mark-to-market gain จากหุ้น Anthropic/SpaceX (other income ~$37.7B ใน Q1'26 · gain ~$99.0B ใน Q2'26 = +$6.26/หุ้น) ดันกำไรสูงผิดปกติ ส่วน Q3'26 กลับเป็นขาดทุน ~$8.7B (หลักๆ SpaceX) = -$0.55/หุ้น — EPS GAAP รายไตรมาสจึงเหวี่ยงทั้งสองทาง ต้องอ่านคู่ epsNote และ TTM EPS/P/E ปัจจุบันยังดูถูกกว่าฐานธุรกิจจริง",
         "years": [
           {
             "fy": "FY2021",
@@ -391,7 +391,14 @@
           "https://stockanalysis.com/stocks/googl/financials/",
           "https://www.statmuse.com/money/ask/googl-stock-price-on-december-31-2025",
           "https://www.macrotrends.net/stocks/charts/GOOGL/alphabet/stock-price-history",
-          "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm"
+          "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm",
+          "https://www.sec.gov/Archives/edgar/data/0001652044/000165204426000080/googexhibit991q32026.htm",
+          "https://www.sec.gov/Archives/edgar/data/0001652044/000165204426000066/googexhibit991q22026.htm",
+          "https://www.sec.gov/Archives/edgar/data/0001652044/000119312526257724/d83560dex992.htm",
+          "https://www.investing.com/news/transcripts/earnings-call-transcript-alphabet-q3-2026-profit-miss-sparks-10-afterhours-drop-93CH-4981037",
+          "https://stockanalysis.com/stocks/googl/history/",
+          "https://www.financialcontent.com/quote/NQ%3AGOOGL/historical",
+          "https://finance.yahoo.com/quote/GOOGL/analysis/"
         ],
         "quarters": [
           {
@@ -501,21 +508,46 @@
             "opMarginPct": 34,
             "fcfB": -5.9,
             "priceQEnd": 353
+          },
+          {
+            "q": "Q3'26",
+            "endYm": "2026-09",
+            "endDate": "2026-09-30",
+            "revenueB": 127.58,
+            "epsAdj": 2.12,
+            "opMarginPct": 31.8,
+            "fcfB": -9.1,
+            "priceQEnd": 344,
+            "epsNote": "รวมขาดทุนเงินลงทุนที่ยังไม่รับรู้ ~$8.7B (หลักๆ หุ้น SpaceX) กด EPS -$0.55 → ไม่รวมรายการนี้ ~$2.67"
           }
         ]
       },
-      "nextEarnings": "2026-10",
+      "nextEarnings": "2027-02",
       "forwardView": {
-        "asOf": "2026-08",
+        "asOf": "2026-10",
         "estimateHistory": [
           {
             "asOf": "2026-08",
             "fy": "FY2026",
             "eps": 20.58,
             "revenue": 497.7
+          },
+          {
+            "asOf": "2026-10",
+            "fy": "FY2027",
+            "eps": 15.17,
+            "revenue": 627.8
           }
         ],
         "guidanceTrack": [
+          {
+            "quarter": "Q3'26",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance",
+            "actual": "~$127.6B (+25% YoY)",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
           {
             "quarter": "Q2'26",
             "metric": "revenue",
@@ -560,20 +592,20 @@
         "consensus": [
           {
             "fy": "FY2026",
-            "revenue": 497.7,
-            "eps": 20.58,
+            "revenue": 500.3,
+            "eps": 20.6,
             "confidence": "high",
-            "basis": "non-GAAP"
+            "basis": "GAAP"
           },
           {
             "fy": "FY2027",
-            "revenue": null,
-            "eps": null,
-            "confidence": "low",
-            "basis": "unknown"
+            "revenue": 627.8,
+            "eps": 15.17,
+            "confidence": "high",
+            "basis": "GAAP"
           }
         ],
-        "note": "Alphabet ไม่ให้ guidance รายได้รายไตรมาส (ให้เฉพาะ CapEx รายปี) — แถว guidance จึงเป็น noGuidance ตามจริง ไม่ใช่ข้อมูลขาด · CapEx 2026 ถูกยกขึ้น 3 รอบ: $175-185B → $180-190B (เม.ย.) → $195-205B (ก.ค.) · CapEx 2027 ตลาดคาด ~$250-257B (FactSet) สูงขึ้นอีกมาก — เป็นตัวเลขคาดการณ์ที่ควรจับตาแทน guidance รายได้ · consensus FY2026 EPS ~$20.58 (50 นักวิเคราะห์ · non-GAAP) พองจาก unrealized gain หุ้น Anthropic/SpaceX ไม่ใช่กำไรจากธุรกิจ — FY2027 แต่ละสำนักต่างกันมาก (~$11.5-14.7) เพราะโมเดล gain นี้ไม่เหมือนกัน และตัวเลข revenue FY2027 อยู่หลัง paywall ทุกแหล่งฟรี จึงเว้นไว้แทนการเดา"
+        "note": "Alphabet ไม่ให้ guidance รายได้ (ให้เฉพาะ CapEx รายปี: 2026 คงกรอบ $195-205B ส่วน 2027 บอกเพียงว่าจะ 'เพิ่มขึ้นอย่างมีนัย' ไม่ให้ตัวเลข) แถว guidance จึงเป็น noGuidance ตามจริง · consensus ที่บันทึกเป็น snapshot ก่อนงบ (26-28 ต.ค. 2026) ฐาน GAAP — FY2026 ~$20.6 รวม gain หุ้น Anthropic/SpaceX ของ Q1-Q2 แล้วและน่าจะถูกปรับลงตาม Q3 ที่ขาดทุน -$0.55/หุ้น ส่วน FY2027 ~$15.2 (3 แหล่งตรงกัน) ต่ำกว่าเพราะไม่มีกำไรพิเศษ โดยรายได้ FY2027 ~$628B ยืนยันได้จากแหล่งเดียว"
       }
     },
     "NVDA": {
@@ -1204,12 +1236,12 @@
       "name": "Microsoft Corporation",
       "layer": "cloud",
       "thesis": {
-        "statement": "Microsoft คือ 'ทางด่วนเก็บค่าผ่านทาง' ของ AI ยุคองค์กร — เป็นเจ้าของทั้งชั้น cloud (Azure), ชั้นแอปพลิเคชัน (Microsoft 365 + Copilot), ชั้นนักพัฒนา (GitHub) และถือหุ้น ~27% ใน OpenAI พร้อมสัญญาผูก Azure มูลค่ามหาศาล ทำให้ไม่ว่า AI จะชนะด้วยโมเดลค่ายไหน Microsoft ก็ได้ส่วนแบ่งรายได้เสมอ รายได้ที่โตเร่งขึ้น ~+18% YoY บนฐานเกือบ $300B/ปี พร้อม margin ~49% คือหลักฐานว่า AI กำลังแปลงเป็นกำไรจริง ไม่ใช่แค่เรื่องเล่า",
+        "statement": "Microsoft คือ 'ทางด่วนเก็บค่าผ่านทาง' ของ AI ยุคองค์กร — เป็นเจ้าของทั้งชั้น cloud (Azure), ชั้นแอปพลิเคชัน (Microsoft 365 + Copilot), ชั้นนักพัฒนา (GitHub) และถือหุ้น ~27% ใน OpenAI พร้อมสัญญาผูก Azure มูลค่ามหาศาล ทำให้ไม่ว่า AI จะชนะด้วยโมเดลค่ายไหน Microsoft ก็ได้ส่วนแบ่งรายได้เสมอ รายได้ที่โตเร่งขึ้น ~+19% YoY บนฐาน ~$346B/ปี (4 ไตรมาสล่าสุด) พร้อม operating margin ~50% (Q1 FY27) คือหลักฐานว่า AI กำลังแปลงเป็นกำไรจริง ไม่ใช่แค่เรื่องเล่า",
         "pillars": [
-          "Azure โต ~40% YoY ต่อเนื่อง โดย AI เป็นตัวเร่งหลัก และ backlog (commercial RPO ~$392B) ล็อกรายได้ล่วงหน้าหลายปี",
+          "Azure โต +48% YoY (Q1 FY27 — ~$33.2B ต่อไตรมาส) เร่งขึ้นต่อเนื่อง โดย AI เป็นตัวเร่งหลัก และ backlog (commercial RPO ~$677B) ล็อกรายได้ล่วงหน้าหลายปี",
           "Copilot ฝังใน Microsoft 365 ที่มีผู้ใช้องค์กรหลายร้อยล้านคน — ช่องทาง upsell AI ต่อหัวที่ใหญ่ที่สุดในโลก",
           "กลยุทธ์ multi-model: ถือหุ้น OpenAI ~27% + ดีล Anthropic (~$30B Azure) ลดความเสี่ยงพึ่งพาโมเดลค่ายเดียว",
-          "งบดุลแข็งแกร่งระดับ AAA ทำให้เร่ง capex ระดับ ~$35B/ไตรมาส ได้โดยยังจ่ายปันผลและ buyback ต่อเนื่อง",
+          "งบดุลแข็งแกร่งระดับ AAA ทำให้เร่ง capex ระดับ ~$45B/ไตรมาส (รวม finance lease) ได้โดยยังจ่ายปันผลและ buyback ต่อเนื่อง",
           "ต้นทุนย้ายค่ายสูงมากจาก bundle Windows + Office + Teams + Azure + security — ลูกค้าองค์กรแทบไม่หนี"
         ]
       },
@@ -1217,38 +1249,38 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+18% YoY (Q4 FY26 — $90.0B) · FY2026 ทั้งปี $331.8B (+18%) · Azure +43% ทะลุ $100B ต่อปีครั้งแรก",
+          "current": "~+19% YoY (Q1 FY27 — $92.3B ชนะ consensus ~$90.6B) · Azure +48% (~$33.2B ต่อไตรมาส เปิดเผยเป็นดอลลาร์ครั้งแรก) · Microsoft Cloud $63.9B (+30%)",
           "trend": "up",
-          "score": 87,
+          "score": 89,
           "impact": "positive",
-          "why": "โตสองหลักสม่ำเสมอที่ฐานรายได้ ~$330B/ปี โดย Azure เร่งเป็น +43% และแตะหลัก $100B — เครื่องยนต์คลาวด์/AI ยังเป็นตัวขับหลักและดีมานด์เกิน capacity"
+          "why": "รายได้เร่งจาก +18% เป็น +19% ที่ฐาน ~$346B/ปี โดย Azure เร่งแรงจาก ~42% (นิยามใหม่) เป็น +48% และชนะ guidance 44-45% — เครื่องยนต์คลาวด์/AI ยังเป็นตัวขับหลักและดีมานด์ยังเกิน capacity"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "non-GAAP EPS $4.74 (Q4 FY26, +23% YoY) ชนะคาด $4.33 · GAAP $4.81 (+32%) · FY2026 net income $133.8B (+31%)",
-          "trend": "up",
-          "score": 84,
+          "current": "non-GAAP EPS $4.89 (Q1 FY27, +18% YoY) ชนะคาด ~$4.72 · GAAP $4.92 (+32% เพราะฐานปีก่อนมีขาดทุน OpenAI ~$0.41/หุ้น) · operating income $45.9B (+21%)",
+          "trend": "flat",
+          "score": 82,
           "impact": "positive",
-          "why": "กำไรโตเร็วกว่ารายได้จาก operating leverage — แม้ยังมีส่วนแบ่งขาดทุน OpenAI กด EPS การเติบโต 20%+ ที่ขนาดนี้หายากมาก"
+          "why": "กำไรจากการดำเนินงานโต +21% เร็วกว่ารายได้ แต่ non-GAAP EPS ชะลอจาก +23% (Q4 FY26) เหลือ +18% จากฐานปีก่อนที่สูง — ยังเป็นการเติบโตระดับสองหลักสูงที่หาได้ยากในขนาดนี้"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "OCF สูงมาก แต่ FCF ถูกกดหนักขึ้น — capex (รวม finance lease) >$40B/ไตรมาส · ~$190B ทั้งปี CY2026",
+          "current": "FCF ~$18.6B (Q1 FY27, −27% YoY) — OCF $58.0B แต่ cash capex $39.4B (2 เท่าของปีก่อน) · capex รวม finance lease ~$45.2B/ไตรมาส · CY2026 ~$175B (ตัวเลขใหม่หลังจัดประเภทสัญญาเช่า เดิม ~$190B)",
           "trend": "down",
-          "score": 58,
+          "score": 55,
           "impact": "neutral",
-          "why": "capex เร่งจาก ~$35B เป็น >$40B/ไตรมาส กลืน FCF มากขึ้น — เดิมพันว่าดีมานด์ AI/คลาวด์คุ้มค่าเสื่อม จุดนี้คือความเสี่ยง overbuild ที่ต้องจับตา"
+          "why": "cash capex โตเร็วกว่ารายได้มาก กลืน OCF ไป ~68% ทำให้ FCF ลดลงทั้งที่กำไรโต — การจัดประเภทสัญญาเช่า datacenter ใหม่ทำให้ตัวเลข capex ดูต่ำลงแต่บริษัทยืนยันว่าเงินลงทุนจริงไม่เปลี่ยน ความเสี่ยง overbuild ยังเป็นจุดที่ต้องจับตา"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "operating margin ~45% (Q4 FY26) — สูงสุดในกลุ่ม mega-cap · gross margin ~68% แคบลงจากค่าเสื่อม datacenter",
-          "trend": "flat",
-          "score": 88,
+          "current": "operating margin ~49.8% (Q1 FY27) จาก ~45.1% ใน Q4 FY26 และ ~48.9% ใน Q1 FY26 · gross margin ~67.8%",
+          "trend": "up",
+          "score": 89,
           "impact": "positive",
-          "why": "โครงสร้างกำไรยังแข็งแกร่งสุดในกลุ่ม แม้ gross margin ถูกกดจากค่าเสื่อม AI infra — operating leverage ของซอฟต์แวร์ยังชดเชยได้ดี"
+          "why": "ค่าใช้จ่ายดำเนินงานโตเพียง ~+6% (S&M ทรงตัว) ขณะรายได้ +19% ดัน op margin เกือบ 50% แม้ค่าเสื่อม/ค่าตัดจำหน่ายในงบกระแสเงินสดเพิ่ม ~44% YoY — มีแรงช่วยบางส่วนจากการยืดอายุการใช้งาน datacenter เป็น 25 ปีตั้งแต่ FY27 (บริษัทบอกว่าผลต่อกำไรปีนี้น้อย)"
         },
         {
           "key": "roic",
@@ -1262,16 +1294,16 @@
         {
           "key": "cash",
           "label": "เงินสดในมือ",
-          "current": "เงินสดและเงินลงทุนระยะสั้นรวม ~$100B+",
-          "trend": "flat",
-          "score": 85,
+          "current": "เงินสดและเงินลงทุนระยะสั้น ~$64.5B (ก.ย. 2026) ลดจาก ~$76.8B (มิ.ย. 2026)",
+          "trend": "down",
+          "score": 80,
           "impact": "positive",
-          "why": "กันชนหนามากพอที่จะเร่ง capex, จ่ายปันผล, buyback และลงทุนเชิงกลยุทธ์ (OpenAI, Anthropic) พร้อมกันได้โดยไม่ต้องพึ่งการกู้เพิ่มอย่างมีนัยสำคัญ"
+          "why": "ยังเป็นกันชนหนาและ OCF ~$58B/ไตรมาสเติมเงินได้เร็ว แต่กองเงินสดลดลงต่อเนื่องจาก capex + ปันผล/buyback + ชำระหนี้ ~$4.9B ในไตรมาส — ความยืดหยุ่นยังสูงแต่ไม่ใช่ระดับ $100B+ อีกแล้ว"
         },
         {
           "key": "debt",
           "label": "หนี้สิน",
-          "current": "หนี้ต่ำมากเทียบขนาดบริษัท สถานะใกล้ net cash และเป็นหนึ่งในไม่กี่บริษัทที่ได้เครดิต AAA",
+          "current": "หนี้รวม ~$35.5B (ชำระคืน ~$4.9B ในไตรมาส) — ต่ำมากเทียบขนาดบริษัท ยังเป็น net cash ~$29B และเป็นหนึ่งในไม่กี่บริษัทที่ได้เครดิต AAA",
           "trend": "flat",
           "score": 90,
           "impact": "positive",
@@ -1280,7 +1312,7 @@
         {
           "key": "dilution",
           "label": "การเจือจางหุ้น",
-          "current": "จำนวนหุ้นแทบไม่เพิ่ม — SBC ราวปีละ ~$12B ถูก buyback ชดเชยเกือบหมด",
+          "current": "diluted shares ~7.45B (−0.3% YoY) — SBC ~$3.1B/ไตรมาส ถูก buyback ~$4.4B ชดเชยได้หมด",
           "trend": "flat",
           "score": 80,
           "impact": "positive",
@@ -1289,7 +1321,7 @@
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรเงินทุน",
-          "current": "ปันผลเพิ่ม ~10% ต่อปี + buyback ต่อเนื่อง ควบคู่ capex AI ที่เร่งขึ้นแรงมาก (~$35B/ไตรมาส)",
+          "current": "ปันผลเพิ่ม +8% เป็น $0.98/ไตรมาส + buyback ~$4.4B/ไตรมาส ควบคู่ capex AI รวม finance lease ~$45B/ไตรมาส",
           "trend": "flat",
           "score": 75,
           "impact": "neutral",
@@ -1298,51 +1330,51 @@
         {
           "key": "valuation",
           "label": "มูลค่าหุ้น",
-          "current": "forward P/E ~20-23x (ราคา ~$390 · mcap ~$2.92T) — de-rate ลงจาก ~30x, หุ้น +15% หลังงบ Q4",
-          "trend": "up",
-          "score": 70,
-          "impact": "positive",
-          "why": "หลัง underperform Mag7 มาทั้งปี multiple ลงมาเหลือ ~20-23x ทั้งที่กำไรโต 20%+ และ Azure เร่งตัว — คุณภาพระดับ AAA + margin 45% ที่ ~20x ถือว่าเหมาะสม ไม่ใช่ premium สุดโต่งอีกต่อไป"
+          "current": "forward P/E ~26x (12 เดือนข้างหน้า) / ~22x ต่อ consensus FY2028 — ราคา ~$531 (ปิด 28 ต.ค.) mcap ~$3.94T · after-hours หลังงบ ~+4% (~$550)",
+          "trend": "down",
+          "score": 60,
+          "impact": "neutral",
+          "why": "หุ้นวิ่งจาก ~$390 (ส.ค.) มา ~$531 (+~36%) multiple จึงกลับขึ้นจาก ~20-23x มาเป็น ~26x — ยังสมเหตุสมผลสำหรับกำไรโต ~18% + margin เกือบ 50% + งบดุล AAA แต่ส่วนลดจากรอบ de-rate ส่วนใหญ่หายไปแล้ว"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
         "consistency": 92,
         "recurringPct": 80,
-        "note": "รายได้กระจายดี 3 ขา คุณภาพสูง (recurring/enterprise สูง) — Intelligent Cloud (Azure +43%, ทะลุ $100B ต่อปี, AI run rate ~$37B+ +123%) เป็นตัวเร่ง ขณะ PBP (M365 Copilot upsell) สม่ำเสมอ · commercial RPO/backlog พุ่งเป็น ~$627B (+99% YoY, +26% ถ้าตัด OpenAI) ให้ visibility หลายปี",
+        "note": "รายได้คุณภาพสูง (recurring/enterprise สูง) — ตั้งแต่ FY27 รายงาน 2 segment: Agents and Infra ($76.8B, +25%, ~83% ของรายได้) มี Azure (~$33.2B, +48%) เป็นตัวเร่ง และ M365 commercial cloud เร่งเป็น +18% ขณะ Devices and Consumer ($15.5B, −3%) หดตาม Windows OEM · commercial RPO ~$677B (+73% YoY) ให้ visibility หลายปี แต่ทรงตัว QoQ และ commercial bookings −12% YoY",
         "segments": [
           {
-            "name": "Intelligent Cloud (Azure, Server, Enterprise Services)",
-            "sharePct": 42,
-            "growthNote": "เครื่องยนต์หลัก — Azure +43% YoY ทะลุ $100B ต่อปีครั้งแรก, AI services เป็นตัวเร่ง, ดีมานด์ยังเกิน capacity",
+            "name": "Azure (อยู่ใน Agents and Infra — นิยามใหม่ FY27: IaaS/PaaS แบบ consumption)",
+            "sharePct": 36,
+            "growthNote": "เครื่องยนต์หลัก — ~$33.2B ต่อไตรมาส +48% YoY (เร่งจาก ~42% ใน Q4 FY26 ตามนิยามใหม่) ชนะ guidance 44-45% · ดีมานด์ยังเกิน capacity",
             "trend": "up"
           },
           {
-            "name": "Productivity and Business Processes (Microsoft 365, LinkedIn, Dynamics)",
-            "sharePct": 40,
-            "growthNote": "โตสองหลักสม่ำเสมอ — M365 Copilot เป็น upsell ราคาต่อหัวที่มีน้ำหนักขึ้นเรื่อย ๆ",
+            "name": "Agents and Infra ส่วนที่เหลือ (Microsoft 365 commercial/consumer cloud, Dynamics, Office/server licensing, enterprise services)",
+            "sharePct": 47,
+            "growthNote": "~$43.6B โต ~+11% (คำนวณจาก A&I ลบ Azure) — M365 commercial cloud +18% (+19% cc, adjusted) เร่งจาก ~+16% · M365 consumer cloud +17% · Copilot เป็น upsell ต่อหัวที่มีน้ำหนักขึ้น",
             "trend": "up"
           },
           {
-            "name": "More Personal Computing (Windows, Gaming/Xbox, Search & Ads)",
-            "sharePct": 18,
-            "growthNote": "โตช้า (วัฏจักร) — แต่เป็นฐานผู้ใช้กระจาย Copilot สู่ consumer",
-            "trend": "flat"
+            "name": "Devices and Consumer (Windows, Xbox, Search & Ads)",
+            "sharePct": 17,
+            "growthNote": "$15.5B −3% YoY — Windows OEM & Devices −22%, Xbox content −2% แต่ Search & ads (ex-TAC) +12% · เป็นฐานผู้ใช้กระจาย Copilot สู่ consumer",
+            "trend": "down"
           }
         ]
       },
       "aiExecution": {
-        "score": 85,
+        "score": 87,
         "items": [
           {
             "item": "Azure AI / AI Foundry — ขายโครงสร้างพื้นฐานและแพลตฟอร์มโมเดลให้องค์กร",
             "status": "executing",
-            "evidence": "Azure +43% YoY ทะลุ $100B ต่อปีครั้งแรก · AI business run rate ~$37B+ (+123% YoY) · commercial RPO ~$627B · ดีมานด์ยังเกิน supply — หลักฐานเชิงสัญญาที่จับต้องได้ที่สุดในกลุ่ม"
+            "evidence": "Azure ~$33.2B +48% YoY ใน Q1 FY27 (เปิดเผยเป็นดอลลาร์ครั้งแรก · นิยามใหม่เป็น IaaS/PaaS ล้วน) ชนะ guidance 44-45% · Azure ทั้งปี FY26 ~$101.9B · AI business run rate ~$37B+ (+123% ตามที่เปิดเผยล่าสุด) · commercial RPO ~$677B — ดีมานด์ยังเกิน supply"
           },
           {
             "item": "Microsoft 365 Copilot — monetize AI ต่อหัวบนฐานผู้ใช้องค์กรหลายร้อยล้าน",
             "status": "on-track",
-            "evidence": "จำนวน seat โตต่อเนื่องทุกไตรมาสและองค์กรใหญ่ (สัดส่วนสูงของ Fortune 500) ทยอยใช้งานจริง แต่รายได้ยังเล็กเทียบศักยภาพ และต้องพิสูจน์ renewal/expansion ในวงกว้าง"
+            "evidence": "ณ Q4 FY26 มี Microsoft 365 Copilot แบบจ่ายเงินกว่า 30 ล้าน seat (net adds เร่งขึ้นกว่าเท่าตัว QoQ) และ Q1 FY27 รายได้ M365 commercial cloud เร่งเป็น +18% (+19% cc, adjusted) จาก ~+16% — เริ่มเห็นผลในรายได้ แต่ยังต้องพิสูจน์ renewal/expansion ในวงกว้าง"
           },
           {
             "item": "GitHub Copilot — ครองตลาด AI coding สำหรับองค์กร",
@@ -1357,7 +1389,7 @@
           {
             "item": "สร้าง AI datacenter ขนาดยักษ์ (โครงการตระกูล Fairwater) รองรับ demand ระยะยาว",
             "status": "executing",
-            "evidence": "capex รวม finance lease >$40B/ไตรมาส (~$190B ทั้งปี CY2026) — โครงการตระกูล Fairwater เร่งสร้าง บริษัทย้ำว่า capacity ยังไม่พอขาย ปัญหาคือ 'สร้างไม่ทัน' ไม่ใช่ 'ไม่มีคนซื้อ'"
+            "evidence": "capex รวม finance lease ~$45.2B ใน Q1 FY27 ต่ำกว่าที่ชี้ไว้ >$50B เพราะ capacity จากผู้ให้เช่าภายนอกส่งมอบล่าช้า (cash capex $39.4B ยังโต 2 เท่า) · CY2026 ~$175B หลังจัดประเภทสัญญาเช่า datacenter ใหม่ (เงินลงทุนจริงไม่เปลี่ยน) — ข้อจำกัดยังเป็น 'สร้าง/ส่งมอบไม่ทัน' ไม่ใช่ 'ไม่มีคนซื้อ'"
           },
           {
             "item": "โมเดล in-house ตระกูล MAI — ลดการพึ่งพา OpenAI ในระยะยาว",
@@ -1410,7 +1442,7 @@
             "key": "customerLockin",
             "label": "การล็อกอินลูกค้า",
             "status": "strengthening",
-            "note": "สัญญา Enterprise Agreement หลายปี + commercial RPO ~$392B + ข้อมูลองค์กรที่สะสมใน Microsoft Graph ทำให้รายได้ล่วงหน้าถูกล็อกไว้ลึกและยาวขึ้นทุกไตรมาส"
+            "note": "สัญญา Enterprise Agreement หลายปี + commercial RPO ~$677B (+73% YoY) + ข้อมูลองค์กรที่สะสมใน Microsoft Graph ทำให้รายได้ล่วงหน้าถูกล็อกไว้ลึกและยาว — แม้ไตรมาสนี้ RPO ทรงตัว QoQ และ bookings −12% YoY"
           },
           {
             "key": "moat",
@@ -1426,27 +1458,27 @@
         "items": [
           {
             "label": "CapEx (AI datacenter/GPU)",
-            "current": "~$35B/ไตรมาส (รวม finance lease) และมีแผนเพิ่มต่อใน FY26 — เร่งขึ้นแรงจาก ~$88B ทั้งปี FY25",
+            "current": "~$45B/ไตรมาส รวม finance lease (Q1 FY27 $45.2B · cash capex $39.4B) — CY2026 ~$175B หลังจัดประเภทสัญญาเช่าใหม่ (เดิม ~$190B; บริษัทยืนยันเงินลงทุนจริงไม่เปลี่ยน)",
             "assessment": "neutral",
-            "why": "มีสัญญาลูกค้า (RPO ~$392B) รองรับมากกว่าคู่แข่งส่วนใหญ่ จึงไม่ใช่การสร้างลอย ๆ แต่ขนาดใหญ่จนหากรอบการใช้ AI สะดุด ค่าเสื่อมจะกดกำไรหลายปี"
+            "why": "มีสัญญาลูกค้า (RPO ~$677B) รองรับมากกว่าคู่แข่งส่วนใหญ่ จึงไม่ใช่การสร้างลอย ๆ แต่ขนาดใหญ่จนหากรอบการใช้ AI สะดุด ค่าเสื่อมจะกดกำไรหลายปี"
           },
           {
             "label": "R&D",
-            "current": "~$30B+/ปี — ระดับสูงสุดของโลกกลุ่ม software",
+            "current": "~$9.0B/ไตรมาส (+11% YoY) — ~$36B/ปี ระดับสูงสุดของโลกกลุ่ม software",
             "assessment": "good",
             "why": "กระจายทั้งโมเดล (MAI), ชิป (Maia/Cobalt), แพลตฟอร์ม (Foundry) และผลิตภัณฑ์ (Copilot ทุกตัว) — ผลงานที่ผ่านมาแปลงเป็นรายได้จริงได้สม่ำเสมอ"
           },
           {
             "label": "Buyback",
-            "current": "โครงการ ~$60B เดินต่อเนื่องแต่ความเร็วลดลงเพื่อเก็บเงินไว้ทำ capex — พอชดเชย SBC ให้ share count ทรงตัว",
+            "current": "โครงการ ~$60B เดินต่อ แต่ช้าลงเพื่อเก็บเงินไว้ทำ capex — Q1 FY27 ~$4.4B (ปีก่อน ~$5.7B) พอชดเชย SBC ให้ share count ลดลงเล็กน้อย",
             "assessment": "neutral",
             "why": "ถูกต้องแล้วที่ให้ลำดับความสำคัญกับ AI ก่อน buyback ในช่วงนี้ แต่แปลว่าผลตอบแทนผู้ถือหุ้นทางตรงระยะสั้นจะบางลง"
           },
           {
             "label": "เงินปันผล",
-            "current": "เพิ่ม ~10% ต่อปีอย่างสม่ำเสมอ (ล่าสุด ~$0.91/ไตรมาส) รวมจ่าย ~$25B+/ปี",
+            "current": "เพิ่ม +8% เป็น $0.98/ไตรมาส (ประกาศ 15 ก.ย. 2026) · จ่ายจริง ~$6.8B/ไตรมาส (~$27B/ปี)",
             "assessment": "good",
-            "why": "โตต่อเนื่องนับสิบปีโดยใช้เงินเพียงส่วนน้อยของกระแสเงินสด — ยั่งยืนแม้ capex จะหนัก"
+            "why": "โตต่อเนื่องนับสิบปีโดยใช้เงินเพียงส่วนน้อยของกระแสเงินสด — รอบนี้เพิ่ม 8% ต่ำกว่ารอบก่อน ๆ ที่ ~10% สะท้อนการให้น้ำหนัก capex ก่อน"
           },
           {
             "label": "การลงทุนเชิงกลยุทธ์ / M&A",
@@ -1456,7 +1488,7 @@
           },
           {
             "label": "การเจือจางหุ้น (SBC)",
-            "current": "SBC ~$12B/ปี — ต่ำมากเมื่อเทียบรายได้ และถูก buyback ดูดซับเกือบหมด",
+            "current": "SBC ~$3.1B/ไตรมาส (~$12.5B/ปี) — ต่ำมากเมื่อเทียบรายได้ และถูก buyback ดูดซับหมด",
             "assessment": "good",
             "why": "วินัยเรื่อง share count ดีต่อเนื่อง ผู้ถือหุ้นระยะยาวไม่ถูกเจือจางแบบบริษัท growth ส่วนใหญ่"
           }
@@ -1464,57 +1496,57 @@
       },
       "valuationView": {
         "level": "fair",
-        "note": "forward P/E ~20-23x (ราคา ~$390, mcap ~$2.92T) — de-rate ลงชัดจาก ~30x หลังหุ้น underperform Mag7 ทั้งปี ทั้งที่รายได้โต ~18%, Azure +43% และงบดุล AAA · ที่ระดับนี้ถือว่า 'สมเหตุสมผล' สำหรับคุณภาพที่ได้ ไม่ใช่ของถูก แต่พ้นโซน premium สุดโต่งแล้ว — ความเสี่ยงหลักคือ capex/FCF ระยะสั้น ไม่ใช่ธุรกิจหลัก"
+        "note": "forward P/E ~26x ต่อกำไร 12 เดือนข้างหน้า (~22x ต่อ FY2028) ที่ราคา ~$531 / mcap ~$3.94T — หุ้นฟื้นแรงจากจุด de-rate ~20-23x ในเดือน ส.ค. หลัง Azure เร่งตัวต่อเนื่อง · ที่ระดับนี้ยังถือว่า 'สมเหตุสมผล' สำหรับคุณภาพ (รายได้ +19%, op margin ~50%, AAA) แต่ไม่ใช่ราคาที่มีส่วนลดอีกแล้ว — ความเสี่ยงหลักคือ capex/FCF และ bookings ที่ติดลบในไตรมาสนี้"
       },
       "whatChanged": [
         {
-          "metric": "Azure (Q3 → Q4 FY26)",
-          "prev": "+40% YoY",
-          "now": "+43% YoY — ทะลุ $100B ต่อปีครั้งแรก",
+          "metric": "Azure (Q4 FY26 → Q1 FY27)",
+          "prev": "~+42% YoY (นิยามใหม่ · นิยามเดิม +43%)",
+          "now": "+48% YoY — ~$33.2B เปิดเผยเป็นดอลลาร์ครั้งแรก ชนะ guidance 44-45% · เริ่มรายงานแบบ 2 segment",
           "direction": "positive"
         },
         {
           "metric": "รายได้รวม",
-          "prev": "$82.9B (+18%)",
-          "now": "$90.0B (+18%) · FY2026 $331.8B (+18%)",
+          "prev": "$90.0B (+18%)",
+          "now": "$92.3B (+19%) ชนะ guidance ~$89.85-90.95B และ consensus ~$90.6B",
           "direction": "positive"
         },
         {
-          "metric": "กำไร (non-GAAP EPS)",
-          "prev": "โตสองหลัก",
-          "now": "$4.74 (+23% YoY) ชนะคาด $4.33 · net income $133.8B FY26 (+31%)",
+          "metric": "Operating margin",
+          "prev": "~45.1%",
+          "now": "~49.8% (opex +6% vs รายได้ +19%) · gross margin ~67.8%",
           "direction": "positive"
         },
         {
           "metric": "CapEx (incl finance lease)",
-          "prev": "~$35-38B/ไตรมาส",
-          "now": ">$40B/ไตรมาส (~$190B ทั้งปี CY2026)",
-          "direction": "negative"
-        },
-        {
-          "metric": "Operating margin",
-          "prev": "~46%",
-          "now": "~45% · gross margin ~68% แคบลงจากค่าเสื่อม datacenter",
+          "prev": "~$41B/ไตรมาส · CY2026 ~$190B",
+          "now": "~$45.2B ต่ำกว่าที่ชี้ไว้ >$50B (capacity ภายนอกส่งมอบล่าช้า) · CY2026 ~$175B หลังจัดประเภทสัญญาเช่าใหม่",
           "direction": "neutral"
         },
         {
+          "metric": "Backlog / bookings",
+          "prev": "commercial RPO ~$678B (+84%)",
+          "now": "~$677B (+73%) ทรงตัว QoQ · commercial bookings −12% YoY",
+          "direction": "negative"
+        },
+        {
           "metric": "Valuation",
-          "prev": "fwd P/E ~30x (premium)",
-          "now": "fwd P/E ~20-23x (de-rate) — หุ้น +15% หลังงบ Q4",
-          "direction": "positive"
+          "prev": "fwd P/E ~20-23x (ราคา ~$390)",
+          "now": "fwd P/E ~26x (ราคา ~$531) — after-hours หลังงบ ~+4%",
+          "direction": "negative"
         }
       ],
       "risks": [
-        "Capex มหาศาล (~$35B/ไตรมาสและยังเพิ่ม) กด FCF หลายปี — หาก demand ด้าน AI ชะลอหรือ monetization ช้ากว่าคาด ค่าเสื่อมจาก GPU/datacenter จะกลายเป็นภาระกำไรระยะยาว (ความเสี่ยง overbuild)",
-        "ความเสี่ยงจาก OpenAI — ทั้งผลขาดทุนตามส่วนได้เสียที่กด EPS ทุกไตรมาส, ความยั่งยืนทางการเงินของ OpenAI เอง และการที่ OpenAI กระจาย workload ไปหา Oracle/CoreWeave/AWS ทำให้ Azure ไม่ได้ผูกขาดอีกต่อไป",
+        "Capex มหาศาล (~$45B/ไตรมาสรวม finance lease, CY2026 ~$175B) กด FCF (Q1 FY27 −27% YoY) — หาก demand ด้าน AI ชะลอหรือ monetization ช้ากว่าคาด ค่าเสื่อมจาก GPU/datacenter จะกลายเป็นภาระกำไรระยะยาว (ความเสี่ยง overbuild) · การยืดอายุ datacenter เป็น 25 ปีและย้ายสัญญาเช่าไปเป็น operating lease ทำให้ตัวเลข capex/ค่าเสื่อมเทียบกับอดีตตรง ๆ ยากขึ้น",
+        "ความเสี่ยงจาก OpenAI — ทั้งผลขาดทุนตามส่วนได้เสียที่กด EPS ทุกไตรมาส, ความยั่งยืนทางการเงินของ OpenAI เอง และการที่ OpenAI กระจาย workload ไปหา Oracle/CoreWeave/AWS ทำให้ Azure ไม่ได้ผูกขาดอีกต่อไป · backlog ~$677B ทรงตัว QoQ และ commercial bookings −12% YoY ใน Q1 FY27 ชี้ว่าดีลก้อนใหญ่ไม่ได้เกิดทุกไตรมาส",
         "Copilot ต้องพิสูจน์ความคุ้มค่าต่อหัวในวงกว้าง — หากองค์กรมองว่า ROI ไม่ชัดเมื่อเทียบราคา ~$30/user/เดือน รอบ renewal อาจเห็นการลด seat และกระทบ narrative การ monetize AI ทั้งก้อน",
         "การแข่งขันรุนแรงขึ้นทุกชั้น — Google Cloud/Gemini เร่งแรงและมี TPU ได้เปรียบด้านต้นทุน, AWS ยังใหญ่กว่า, ส่วน AI coding tools รุ่นใหม่กัดกิน GitHub Copilot ในกลุ่ม power developer",
         "แรงกดดันด้านกฎระเบียบและโครงสร้างดีลวนในอุตสาหกรรม AI (circular deals) — หากมูลค่าห่วงโซ่ AI ถูกตั้งคำถามทั้งระบบ หุ้นที่ multiple ระดับ premium อย่าง MSFT จะโดน de-rate ไปด้วยแม้พื้นฐานไม่เปลี่ยน"
       ],
-      "asOf": "2026-08",
+      "asOf": "2026-10",
       "history": {
-        "fyNote": "ปีบัญชีของ Microsoft สิ้นสุด 30 มิ.ย. (เช่น FY2025 = ก.ค. 2024 – มิ.ย. 2025) — FY2026 สิ้นสุดแล้วแต่จะประกาศผลวันที่ 29 ก.ค. 2026 จึงยังไม่นับรวม ใช้ FY2021–FY2025",
-        "epsBasis": "diluted GAAP, split-adjusted (ไม่มี split ตั้งแต่ปี 2003 — ตัวเลขตามงบจริงคือฐานหุ้นปัจจุบันอยู่แล้ว) · หมายเหตุ: Q2 FY26 GAAP EPS $5.16 รวมกำไรจากเงินลงทุนใน OpenAI ~$1.02/หุ้น (net income +$7.6B) — non-GAAP ไตรมาสนั้น $4.14 · ไตรมาสอื่นไม่มีรายการนี้",
+        "fyNote": "ปีบัญชีของ Microsoft สิ้นสุด 30 มิ.ย. (เช่น FY2025 = ก.ค. 2024 – มิ.ย. 2025) — ข้อมูลรายปีใช้ FY2021–FY2026 · FY2027 (ก.ค. 2026 – มิ.ย. 2027) ยังไม่จบปี จึงมีเฉพาะในตารางรายไตรมาส",
+        "epsBasis": "diluted GAAP, split-adjusted (ไม่มี split ตั้งแต่ปี 2003 — ตัวเลขตามงบจริงคือฐานหุ้นปัจจุบันอยู่แล้ว) · หมายเหตุ: ตั้งแต่ FY26 Microsoft แยกผลจากเงินลงทุนใน OpenAI ออกจาก non-GAAP — Q1 FY26 GAAP $3.72 รวมขาดทุน ~$0.41/หุ้น (non-GAAP $4.13) · Q2 FY26 GAAP $5.16 รวมกำไร ~$1.02/หุ้น (net income +$7.6B, non-GAAP $4.14) · Q4 FY26 GAAP $4.81 รวมกำไร ~$0.07/หุ้น (non-GAAP $4.74) · Q1 FY27 GAAP $4.92 รวมกำไร ~$0.03/หุ้น (non-GAAP $4.89) · Q3 FY26 ผลกระทบไม่มีนัย (~$14M)",
         "years": [
           {
             "fy": "FY2021",
@@ -1568,16 +1600,26 @@
             "epsAdj": 17.96,
             "opMarginPct": 46.8,
             "fcfB": 67,
-            "priceFYEnd": 470
+            "priceFYEnd": 373.02
           }
         ],
-        "notes": "ตัวเลขงบตรงกับ 8-K/10-K ของ SEC และ stockanalysis.com; FCF = กระแสเงินสดจากการดำเนินงาน ลบ capex (PP&E) — FY2024–FY2025 capex พุ่งจากการลงทุน AI/data center ($44.5B → $64.6B) กด FCF ทั้งที่กำไรโต; ราคาปิดสิ้นปีบัญชีเป็นราคาปิดจริง (raw close) จาก Yahoo Finance ไม่ใช่ราคาปรับเงินปันผล (แหล่งอย่าง StatMuse แสดงราคาปรับปันผลซึ่งต่ำกว่า ~2-4%); จำนวนหุ้น diluted โดยนัยลดลงช้า ๆ จาก ~7.6B เหลือ ~7.5B ตาม buyback สอดคล้องทุกปี; ไม่มี stock split ในช่วงนี้",
+        "notes": "ตัวเลขงบตรงกับ 8-K/10-K ของ SEC และ stockanalysis.com; FCF = กระแสเงินสดจากการดำเนินงาน ลบ capex (PP&E) — FY2024–FY2025 capex พุ่งจากการลงทุน AI/data center ($44.5B → $64.6B) กด FCF ทั้งที่กำไรโต; ราคาปิดสิ้นปีบัญชีเป็นราคาปิดจริง (raw close) จาก Yahoo Finance ไม่ใช่ราคาปรับเงินปันผล (แหล่งอย่าง StatMuse แสดงราคาปรับปันผลซึ่งต่ำกว่า ~2-4%); จำนวนหุ้น diluted โดยนัยลดลงช้า ๆ จาก ~7.6B เหลือ ~7.5B ตาม buyback สอดคล้องทุกปี; ไม่มี stock split ในช่วงนี้; ตั้งแต่ FY27 (ประกาศ ก.ย. 2026) Microsoft รายงาน 2 segment ใหม่ Agents and Infra / Devices and Consumer และนิยาม Azure ใหม่ (ย้าย GitHub cloud/Security Copilot ไป M365 commercial cloud) — ตัวเลขรวมบริษัทในตารางไม่กระทบ; Q1 FY27 OCF $58.0B − additions to PP&E $39.4B = FCF ~$18.6B (capex รวม finance lease ~$45.2B ไม่ได้ใช้คำนวณ FCF); แก้ราคาปิดสิ้นไตรมาส Q1–Q4 FY26 และสิ้น FY2026 ให้ตรง raw close ของ Yahoo (ค่าเดิมคลาดเคลื่อน: 30 มิ.ย. 2026 ปิดจริง $373.02)",
         "sources": [
           "https://www.sec.gov/Archives/edgar/data/789019/000095017025100226/msft-ex99_1.htm",
           "https://stockanalysis.com/stocks/msft/financials/",
           "https://query1.finance.yahoo.com/v8/finance/chart/MSFT (raw daily closes)",
           "https://news.microsoft.com/source/2026/07/08/microsoft-announces-quarterly-earnings-release-date-68/",
-          "https://www.statmuse.com/money/ask/msft-closing-price-on-june-30-2021 (cross-check, dividend-adjusted)"
+          "https://www.statmuse.com/money/ask/msft-closing-price-on-june-30-2021 (cross-check, dividend-adjusted)",
+          "https://www.sec.gov/Archives/edgar/data/0000789019/000119312526436122/msft-ex99_1.htm",
+          "https://www.sec.gov/Archives/edgar/data/0000789019/000119312526380280/d291965dex991.htm",
+          "https://www.sec.gov/Archives/edgar/data/0000789019/000119312526323632/msft-ex99_1.htm",
+          "https://www.microsoft.com/en-us/investor/earnings/fy-2027-q1/press-release-webcast",
+          "https://www.fool.com/earnings/call-transcripts/2026/08/07/microsoft-msft-q4-2026-earnings-call-transcript/",
+          "https://www.stocktitan.net/sec-filings/MSFT/8-k-microsoft-corp-reports-material-event-f8a7cf7d3af8.html",
+          "https://www.cnbc.com/2026/10/28/microsoft-msft-q1-earnings-report-2027.html",
+          "https://en.fnnews.com/news/202610290543166596",
+          "https://www.zerohedge.com/markets/msft-rises-azure-beat-bookings-shrink-and-backlog-stalls",
+          "https://stockanalysis.com/stocks/msft/forecast/"
         ],
         "quarters": [
           {
@@ -1667,8 +1709,9 @@
             "epsAdj": 3.72,
             "opMarginPct": 48.9,
             "fcfB": 25.66,
-            "priceQEnd": 515,
-            "endDate": "2025-09-30"
+            "priceQEnd": 518,
+            "endDate": "2025-09-30",
+            "epsNote": "GAAP EPS $3.72 รวมผลขาดทุนจากเงินลงทุนใน OpenAI ~$0.41/หุ้น (net income −$3.1B) — ตัดรายการนี้ออกจะเป็น ~$4.13 (non-GAAP ที่บริษัทรายงาน) จึงเทียบกับไตรมาสอื่นตรง ๆ ไม่ได้"
           },
           {
             "q": "Q2 FY26",
@@ -1677,7 +1720,7 @@
             "epsAdj": 5.16,
             "opMarginPct": 47.1,
             "fcfB": 5.88,
-            "priceQEnd": 470,
+            "priceQEnd": 484,
             "endDate": "2025-12-31",
             "epsNote": "GAAP EPS $5.16 รวมกำไรจากเงินลงทุนใน OpenAI ~$1.02/หุ้น (net income +$7.6B) — ตัดรายการนี้ออกจะเหลือ ~$4.14 (non-GAAP ที่บริษัทรายงาน) จึงเทียบกับไตรมาสอื่นตรง ๆ ไม่ได้"
           },
@@ -1688,7 +1731,7 @@
             "epsAdj": 4.27,
             "opMarginPct": 46.3,
             "fcfB": 15.8,
-            "priceQEnd": 455,
+            "priceQEnd": 370,
             "endDate": "2026-03-31"
           },
           {
@@ -1698,23 +1741,49 @@
             "epsAdj": 4.81,
             "opMarginPct": 45.1,
             "fcfB": 19.64,
-            "priceQEnd": 470,
-            "endDate": "2026-06-30"
+            "priceQEnd": 373,
+            "endDate": "2026-06-30",
+            "epsNote": "GAAP EPS $4.81 รวมกำไรจากเงินลงทุนใน OpenAI ~$0.07/หุ้น — ตัดรายการนี้ออกจะเหลือ ~$4.74 (non-GAAP ที่บริษัทรายงาน)"
+          },
+          {
+            "q": "Q1 FY27",
+            "endYm": "2026-09",
+            "revenueB": 92.28,
+            "epsAdj": 4.92,
+            "opMarginPct": 49.8,
+            "fcfB": 18.63,
+            "priceQEnd": 513,
+            "endDate": "2026-09-30",
+            "epsNote": "GAAP EPS $4.92 รวมกำไรสุทธิจากเงินลงทุนใน OpenAI ~$0.03/หุ้น (net income +$207M) — non-GAAP ที่บริษัทรายงาน $4.89 · GAAP โต +32% YoY สูงกว่า non-GAAP (+18%) เพราะฐาน Q1 FY26 มีขาดทุน OpenAI ~$0.41/หุ้น"
           }
         ]
       },
-      "nextEarnings": "2026-10",
+      "nextEarnings": "2027-01",
       "forwardView": {
-        "asOf": "2026-08",
+        "asOf": "2026-10",
         "estimateHistory": [
           {
             "asOf": "2026-08",
             "fy": "FY2027",
             "eps": 19.7,
             "revenue": 391.2
+          },
+          {
+            "asOf": "2026-10",
+            "fy": "FY2027",
+            "eps": 19.76,
+            "revenue": 391.6
           }
         ],
         "guidanceTrack": [
+          {
+            "quarter": "Q1 FY27",
+            "metric": "revenue",
+            "guided": "~$89.85-90.95B",
+            "actual": "~$92.3B",
+            "result": "beat",
+            "magnitudePct": 2.1
+          },
           {
             "quarter": "Q4 FY26",
             "metric": "revenue",
@@ -1807,20 +1876,20 @@
         "consensus": [
           {
             "fy": "FY2027",
-            "revenue": 391.2,
-            "eps": 19.7,
+            "revenue": 391.6,
+            "eps": 19.76,
             "confidence": "high",
             "basis": "non-GAAP"
           },
           {
             "fy": "FY2028",
-            "revenue": null,
-            "eps": 23.32,
+            "revenue": 468.6,
+            "eps": 23.69,
             "confidence": "medium",
             "basis": "unknown"
           }
         ],
-        "note": "consensus FY2027 จาก 48 นักวิเคราะห์ (StockAnalysis ระบุฐาน non-GAAP adjusted) · FY2028 เฉลี่ย ~$23.32 ช่วงกว้าง ~18.6-27.2 ฐานไม่ระบุ · guidance ของ Microsoft ให้เป็นราย segment ในคอลล์ — ตัวเลขที่บันทึกคือ implied total ที่จุดกึ่งกลาง · Q1 FY26 มี guidance แต่ยืนยันตัวเลขไม่ได้จึงเว้นแถว (ไม่เดา) · งบถัดไป ~27 ต.ค. 2026 ยังไม่ยืนยันทางการจึงคง nextEarnings แบบเดือน"
+        "note": "consensus FY2027 ~$19.76 / รายได้ ~$391.6B (52 นักวิเคราะห์ · StockAnalysis ระบุฐาน non-GAAP และ Yahoo ตรงกัน) เป็นภาพก่อนนักวิเคราะห์ปรับประมาณการหลังงบ Q1 FY27 ที่ชนะคาด · FY2028 ~$23.69 (Yahoo 33 ราย ช่วง ~22.0-25.7, Zacks ~$23.29) ไม่ระบุฐาน · ตั้งแต่ FY27 guidance ให้ราย segment ใหม่ 2 ขา (Agents and Infra + Devices and Consumer) ตัวเลขที่บันทึกคือผลรวมช่วงของ segment — guidance Q2 FY27 จากคอลล์ยังยืนยันจากแหล่งที่เข้าถึงได้ไม่ได้จึงยังไม่บันทึก และ Q1 FY26 เว้นแถวเพราะยืนยันตัวเลขไม่ได้"
       }
     },
     "META": {
@@ -11244,12 +11313,12 @@
       "name": "Vertiv Holdings",
       "layer": "power",
       "thesis": {
-        "statement": "ขายของที่ศูนย์ข้อมูล AI ขาดไม่ได้แต่ไม่ใช่ชิป — ระบบไฟฟ้าและระบายความร้อน เมื่อแร็ค AI กินไฟหนาแน่นขึ้นจนลมเย็นไม่พอ ความต้องการระบายความร้อนด้วยของเหลวจึงกลายเป็นงานบังคับ ไม่ใช่ทางเลือก · ประเด็นของ thesis ไม่ใช่ความต้องการ แต่คือราคาที่ลงมา 43% จากยอด ทั้งที่บริษัทปรับเป้ากำไรขึ้นสามไตรมาสติด",
+        "statement": "ขายของที่ศูนย์ข้อมูล AI ขาดไม่ได้แต่ไม่ใช่ชิป — ระบบไฟฟ้าและระบายความร้อน เมื่อแร็ค AI กินไฟหนาแน่นขึ้นจนลมเย็นไม่พอ ความต้องการระบายความร้อนด้วยของเหลวจึงกลายเป็นงานบังคับ ไม่ใช่ทางเลือก · ประเด็นของ thesis ไม่ใช่ความต้องการ (Q3/69 คำสั่งซื้อโตเกินเท่าตัว) แต่คือราคาที่ยังต่ำกว่ายอด ~35% แม้เด้งขึ้น ~16% หลังงบ ทั้งที่บริษัทปรับเป้ากำไรทั้งปีขึ้นทุกรอบที่ประกาศงบในปีนี้",
         "pillars": [
-          "งานในมือ ~15 พันล้านดอลลาร์ (สิ้นปี 2568) โตเท่าตัวจาก ~7.8 พันล้าน และอัตราส่วนคำสั่งซื้อต่อรายได้ ~2.9 เท่า แปลว่ารับงานเร็วกว่าส่งมอบมาก มองเห็นรายได้ล่วงหน้าได้ยาวกว่าผู้ผลิตชิป",
-          "อัตรากำไรขยายจริงและต่อเนื่อง — adjusted operating margin ไต่จาก ~20.4% ทั้งปี 2568 เป็น ~20.8% ใน Q1/69 และ ~22.6% ใน Q2/69 สะท้อนว่าได้ประโยชน์จากขนาดและการตั้งราคา ไม่ใช่แค่ยอดขายโต",
+          "งานในมือ ~15 พันล้านดอลลาร์และอัตราส่วนคำสั่งซื้อต่อรายได้ ~2.9 เท่า (สิ้นปี 2568) และ Q3/69 คำสั่งซื้อโตเองไม่รวมซื้อกิจการเกิน 100% YoY แปลว่ารับงานเร็วกว่าส่งมอบมาก · ลูกค้าสั่งล่วงหน้าราว 12-18 เดือน จึงมองเห็นรายได้ล่วงหน้าได้ยาวกว่าผู้ผลิตชิป",
+          "อัตรากำไรขยายจริงและต่อเนื่อง — adjusted operating margin ไต่จาก ~20.4% ทั้งปี 2568 เป็น ~20.8% (Q1/69) ~22.6% (Q2/69) และ ~25.2% (Q3/69) โดยเป้า Q4 อยู่ที่ ~25.3-26.3% สะท้อนว่าได้ประโยชน์จากขนาดและผลิตภาพโรงงาน ไม่ใช่แค่ยอดขายโต",
           "ระบายความร้อนด้วยของเหลวเป็นคูเมืองเชิงเวลา — เป็นงานวิศวกรรมที่ต้องออกแบบร่วมกับลูกค้าตั้งแต่ต้นและทดสอบร่วมกับผู้ผลิตชิป คู่แข่งที่เพิ่งเริ่มต้องใช้เวลาหลายปีไล่ตาม",
-          "เป็นเงินสดสุทธิและสร้างกระแสเงินสดได้จริง — adjusted FCF Q2/69 ~925 ล้านดอลลาร์ ต่างจากบริษัท AI หลายตัวที่ยังเผาเงิน",
+          "เป็นเงินสดสุทธิและสร้างกระแสเงินสดได้จริง — adjusted FCF 9 เดือนแรกของปี 2569 ~2.23 พันล้านดอลลาร์ และเป้าทั้งปีถูกปรับขึ้นเป็น ~2.6-2.8 พันล้าน ต่างจากบริษัท AI หลายตัวที่ยังเผาเงิน",
           "ความเสี่ยงคือกระจุกตัวที่ปลายทางเดียวกัน — รายได้ผูกกับรอบการลงทุนศูนย์ข้อมูลของผู้ให้บริการคลาวด์รายใหญ่ ถ้าชะลอการลงทุนพร้อมกัน งานในมือจะถูกเลื่อนไม่ใช่ถูกยกเลิก แต่กระทบจังหวะรับรู้รายได้"
         ]
       },
@@ -11257,147 +11326,147 @@
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "Q2/69 ยอดขาย ~3,274 ล้านดอลลาร์ (+24% YoY · โตเองไม่รวมซื้อกิจการ +18%)",
+          "current": "Q3/69 ยอดขาย ~4,313 ล้านดอลลาร์ (+61% YoY · โตเองไม่รวมซื้อกิจการ +55%)",
           "trend": "up",
-          "score": 82,
+          "score": 92,
           "impact": "positive",
-          "why": "โตสองหลักต่อเนื่องบนฐานที่ใหญ่แล้ว (ทั้งปี 2568 ~10.2 พันล้านดอลลาร์) และเป้าทั้งปี 2569 ที่ ~13.8-14.2 พันล้าน หมายถึงโตราว 35% · แต่ Q2 ยอดขายออกมาต่ำกว่าจุดกึ่งกลางที่บริษัทให้ไว้เล็กน้อย จึงยังไม่ให้คะแนนสูงกว่านี้"
+          "why": "เร่งขึ้นแรงจาก +24% ใน Q2/69 และสูงกว่าจุดกึ่งกลางที่บริษัทให้ไว้ ~15% · บริษัทปรับเป้ายอดขายทั้งปี 2569 ขึ้น ~650 ล้านเป็น ~14.45-14.85 พันล้านดอลลาร์ (โต ~43%) · ที่ยังไม่ให้เต็มเพราะ ~100-150 ล้านในไตรมาสนี้เป็นยอดที่เลื่อนมาจาก Q2 จึงไม่ใช่ฐานที่จะโตแบบนี้ได้ทุกไตรมาส"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "Q2/69 adjusted EPS ~1.52 ดอลลาร์ (+60% YoY) · GAAP ~1.27 ดอลลาร์ (+53%)",
+          "current": "Q3/69 adjusted EPS ~2.21 ดอลลาร์ (+78% YoY) · GAAP ~1.95 ดอลลาร์ (+91%)",
           "trend": "up",
-          "score": 88,
+          "score": 93,
           "impact": "positive",
-          "why": "โตเร็วกว่ายอดขายมากเพราะอัตรากำไรขยาย และสำคัญคือ GAAP ก็โต 53% ไปในทางเดียวกัน ไม่ใช่กำไรที่เกิดจากการตัดรายการออกอย่างเดียว ช่องว่าง GAAP กับ adjusted ~0.25 ดอลลาร์ต่อหุ้นถือว่าแคบ"
+          "why": "เกินจุดกึ่งกลางที่บริษัทให้ไว้ (~1.80) ราว 23% และ GAAP โตเร็วกว่า adjusted เพราะปีก่อนมีค่าปรับโครงสร้าง จึงไม่ใช่กำไรที่เกิดจากการตัดรายการออก · ช่องว่าง GAAP กับ adjusted ~0.26 ดอลลาร์ต่อหุ้นส่วนใหญ่เป็นค่าตัดจำหน่ายสินทรัพย์ไม่มีตัวตนและเงินจ่ายเพิ่มตามเงื่อนไขการซื้อกิจการ"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "Q2/69 adjusted FCF ~925 ล้านดอลลาร์ (เงินสดจากการดำเนินงาน ~1,100 ล้าน)",
+          "current": "Q3/69 adjusted FCF ~652 ล้านดอลลาร์ (+50% YoY · เงินสดจากการดำเนินงาน ~794 ล้าน) · 9 เดือนแรก ~2.23 พันล้าน",
           "trend": "up",
-          "score": 90,
+          "score": 86,
           "impact": "positive",
-          "why": "ทั้งปี 2568 ทำได้ ~1,887 ล้านดอลลาร์ (+66%) และไตรมาสเดียวใน Q2/69 ทำได้เกือบครึ่งของทั้งปีก่อน · เงินที่ลูกค้าจ่ายล่วงหน้าตามงานในมือช่วยหนุนเงินทุนหมุนเวียน"
+          "why": "ลดลงจาก ~925 ล้านใน Q2/69 เพราะเงินทุนหมุนเวียนดูดเงินไป — สินค้าคงคลังเพิ่ม ~767 ล้านและลูกหนี้เพิ่ม ~632 ล้านในไตรมาสเดียว แม้เงินรับล่วงหน้าจากลูกค้าเพิ่ม ~490 ล้านช่วยชดเชย · ทั้งปีบริษัทปรับเป้าขึ้นเป็น ~2.6-2.8 พันล้านดอลลาร์ (จาก ~2.4-2.6 พันล้าน) จึงยังเป็นจุดแข็ง แต่ลดคะแนนลงจากการแปลงกำไรเป็นเงินสดที่ต่ำลงในไตรมาสนี้"
         },
         {
           "key": "margin",
           "label": "อัตรากำไรจากการดำเนินงาน",
-          "current": "Q2/69 adjusted ~22.6% (+410 bp YoY) · GAAP ~19.5%",
+          "current": "Q3/69 adjusted ~25.2% (+290 bp YoY) · GAAP ~22.8%",
           "trend": "up",
-          "score": 85,
+          "score": 89,
           "impact": "positive",
-          "why": "ขยายต่อเนื่องจาก ~20.4% ทั้งปี 2568 และ ~20.8% ใน Q1/69 · บริษัทบอกว่ามาจากขนาดที่โตและการตั้งราคาที่ชดเชยภาษีนำเข้าได้ ไม่ใช่การตัดต้นทุนชั่วคราว"
+          "why": "ขยายต่อจาก ~22.6% ใน Q2/69 และเกินช่วงเป้า ~24.0-25.0% · บริษัทให้เป้า Q4 ที่ ~25.3-26.3% และปรับเป้าทั้งปีเป็น ~23.5-24.5% · ส่วนขยายรอบนี้มาจากนอกอเมริกาเป็นหลัก (ยุโรปตะวันออกกลางแอฟริกา ~28.0% +920 bp YoY · เอเชียแปซิฟิก ~17.0% +380 bp) ขณะที่อเมริกาทรงตัวที่ ~29.4%"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "กำไรจากการดำเนินงาน Q2/69 ~638 ล้านดอลลาร์ (GAAP) บนฐานทุนที่ไม่หนัก",
+          "current": "กำไรจากการดำเนินงาน Q3/69 ~984 ล้านดอลลาร์ (GAAP · +90% YoY) บนฐานทุนที่ไม่หนัก",
           "trend": "up",
-          "score": 78,
+          "score": 80,
           "impact": "positive",
-          "why": "เป็นธุรกิจที่ไม่ต้องลงทุนหนักเท่าโรงงานชิป (เงินลงทุนราว 4% ของรายได้) จึงเปลี่ยนการเติบโตเป็นผลตอบแทนได้เร็ว · ยังไม่ให้คะแนนสูงกว่านี้เพราะมีค่าความนิยมจากการควบรวมในอดีตอยู่ในฐานทุน"
+          "why": "เป็นธุรกิจที่ไม่ต้องลงทุนหนักเท่าโรงงานชิป (เงินลงทุนราว 4% ของรายได้) กำไรโตเร็วกว่าฐานทุนจึงดันผลตอบแทนขึ้น · ยังไม่ให้คะแนนสูงกว่านี้เพราะค่าความนิยม ~2.28 พันล้านจากการควบรวมยังอยู่ในฐานทุน และสินค้าคงคลังที่เพิ่มกว่าเท่าตัวในปีนี้ทำให้เงินทุนที่ใช้ในธุรกิจหนักขึ้น"
         },
         {
           "key": "cash",
           "label": "เงินสดในมือ",
-          "current": "~2.8 พันล้านดอลลาร์ (30 มิ.ย. 2569)",
+          "current": "~3.51 พันล้านดอลลาร์ + เงินลงทุนระยะสั้น ~0.2 พันล้าน (30 ก.ย. 2569) · สภาพคล่องรวม ~6.2 พันล้าน",
           "trend": "up",
-          "score": 80,
+          "score": 84,
           "impact": "positive",
-          "why": "เพิ่มจาก ~2.15 พันล้านเมื่อสิ้น Q1/69 และมากพอจะหักกลบหนี้ระยะยาวได้ทั้งหมด ทำให้บริษัทอยู่ในสถานะเงินสดสุทธิ"
+          "why": "เพิ่มจาก ~2.81 พันล้านเมื่อสิ้น Q2/69 และมากกว่าหนี้ระยะยาวทั้งหมด ทำให้เป็นเงินสดสุทธิ ~0.8 พันล้านดอลลาร์ · ส่วนหนึ่งมาจากเงินที่ลูกค้าจ่ายล่วงหน้า (เงินรับล่วงหน้า ~4.12 พันล้าน) ซึ่งต้องส่งมอบงานแลก จึงไม่ใช่เงินว่างทั้งหมด"
         },
         {
           "key": "debt",
           "label": "หนี้สิน",
-          "current": "หนี้ระยะยาว ~2.94 พันล้านดอลลาร์ · สุทธิแล้วเป็นเงินสดสุทธิ",
+          "current": "หนี้ระยะยาว ~2.93 พันล้านดอลลาร์ · สุทธิแล้วเป็นเงินสดสุทธิ ~0.8 พันล้าน",
           "trend": "up",
-          "score": 78,
+          "score": 80,
           "impact": "positive",
-          "why": "เคยเป็นบริษัทที่มีหนี้สูงจากการเข้าตลาดผ่าน SPAC แต่กระแสเงินสดที่แรงทำให้หักกลบได้หมดแล้ว เป็นการเปลี่ยนแปลงเชิงโครงสร้างที่ลดความเสี่ยงลงมาก"
+          "why": "เคยเป็นบริษัทที่มีหนี้สูงจากการเข้าตลาดผ่าน SPAC แต่กระแสเงินสดที่แรงทำให้หักกลบได้หมดแล้วและส่วนเกินกว้างขึ้น · ดอกเบี้ยจ่ายสุทธิ Q3/69 เหลือ ~6 ล้านดอลลาร์จาก ~23 ล้านเมื่อปีก่อน"
         },
         {
           "key": "dilution",
           "label": "การเพิ่มทุนและการลดสัดส่วน",
-          "current": "ไม่มีการเพิ่มทุนใหญ่ · จ่ายปันผล ~23.9 ล้านดอลลาร์ใน Q2/69",
+          "current": "ไม่มีการเพิ่มทุนใหญ่ · หุ้นเจือจาง ~392.7 ล้านหุ้นทรงตัว · ปันผล ~24.0 ล้านดอลลาร์ใน Q3/69",
           "trend": "flat",
           "score": 72,
           "impact": "neutral",
-          "why": "ไม่มีการออกหุ้นใหม่ที่กดสัดส่วนผู้ถือหุ้นเดิม และค่าตอบแทนเป็นหุ้นอยู่ในระดับปกติของบริษัทอุตสาหกรรม ไม่ใช่ระดับที่พบในบริษัทเทคเพิ่งเข้าตลาด"
+          "why": "ไม่มีการออกหุ้นใหม่ที่กดสัดส่วนผู้ถือหุ้นเดิม และค่าตอบแทนเป็นหุ้น (~20 ล้านดอลลาร์ใน Q3/69) อยู่ในระดับปกติของบริษัทอุตสาหกรรม ไม่ใช่ระดับที่พบในบริษัทเทคเพิ่งเข้าตลาด"
         },
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรเงินทุน",
-          "current": "เงินลงทุนราว 4% ของรายได้ทั้งปี · ขยายกำลังผลิตและซื้อกิจการเสริม",
+          "current": "เงินลงทุน Q3/69 ~139 ล้านดอลลาร์ · ทั้งปีราว 4% ของรายได้ · ขยายกำลังผลิตและซื้อกิจการเสริม",
           "trend": "flat",
           "score": 74,
           "impact": "positive",
-          "why": "ลงทุนขยายกำลังผลิตเพื่อรองรับงานในมือ ~15 พันล้านดอลลาร์ซึ่งเป็นการใช้เงินที่มีงานรออยู่จริง ไม่ใช่ลงทุนดักความต้องการ · ปันผลยังเล็กมากเมื่อเทียบกระแสเงินสด"
+          "why": "ลงทุนขยายกำลังผลิตเพื่อรองรับคำสั่งซื้อที่โตเกินเท่าตัว ซึ่งเป็นการใช้เงินที่มีงานรออยู่จริง ไม่ใช่ลงทุนดักความต้องการ · ปันผลยังเล็กมากเมื่อเทียบกระแสเงินสด และผู้บริหารให้น้ำหนักการลงทุนในธุรกิจและซื้อกิจการก่อนการคืนเงินผู้ถือหุ้น"
         },
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "~215 ดอลลาร์ (15 ต.ค. 2569) · ~32 เท่าของกำไรคาดปี 2569 (adjusted) · ~23 เท่าของปี 2570",
-          "trend": "up",
-          "score": 58,
+          "current": "~243 ดอลลาร์ (28 ต.ค. 2569) · ~34 เท่าของเป้ากำไรปี 2569 (adjusted ~7.15) · ~26 เท่าของ consensus ปี 2570 (ตัวเลขก่อนงบ Q3) · มูลค่าตลาด ~93 พันล้านดอลลาร์",
+          "trend": "down",
+          "score": 55,
           "impact": "neutral",
-          "why": "ราคาลงจากยอด ~376 ดอลลาร์ (พ.ค. 69) มาแล้ว ~43% ทั้งที่บริษัทปรับเป้ากำไรขึ้นสามไตรมาสติด ทำให้ถูกลงชัดเจนเมื่อเทียบการเติบโต · แต่ ~32 เท่ายังไม่ใช่ราคาถูกในเชิงสัมบูรณ์ และเป็นฐาน adjusted ไม่ใช่ GAAP"
+          "why": "ราคาเด้ง ~16% ในวันประกาศงบ เร็วกว่ากำไรคาดปี 2569 ที่ขยับขึ้น ~6% ค่า P/E จึงขยายจาก ~32 เป็น ~34 เท่า · ยังต่ำกว่ายอด ~376 ดอลลาร์ (พ.ค. 69) ราว 35% ขณะที่คำสั่งซื้อและเป้ากำไรดีกว่าตอนนั้น · แต่ ~34 เท่ายังไม่ใช่ราคาถูกในเชิงสัมบูรณ์ และเป็นฐาน adjusted ไม่ใช่ GAAP"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
-        "consistency": 72,
+        "consistency": 70,
         "recurringPct": null,
-        "note": "คุณภาพรายได้ดีกว่าค่าเฉลี่ยกลุ่ม AI เพราะมีงานในมือ ~15 พันล้านดอลลาร์รองรับ และอัตราส่วนคำสั่งซื้อต่อรายได้ ~2.9 เท่า (ข้อมูลสิ้นปี 2568) ทำให้มองรายได้ล่วงหน้าได้ · ข้อควรระวัง: งานในมือไม่ใช่รายได้ที่การันตี ลูกค้าเลื่อนกำหนดส่งมอบได้ และรายได้กระจุกที่ปลายทางเดียวกันคือรอบลงทุนศูนย์ข้อมูล · บริษัทไม่ได้เปิดสัดส่วนรายได้ที่เกิดซ้ำจึงไม่ระบุ",
+        "note": "คุณภาพรายได้ดีกว่าค่าเฉลี่ยกลุ่ม AI เพราะมีงานในมือ ~15 พันล้านดอลลาร์ (สิ้นปี 2568) รองรับ และ Q3/69 คำสั่งซื้อโตเองเกิน 100% YoY โดยลูกค้าสั่งล่วงหน้าราว 12-18 เดือน · ข้อควรระวัง: จังหวะรับรู้รายได้แกว่งระหว่างไตรมาส — Q2/69 ต่ำกว่าเป้าเพราะซัพพลายเชนติดขัด แล้ว ~100-150 ล้านดอลลาร์ไหลมาลง Q3/69 · รายได้บริการและอะไหล่ ~719 ล้าน (~17% ของยอดขาย Q3/69) เป็นส่วนที่เกิดซ้ำได้มากกว่า แต่บริษัทไม่ได้เปิดสัดส่วนรายได้ที่เกิดซ้ำจริงจึงไม่ระบุ",
         "segments": [
           {
             "name": "อเมริกา",
-            "sharePct": 63,
-            "growthNote": "Q2/69 ~2,071 ล้านดอลลาร์ +29% YoY เป็นแรงขับหลักจากการลงทุนศูนย์ข้อมูล AI",
+            "sharePct": 69,
+            "growthNote": "Q3/69 ~2,989 ล้านดอลลาร์ +75% YoY (โตเอง +66%) เป็นแรงขับหลักจากการลงทุนศูนย์ข้อมูล AI · อัตรากำไรภูมิภาค ~29.4% ทรงตัวจากปีก่อน",
             "trend": "up"
           },
           {
             "name": "เอเชียแปซิฟิก",
-            "sharePct": 22,
-            "growthNote": "Q2/69 ~720 ล้านดอลลาร์ +29% YoY โตใกล้เคียงอเมริกา",
+            "sharePct": 18,
+            "growthNote": "Q3/69 ~779 ล้านดอลลาร์ +50% YoY (โตเอง +48%) เร่งขึ้นจาก +29% ใน Q2/69",
             "trend": "up"
           },
           {
             "name": "ยุโรป ตะวันออกกลาง แอฟริกา",
-            "sharePct": 15,
-            "growthNote": "Q2/69 ~484 ล้านดอลลาร์ +2% YoY แทบไม่โต เป็นจุดอ่อนที่ชัดเจน",
-            "trend": "flat"
+            "sharePct": 13,
+            "growthNote": "Q3/69 ~545 ล้านดอลลาร์ +23% YoY (โตเอง +19%) ฟื้นจาก +2% ใน Q2/69 แต่ 9 เดือนแรกโตเองยังติดลบ ~3%",
+            "trend": "up"
           }
         ]
       },
       "aiExecution": {
-        "score": 84,
+        "score": 88,
         "items": [
           {
             "item": "เปลี่ยนความต้องการ AI เป็นงานในมือจริง",
             "status": "executing",
-            "evidence": "งานในมือ ~15 พันล้านดอลลาร์ โตเท่าตัวจาก ~7.8 พันล้าน · อัตราส่วนคำสั่งซื้อต่อรายได้ ~2.9 เท่า (ข้อมูลสิ้นปี 2568)"
+            "evidence": "Q3/69 คำสั่งซื้อโตเองเกิน 100% YoY · งานในมือ ~15 พันล้านดอลลาร์ ณ สิ้นปี 2568 (โตเท่าตัวจาก ~7.8 พันล้าน) · Q3 ไม่ได้เปิดยอดงานในมือ แต่เงินรับล่วงหน้าจากลูกค้าเพิ่มเป็น ~4.12 พันล้านจาก ~1.81 พันล้านเมื่อสิ้นปี 2568"
           },
           {
             "item": "ขยายอัตรากำไรขณะที่โต",
             "status": "executing",
-            "evidence": "adjusted operating margin ไต่จาก ~20.4% (ปี 2568) เป็น ~20.8% (Q1/69) และ ~22.6% (Q2/69)"
+            "evidence": "adjusted operating margin ไต่จาก ~20.4% (ปี 2568) เป็น ~20.8% (Q1/69) ~22.6% (Q2/69) และ ~25.2% (Q3/69)"
           },
           {
             "item": "ส่งมอบระบบระบายความร้อนด้วยของเหลว",
             "status": "executing",
-            "evidence": "บริษัทระบุว่ารายได้จากระบายความร้อนด้วยของเหลวเร่งขึ้นและเข้าไปอยู่ในงานออกแบบร่วมกับลูกค้า AI เกือบทุกราย"
+            "evidence": "บริษัทระบุว่ารายได้จากระบายความร้อนด้วยของเหลวเร่งขึ้นและเข้าไปอยู่ในงานออกแบบร่วมกับลูกค้า AI เกือบทุกราย · ในการประชุมนักวิเคราะห์ Q3/69 ผู้บริหารระบุว่าตลาดกำลังเลื่อนสัดส่วนไปทางระบายความร้อนด้วยของเหลว และยอดขายสินค้า Q3/69 โต ~66% YoY"
           },
           {
             "item": "ปรับเป้ากำไรขึ้นตามความต้องการ",
             "status": "executing",
-            "evidence": "เป้า adjusted EPS ทั้งปี 2569 ไต่จาก ~6.02 (ก.พ.) เป็น ~6.35 (เม.ย.) และ ~6.70 ดอลลาร์ (ก.ค.) ขึ้นราว 5% ทุกครั้ง"
+            "evidence": "เป้า adjusted EPS ทั้งปี 2569 ไต่จาก ~6.02 (ก.พ.) เป็น ~6.35 (เม.ย.) ~6.70 (ก.ค.) และ ~7.15 ดอลลาร์ (ต.ค.) · รอบล่าสุดขึ้น ~7% พร้อมเป้ายอดขาย +650 ล้านดอลลาร์"
           },
           {
             "item": "กระจายการเติบโตออกนอกอเมริกา",
-            "status": "at-risk",
-            "evidence": "Q2/69 ยุโรปตะวันออกกลางแอฟริกาโตเพียง ~2% YoY เทียบอเมริกา ~29% การเติบโตยังพึ่งภูมิภาคเดียวเป็นหลัก"
+            "status": "on-track",
+            "evidence": "Q3/69 เอเชียแปซิฟิกโต ~50% และยุโรปตะวันออกกลางแอฟริกาโต ~23% (จาก ~2% ใน Q2/69) · แต่อเมริกาโตเร็วกว่าที่ ~75% จนสัดส่วนขึ้นเป็น ~69% ของยอดขาย การพึ่งภูมิภาคเดียวจึงยังไม่ลดลง"
           }
         ]
       },
@@ -11409,7 +11478,7 @@
             "key": "marketLeadership",
             "label": "ความเป็นผู้นำตลาด",
             "status": "strengthening",
-            "note": "เป็นหนึ่งในไม่กี่รายที่ทำได้ครบทั้งไฟและความเย็นสำหรับศูนย์ข้อมูล และได้ส่วนแบ่งเพิ่มในรอบการลงทุน AI"
+            "note": "เป็นหนึ่งในไม่กี่รายที่ทำได้ครบทั้งไฟและความเย็นสำหรับศูนย์ข้อมูล · Q3/69 คำสั่งซื้อโตเองเกินเท่าตัว และผู้บริหารระบุว่าเป็นการได้ส่วนแบ่งเพิ่ม ไม่ใช่แค่ยอดค้างจาก Q2"
           },
           {
             "key": "techLeadership",
@@ -11421,7 +11490,7 @@
             "key": "executionSpeed",
             "label": "ความเร็วในการส่งมอบ",
             "status": "strengthening",
-            "note": "ทำกำไรต่อหุ้นเกินที่ให้แนวโน้มไว้ติดกันหลายไตรมาส และปรับเป้าทั้งปีขึ้นสามครั้งในปีเดียว"
+            "note": "ทำกำไรต่อหุ้นเกินที่ให้แนวโน้มไว้ติดกันหลายไตรมาส และปรับเป้าทั้งปีขึ้นทุกรอบที่ประกาศงบในปี 2569 · จุดสะดุดคือ Q2/69 ส่งมอบล่าช้าจากซัพพลายเชน ซึ่งตามกลับมาได้ใน Q3/69"
           },
           {
             "key": "switchingCost",
@@ -11461,87 +11530,87 @@
         "items": [
           {
             "label": "ลงทุนขยายกำลังผลิต",
-            "current": "ราว 4% ของรายได้ทั้งปี",
+            "current": "Q3/69 ~139 ล้านดอลลาร์ · ทั้งปีราว 4% ของรายได้",
             "assessment": "good",
-            "why": "ต่ำเมื่อเทียบอุตสาหกรรมที่ต้องใช้เงินหนัก และมีงานในมือ ~15 พันล้านดอลลาร์รองรับไว้แล้ว"
+            "why": "ต่ำเมื่อเทียบอุตสาหกรรมที่ต้องใช้เงินหนัก และมีคำสั่งซื้อที่โตเกินเท่าตัวรองรับไว้แล้ว"
           },
           {
             "label": "ลดภาระหนี้",
-            "current": "หนี้ระยะยาว ~2.94 พันล้าน เทียบเงินสด ~2.8 พันล้าน",
+            "current": "หนี้ระยะยาว ~2.93 พันล้าน เทียบเงินสด ~3.51 พันล้าน",
             "assessment": "good",
             "why": "เปลี่ยนจากบริษัทที่มีหนี้สูงหลังเข้าตลาดผ่าน SPAC มาเป็นเงินสดสุทธิ ลดความเสี่ยงเชิงโครงสร้างลงมาก"
           },
           {
             "label": "ปันผล",
-            "current": "~23.9 ล้านดอลลาร์ใน Q2/69",
+            "current": "~24.0 ล้านดอลลาร์ใน Q3/69",
             "assessment": "neutral",
-            "why": "เล็กมากเมื่อเทียบ FCF ~925 ล้านต่อไตรมาส เป็นสัญลักษณ์มากกว่าการคืนเงินจริง แต่ก็เหมาะกับช่วงที่ยังต้องลงทุนโต"
+            "why": "เล็กมากเมื่อเทียบ FCF ~652 ล้านต่อไตรมาส เป็นสัญลักษณ์มากกว่าการคืนเงินจริง แต่ก็เหมาะกับช่วงที่ยังต้องลงทุนโต"
           },
           {
             "label": "ซื้อกิจการเสริม",
-            "current": "ช่วยหนุนการเติบโต ~4% ใน Q1/69",
+            "current": "หนุนยอดขาย ~6% ใน Q3/69 · ใช้เงิน ~278 ล้านดอลลาร์ใน 9 เดือนแรก",
             "assessment": "neutral",
-            "why": "ขนาดเล็กและเสริมสายผลิตภัณฑ์ ยังไม่ใหญ่พอจะสร้างความเสี่ยงการควบรวม แต่ต้องตามดูว่าไม่สะสมค่าความนิยมเกินจำเป็น"
+            "why": "ขนาดเล็กและเสริมสายผลิตภัณฑ์ ยังไม่ใหญ่พอจะสร้างความเสี่ยงการควบรวม แต่มีเงินจ่ายเพิ่มตามเงื่อนไขการซื้อกิจการ ~96 ล้านใน 9 เดือนแรกที่ถูกตัดออกจาก adjusted จึงต้องตามดูว่าไม่สะสมเกินจำเป็น"
           },
           {
             "label": "การซื้อหุ้นคืน",
-            "current": "ไม่ได้ระบุในไตรมาสล่าสุด",
+            "current": "ไม่มีในไตรมาสล่าสุด",
             "assessment": "neutral",
-            "why": "ยังไม่ใช่ตัวขับหลักของการคืนเงิน เหมาะสมในช่วงที่โอกาสลงทุนในธุรกิจยังให้ผลตอบแทนสูงกว่า"
+            "why": "ผู้บริหารให้น้ำหนักการลงทุนในธุรกิจและซื้อกิจการก่อน เหมาะสมในช่วงที่โอกาสลงทุนในธุรกิจยังให้ผลตอบแทนสูงกว่า"
           }
         ]
       },
       "valuationView": {
         "level": "fair",
-        "note": "~215 ดอลลาร์ คิดเป็น ~32 เท่าของกำไรคาดปี 2569 (adjusted ~6.74 ดอลลาร์) และ ~23 เท่าของปี 2570 (~9.19 ดอลลาร์) · ที่น่าสนใจคือราคาลงมา ~43% จากยอด ~376 ดอลลาร์เมื่อ พ.ค. 69 ทั้งที่บริษัทปรับเป้ากำไรขึ้นสามไตรมาสติด แปลว่าตลาดกำลังคิดลดความยั่งยืนของรอบการลงทุน ไม่ใช่คิดลดผลประกอบการที่ออกมาแล้ว · ยังไม่จัดเป็นราคาถูกเพราะ ~32 เท่าสะท้อนการเติบโตไว้พอสมควรแล้ว และเป็นฐาน adjusted ไม่ใช่ GAAP"
+        "note": "~243 ดอลลาร์ (28 ต.ค. 69) คิดเป็น ~34 เท่าของเป้ากำไรปี 2569 (adjusted ~7.15 ดอลลาร์) และ ~26 เท่าของ consensus ปี 2570 (~9.19 ดอลลาร์ ซึ่งเป็นตัวเลขก่อนงบ Q3 ยังไม่สะท้อนผลที่ออกมา) · ราคาเด้ง ~16% หลังงบแต่ยังต่ำกว่ายอด ~376 ดอลลาร์เมื่อ พ.ค. 69 ราว 35% ทั้งที่คำสั่งซื้อเร่งขึ้นและเป้ากำไรถูกปรับขึ้นทุกรอบ แปลว่าตลาดยังคิดลดความยั่งยืนของรอบการลงทุน ไม่ใช่ผลประกอบการที่ออกมาแล้ว · ยังไม่จัดเป็นราคาถูกเพราะ ~34 เท่าสะท้อนการเติบโตไว้พอสมควร และเป็นฐาน adjusted ไม่ใช่ GAAP"
       },
       "whatChanged": [
         {
           "metric": "ยอดขาย",
-          "prev": "Q1/69 ~2,650 ล้านดอลลาร์",
-          "now": "Q2/69 ~3,274 ล้านดอลลาร์",
+          "prev": "Q2/69 ~3,274 ล้านดอลลาร์ (+24% YoY)",
+          "now": "Q3/69 ~4,313 ล้านดอลลาร์ (+61% YoY · โตเอง +55%)",
+          "direction": "positive"
+        },
+        {
+          "metric": "ยอดขายเทียบจุดกึ่งกลางเป้าของไตรมาส",
+          "prev": "Q2/69 ต่ำกว่า ~2%",
+          "now": "Q3/69 สูงกว่า ~15%",
           "direction": "positive"
         },
         {
           "metric": "adjusted EPS",
-          "prev": "Q1/69 ~1.17 ดอลลาร์",
-          "now": "Q2/69 ~1.52 ดอลลาร์",
-          "direction": "positive"
-        },
-        {
-          "metric": "GAAP EPS",
-          "prev": "Q1/69 ~0.99 ดอลลาร์",
-          "now": "Q2/69 ~1.27 ดอลลาร์",
+          "prev": "Q2/69 ~1.52 ดอลลาร์",
+          "now": "Q3/69 ~2.21 ดอลลาร์",
           "direction": "positive"
         },
         {
           "metric": "adjusted operating margin",
-          "prev": "Q1/69 ~20.8%",
-          "now": "Q2/69 ~22.6%",
+          "prev": "Q2/69 ~22.6%",
+          "now": "Q3/69 ~25.2%",
           "direction": "positive"
         },
         {
           "metric": "adjusted FCF",
-          "prev": "Q1/69 ~653 ล้านดอลลาร์",
-          "now": "Q2/69 ~925 ล้านดอลลาร์",
-          "direction": "positive"
+          "prev": "Q2/69 ~925 ล้านดอลลาร์",
+          "now": "Q3/69 ~652 ล้านดอลลาร์",
+          "direction": "negative"
         },
         {
           "metric": "เป้า adjusted EPS ทั้งปี 2569",
-          "prev": "6.30-6.40 ดอลลาร์",
-          "now": "6.65-6.75 ดอลลาร์",
+          "prev": "6.65-6.75 ดอลลาร์",
+          "now": "7.10-7.20 ดอลลาร์",
           "direction": "positive"
         }
       ],
       "risks": [
         "รายได้ผูกกับรอบการลงทุนศูนย์ข้อมูลของลูกค้ารายใหญ่ไม่กี่กลุ่ม ถ้าผู้ให้บริการคลาวด์ชะลอการลงทุนพร้อมกัน งานในมือจะถูกเลื่อนกำหนดส่งมอบ ซึ่งกระทบจังหวะรับรู้รายได้แม้คำสั่งซื้อจะยังอยู่",
-        "งานในมือ ~15 พันล้านดอลลาร์ไม่ใช่รายได้ที่การันตี และตัวเลขที่เปิดล่าสุดเป็นข้อมูลสิ้นปี 2568 — บริษัทไม่ได้เปิดงานในมือทุกไตรมาส จึงมองการเปลี่ยนแปลงระหว่างทางไม่ชัด",
-        "ยุโรปตะวันออกกลางแอฟริกาโตเพียง ~2% YoY ใน Q2/69 การเติบโตจึงพึ่งอเมริกาเป็นหลัก ถ้าอเมริกาชะลอจะไม่มีภูมิภาคอื่นมาชดเชย",
+        "งานในมือ ~15 พันล้านดอลลาร์ไม่ใช่รายได้ที่การันตี และตัวเลขที่เปิดล่าสุดยังเป็นข้อมูลสิ้นปี 2568 — Q3/69 บริษัทบอกเพียงว่าคำสั่งซื้อโตเกิน 100% โดยไม่เปิดยอดงานในมือหรืออัตราส่วนคำสั่งซื้อต่อรายได้ จึงมองการเปลี่ยนแปลงระหว่างทางไม่ชัด",
+        "เงินทุนหมุนเวียนพองตัวเร็ว — สินค้าคงคลัง ~3.29 พันล้านดอลลาร์ เพิ่มกว่าเท่าตัวจากสิ้นปี 2568 และลูกหนี้ ~4.38 พันล้าน ถ้าลูกค้าเลื่อนรับมอบ ของที่สต็อกไว้จะกลายเป็นภาระและกดกระแสเงินสดแบบที่เริ่มเห็นใน Q3/69",
         "เป็นธุรกิจฮาร์ดแวร์ที่ไม่มีชั้นซอฟต์แวร์ล็อกลูกค้า คู่แข่งอย่าง Schneider Electric และ Eaton ใหญ่กว่าและลงมาเล่นตลาดเดียวกัน การแข่งด้านราคาจะกดอัตรากำไรที่เพิ่งขยายขึ้นมาได้",
-        "Q2/69 ยอดขายออกมาต่ำกว่าจุดกึ่งกลางที่บริษัทให้ไว้ ~2% แม้กำไรจะเกินเป้า แปลว่าตัวเลขกำไรที่สวยมาจากอัตรากำไร ไม่ใช่ปริมาณ ซึ่งเป็นแหล่งที่ขยายต่อได้จำกัดกว่า"
+        "ยอดขายแกว่งตามจังหวะส่งมอบ — Q2/69 ต่ำกว่าเป้าเพราะซัพพลายเชนติดขัด แล้วยอด ~100-150 ล้านดอลลาร์ไหลมาลง Q3/69 ทำให้ Q3 ดูสูงกว่าฐานปกติ และการเติบโตระดับนี้ต้องพึ่งการขยายโรงงานหลายแห่งพร้อมกัน ความผิดพลาดด้านการผลิตจะกระทบกำหนดส่งทันที"
       ],
       "asOf": "2026-10",
-      "nextEarnings": "2026-10-28",
+      "nextEarnings": "2027-02",
       "history": {
         "years": [
           {
@@ -11611,19 +11680,23 @@
             "opMarginPct": 22.6,
             "fcfB": 0.925,
             "priceQEnd": null
+          },
+          {
+            "q": "Q3/26",
+            "endYm": "2026-09",
+            "endDate": "2026-09-30",
+            "revenueB": 4.313,
+            "epsAdj": 2.21,
+            "opMarginPct": 25.2,
+            "fcfB": 0.652,
+            "priceQEnd": 241.31
           }
         ],
-        "epsBasis": "adjusted (non-GAAP) diluted EPS — ใช้ฐานเดียวกับที่บริษัทให้แนวโน้มและที่ consensus อ้างอิง จึงเทียบกันได้ตรง · GAAP ต่ำกว่าราว 0.18-0.25 ดอลลาร์ต่อหุ้นในแต่ละไตรมาส (Q2/69 GAAP ~1.27 เทียบ adjusted ~1.52) · opMarginPct เป็นฐาน adjusted เช่นกัน · ปี 2565-2566 ไม่ได้บันทึก EPS ไว้เพราะยังไม่ได้ตรวจยืนยันจากแหล่งปฐมภูมิ"
+        "epsBasis": "adjusted (non-GAAP) diluted EPS — ใช้ฐานเดียวกับที่บริษัทให้แนวโน้มและที่ consensus อ้างอิง จึงเทียบกันได้ตรง · GAAP ต่ำกว่าราว 0.18-0.26 ดอลลาร์ต่อหุ้นในแต่ละไตรมาสของปี 2569 (Q3/69 GAAP ~1.95 เทียบ adjusted ~2.21 ส่วนต่างหลักคือค่าตัดจำหน่ายสินทรัพย์ไม่มีตัวตนและเงินจ่ายเพิ่มตามเงื่อนไขการซื้อกิจการ) · opMarginPct เป็นฐาน adjusted เช่นกัน · ปี 2565-2566 ไม่ได้บันทึก EPS ไว้เพราะยังไม่ได้ตรวจยืนยันจากแหล่งปฐมภูมิ"
       },
       "forwardView": {
         "asOf": "2026-10",
         "estimateHistory": [
-          {
-            "asOf": "2026-10",
-            "fy": "FY2026",
-            "eps": 6.74,
-            "revenue": 14
-          },
           {
             "asOf": "2026-10",
             "fy": "FY2027",
@@ -11632,6 +11705,30 @@
           }
         ],
         "guidanceTrack": [
+          {
+            "quarter": "2026Q3",
+            "metric": "eps",
+            "guided": "$1.77-1.83 (adjusted)",
+            "actual": "$2.21 (adjusted)",
+            "result": "beat",
+            "magnitudePct": 22.8
+          },
+          {
+            "quarter": "2026Q3",
+            "metric": "margin",
+            "guided": "24.0-25.0% (adjusted)",
+            "actual": "~25.2% (adjusted)",
+            "result": "beat",
+            "magnitudePct": 2.9
+          },
+          {
+            "quarter": "2026Q3",
+            "metric": "revenue",
+            "guided": "$3,650-3,850M",
+            "actual": "~$4,313M",
+            "result": "beat",
+            "magnitudePct": 15
+          },
           {
             "quarter": "2026Q2",
             "metric": "eps",
@@ -11660,20 +11757,20 @@
         "consensus": [
           {
             "fy": "FY2026",
-            "revenue": 14,
-            "eps": 6.74,
-            "confidence": "high",
+            "revenue": 14.65,
+            "eps": 7.15,
+            "confidence": "low",
             "basis": "non-GAAP"
           },
           {
             "fy": "FY2027",
             "revenue": 18.27,
             "eps": 9.19,
-            "confidence": "high",
+            "confidence": "medium",
             "basis": "non-GAAP"
           }
         ],
-        "note": "ประมาณการทั้งสองปีมาจากนักวิเคราะห์ ~30 ราย และปี 2570 ถูกปรับขึ้นจาก ~8.81 เป็น ~9.19 ดอลลาร์ในช่วง 3 เดือน · ที่ต้องสังเกตคือ Q2/69 กำไรและอัตรากำไรเกินเป้าแต่ยอดขายต่ำกว่าจุดกึ่งกลาง ~2% แปลว่าแรงหนุนมาจากอัตรากำไรมากกว่าปริมาณ · วันประกาศงบ Q3 ที่ระบุไว้ (28 ต.ค.) เป็นวันที่ประมาณจากรอบปีก่อน บริษัทยังไม่ยืนยันอย่างเป็นทางการ"
+        "note": "ปี 2569 ใช้จุดกึ่งกลางเป้าใหม่ของบริษัท (~7.15 ดอลลาร์ / ~14.65 พันล้าน) แทน consensus ก่อนงบ ~6.73 ดอลลาร์ / ~14.0 พันล้านที่ล้าสมัยแล้ว ส่วนปี 2570 ~9.19 ดอลลาร์ยังเป็นตัวเลขก่อนงบ Q3 ที่นักวิเคราะห์ยังไม่ทยอยปรับ · Q3/69 ยอดขายเกินจุดกึ่งกลางเป้า ~15% แต่ ~100-150 ล้านดอลลาร์เป็นยอดที่เลื่อนมาจาก Q2 และบริษัทจะให้เป้าปี 2570 พร้อมงบ Q4 (ราว ก.พ. 70)"
       }
     },
     "SPCX": {

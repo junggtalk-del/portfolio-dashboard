@@ -865,7 +865,9 @@ console.log("== EPS ที่มีรายการพิเศษ (epsNote) �
   var obs0 = IE._internal.observationOf(epsCfg([]), mockO(), {}, null).metrics.epsYoY;
   var obs1 = IE._internal.observationOf(epsCfg([7]), mockO(), {}, null).metrics.epsYoY;
   t("observation epsYoY ใช้ฐานเดียวกับ health (EPS 0.7 เทียบ 1.0 ปีก่อน = −30% → กำไรดำเนินงาน +20%)", obs0 === -30 && obs1 === 20, [obs0, obs1]);
-  // KB จริง: TSM ไม่มี epsNote ในช่วงที่เทียบ → ยังเป็น EPS
+  // KB จริง: GOOG Q3'26 มี epsNote → ใช้กำไรจากการดำเนินงาน (+30%) · TSM ไม่มี epsNote ในช่วงที่เทียบ → ยังเป็น EPS
+  var gH = IE.compute("GOOG", snapD, { data: D, TE: TE, VE: VE, PM: PM, prevObs: null }).health.pillars.filter(function (p) { return p.key === "eps"; })[0];
+  t("GOOG (KB จริง) → สัญญาณ EPS วัดจากกำไรจากการดำเนินงาน และไม่ใช่ warn", gH.evidence.indexOf(OPI) >= 0 && gH.status === "ok", gH.status + " · " + gH.evidence);
   var tH = IE.compute("TSM", snapD, { data: D, TE: TE, VE: VE, PM: PM, prevObs: null }).health.pillars.filter(function (p) { return p.key === "eps"; })[0];
   t("TSM (ไม่มี epsNote ในช่วงที่เทียบ) → ยังวัดจาก EPS", tH.evidence.indexOf(OPI) < 0, tH.evidence);
 }
