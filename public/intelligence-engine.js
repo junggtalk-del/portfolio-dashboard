@@ -17,7 +17,7 @@
   // ตอบคำถามเดียว: "หุ้นลง — นี่คือจังหวะสะสม หรือ thesis กำลังพัง?"
   // ============================================================
 
-  var VERSION = "1.1.0";
+  var VERSION = "1.2.0";   // 1.2.0 (2026-10-29): สัญญาณ EPS ที่มี epsNote วัดจากกำไรจากการดำเนินงาน
 
   // ---------------- เกณฑ์ทั้งหมด (deterministic + อธิบายได้) ----------------
   // เกณฑ์ที่มีอยู่แล้วในระบบจะอ่านจาก engine ตัวจริงตอนรัน (ดู thresholds())
@@ -204,29 +204,60 @@
     }
     return out;
   }
+  // EPS ที่มีรายการพิเศษเทียบ YoY ตรง ๆ ไม่ได้ — กำไร/ขาดทุนจากเงินลงทุนทำ GAAP EPS แกว่งได้ทั้งสองทาง
+  //   (GOOG Q2'26 EPS +294% จากกำไรหุ้น Anthropic/SpaceX · Q3'26 −26% จากขาดทุน ~$8.7B ทั้งที่กำไรจากการดำเนินงาน +30%)
+  //   KB บอกไตรมาสที่มีรายการแบบนี้ด้วย epsNote → ถ้าไตรมาสที่สัญญาณ EPS ใช้เทียบ
+  //   (ล่าสุด · ก่อนหน้า · ไตรมาสเดียวกันปีก่อนของทั้งสอง) มี epsNote ให้วัดการเติบโตของกำไรด้วย
+  //   "กำไรจากการดำเนินงาน" = revenueB × opMarginPct ÷ 100 แทน (ไม่รวมกำไร/ขาดทุนจากเงินลงทุน)
+  function epsDistorted(Q) {
+    var n = Q.length, idx = [n - 1, n - 2, n - 5, n - 6];
+    for (var i = 0; i < idx.length; i++) {
+      var q = idx[i] >= 0 ? Q[idx[i]] : null;
+      if (q && typeof q.epsNote === "string" && q.epsNote.replace(/\s+/g, "") !== "") return true;
+    }
+    return false;
+  }
+  // series ที่สัญญาณ EPS ใช้จริง: { rows, field, viaOpIncome } — rows ยาวเท่า Q เสมอ (ดัชนีไตรมาสตรงกัน)
+  function earningsSeries(Q) {
+    if (!epsDistorted(Q)) return { rows: Q, field: "epsAdj", viaOpIncome: false };
+    var rows = [];
+    for (var i = 0; i < Q.length; i++) {
+      var r = num(Q[i].revenueB), m = num(Q[i].opMarginPct);
+      rows.push({ opIncB: r != null && m != null ? r * m / 100 : null });
+    }
+    return { rows: rows, field: "opIncB", viaOpIncome: true };
+  }
+
   function computeHealth(cfg, o, monet, TH) {
     var pillars = [];
     var Q = cfg.history && Array.isArray(cfg.history.quarters) ? cfg.history.quarters : [];
     var hasQ = Q.length >= 6; // ≥6 = เช็ค decel จุดล่าสุดได้ (warn) · consecutive (crit) ต้อง ≥7 — 6 พอดีจะได้แค่ warn ซึ่งตั้งใจให้ conservative
 
     // --- growth pillars (จากงบไตรมาสจริงใน KB) ---
-    function qPillar(key, label, field) {
+    // rows/prefix/fmt ใช้เมื่อวัดจาก series อื่นแทน (EPS ที่มีรายการพิเศษ → กำไรจากการดำเนินงาน)
+    function qPillar(key, label, field, rows, prefix, fmt) {
+      var R = rows || Q, pre = prefix || "";
+      var show = fmt || function (v) { return String(v); };
       if (!hasQ) return pillar(key, label, "na", "ไตรมาสใน KB ไม่พอ (ต้อง ≥6)", true);
       // พลิกจากกำไรเป็นขาดทุน (เทียบไตรมาสเดียวกันปีก่อน) — YoY เทียบ % ไม่ได้ แต่คือการเสื่อมที่ชัดที่สุด
-      var lastV = num(Q[Q.length - 1][field]), yagoV = Q.length >= 5 ? num(Q[Q.length - 5][field]) : null;
+      var lastV = num(R[R.length - 1][field]), yagoV = R.length >= 5 ? num(R[R.length - 5][field]) : null;
       if (lastV != null && yagoV != null && yagoV > 0 && lastV <= 0)
-        return pillar(key, label, "crit", "พลิกจาก " + yagoV + " เป็น " + lastV + " (ปีก่อนกำไร ตอนนี้ติดลบ)", true);
-      var yo = yoySeries(Q, field);
+        return pillar(key, label, "crit", pre + "พลิกจาก " + show(yagoV) + " เป็น " + show(lastV) + " (ปีก่อนกำไร ตอนนี้ติดลบ)", true);
+      var yo = yoySeries(R, field);
       var st = decelState(yo);
       var lastYo = yo.length ? yo[yo.length - 1] : null;
-      var txt = lastYo == null ? "YoY ล่าสุดคำนวณไม่ได้ (ฐานติดลบ/ไม่มีข้อมูล)" : "YoY ล่าสุด " + round1(lastYo) + "%";
+      var txt = pre + (lastYo == null ? "YoY ล่าสุดคำนวณไม่ได้ (ฐานติดลบ/ไม่มีข้อมูล)" : "YoY ล่าสุด " + round1(lastYo) + "%");
       if (st === "na") return pillar(key, label, "na", txt, true);
       if (st === "consecutive") return pillar(key, label, "crit", txt + " — ชะลอแรง 2 ไตรมาสติด", true);
       if (st === "single") return pillar(key, label, "warn", txt + " — ชะลอแรง 1 ไตรมาส (รอยืนยัน)", true);
       return pillar(key, label, "ok", txt + " — ไม่มีสัญญาณชะลอผิดปกติ", true);
     }
     pillars.push(qPillar("revenue", "Revenue growth", "revenueB"));
-    pillars.push(qPillar("eps", "EPS growth", "epsAdj"));
+    var ES = earningsSeries(Q);
+    pillars.push(ES.viaOpIncome
+      ? qPillar("eps", "EPS growth", ES.field, ES.rows, "EPS มีรายการพิเศษ (ดู epsNote) — วัดจากกำไรจากการดำเนินงานแทน · ",
+          function (v) { return round1(v) + "B"; })
+      : qPillar("eps", "EPS growth", "epsAdj"));
 
     // --- margin: ล่าสุดเทียบค่าเฉลี่ย 4 ไตรมาสก่อนหน้า ---
     (function () {
@@ -729,10 +760,11 @@
   function observationOf(cfg, o, X, snapshot) {
     var Q = cfg.history && Array.isArray(cfg.history.quarters) ? cfg.history.quarters : [];
     var lastQ = Q.length ? Q[Q.length - 1] : null;
-    function lastYoY(field) {
-      var yo = yoySeries(Q, field);
+    function lastYoY(field, rows) {
+      var yo = yoySeries(rows || Q, field);
       return yo.length ? round1(yo[yo.length - 1]) : null;
     }
+    var ES = earningsSeries(Q);   // EPS ที่มีรายการพิเศษ → การเติบโตของกำไรจากการดำเนินงาน (ชุดเดียวกับ health)
     var day = snapshot && snapshot.loadedAt ? String(snapshot.loadedAt).slice(0, 10) : null;
     return {
       day: day,
@@ -742,7 +774,7 @@
         thesis: o && o.available ? num(o.thesis.score) : null,
         mega: o && o.available && o.inputs && o.inputs.megaTrend ? num(o.inputs.megaTrend.score) : null,
         revYoY: Q.length >= 5 ? lastYoY("revenueB") : null,
-        epsYoY: Q.length >= 5 ? lastYoY("epsAdj") : null,
+        epsYoY: Q.length >= 5 ? lastYoY(ES.field, ES.rows) : null,
         fcf: lastQ ? num(lastQ.fcfB) : null,
         margin: lastQ ? num(lastQ.opMarginPct) : null,
         monet: X && X.aiMonetization ? X.aiMonetization.overall : null,

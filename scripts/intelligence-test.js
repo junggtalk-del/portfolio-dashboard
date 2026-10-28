@@ -833,6 +833,43 @@ console.log("== Routing acceptance: /thesis = Overview · ?ticker=X = Detail =="
   t("?ticker=AAPL (นอก KB) → lite path ไม่พัง และไม่ใช่ Overview", rootObj.innerHTML.length > 200 && rootObj.innerHTML.indexOf("Today’s Highlights") < 0);
 }
 
+console.log("== EPS ที่มีรายการพิเศษ (epsNote) → วัดการเติบโตจากกำไรจากการดำเนินงาน (2026-10-29) ==");
+{
+  // GOOG Q3'26: GAAP EPS −26% YoY เพราะขาดทุนเงินลงทุน ~$8.7B (Q2'26 เคย +294% จากกำไรเงินลงทุน) ทั้งที่กำไรจากการดำเนินงาน +30%
+  // fixture: รายได้ +20% ทุกไตรมาส margin 30% คงที่ · EPS ไตรมาสล่าสุดหล่นจากรายการพิเศษ (1.2 → 0.7)
+  function epsCfg(noteAt, mutate) {
+    var Qx = quarters([[100, 1.0, 30, 5], [100, 1.0, 30, 5], [100, 1.0, 30, 5], [100, 1.0, 30, 5],
+      [120, 1.2, 30, 5], [120, 1.2, 30, 5], [120, 1.2, 30, 5], [120, 0.7, 30, 5]]);
+    (noteAt || []).forEach(function (i) { Qx[i].epsNote = "รวมขาดทุนเงินลงทุนที่ยังไม่รับรู้ — ไม่รวมรายการนี้ ~1.2"; });
+    if (mutate) mutate(Qx);
+    return synthCompany({ history: { years: synthCompany({}).history.years, quarters: Qx } });
+  }
+  function epsPillar(cfg) { return healthOf(cfg, mockO()).pillars.filter(function (p) { return p.key === "eps"; })[0]; }
+  var OPI = "กำไรจากการดำเนินงาน";
+  var e0 = epsPillar(epsCfg([]));
+  t("ไม่มี epsNote → ยังวัดจาก EPS เหมือนเดิม (EPS หล่น = warn)", e0.status === "warn" && e0.evidence.indexOf(OPI) < 0, e0.status + " · " + e0.evidence);
+  var e1 = epsPillar(epsCfg([7]));
+  t("epsNote ไตรมาสล่าสุด → วัดจากกำไรจากการดำเนินงาน (+20% = ok) และบอกบนจอว่าเปลี่ยนฐาน",
+    e1.status === "ok" && e1.evidence.indexOf(OPI) >= 0 && e1.evidence.indexOf("epsNote") >= 0 && e1.evidence.indexOf("YoY ล่าสุด 20%") >= 0, e1.status + " · " + e1.evidence);
+  var e2 = epsPillar(epsCfg([3]));
+  t("epsNote ที่ไตรมาสฐานปีก่อน (n−5) → ก็เปลี่ยนฐาน (ฐานบิดก็เทียบไม่ได้)", e2.evidence.indexOf(OPI) >= 0, e2.evidence);
+  var e3 = epsPillar(epsCfg([0]));
+  t("epsNote นอกช่วงที่ใช้เทียบ (ไตรมาสแรกสุด) → ไม่เปลี่ยนฐาน", e3.evidence.indexOf(OPI) < 0 && e3.status === "warn", e3.status + " · " + e3.evidence);
+  var e4 = epsPillar(epsCfg([7], function (Qx) { Qx[3].opMarginPct = null; }));
+  t("เปลี่ยนฐานแล้วแต่ไตรมาสฐานไม่มี margin → na (ไม่เดาตัวเลข)", e4.status === "na" && e4.evidence.indexOf("คำนวณไม่ได้") >= 0, e4.status + " · " + e4.evidence);
+  // margin ของไตรมาสล่าสุดหาย ต้องไม่กลายเป็นกำไร 0 → "พลิกจากกำไรเป็นขาดทุน" (crit ปลอม)
+  var e5 = epsPillar(epsCfg([7], function (Qx) { Qx[7].opMarginPct = null; }));
+  t("ไตรมาสล่าสุดไม่มี margin → na ไม่ใช่ crit ปลอม", e5.status === "na", e5.status + " · " + e5.evidence);
+  var e6 = epsPillar(epsCfg([], function (Qx) { Qx[7].epsNote = "   "; }));
+  t("epsNote ว่าง (มีแต่ช่องว่าง) → ไม่นับว่ามีรายการพิเศษ", e6.evidence.indexOf(OPI) < 0 && e6.status === "warn", e6.status + " · " + e6.evidence);
+  var obs0 = IE._internal.observationOf(epsCfg([]), mockO(), {}, null).metrics.epsYoY;
+  var obs1 = IE._internal.observationOf(epsCfg([7]), mockO(), {}, null).metrics.epsYoY;
+  t("observation epsYoY ใช้ฐานเดียวกับ health (EPS 0.7 เทียบ 1.0 ปีก่อน = −30% → กำไรดำเนินงาน +20%)", obs0 === -30 && obs1 === 20, [obs0, obs1]);
+  // KB จริง: TSM ไม่มี epsNote ในช่วงที่เทียบ → ยังเป็น EPS
+  var tH = IE.compute("TSM", snapD, { data: D, TE: TE, VE: VE, PM: PM, prevObs: null }).health.pillars.filter(function (p) { return p.key === "eps"; })[0];
+  t("TSM (ไม่มี epsNote ในช่วงที่เทียบ) → ยังวัดจาก EPS", tH.evidence.indexOf(OPI) < 0, tH.evidence);
+}
+
 console.log("");
 console.log(pass + fail + " checks · " + pass + " passed · " + fail + " failed");
 process.exit(fail ? 1 : 0);
