@@ -335,6 +335,16 @@ function tileValue(label) {
   var m = re.exec(sec("djSummary"));
   return m ? m[1] : null;
 }
+// dj-3 (2026-10-26 ปรับหน้าตามภาพที่ผู้ใช้ส่งมา): กล่อง "บันทึก" · "ไม้จริง" · "รอทบทวน" รวมเป็นกล่องแรก "บันทึกทั้งหมด"
+//   ตัวเลข = จำนวนบันทึก · บรรทัดเล็ก = "ไม้จริง N · รอทบทวน M" — เทสต์เดิมตรวจความหมายเดิม แค่อ่านจากที่ใหม่
+function entriesN() { return tileValue("บันทึกทั้งหมด"); }
+function entriesSub() {
+  var m = /<div class="dj-tile-l">บันทึกทั้งหมด<\/div><div class="dj-tile-s">([^<]*)<\/div>/.exec(sec("djSummary"));
+  return m ? m[1] : null;
+}
+function subCount(word) { var m = new RegExp(word + " ([0-9]+|—)").exec(entriesSub() || ""); return m ? m[1] : null; }
+function tradesN() { return subCount("ไม้จริง"); }
+function dueTileN() { return subCount("รอทบทวน"); }
 function stripComments(s) { return s.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, ""); }
 // กติกา ES5 ชุดเดียวกับเทสต์เอนจิน (scripts/decision-journal-test.js R2.7)
 var ES5_RULES = [
@@ -386,14 +396,20 @@ section("load + skeleton (Task 8)", function () {
     t("load never writes (no PUT)", fetchCalls.every(function (c) { return c.method !== "PUT"; }));
     t("no unrouted fetch", unrouted.length === 0, unrouted);
 
-    var order = ["djSummary", "djReview", "djNew", "djLog", "djTrades", "djStats", "djMethod"].map(function (id) { return html().indexOf('id="' + id + '"'); });
-    t("sections in decision-first order", order.every(function (p, i) { return p >= 0 && (i === 0 || p > order[i - 1]); }), order);
+    // dj-3: จอกว้างสองคอลัมน์ — ฟอร์มบันทึกใหม่ซ้าย · บันทึกทั้งหมด + สถิติขวา → ใน DOM สถิติจึงมาก่อนไม้จริง
+    var order = ["djSummary", "djReview", "djNew", "djLog", "djStats", "djTrades", "djMethod"].map(function (id) { return html().indexOf('id="' + id + '"'); });
+    t("sections in order: summary → review → new | log + stats → trades → method", order.every(function (p, i) { return p >= 0 && (i === 0 || p > order[i - 1]); }), order);
     var heads = { djSummary: "ภาพรวม", djReview: "ถึงกำหนดทบทวน", djNew: "บันทึกใหม่", djLog: "บันทึกทั้งหมด", djTrades: "ไม้จริง", djStats: "สถิติ", djMethod: "วิธีคิด" };
     t("each section has its Thai heading", Object.keys(heads).every(function (id) {
       return new RegExp("<h2[^>]*>[^<]*" + heads[id]).test(sec(id));
     }), Object.keys(heads).filter(function (id) { return !new RegExp("<h2[^>]*>[^<]*" + heads[id]).test(sec(id)); }));
     t("sections are <section> elements with dj-block", countOf(/<section id="dj[A-Za-z]+" class="dj-block/g) === 7);
-    t("no page hero (shell hero only)", html().indexOf("dj-hero") < 0 && html().indexOf("mc-page-hero") < 0);
+    // dj-3: หน้าวาดหัวของตัวเอง (ชื่อ · ค้นหา · ธีม · บันทึกใหม่) และเอา PAGE_META ออก → ไม่มีหัว shell ซ้ำ
+    t("own page header before the summary: one h1, search box, jump to the form · no hero",
+      countOf(/<header class="dj-head">/g) === 1 && countOf(/<h1[ >]/g) === 1 && /<h1 class="dj-head-t">Decision Journal<\/h1>/.test(html()) &&
+      /<input id="djSearch"[^>]*data-dj-search="1"/.test(html()) && /data-dj-jump="new"/.test(html()) &&
+      html().indexOf('<header class="dj-head">') < html().indexOf('id="djSummary"') &&
+      html().indexOf("dj-hero") < 0 && html().indexOf("mc-page-hero") < 0);
     t("disclaimer present", html().indexOf("ไม่ใช่คำแนะนำการลงทุน") >= 0);
     t("no NaN/undefined", !LEAK.test(html()), (LEAK.exec(html()) || [])[0]);
     t("no advisory wording", !ADVISORY_TH.test(html()) && !ADVISORY_EN.test(html()));
@@ -404,7 +420,7 @@ section("load + skeleton (Task 8)", function () {
     t("sync status says the page matches the server (not 'saved' — nothing was saved)",
       /ตรงกับเซิร์ฟเวอร์/.test(sec("djSummary")) && !/บันทึกบนเซิร์ฟเวอร์แล้ว/.test(html()));
     t("doc loaded from server", !!S.doc && S.doc.entries.length === 2 && S.doc.trades.length === 2);
-    t("summary counts live entries and trades", tileValue("บันทึก") === "2" && tileValue("ไม้จริง") === "2", [tileValue("บันทึก"), tileValue("ไม้จริง")]);
+    t("summary counts live entries and trades", entriesN() === "2" && tradesN() === "2", [entriesN(), entriesSub()]);
     t("holdings kept = isHolding rows only", S.holdings.length === 3 && S.holdings.every(function (h) { return h.isHolding; }));
     t("symbols = holdings ∪ entries ∪ trades, canonical, sorted, no watchlist-only",
       S.symbols.join() === "K-GTECHRMF,NVDA,PTT.BK", S.symbols);
@@ -448,7 +464,7 @@ section("load: failures are honest (Task 8)", function () {
   }).then(function () {
     var S = P._state;
     t("network reject → error, readable reason", S.syncState === "error" && /เชื่อมต่อเซิร์ฟเวอร์ไม่ได้/.test(S.loadError || ""), S.loadError);
-    t("unknown counts show — not 0", tileValue("บันทึก") === "—" && tileValue("ไม้จริง") === "—", [tileValue("บันทึก"), tileValue("ไม้จริง")]);
+    t("unknown counts show — not 0", entriesN() === "—" && tradesN() === null && !/\d/.test(entriesSub() || ""), [entriesN(), entriesSub()]);
     failGet = 401;
     return P.load(true);
   }).then(function () {
@@ -459,7 +475,7 @@ section("load: failures are honest (Task 8)", function () {
     return P.load(true);
   }).then(function () {
     var S = P._state;
-    t("data null → empty doc, idle, counts 0", S.syncState === "idle" && S.doc && S.doc.entries.length === 0 && tileValue("บันทึก") === "0", [S.syncState, tileValue("บันทึก")]);
+    t("data null → empty doc, idle, counts 0", S.syncState === "idle" && S.doc && S.doc.entries.length === 0 && entriesN() === "0", [S.syncState, entriesN()]);
     t("empty doc still renders all sections without leaks", countOf(/<section id="dj/g) === 7 && !LEAK.test(html()));
     // เอกสารผิดรูปจากเซิร์ฟเวอร์ → ไม่เอามาแสดง บอกว่าผิดรูป
     JOURNAL = { v: 1, entries: "x", trades: [] };
@@ -480,7 +496,7 @@ section("load: failures are honest (Task 8)", function () {
     JOURNAL.trades[1].deletedAt = "2026-10-21T00:00:00.000Z";
     return P.load(true);
   }).then(function () {
-    t("tombstoned entries/trades are not counted", tileValue("บันทึก") === "1" && tileValue("ไม้จริง") === "1", [tileValue("บันทึก"), tileValue("ไม้จริง")]);
+    t("tombstoned entries/trades are not counted", entriesN() === "1" && tradesN() === "1", [entriesN(), entriesSub()]);
     // คำตอบของรอบเก่าที่มาถึงทีหลังต้องไม่ทับรอบใหม่
     JOURNAL = freshJournal();
     JOURNAL.entries = JOURNAL.entries.slice(0, 1);   // รอบเก่า: 1 รายการ (ตอบช้า 80ms)
@@ -609,7 +625,8 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     return out;
   }
   // dj-2 (2026-10-26): CSS แก้หน้ากว้างเกินจอมือถือ + ป้ายนำเข้าไฟล์ — bump เพื่อไม่ให้เบราว์เซอร์ใช้ไฟล์เก่าในแคช
-  var want = headRefs(dr).map(function (r) { return r.indexOf("/thai-dr-monitor.css") === 0 ? "/decision-journal.css?v=20261026-dj-2" : r; });
+  // dj-3 (2026-10-26): ปรับสีและเลย์เอาต์ตามภาพที่ผู้ใช้ส่งมา
+  var want = headRefs(dr).map(function (r) { return r.indexOf("/thai-dr-monitor.css") === 0 ? "/decision-journal.css?v=20261026-dj-3" : r; });
   t("head = thai-dr-monitor head with the page CSS swapped", headRefs(dj).join("|") === want.join("|"), headRefs(dj));
   t("title", /<title>Decision Journal · AI Investment Mission Control<\/title>/.test(dj));
   t("nothing after privacy.js in head", /privacy\.js\?v=[^"]+"><\/script>\s*<\/head>/.test(dj));
@@ -619,14 +636,35 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     var re = /<script src="([^"]+)"/g, m, out = [];
     while ((m = re.exec(body)) !== null) out.push(m[1]);
     return out.join("|") === ["/technical-indicators.js?v=20260617-action-priority", "/decision-journal-engine.js?v=20261026-dj-2",
-      "/decision-journal-page.js?v=20261026-dj-2", "/app-navigation.js?v=20261025-nav-26"].join("|");
+      "/decision-journal-page.js?v=20261026-dj-3", "/app-navigation.js?v=20261026-nav-27"].join("|");
   })());
   t("lang th + viewport", /<html lang="th">/.test(dj) && /name="viewport"[^>]*width=device-width/.test(dj));
 
   var css = readPub("decision-journal.css");
   var cssCode = css.replace(/\/\*[\s\S]*?\*\//g, "");
   t("CSS uses --mc-* tokens", (cssCode.match(/var\(--mc-/g) || []).length >= 10);
-  t("CSS has no hex colours (palette comes from tokens)", !/#[0-9a-fA-F]{3,8}\b/.test(cssCode), (/#[0-9a-fA-F]{3,8}\b/.exec(cssCode) || [])[0]);
+  // dj-3: ชุดสีพาสเทลตามภาพที่ผู้ใช้ส่งมา ประกาศเป็นตัวแปร --dj-* ในบล็อกที่มีแต่ตัวแปร (ธีมมืดเป็นค่าเริ่มต้น + ธีมสว่าง)
+  //   นอกบล็อกตัวแปรห้ามมีค่าสีตรง ๆ (hex / rgb / hsl …) — ทุกที่อ้าง var() เหมือนเดิม
+  var tokenRules = [];
+  var restCss = cssCode.replace(/([^{}]+)\{([^{}]*)\}/g, function (all, selector, body) {
+    var decls = body.split(";").map(function (d) { return d.trim(); }).filter(Boolean);
+    if (decls.length && decls.every(function (d) { return d.indexOf("--dj-") === 0; })) {
+      tokenRules.push({ sel: selector.trim(), decls: decls });
+      return "";
+    }
+    return all;
+  });
+  var COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|oklch|oklab|lab|lch)\(/;
+  t("CSS: colour literals only inside --dj-* token blocks", tokenRules.length >= 2 && !COLOR_LITERAL.test(restCss), (COLOR_LITERAL.exec(restCss) || [])[0]);
+  function tokenNames(selRe) {
+    var out = {};
+    tokenRules.forEach(function (r) { if (selRe.test(r.sel)) r.decls.forEach(function (d) { out[d.split(":")[0].trim()] = 1; }); });
+    return Object.keys(out);
+  }
+  var darkTok = tokenNames(/^\.dj-page$/).filter(function (k) { return k !== "--dj-h" && k !== "--dj-i"; });
+  var lightTok = tokenNames(/^html\[data-theme="light"\] \.dj-page$/);
+  var missingLight = darkTok.filter(function (k) { return lightTok.indexOf(k) < 0; });
+  t("CSS: the light theme redefines every colour token of the dark default", darkTok.length >= 30 && missingLight.length === 0, missingLight);
   t("CSS has no decorative gradients", !/gradient\(/.test(cssCode));
   t("CSS sets no new font family", !/font-family:\s*(?!inherit|var\(--mc-font\))/.test(cssCode));
   // ตัวขยายสถานะ is-* ใช้ได้เมื่อเกาะกับคลาส dj- (แบบ .aa-status.is-ahead ของโปรเจกต์) — ห้ามยืนเดี่ยว
@@ -654,8 +692,9 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
   var nav = readPub("app-navigation.js");
   t("nav: SIDEBAR Portfolio group has Decision Journal as its first item",
     /\{ label: "Portfolio", items: \[\s*(?:\/\/[^\n]*\s*)*\{ p: "\/decision-journal", i: "📓", t: "Decision Journal" \},/.test(nav));
-  t("nav: PAGE_META entry", nav.indexOf('"/decision-journal": { category: "Portfolio", title: "📓 Decision Journal", subtitle: "บันทึกสิ่งที่คิดตอนตัดสินใจ — กฎบอกว่าอะไร · ทำจริงอะไร · ผ่านไปแล้วถูกหรือผิด · ไม้จริงกำไรหรือขาดทุน" }') >= 0);
-  t("nav: /decision-journal appears in both SIDEBAR and PAGE_META", (nav.match(/"\/decision-journal"/g) || []).length === 2);
+  // dj-3: หน้าวาดหัวของตัวเอง — ถ้ายังมี PAGE_META เปลือกเว็บจะวาดหัวซ้ำ (ชื่อหน้า 2 ครั้ง)
+  t("nav: no PAGE_META entry (the page draws its own header)", !/"\/decision-journal":\s*\{\s*category/.test(nav));
+  t("nav: /decision-journal appears once (SIDEBAR only)", (nav.match(/"\/decision-journal"/g) || []).length === 1);
 
   var vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
   var rw = vercel.rewrites || [];
@@ -709,9 +748,10 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     var htmls = fs.readdirSync(PUB).filter(function (f) { return /\.html$/.test(f); });
     var navRefs = htmls.filter(function (f) { return readPub(f).indexOf("app-navigation.js?v=") >= 0; });
     var pvRefs = htmls.filter(function (f) { return readPub(f).indexOf("privacy.js?v=") >= 0; });
-    t("every HTML that references app-navigation.js uses 20261025-nav-26",
-      navRefs.length >= 19 && navRefs.every(function (f) { return /app-navigation\.js\?v=20261025-nav-26"/.test(readPub(f)) && !/app-navigation\.js\?v=(?!20261025-nav-26")/.test(readPub(f)); }),
-      navRefs.filter(function (f) { return !/app-navigation\.js\?v=20261025-nav-26"/.test(readPub(f)); }));
+    // nav-27 (dj-3): เอา PAGE_META ของ /decision-journal ออก — ทุกหน้าต้องโหลดไฟล์ใหม่ (เวอร์ชันเดียวทั้งเว็บ)
+    t("every HTML that references app-navigation.js uses 20261026-nav-27",
+      navRefs.length >= 19 && navRefs.every(function (f) { return /app-navigation\.js\?v=20261026-nav-27"/.test(readPub(f)) && !/app-navigation\.js\?v=(?!20261026-nav-27")/.test(readPub(f)); }),
+      navRefs.filter(function (f) { return !/app-navigation\.js\?v=20261026-nav-27"/.test(readPub(f)); }));
     t("every HTML that references privacy.js uses 20261025-pv-2",
       pvRefs.length >= 19 && pvRefs.every(function (f) { return /privacy\.js\?v=20261025-pv-2"/.test(readPub(f)) && !/privacy\.js\?v=(?!20261025-pv-2")/.test(readPub(f)); }),
       pvRefs.filter(function (f) { return !/privacy\.js\?v=20261025-pv-2"/.test(readPub(f)); }));
@@ -856,7 +896,7 @@ section("form + preview + save (Task 9)", function () {
     t("reset clears symbol, selects, feelings and preview; date back to today",
       getVal("djSymbol") === "" && getVal("djAction") === "" && getVal("djDate") === "2026-10-25" &&
       S.form.feelings.length === 0 && S.preview === null && countOf(/dj-chip is-on/g) === 0);
-    t("summary counts the new entry", tileValue("บันทึก") === "3", tileValue("บันทึก"));
+    t("summary counts the new entry", entriesN() === "3", entriesN());
     t("no leaks after save", !LEAK.test(html()), (LEAK.exec(html()) || [])[0]);
   });
 });
@@ -1412,7 +1452,7 @@ section("async completions do not rebuild the form while typing (Task 9 review f
   return P.load(true).then(function () {
     t("load while typing: #djRoot not rebuilt", html().indexOf(MARK) >= 0);
     t("…summary updated in place (inner content only)", /ตรงกับเซิร์ฟเวอร์/.test(els.djSummary.innerHTML) &&
-      /โหลดเมื่อ/.test(els.djSummary.innerHTML) && !/<section/.test(els.djSummary.innerHTML) && /<h2 id="djSummaryH">/.test(els.djSummary.innerHTML));
+      /โหลดเมื่อ/.test(els.djSummary.innerHTML) && !/<section/.test(els.djSummary.innerHTML) && /<h2 id="djSummaryH"[^>]*>ภาพรวม<\/h2>/.test(els.djSummary.innerHTML));
     t("…typed text untouched", getVal("djEvent") === "กำลังพิม");
     return P._previewRules();
   }).then(function () {
@@ -1510,7 +1550,7 @@ section("failed first load + failed save: summary never passes the local draft o
   S.serverLoaded = false;    // เหมือนเปิดหน้าใหม่: ยังไม่เคยได้สำเนาจากเซิร์ฟเวอร์
   failGet = 500;
   return P.load(true).then(function () {
-    t("first load fails → counts unknown (—)", tileValue("บันทึก") === "—" && tileValue("ไม้จริง") === "—", [tileValue("บันทึก"), tileValue("ไม้จริง")]);
+    t("first load fails → counts unknown (—)", entriesN() === "—" && tradesN() === null && !/\d/.test(entriesSub() || ""), [entriesN(), entriesSub()]);
     t("…alert says the server content is unknown", /ยังไม่รู้ว่าบนเซิร์ฟเวอร์มีบันทึกอะไรบ้าง/.test(sec("djSummary")) &&
       !/โหลดได้ครั้งก่อน/.test(sec("djSummary")));
     fillForm({ symbol: "NVDA", date: "2026-10-24", event: "ทดสอบ โหลดล้ม บันทึกล้ม", direction: "up", horizon: "30", action: "buy" });
@@ -1520,8 +1560,8 @@ section("failed first load + failed save: summary never passes the local draft o
     t("save with GET 500 → not saved, draft kept", ok === false && !!draftObj() && S.syncState === "draft" && /HTTP 500/.test(S.loadError || ""),
       [ok, S.syncState, S.loadError]);
     t("…summary does not say โหลดได้ครั้งก่อน", !/โหลดได้ครั้งก่อน/.test(sum) && /ยังไม่รู้ว่าบนเซิร์ฟเวอร์มีบันทึกอะไรบ้าง/.test(sum));
-    t("…the local count is not shown as the server total", tileValue("บันทึก") === "—" && tileValue("ไม้จริง") === "—",
-      [tileValue("บันทึก"), tileValue("ไม้จริง")]);
+    t("…the local count is not shown as the server total", entriesN() === "—" && tradesN() === null && !/\d/.test(entriesSub() || ""),
+      [entriesN(), entriesSub()]);
     t("…it is labelled as local draft only", /เฉพาะร่างในเครื่องนี้: บันทึก 1 · ไม้จริง 0 — ยังไม่รู้ว่าบนเซิร์ฟเวอร์มีอะไร/.test(sum));
     failGet = null;
     return P.load(true);
@@ -1529,8 +1569,8 @@ section("failed first load + failed save: summary never passes the local draft o
     var want = String(D.liveEntries(JOURNAL).length + 1);
     var sum = sec("djSummary");
     t("after the server is back: draft sent, real total shown", S.serverLoaded === true && S.syncState === "saved" &&
-      !store.decision_journal_draft_v1 && tileValue("บันทึก") === want && !/เฉพาะร่างในเครื่องนี้/.test(sum),
-      [tileValue("บันทึก"), want, S.syncState]);
+      !store.decision_journal_draft_v1 && entriesN() === want && !/เฉพาะร่างในเครื่องนี้/.test(sum),
+      [entriesN(), want, S.syncState]);
   }, function (e) { failGet = null; throw e; });
 });
 
@@ -1622,9 +1662,10 @@ section("log: timeline cards + outcomes (Task 10)", function () {
       [7, 30, 90].every(function (h) { return /รอ/.test(hzCell(c2, h)) && !/%/.test(hzCell(c2, h)); }) && /ยังไม่ถึงกำหนด/.test(c2));
     t("action result: ขาย then price up → ผลของการขาย ไม่ดี", /ผลของการขาย/.test(c1) && /class="dj-pill is-bad">ไม่ดี</.test(c1) && /ขายแล้วราคาขึ้น/.test(c1));
     t("card: date · symbol · action chip · view · event · feelings",
-      /2026-09-01/.test(c1) && /NVDA/.test(c1) && /class="dj-act">ขาย</.test(c1) && /class="dj-act">ซื้อ</.test(c2) &&
+      /2026-09-01/.test(c1) && /NVDA/.test(c1) && /class="dj-act" data-hue="violet">ขาย</.test(c1) && /class="dj-act" data-hue="blue">ซื้อ</.test(c2) &&
       /คาดว่า/.test(c1) && /ลง/.test(c1) && /1 สัปดาห์/.test(c1) && /3 เดือน/.test(c2) &&
-      /ข่าวร้าย ตลาดลง/.test(c1) && /class="dj-tag">กลัว</.test(c1) && /class="dj-tag">นิ่ง</.test(c2));
+      /ข่าวร้าย ตลาดลง/.test(c1) && /class="dj-tag" data-hue="rose"><svg[^>]*>[\s\S]*?<\/svg>กลัว</.test(c1) &&
+      /class="dj-tag" data-hue="teal"><svg[^>]*>[\s\S]*?<\/svg>นิ่ง</.test(c2));
     t("กฎบอกว่า: three chips (กฎ 1 EMA · กฎ 2 SMA200 · กฎ 3 −x.x%)",
       /กฎบอกว่า/.test(c1) && /กฎ 1 [^<]*ขาขึ้น/.test(c1) && /กฎ 2 [^<]*เหนือ SMA200/.test(c1) && /กฎ 3 −5\.0%/.test(c1));
     t("rule chip colours follow the frozen verdict (r1 opposed this sell = red, supported that buy = green)",
@@ -1709,7 +1750,7 @@ section("log: delete with confirm (Task 10)", function () {
       Object.keys(e1).sort().join() === "createdAt,date,deletedAt,id,symbol,updatedAt" && win.DecisionJournal.itemProblems(e1).length === 0, Object.keys(e1));
     var e2 = put.entries.filter(function (x) { return x.id === "e_fix2"; })[0];
     t("the other entry and every trade untouched", !!e2 && !e2.deletedAt && put.trades.length === 2 && put.trades.every(function (x) { return !x.deletedAt; }));
-    t("saved on the server after delete", S.syncState === "saved" && /บันทึกบนเซิร์ฟเวอร์แล้ว/.test(sec("djSummary")) && tileValue("บันทึก") === "1");
+    t("saved on the server after delete", S.syncState === "saved" && /บันทึกบนเซิร์ฟเวอร์แล้ว/.test(sec("djSummary")) && entriesN() === "1");
     t("ohlc fetched at most once per symbol with concurrency pool",
       fetchCalls.filter(function (c) { return /\/api\/ohlc\?symbol=NVDA/.test(c.url); }).length === 1);
     // ช่วงราคาที่ดึง = วันที่บันทึกเก่าสุดของสัญลักษณ์นั้น − MAX_STALE_DAYS (7): 2026-09-01 − 7 = 2026-08-25 · 2026-10-20 − 7 = 2026-10-13
@@ -1926,16 +1967,17 @@ section("review (Task 11)", function () {
     //   e_fix2: +90 จาก 2026-10-20 = 2027-01-18 > cutoff → pending → ยังไม่ถึงกำหนด
     t("review queue lists only due entries", countOf(/data-dj-review="/g) === 1 && /data-dj-review="e_fix1"/.test(html()), reviewIds());
     t("summary says รอทบทวน 1", /รอทบทวน<\/[^>]+>\s*<[^>]+>1/.test(html()) || /รอทบทวน 1/.test(html()));
-    t("summary tile รอทบทวน = 1 (first tile) and the callout links to #djReview",
-      tileValue("รอทบทวน") === "1" && sec("djSummary").indexOf("รอทบทวน") < sec("djSummary").indexOf(">บันทึก<") &&
-      /<a [^>]*href="#djReview"[^>]*>[\s\S]*รอทบทวน 1 รายการ/.test(sec("djSummary")), tileValue("รอทบทวน"));
+    t("summary: รอทบทวน 1 on the first tile, and the callout above the tiles links to #djReview",
+      dueTileN() === "1" && sec("djSummary").indexOf('class="dj-due"') >= 0 &&
+      sec("djSummary").indexOf('class="dj-due"') < sec("djSummary").indexOf('class="dj-tiles"') &&
+      /<a [^>]*href="#djReview"[^>]*>[\s\S]*รอทบทวน 1 รายการ/.test(sec("djSummary")), entriesSub());
     t("review section visible and the card lives in djReview", !reviewHidden() && /data-dj-review="e_fix1"/.test(sec("djReview")));
     t("review card is not a log card (log still counts 2)", logCount() === 2 && !/data-dj-entry=/.test(reviewCard("e_fix1")));
     var r = reviewCard("e_fix1"), rt = textOf(r);
     t("card: date · symbol · action · compliance pill · due date",
-      /2026-09-01/.test(r) && /NVDA/.test(r) && /class="dj-act">ขาย</.test(r) && /class="dj-pill is-bad">แหกกฎ</.test(r) && /2026-09-08/.test(rt));
+      /2026-09-01/.test(r) && /NVDA/.test(r) && /class="dj-act" data-hue="violet">ขาย</.test(r) && /class="dj-pill is-bad">แหกกฎ</.test(r) && /2026-09-08/.test(rt));
     t("card: what was thought (direction + horizon, event, feelings)",
-      /คาดว่าราคาจะลง ภายใน 1 สัปดาห์/.test(rt) && /ข่าวร้าย ตลาดลง/.test(r) && /class="dj-tag">กลัว</.test(r));
+      /คาดว่าราคาจะลง ภายใน 1 สัปดาห์/.test(rt) && /ข่าวร้าย ตลาดลง/.test(r) && /class="dj-tag" data-hue="rose"><svg[^>]*>[\s\S]*?<\/svg>กลัว</.test(r));
     t("card: กฎบอกว่า chips + frozen why", /กฎบอกว่า/.test(r) && /class="dj-rchip is-bad">กฎ 1/.test(r) && /EMA12 ยังเหนือ EMA26/.test(r));
     // ref = ปิด 2026-08-31 = 100 · ที่กำหนด = ปิด 2026-09-08 = 103 · (103 − 100) × 100 / 100 = +3.0
     t("price line: ราคาตอนนั้น 100.00 → ที่กำหนด 103.00 (+3.0%)", /ราคาตอนนั้น 100\.00 → ที่กำหนด 103\.00 \(\+3\.0%\)/.test(rt), rt);
@@ -1989,7 +2031,7 @@ section("review (Task 11)", function () {
         fetchCalls[iPut - 1].method === "GET" && /^\/api\/portfolio\?doc=journal/.test(fetchCalls[iPut - 1].url));
       t("log card: lesson + ตัดสินใจผิด + ทบทวนแล้ว", /ตัดสินใจผิด/.test(cardOf("e_fix1")) && /ทบทวนแล้ว/.test(cardOf("e_fix1")));
       t("summary: รอทบทวน 0, no callout, saved on server",
-        tileValue("รอทบทวน") === "0" && !/href="#djReview"/.test(sec("djSummary")) && S.syncState === "saved" && /บันทึกบนเซิร์ฟเวอร์แล้ว/.test(sec("djSummary")));
+        dueTileN() === "0" && !/href="#djReview"/.test(sec("djSummary")) && S.syncState === "saved" && /บันทึกบนเซิร์ฟเวอร์แล้ว/.test(sec("djSummary")));
       t("right after saving, the review section says what was saved (not hidden yet)",
         !reviewHidden() && /ทบทวน NVDA · 2026-09-01/.test(textOf(sec("djReview"))) && /บันทึกบนเซิร์ฟเวอร์แล้ว/.test(sec("djReview")));
       // เซิร์ฟเวอร์จำสิ่งที่ PUT ไปแล้ว → เปิดหน้าใหม่ไม่มีอะไรรอทบทวน → section ซ่อน (หัวข้อยังอยู่ใน DOM)
@@ -1997,7 +2039,7 @@ section("review (Task 11)", function () {
       return freshLogPage();
     }).then(function () {
       t("nothing due → djReview hidden with dj-hidden (heading kept)", reviewHidden() && reviewCount() === 0 && /ถึงกำหนดทบทวน/.test(sec("djReview")));
-      t("…and the summary still says รอทบทวน 0", tileValue("รอทบทวน") === "0");
+      t("…and the summary still says รอทบทวน 0", dueTileN() === "0", entriesSub());
       t("a reviewed entry from the server is never due again", !D.reviewDue(entryIn(JOURNAL, "e_fix1"), S.outcomesById.e_fix1) && !!S.outcomesById.e_fix1);
     });
   });
@@ -2074,7 +2116,7 @@ section("review: horizons from H.status · no-data · ทรงตัว band fr
       /ราคาตอนนั้น 32\.00 → ที่กำหนด 32\.48 \(\+1\.5%\)/.test(textOf(r2)) && !/class="dj-up"[^>]*>\(\+1\.5%\)/.test(r2) &&
       /class="dj-pill is-muted">ทรงตัว</.test(r2) && r2.indexOf("±" + D.FLAT_BAND_PCT + "%") >= 0 && D.FLAT_BAND_PCT === 2, textOf(r2));
     t("priceBasisChanged note on the review card", /ราคาย้อนหลังถูกปรับ \(เช่น แตกพาร์\)/.test(r2));
-    t("summary tile counts both", tileValue("รอทบทวน") === "2");
+    t("summary tile counts both", dueTileN() === "2", entriesSub());
     var saved = D.FLAT_BAND_PCT;
     D.FLAT_BAND_PCT = 4.5;
     P.render();
@@ -2094,7 +2136,7 @@ section("review: price fetch failure and loading are honest (Task 11)", function
   });
   var loading = freshLogPage();
   return new Promise(function (r) { setTimeout(r, 30); }).then(function () {
-    t("while prices load, the รอทบทวน tile says so", /รอทบทวน<\/div><div class="dj-tile-s">กำลังดึงราคา/.test(sec("djSummary")), sec("djSummary"));
+    t("while prices load, the first tile says the review count is still loading", /รอทบทวน [0-9]+ · กำลังดึงราคา/.test(entriesSub() || ""), entriesSub());
     return loading;
   }).then(function () {
     restoreFetch();
@@ -2506,10 +2548,10 @@ section("summary strip: ตามกฎ · คาดถูก · ไม้เป
     t("กำไร/ขาดทุนที่รับรู้ · USD = +$120.00 coloured up", tileNum("กำไร/ขาดทุนที่รับรู้ · USD") === "+$120.00" &&
       /class="dj-tile-n dj-up"/.test(tileBox("กำไร/ขาดทุนที่รับรู้ · USD")), tileNum("กำไร/ขาดทุนที่รับรู้ · USD"));
     t("no THB realized tile when there are no THB trades", tileNum("กำไร/ขาดทุนที่รับรู้ · THB") === null);
-    t("entries / trades counters kept", tileValue("บันทึก") === "2" && tileValue("ไม้จริง") === "2");
-    t("tile order: รอทบทวน → ตามกฎ → คาดถูก → ไม้เปิดอยู่ → รับรู้ → บันทึก", (function () {
+    t("entries / trades counters kept", entriesN() === "2" && tradesN() === "2", [entriesN(), entriesSub()]);
+    t("tile order: บันทึกทั้งหมด → ตามกฎ → คาดถูก → ไม้เปิดอยู่ → รับรู้", (function () {
       var h = sec("djSummary");
-      var at = ["รอทบทวน", "ตามกฎ", "คาดถูก", "ไม้เปิดอยู่", "กำไร/ขาดทุนที่รับรู้", "บันทึก"].map(function (l) { return h.indexOf('<div class="dj-tile-l">' + l); });
+      var at = ["บันทึกทั้งหมด", "ตามกฎ", "คาดถูก", "ไม้เปิดอยู่", "กำไร/ขาดทุนที่รับรู้"].map(function (l) { return h.indexOf('<div class="dj-tile-l">' + l); });
       return at.every(function (p, i) { return p >= 0 && (i === 0 || p > at[i - 1]); });
     })());
     t("sync status text in the summary", /ตรงกับเซิร์ฟเวอร์/.test(sec("djSummary")));
@@ -2631,8 +2673,8 @@ section("stats: three tables from stats() · hand-computed · ยังน้อ
 
     // แถบภาพรวมใช้ชุดเดียวกัน: ตามกฎ 3 จาก 7 (n/a และ unknown ไม่อยู่ในตัวหาร) · คาดถูก 2 จาก 7 · รอทบทวน 9 (ครบกำหนดทุกรายการ ยังไม่ทบทวน)
     t("summary agrees with the stats: ตามกฎ 3 / 7 (n/a · unknown excluded) · คาดถูก 2 / 7 · รอทบทวน 9",
-      tileNum("ตามกฎ") === "3 / 7" && tileNum("คาดถูก") === "2 / 7" && tileNum("รอทบทวน") === "9" && tileValue("บันทึก") === "9",
-      [tileNum("ตามกฎ"), tileNum("คาดถูก"), tileNum("รอทบทวน"), tileValue("บันทึก")]);
+      tileNum("ตามกฎ") === "3 / 7" && tileNum("คาดถูก") === "2 / 7" && dueTileN() === "9" && entriesN() === "9",
+      [tileNum("ตามกฎ"), tileNum("คาดถูก"), dueTileN(), entriesN()]);
     t("stats copy reads MIN_STAT_N", sec("djStats").indexOf("น้อยกว่า " + D.MIN_STAT_N + " รายการ") >= 0);
     // ตัวเลขในคำอธิบายมาจากค่าคงที่ (เปลี่ยนใน sandbox แล้วจอต้องเปลี่ยนตาม)
     var saved = { FLAT_BAND_PCT: D.FLAT_BAND_PCT, MIN_STAT_N: D.MIN_STAT_N };
@@ -2857,6 +2899,210 @@ section("browser-probe fixes (2026-10-26): mobile width · import copy · disabl
     t("no NaN/undefined in the cards after the change", !LEAK.test(sec("djLog")));
     JOURNAL = freshJournal();
     return freshTradesPage();
+  });
+});
+
+// ============================================================
+// dj-3 (2026-10-26) — ปรับหน้าตามภาพที่ผู้ใช้ส่งมา: หัวหน้า · ค้นหา · ธีม · สองคอลัมน์ · ขั้น 1–5 · สีประจำหมวด
+//   พฤติกรรมเดิมทุกอย่าง (id · data-dj-* · ข้อความ) ต้องอยู่ครบ — เทสต์ชุดเดิมด้านบนยังผ่าน
+// ============================================================
+function typeSearch(v) {
+  var el = nodeOf("data-dj-search", "1");
+  var fn = handlers["data-dj-search|1|input"];
+  if (!el || !fn) return false;
+  el.value = v;
+  fn({ target: el });
+  return true;
+}
+function headerHtml() {
+  var h = html(), i = h.indexOf('<header class="dj-head">');
+  return i < 0 ? "" : h.slice(i, h.indexOf("</header>", i) + 9);
+}
+
+section("restyle dj-3: layout · tiles · section icons · steps · colour hooks", function () {
+  var D = win.DecisionJournal;
+  var S = P._state;
+  JOURNAL = freshJournal();
+  return freshLogPage().then(function () {
+    var h = html();
+    // เลย์เอาต์: ฟอร์มซ้าย · บันทึกทั้งหมด + สถิติขวา (DOM: cols → djNew → col-log → djLog → djStats → djTrades)
+    var at = {
+      cols: h.indexOf('<div class="dj-cols">'), formCol: h.indexOf('<div class="dj-col dj-col-form">'), news: h.indexOf('id="djNew"'),
+      logCol: h.indexOf('<div class="dj-col dj-col-log">'), log: h.indexOf('id="djLog"'), stats: h.indexOf('id="djStats"'), trades: h.indexOf('id="djTrades"')
+    };
+    t("two columns: the form column holds djNew · the log column holds djLog then djStats · trades below",
+      at.cols >= 0 && at.cols < at.formCol && at.formCol < at.news && at.news < at.logCol && at.logCol < at.log && at.log < at.stats &&
+      at.stats < at.trades && h.slice(at.formCol, at.logCol).indexOf('id="djLog"') < 0, at);
+    t("djNew and djLog are whole-card sections · the summary heading is for screen readers only",
+      /<section id="djNew" class="dj-block is-card"/.test(h) && /<section id="djLog" class="dj-block is-card"/.test(h) &&
+      /<h2 id="djSummaryH" class="dj-sr">ภาพรวม<\/h2>/.test(h));
+    var heads = { djReview: "amber", djNew: "green", djLog: "indigo", djStats: "violet", djTrades: "sky", djMethod: "slate" };
+    var noIcon = Object.keys(heads).filter(function (id) {
+      return !new RegExp('<div class="dj-block-head"><span class="dj-ico" data-hue="' + heads[id] + '"><svg').test(sec(id));
+    });
+    t("each section heading carries its coloured icon", noIcon.length === 0, noIcon);
+
+    // กล่องสรุป: สีตามภาพ (ม่วงคราม · เขียว · ชมพู · เหลือง · ฟ้า) · ใบแรกเป็นลิงก์ไปบันทึกทั้งหมด
+    var sum = sec("djSummary");
+    t("first tile links to the log, with a chevron", /<a class="dj-tile is-link" data-hue="indigo" href="#djLog">/.test(sum) && /class="dj-tile-go"/.test(sum));
+    t("tile colours: indigo · green · pink · amber · sky", ["indigo", "green", "pink", "amber", "sky"].every(function (hue) {
+      return new RegExp('class="dj-tile[^"]*" data-hue="' + hue + '"').test(sum);
+    }));
+    t("every tile has its icon before the number",
+      (sum.match(/<span class="dj-ico"><svg/g) || []).length === (sum.match(/<div class="dj-tile-n/g) || []).length &&
+      (sum.match(/<div class="dj-tile-n/g) || []).length === 5);
+
+    // ไอคอนเป็นของประกอบ · ไม่มีอีโมจิแทนไอคอน
+    t("every svg icon is aria-hidden and unfocusable", countOf(/<svg class="dj-svg"/g) > 20 &&
+      countOf(/<svg class="dj-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">/g) === countOf(/<svg /g));
+    var EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+    t("no emoji standing in for icons", !EMOJI.test(h), (EMOJI.exec(h) || [])[0]);
+
+    // ฟอร์ม: 5 ขั้นมีลำดับจริง (กรอก → ดูกฎ → บันทึก)
+    var nw = sec("djNew");
+    var stepHues = [], re = /<div class="dj-step" data-hue="([a-z]+)">/g, m;
+    while ((m = re.exec(nw)) !== null) stepHues.push(m[1]);
+    t("form = five numbered steps: blue → green → sky → amber → violet", stepHues.join() === "blue,green,sky,amber,violet", stepHues);
+    t("each step title is an h3 that also says its number to screen readers", [1, 2, 3, 4, 5].every(function (k) {
+      return new RegExp('<h3 class="dj-step-t" id="djStep' + k + 'T"><span class="dj-sr">ขั้นที่ ' + k + " · </span>").test(nw);
+    }));
+    function stepOf(id) {
+      var i = nw.indexOf('id="' + id + '"');
+      var s = nw.lastIndexOf('<div class="dj-step" data-hue="', i);
+      return i < 0 || s < 0 ? null : (/data-hue="([a-z]+)"/.exec(nw.slice(s)) || [])[1];
+    }
+    t("every field sits in its step",
+      stepOf("djSymbol") === "blue" && stepOf("djDate") === "blue" && stepOf("djEvent") === "green" && stepOf("djFeel_fear") === "green" &&
+      stepOf("djDirection") === "sky" && stepOf("djHorizon") === "sky" && stepOf("djAction") === "sky" && stepOf("djConviction") === "sky" &&
+      stepOf("djWithTrade") === "sky" && stepOf("djQty") === "sky" && stepOf("djCurrency") === "sky" && stepOf("djPlan") === "amber" &&
+      stepOf("djRulePanel") === "violet",
+      [stepOf("djSymbol"), stepOf("djEvent"), stepOf("djAction"), stepOf("djQty"), stepOf("djPlan"), stepOf("djRulePanel")]);
+    t("textareas without a visible label are named by their step title",
+      /<textarea id="djEvent"[^>]*aria-labelledby="djStep2T"/.test(nw) && /<textarea id="djPlan"[^>]*aria-labelledby="djStep4T"/.test(nw));
+    t("the five fields save() requires are marked and announced required",
+      (nw.match(/<span class="dj-req" aria-hidden="true">\*<\/span>/g) || []).length === 5 &&
+      ["djSymbol", "djDate"].every(function (id) { return new RegExp('<input id="' + id + '"[^>]*aria-required="true"').test(nw); }) &&
+      ["djDirection", "djHorizon", "djAction"].every(function (id) { return new RegExp('<select id="' + id + '"[^>]*aria-required="true"').test(nw); }));
+    t("save row: บันทึก (primary) → ดูว่ากฎบอกอะไร → status, both buttons with an icon", (function () {
+      var i = nw.indexOf('class="dj-actions dj-save-row"'), a = nw.indexOf('id="djSaveBtn"'), b = nw.indexOf('id="djPreviewBtn"'), c = nw.indexOf('id="djSaveStatus"');
+      return i >= 0 && i < a && a < b && b < c &&
+        /id="djSaveBtn" class="dj-btn dj-btn-primary"[^>]*><svg[^>]*>[\s\S]*?<\/svg><span>บันทึก<\/span>/.test(nw) &&
+        /id="djPreviewBtn"[^>]*><svg[^>]*>[\s\S]*?<\/svg><span>ดูว่ากฎบอกอะไร<\/span>/.test(nw);
+    })());
+
+    // ชิปอารมณ์: สีเฉพาะตัว + ไอคอน · คลาสยังเป็น dj-chip / dj-chip is-on (syncFormChrome ตั้งคลาสใหม่ทั้งก้อน)
+    var FEEL_HUE = { fear: "rose", greed: "amber", fomo: "blue", confident: "green", unsure: "indigo", bored: "slate", regret: "violet", calm: "teal" };
+    t("feeling chips: own colour + icon, Thai label kept", D.FEELINGS.every(function (f) {
+      return new RegExp('class="dj-chip" aria-pressed="false" data-dj-feel="' + f.key + '" data-hue="' + FEEL_HUE[f.key] +
+        '" id="djFeel_' + f.key + '"><svg[^>]*>[\\s\\S]*?</svg>' + f.thai + "</button>").test(nw);
+    }));
+    var distinct = {};
+    D.FEELINGS.forEach(function (f) { distinct[FEEL_HUE[f.key]] = 1; });
+    t("eight feelings, eight distinct colours", D.FEELINGS.length === 8 && Object.keys(distinct).length === 8);
+    clickAttr("data-dj-feel", "fear");
+    P.render();
+    t("a picked chip keeps its colour hook", /class="dj-chip is-on" aria-pressed="true" data-dj-feel="fear" data-hue="rose"/.test(html()));
+    clickAttr("data-dj-feel", "fear");
+    P.render();
+    t("…and unpicking clears it", S.form.feelings.length === 0 && countOf(/dj-chip is-on/g) === 0);
+
+    // สถิติ: การ์ดต่อกลุ่ม · แถวอารมณ์มีไอคอนสีเดียวกับชิป
+    var st = sec("djStats");
+    t("stats: one card per group (ตามกฎ vs แหกกฎ · อารมณ์ · ที่คาดไว้)",
+      /<div class="dj-stat-card" data-hue="green"><div class="dj-stat-head"><span class="dj-ico"><svg[\s\S]*?<\/svg><\/span><h3 class="dj-sub-h">ตามกฎ vs แหกกฎ/.test(st) &&
+      /<div class="dj-stat-card" data-hue="orange">[\s\S]*?<h3 class="dj-sub-h">ตามอารมณ์ตอนตัดสินใจ/.test(st) &&
+      /<div class="dj-stat-card" data-hue="pink">[\s\S]*?<h3 class="dj-sub-h">ตามที่คาดไว้/.test(st));
+    t("feeling rows carry the chip's colour + icon", /data-dj-stat="feel:fear"><th scope="row"><span class="dj-feel" data-hue="rose"><svg/.test(st));
+
+    // CSS: ทุกสีที่หน้าวาดมีที่มา · สองคอลัมน์จาก container query · ไม่มีเส้นสีหนาด้านข้าง · ธีมคุมตัวควบคุมของเบราว์เซอร์
+    var css = readPub("decision-journal.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    var used = {};
+    (html().match(/data-hue="[a-z]+"/g) || []).forEach(function (s) { used[s.slice(10, -1)] = 1; });
+    var noMap = Object.keys(used).filter(function (hue) { return css.indexOf('.dj-page [data-hue="' + hue + '"] {') < 0; });
+    t("CSS: every colour the page draws has a data-hue mapping", Object.keys(used).length >= 10 && noMap.length === 0, [Object.keys(used), noMap]);
+    t("CSS: two columns from a container query on the page",
+      /\.dj-page\s*\{[^}]*container:\s*dj \/ inline-size/.test(css) &&
+      /@container dj \(min-width: \d+px\)\s*\{\s*\.dj-cols\s*\{[^}]*grid-template-columns:\s*minmax/.test(css));
+    t("CSS: no coloured border-left/right above 1px anywhere", !/border-(left|right):\s*[2-9]/.test(css));
+    t("CSS: native controls follow the theme (color-scheme)",
+      /color-scheme:\s*dark/.test(css) && /html\[data-theme="light"\] \.dj-page\s*\{\s*color-scheme:\s*light/.test(css));
+    t("CSS: light theme puts white digits/icons on the darker ink (step numbers · heading icons · stat icons)",
+      /html\[data-theme="light"\] \.dj-step-n\s*\{\s*background:\s*var\(--dj-i\)/.test(css) &&
+      /html\[data-theme="light"\] \.dj-block-head > \.dj-ico\s*\{\s*background:\s*var\(--dj-i\)/.test(css) &&
+      /html\[data-theme="light"\] \.dj-stat-head > \.dj-ico\s*\{\s*background:\s*var\(--dj-i\)/.test(css));
+    t("CSS: picked chip, search box and new button styled · reduced motion respected",
+      /\.dj-chip\.is-on\s*\{/.test(css) && /\.dj-search-input\s*\{/.test(css) && /\.dj-new-btn\s*\{/.test(css) && /prefers-reduced-motion:\s*reduce/.test(css));
+    t("no NaN/undefined, advisory words or money in titles after the restyle", !LEAK.test(html()) && !ADVISORY_TH.test(html()) &&
+      !ADVISORY_EN.test(html()) && !/(title|aria-label)="[^"]*[฿$]\s?[\d,]/.test(html()), (LEAK.exec(html()) || [])[0]);
+  });
+});
+
+section("restyle dj-3: header search · theme buttons · jump to the form", function () {
+  var S = P._state;
+  JOURNAL = freshJournal();
+  return freshLogPage().then(function () {
+    t("search box empty at start", /<input id="djSearch"[^>]*value=""/.test(headerHtml()) && !S.filters.q);
+    t("typing searches the log (event text)", typeSearch("ข่าวร้าย") && logIds().join() === "e_fix1" &&
+      /แสดง 1 จาก 2/.test(sec("djLog")) && /ค้นหา “ข่าวร้าย”/.test(sec("djLog")), logIds());
+    t("…the typed text is kept in the header box", /<input id="djSearch"[^>]*value="ข่าวร้าย"/.test(headerHtml()));
+    typeSearch("sma200");
+    t("search reaches the frozen rule reason (SMA200), case-insensitive", logIds().join() === "e_fix1", logIds());
+    typeSearch("ptt   ซื้อ");
+    t("several words must all match (symbol + action)", logIds().join() === "e_fix2", logIds());
+    // แยก "ทุกคำ" ออกจาก "คำไหนก็ได้": NVDA เป็นไม้ขาย · ซื้อเป็นของ PTT → ทุกคำ = ไม่เจอ (คำไหนก็ได้ = เจอทั้งคู่)
+    typeSearch("nvda ซื้อ");
+    t("…one word from each of two entries matches neither", logCount() === 0, logIds());
+    typeSearch("ไม่มีคำนี้แน่นอน");
+    t("no match → says so for the search and offers the clear button", logCount() === 0 &&
+      /ไม่มีบันทึกที่ตรงกับคำค้น “ไม่มีคำนี้แน่นอน”/.test(sec("djLog")) && /data-dj-filter-clear="1"/.test(sec("djLog")));
+    changeAttr("data-dj-filter", "symbol", "NVDA");
+    t("search + a filter → the message names both", /ไม่มีบันทึกที่ตรงกับตัวกรองและคำค้น/.test(sec("djLog")));
+    clickAttr("data-dj-filter-clear", "1");
+    t("clear resets the search too (state and the header box)", logCount() === 2 && !S.filters.q && !S.filters.symbol &&
+      /<input id="djSearch"[^>]*value=""/.test(headerHtml()));
+    typeSearch("   ");
+    t("spaces only = no search", !S.filters.q && logCount() === 2);
+
+    // พิมพ์อยู่ในช่องค้นหา: หน้าไม่ถูกวาดใหม่ทั้งก้อน (เคอร์เซอร์/IME ไม่หลุด) — วาดใหม่เฉพาะบันทึกทั้งหมด
+    var MARK = "<!--search-typing-->";
+    doc.activeElement = doc.getElementById("djSearch");
+    els.djRoot.innerHTML = html() + MARK;
+    typeSearch("NVDA");
+    var logNow = els.djLog.innerHTML;
+    t("typing with focus in the box: page not rebuilt, only the log redrawn", html().indexOf(MARK) >= 0 &&
+      /data-dj-entry="e_fix1"/.test(logNow) && !/data-dj-entry="e_fix2"/.test(logNow) && !/<section/.test(logNow));
+    P.render();
+    t("…an async render while typing leaves the header (and the box) alone", html().indexOf(MARK) >= 0);
+    doc.activeElement = null;
+    typeSearch("");
+    t("…blur + clear → full page again with both entries", html().indexOf(MARK) < 0 && logCount() === 2);
+
+    // ปุ่มธีม: ใช้ตัวคุมธีมของทั้งเว็บ (theme.js) · ไม่มีตัวคุม = ไม่แสดงปุ่ม
+    t("no theme buttons without the site theme controller", !/data-dj-theme=/.test(headerHtml()));
+    var calls = [], cur = "dark";
+    win.AppTheme = { get: function () { return cur; }, set: function (x) { calls.push(x); cur = x; }, toggle: function () {} };
+    P.render();
+    var hh = headerHtml();
+    t("with the controller: sun + moon buttons, the current theme pressed",
+      /role="group" aria-label="ธีมของหน้า"/.test(hh) &&
+      /<button type="button" id="djTheme_light" class="dj-theme-b" data-dj-theme="light" aria-pressed="false" aria-label="ธีมสว่าง">/.test(hh) &&
+      /<button type="button" id="djTheme_dark" class="dj-theme-b" data-dj-theme="dark" aria-pressed="true" aria-label="ธีมมืด">/.test(hh));
+    clickAttr("data-dj-theme", "light");
+    t("clicking the sun sets the site theme and flips the pressed state in place",
+      calls.join() === "light" && els.djTheme_light.attributes["aria-pressed"] === "true" && els.djTheme_dark.attributes["aria-pressed"] === "false",
+      [calls, els.djTheme_light.attributes["aria-pressed"], els.djTheme_dark.attributes["aria-pressed"]]);
+    P.render();
+    t("…and a re-render keeps the new state", /data-dj-theme="light" aria-pressed="true"/.test(headerHtml()));
+    delete win.AppTheme;
+    P.render();
+
+    // + บันทึกใหม่ → ไปที่ฟอร์ม แล้วโฟกัสช่องสัญลักษณ์
+    var focused = 0;
+    var sym = doc.getElementById("djSymbol"), oldFocus = sym.focus;
+    sym.focus = function () { focused++; };
+    t("+ บันทึกใหม่ jumps to the form and focuses the symbol box", clickAttr("data-dj-jump", "new") && focused === 1, focused);
+    sym.focus = oldFocus;
+    t("no leaks in the header", !LEAK.test(headerHtml()));
   });
 });
 

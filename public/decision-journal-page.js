@@ -998,18 +998,152 @@
   }
 
   // ---------------- render ----------------
-  function block(id, title, sub, body, extraCls) {
-    return '<section id="' + id + '" class="dj-block' + (extraCls ? " " + extraCls : "") + '" aria-labelledby="' + id + 'H">' +
-      '<div class="dj-block-head"><h2 id="' + id + 'H">' + esc(title) + "</h2>" +
-      (sub ? '<span class="dj-block-sub">' + sub + "</span>" : "") + "</div>" +
-      body + "</section>";
+  // ไอคอน: SVG วาดเอง เส้นหนาเท่ากันทั้งหน้า สีตาม currentColor (CSS .dj-svg ตั้ง stroke) — ไม่ใช้อีโมจิแทนไอคอน
+  // ทุกไอคอนเป็นของประกอบ (aria-hidden) ความหมายอยู่ในข้อความข้าง ๆ เสมอ
+  var ICON = {
+    book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M10 2v8l3-3 3 3V2"/>',
+    search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+    moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    fileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8M16 17H8M10 9H8"/>',
+    checkCircle: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+    target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+    hourglass: '<path d="M5 22h14M5 2h14"/><path d="M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22"/><path d="M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/>',
+    barChart: '<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>',
+    chevron: '<path d="m9 18 6-6-6-6"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/>',
+    activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    arrows: '<path d="m8 3-4 4 4 4M4 7h16M16 21l4-4-4-4M20 17H4"/>',
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+    pie: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10Z"/>',
+    scale: '<path d="M12 3v18M7 21h10M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>',
+    smile: '<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
+    // อารมณ์ 8 แบบ (ตาม FEELINGS ของเอนจิน)
+    frown: '<circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2M9 9h.01M15 9h.01"/>',
+    trophy: '<path d="M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M17 6h2a2 2 0 0 1 0 4h-2M7 6H5a2 2 0 0 0 0 4h2M12 14v7M8 21h8"/>',
+    rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09Z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2Z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
+    thumbsUp: '<path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>',
+    help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/>',
+    zzz: '<path d="M2 13h6l-6 8h6M10 7h5l-5 6h5M17 2h4l-4 5h4"/>',
+    heartCrack: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="m12 13-1-1 2-2-3-3 2-2"/>',
+    waves: '<path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>'
+  };
+  function icon(name) {
+    return '<svg class="dj-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + (ICON[name] || "") + "</svg>";
   }
-  // cls (ถ้ามี) อยู่ที่กล่อง ไม่ใช่ที่ตัวเลข · sub = บรรทัดเล็กใต้ป้าย เช่น สถานะกำลังโหลด
-  function tile(n, label, cls, sub) {
-    return '<div class="dj-tile' + (cls ? " " + cls : "") + '"><div class="dj-tile-n">' + esc(n) + '</div><div class="dj-tile-l">' + esc(label) + "</div>" +
-      (sub ? '<div class="dj-tile-s">' + esc(sub) + "</div>" : "") + "</div>";
+  // สีประจำหมวด (data-hue → ตัวแปรสีใน CSS) เป็นป้ายจำเท่านั้น
+  // ความหมายดี/ไม่ดียังเป็นเขียว/แดงที่ตัวเลขและป้ายตัดสิน — การกระทำจึงไม่ใช้เขียว/แดง
+  var FEEL_LOOK = {
+    fear: { hue: "rose", ico: "frown" }, greed: { hue: "amber", ico: "trophy" }, fomo: { hue: "blue", ico: "rocket" },
+    confident: { hue: "green", ico: "thumbsUp" }, unsure: { hue: "indigo", ico: "help" }, bored: { hue: "slate", ico: "zzz" },
+    regret: { hue: "violet", ico: "heartCrack" }, calm: { hue: "teal", ico: "waves" }
+  };
+  function feelLook(key) { return FEEL_LOOK[key] || { hue: "slate", ico: "smile" }; }
+  var ACT_HUE = { buy: "blue", sell: "violet", hold: "slate", none: "amber" };
+
+  // opts = { cls, ico, hue, hideTitle, aside }
+  //   ico/hue = ไอคอนสีหน้าหัวข้อ · hideTitle = หัวข้อมีไว้ให้โปรแกรมอ่านจอ (ภาพรวมไม่มีหัวข้อบนจอ)
+  //   aside = HTML ชิดขวาของแถวหัวข้อ (ตัวกรองของบันทึกทั้งหมด) · cls "is-card" = ทั้งส่วนเป็นการ์ดเดียว
+  function block(id, title, sub, body, opts) {
+    var o = opts || {};
+    var h2 = '<h2 id="' + id + 'H"' + (o.hideTitle ? ' class="dj-sr"' : "") + ">" + esc(title) + "</h2>";
+    var subHtml = sub ? '<span class="dj-block-sub">' + sub + "</span>" : "";
+    var head = o.hideTitle
+      ? '<div class="dj-block-head is-bare">' + h2 + subHtml + "</div>"
+      : '<div class="dj-block-head">' + (o.ico ? '<span class="dj-ico" data-hue="' + (o.hue || "slate") + '">' + icon(o.ico) + "</span>" : "") +
+        '<div class="dj-block-title">' + h2 + subHtml + "</div>" +
+        (o.aside ? '<div class="dj-block-aside">' + o.aside + "</div>" : "") + "</div>";
+    return '<section id="' + id + '" class="dj-block' + (o.cls ? " " + o.cls : "") + '" aria-labelledby="' + id + 'H">' + head + body + "</section>";
+  }
+  // กล่องตัวเลขสรุป: ไอคอนสี → ตัวเลข → ป้าย → บรรทัดเล็ก (n → l → s ติดกันเสมอ)
+  // o = { n, label, sub, hue, ico, nCls, href } · nCls = คลาสสีของตัวเลข (" dj-up") · href = ทั้งกล่องเป็นลิงก์
+  function tileHtml(o) {
+    var tag = o.href ? "a" : "div";
+    return "<" + tag + ' class="dj-tile' + (o.href ? " is-link" : "") + '" data-hue="' + o.hue + '"' + (o.href ? ' href="' + o.href + '"' : "") + ">" +
+      '<span class="dj-ico">' + icon(o.ico) + "</span>" +
+      '<div class="dj-tile-n' + (o.nCls || "") + '">' + esc(o.n) + '</div><div class="dj-tile-l">' + esc(o.label) + "</div>" +
+      (o.sub ? '<div class="dj-tile-s">' + esc(o.sub) + "</div>" : "") +
+      (o.href ? '<span class="dj-tile-go">' + icon("chevron") + "</span>" : "") +
+      "</" + tag + ">";
   }
   function pill(cls, text) { return '<span class="dj-pill ' + cls + '">' + esc(text) + "</span>"; }
+
+  // ---------------- หัวหน้า: ชื่อ · ค้นหาบันทึก · ธีม · ไปที่ฟอร์ม ----------------
+  // วาดใหม่เฉพาะตอนวาดทั้งหน้า — ระหว่างพิมพ์ค้นหา หน้าวาดเฉพาะส่วนอื่น (ช่องค้นหาไม่ถูกแตะ)
+  var HEAD_SUB = "บันทึกสิ่งที่คิดตอนตัดสินใจ — กฎบอกว่าอะไร · ทำจริงอะไร · ผ่านไปแล้วถูกหรือผิด · ไม้จริงกำไรหรือขาดทุน";
+  function themeApi() {
+    var T = window.AppTheme;
+    return T && typeof T.set === "function" && typeof T.get === "function" ? T : null;
+  }
+  function themeNow() {
+    var T = themeApi();
+    try { return T ? String(T.get()) : ""; } catch (e) { return ""; }
+  }
+  function themeBtn(t, label, ico) {
+    return '<button type="button" id="djTheme_' + t + '" class="dj-theme-b" data-dj-theme="' + t + '" aria-pressed="' +
+      (themeNow() === t ? "true" : "false") + '" aria-label="' + label + '">' + icon(ico) + "</button>";
+  }
+  function renderHeader() {
+    var q = state.filters.q || "";
+    // ปุ่มธีมใช้ตัวคุมธีมของทั้งเว็บ (theme.js) — ไม่มีตัวคุมก็ไม่แสดงปุ่มที่กดแล้วไม่เกิดอะไร
+    var theme = themeApi()
+      ? '<div class="dj-theme" role="group" aria-label="ธีมของหน้า">' + themeBtn("light", "ธีมสว่าง", "sun") + themeBtn("dark", "ธีมมืด", "moon") + "</div>"
+      : "";
+    return '<header class="dj-head">' +
+      '<div class="dj-head-id"><span class="dj-head-mark">' + icon("book") + "</span>" +
+      '<div class="dj-head-text"><h1 class="dj-head-t">Decision Journal</h1><p class="dj-head-sub">' + esc(HEAD_SUB) + "</p></div></div>" +
+      '<div class="dj-head-tools">' +
+      '<label class="dj-search">' + icon("search") + '<span class="dj-sr">ค้นหาบันทึก</span>' +
+      '<input id="djSearch" class="dj-search-input" type="search" data-dj-search="1" autocomplete="off" spellcheck="false" enterkeyhint="search"' +
+      ' placeholder="ค้นหาบันทึก… เช่น NVDA, SMA200" value="' + esc(q) + '"></label>' +
+      theme +
+      '<button type="button" class="dj-btn dj-btn-primary dj-new-btn" data-dj-jump="new">' + icon("plus") + "<span>บันทึกใหม่</span></button>" +
+      "</div></header>";
+  }
+  function syncThemeButtons() {
+    var cur = themeNow();
+    each(["light", "dark"], function (t) {
+      var b = field("djTheme_" + t);
+      if (b && b.setAttribute) b.setAttribute("aria-pressed", cur === t ? "true" : "false");
+    });
+  }
+  function setTheme(t) {
+    var T = themeApi();
+    if (!T || (t !== "light" && t !== "dark")) return;
+    try { T.set(t); } catch (e) { logError("เปลี่ยนธีม", e); }
+    syncThemeButtons();
+  }
+  function reducedMotion() {
+    try { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { return false; }
+  }
+  // เลื่อนไปที่ส่วน (new = ฟอร์มบันทึกใหม่ แล้วโฟกัสช่องสัญลักษณ์ · log = บันทึกทั้งหมด)
+  function jumpTo(which) {
+    var target = field(which === "log" ? "djLog" : "djNew");
+    if (target && typeof target.scrollIntoView === "function") {
+      try { target.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" }); }
+      catch (e) { try { target.scrollIntoView(); } catch (e2) { /* เลื่อนไม่ได้ก็ไม่เป็นไร */ } }
+    }
+    if (which !== "new") return;
+    var s = field("djSymbol");
+    if (s && typeof s.focus === "function") {
+      try { s.focus({ preventScroll: true }); } catch (e) { try { s.focus(); } catch (e2) { /* ไม่เป็นไร */ } }
+    }
+  }
+  // ค้นหา: เก็บสิ่งที่พิมพ์ตามจริง ตอนเทียบค่อยตัดช่องว่าง · ระหว่างพิมพ์วาดใหม่เฉพาะ "บันทึกทั้งหมด"
+  function setSearch(v) {
+    var raw = v == null ? "" : String(v);
+    if (trimStr(raw)) state.filters.q = raw;
+    else delete state.filters.q;
+    if (focusedSearch()) {
+      var el = setSection("djLog", renderLog());
+      if (el) wire(el);
+      return;
+    }
+    render();
+  }
   function syncPill() {
     var sync = SYNC_LABEL[state.syncState] || SYNC_LABEL.idle;
     return '<span class="dj-sync ' + sync.cls + '" role="status" aria-live="polite">' + esc(sync.text) + "</span>";
@@ -1039,18 +1173,22 @@
     }
     // ยังไม่เคยได้สำเนาจากเซิร์ฟเวอร์ → state.doc (ถ้ามี) คือร่างในเครื่องล้วน ๆ ห้ามแสดงเป็นยอดรวม
     var known = state.serverLoaded && !!state.doc;
-    var nEntries = known ? String(D.liveEntries(state.doc).length) : "—";
-    var nTrades = known ? String(D.liveTrades(state.doc).length) : "—";
     // รอทบทวน = คิวเดียวกับส่วน "ถึงกำหนดทบทวน" (dueList) · ระหว่างดึงราคาบอกว่ากำลังดึง (ตัวเลขอาจยังไม่ครบ)
     var dueN = known ? dueList().length : null;
-    var dueTile = tile(dueN === null ? "—" : String(dueN), "รอทบทวน", dueN ? "is-warn" : "",
-      known && state.outcomesLoading ? "กำลังดึงราคา…" : "");
     var dueLink = dueN
-      ? '<a class="dj-due" href="#djReview"><strong>รอทบทวน ' + dueN + " รายการ</strong>" +
+      ? '<a class="dj-due" href="#djReview">' + icon("clock") + "<strong>รอทบทวน " + dueN + " รายการ</strong>" +
         "<span>ผลจริงมาถึงแล้ว — ดูว่าคาดถูกไหม แล้วจดบทเรียนสั้น ๆ</span></a>"
       : "";
-    var tiles = dueLink + '<div class="dj-tiles">' + dueTile + factTiles(known) + "</div>" +
-      '<div class="dj-tiles dj-tiles-minor">' + tile(nEntries, "บันทึก", "is-minor") + tile(nTrades, "ไม้จริง", "is-minor") + "</div>";
+    // กล่องแรก "บันทึกทั้งหมด" เป็นลิงก์ไปไทม์ไลน์ · บรรทัดเล็กบอกจำนวนไม้จริงและคิวทบทวน
+    var entriesSub;
+    if (!known) entriesSub = state.loading ? "กำลังโหลด…" : "ยังโหลดจากเซิร์ฟเวอร์ไม่ได้";
+    else {
+      entriesSub = "ไม้จริง " + D.liveTrades(state.doc).length + " · รอทบทวน " + dueN +
+        (state.outcomesLoading ? " · กำลังดึงราคา…" : "");
+    }
+    var entriesTile = tileHtml({ n: known ? String(D.liveEntries(state.doc).length) : "—", label: "บันทึกทั้งหมด", sub: entriesSub,
+      hue: "indigo", ico: "fileText", href: "#djLog" });
+    var tiles = dueLink + '<div class="dj-tiles">' + entriesTile + factTiles(known) + "</div>";
     if (!known && state.doc) {
       tiles += '<p class="dj-note">เฉพาะร่างในเครื่องนี้: บันทึก ' + D.liveEntries(state.doc).length + " · ไม้จริง " +
         D.liveTrades(state.doc).length + " — ยังไม่รู้ว่าบนเซิร์ฟเวอร์มีอะไร</p>";
@@ -1058,7 +1196,7 @@
     var hnote = state.holdingsError
       ? '<p class="dj-note">รายการหุ้นในพอร์ตโหลดไม่สำเร็จ (' + esc(state.holdingsError) + ") — พิมพ์สัญลักษณ์เองได้ตามปกติ</p>"
       : "";
-    return block("djSummary", "ภาพรวม", head, alert + pendingAlert + sizeAlert() + tiles + hnote);
+    return block("djSummary", "ภาพรวม", head, alert + pendingAlert + sizeAlert() + tiles + hnote, { hideTitle: true, cls: "dj-summary" });
   }
 
   // ---- ภาพรวม: ตัวเลขที่ตอบว่า "ทำตามกฎไหม · คาดถูกไหม · ถืออะไรอยู่ · ได้/เสียเท่าไร" ----
@@ -1075,9 +1213,9 @@
     if (!state.doc) return null;
     try { return D.stats(D.liveEntries(state.doc), state.outcomesById); } catch (e) { logError("คิดสถิติ", e); return null; }
   }
+  // สีของกล่อง = ป้ายจำหมวด · สีกำไร/ขาดทุนอยู่ที่ตัวเลข (ล็อกอยู่ = XXX ไม่ลงสี)
   function moneyTile(amount, currency, label, sub) {
-    return '<div class="dj-tile"><div class="dj-tile-n' + pnlCls(amount) + '">' + esc(moneySigned(amount, currency, true)) + "</div>" +
-      '<div class="dj-tile-l">' + esc(label) + "</div>" + (sub ? '<div class="dj-tile-s">' + esc(sub) + "</div>" : "") + "</div>";
+    return tileHtml({ n: moneySigned(amount, currency, true), nCls: pnlCls(amount), label: label, sub: sub, hue: "sky", ico: "barChart" });
   }
   // บรรทัดใต้ "ไม้เปิดอยู่": ชื่อสัญลักษณ์ (ไม่ใช่เงิน ล็อกอยู่ก็แสดงได้) — เดิมเขียนแค่ "สัญลักษณ์" อ่านแล้วไม่รู้ว่าหมายถึงอะไร
   function openSub(res) {
@@ -1090,33 +1228,36 @@
   function factTiles(known) {
     var D = E();
     var realizedLabel = "กำไร/ขาดทุนที่รับรู้";
-    if (!known) {
-      return tile("—", "ตามกฎ") + tile("—", "คาดถูก") + tile("—", "ไม้เปิดอยู่") + tile("—", realizedLabel);
-    }
+    // สี/ไอคอนประจำกล่อง: ตามกฎ เขียว · คาดถูก ชมพู · ไม้เปิดอยู่ เหลือง · กำไร/ขาดทุน ฟ้า
+    function rule(n, sub) { return tileHtml({ n: n, label: "ตามกฎ", sub: sub, hue: "green", ico: "checkCircle" }); }
+    function pred(n, sub) { return tileHtml({ n: n, label: "คาดถูก", sub: sub, hue: "pink", ico: "target" }); }
+    function opened(n, sub) { return tileHtml({ n: n, label: "ไม้เปิดอยู่", sub: sub, hue: "amber", ico: "hourglass" }); }
+    function realized(label, sub) { return tileHtml({ n: "—", label: label, sub: sub, hue: "sky", ico: "barChart" }); }
+    if (!known) return rule("—") + pred("—") + opened("—") + realized(realizedLabel);
     var per = 0, judgedC = 0;
     each(D.liveEntries(state.doc), function (e) {
       var c = obj(e.verdict).compliance;
       if (c === "per-rule") { per++; judgedC++; } else if (c === "against") judgedC++;
     });
-    var out = tile(judgedC ? per + " / " + judgedC : "—", "ตามกฎ", "",
+    var out = rule(judgedC ? per + " / " + judgedC : "—",
       judgedC ? "จากการซื้อ/ขายที่ตัดสินได้" : "ยังไม่มีการซื้อ/ขายที่ตัดสินได้");
     var st = statsNow();
     var bp = st ? st.byPrediction : null;
     var predSub = state.outcomesLoading ? "กำลังดึงราคา… ตัวเลขอาจยังไม่ครบ"
       : (bp && bp.judged ? "จากที่ครบกำหนด · ทรงตัว (" + flatNote() + ") นับในตัวหาร" : "ยังไม่มีบันทึกที่ครบกำหนด");
-    out += tile(bp && bp.judged ? bp.right + " / " + bp.judged : "—", "คาดถูก", "", predSub);
+    out += pred(bp && bp.judged ? bp.right + " / " + bp.judged : "—", predSub);
     var res = fifoNow();
-    out += tile(res ? String(res.open.length) : "—", "ไม้เปิดอยู่", "", openSub(res));
-    if (!res) return out + tile("—", realizedLabel);
+    out += opened(res ? String(res.open.length) : "—", openSub(res));
+    if (!res) return out + realized(realizedLabel);
     var ccys = [], k, sold = {};
     for (k in res.totals) if (Object.prototype.hasOwnProperty.call(res.totals, k)) ccys.push(k);
     ccys.sort();
     each(res.realized, function (r) { if (r && r.currency) sold[r.currency] = 1; });
-    if (!ccys.length) return out + tile("—", realizedLabel, "", "ยังไม่มีไม้จริง");
+    if (!ccys.length) return out + realized(realizedLabel, "ยังไม่มีไม้จริง");
     each(ccys, function (c) {
       out += sold[c]
         ? moneyTile(res.totals[c].realized, c, realizedLabel + " · " + c, "ไม่แปลงสกุล")
-        : tile("—", realizedLabel + " · " + c, "", "ยังไม่มีไม้ขาย");
+        : realized(realizedLabel + " · " + c, "ยังไม่มีไม้ขาย");
     });
     return out;
   }
@@ -1178,17 +1319,35 @@
     var ai = String(a.id), bi = String(b.id);
     return ai < bi ? -1 : (ai > bi ? 1 : 0);
   }
+  // ข้อความที่ค้นได้ของบันทึกหนึ่ง: สัญลักษณ์ · วันที่ · ข่าว · แผน · บทเรียน · เหตุผลของกฎ (มี EMA/SMA200) · ทำอะไร · ผลตัดสิน · คาดว่า · อารมณ์
+  function searchText(e) {
+    var D = E(), ctx = obj(e.context), act = obj(e.action), v = obj(e.verdict), vw = obj(e.view);
+    var bits = [D.canonicalSymbol(e.symbol) || String(e.symbol || ""), String(e.date || ""), ctx.event, act.plan, obj(e.review).lesson, v.why,
+      thaiOf(D.ACTIONS, act.kind), (VERDICT_VIEW[v.compliance] || {}).text, thaiOf(D.DIRECTIONS, vw.direction)];
+    each(arr(ctx.feelings), function (k) { bits.push(thaiOf(D.FEELINGS, k)); });
+    var out = [];
+    each(bits, function (b) { if (typeof b === "string" && b) out.push(b); });
+    return out.join("\n").toLowerCase();
+  }
+  // คำค้นหลายคำ (เว้นวรรค) ต้องเจอครบทุกคำ · ไม่สนตัวพิมพ์เล็ก/ใหญ่
+  function matchesSearch(e, q) {
+    var terms = trimStr(q).toLowerCase().split(/\s+/);
+    var hay = searchText(e);
+    for (var i = 0; i < terms.length; i++) if (terms[i] && hay.indexOf(terms[i]) < 0) return false;
+    return true;
+  }
   function matchesFilters(e) {
     var D = E(), f = state.filters;
     if (f.symbol && D.canonicalSymbol(e.symbol) !== f.symbol) return false;
     if (f.feeling && arr(obj(e.context).feelings).indexOf(f.feeling) < 0) return false;
     if (f.compliance && obj(e.verdict).compliance !== f.compliance) return false;
     if (f.action && obj(e.action).kind !== f.action) return false;
+    if (f.q && trimStr(f.q) && !matchesSearch(e, f.q)) return false;
     return true;
   }
   function anyFilter() {
     for (var i = 0; i < LOG_FILTER_KEYS.length; i++) if (state.filters[LOG_FILTER_KEYS[i]]) return true;
-    return false;
+    return !!(state.filters.q && trimStr(state.filters.q));
   }
 
   function filterSelect(key, label, options) {
@@ -1388,7 +1547,7 @@
     return '<div class="dj-entry-head">' +
       '<span class="dj-entry-date">' + esc(e.date) + "</span>" +
       '<strong class="dj-entry-sym">' + esc(sym) + "</strong>" +
-      '<span class="dj-act">' + esc(thaiOf(D.ACTIONS, act.kind) || "ไม่ระบุ") + "</span>" +
+      '<span class="dj-act" data-hue="' + (ACT_HUE[act.kind] || "slate") + '">' + esc(thaiOf(D.ACTIONS, act.kind) || "ไม่ระบุ") + "</span>" +
       (extra || "") + pill(vv.cls, vv.text) + "</div>";
   }
   function rulesSayHtml(rules, verdict) {
@@ -1405,7 +1564,9 @@
       : "คาดว่า: ไม่แน่ใจทิศทาง · ดูผลที่ " + esc(hd);
     var feel = "";
     each(D.FEELINGS, function (x) {
-      if (arr(ctx.feelings).indexOf(x.key) >= 0) feel += '<span class="dj-tag">' + esc(x.thai) + "</span>";
+      if (arr(ctx.feelings).indexOf(x.key) < 0) return;
+      var lk = feelLook(x.key);
+      feel += '<span class="dj-tag" data-hue="' + lk.hue + '">' + icon(lk.ico) + esc(x.thai) + "</span>";
     });
     var evText = typeof ctx.event === "string" ? trimStr(ctx.event) : "";
     var plan = typeof act.plan === "string" ? trimStr(act.plan) : "";
@@ -1432,29 +1593,35 @@
   function renderLog() {
     var D = E();
     var title = "บันทึกทั้งหมด";
+    var look = { ico: "list", hue: "indigo", cls: "is-card" };
     if (!state.doc) {
-      var why = state.loading ? "กำลังโหลดบันทึก…" : "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ “ภาพรวม” ด้านบน";
-      return block("djLog", title, "", '<p class="dj-placeholder">' + esc(why) + "</p>");
+      var why = state.loading ? "กำลังโหลดบันทึก…" : "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ด้านบนของหน้า";
+      return block("djLog", title, "", '<p class="dj-placeholder">' + esc(why) + "</p>", look);
     }
     var msg = state.logMsg ? '<div class="dj-form-msg dj-log-msg" role="alert">' + esc(state.logMsg) + "</div>" : "";
     var all = D.liveEntries(state.doc).slice().sort(entryCmp);
     if (!all.length) {
       return block("djLog", title, "", msg +
-        '<p class="dj-placeholder">ยังไม่มีบันทึก — เริ่มจาก “บันทึกใหม่” ด้านบน ระบบจะเติมราคาจริงให้เมื่อถึงกำหนด</p>');
+        '<p class="dj-placeholder">ยังไม่มีบันทึก — เริ่มจาก “บันทึกใหม่” ระบบจะเติมราคาจริงให้เมื่อถึงกำหนด</p>', look);
     }
     var shown = [];
     each(all, function (e) { if (matchesFilters(e)) shown.push(e); });
     var count = shown.length === all.length ? all.length + " รายการ · ใหม่ → เก่า" : "แสดง " + shown.length + " จาก " + all.length + " รายการ";
-    var body = renderFilters(all) + msg;
+    var q = state.filters.q ? trimStr(state.filters.q) : "";
+    var body = msg;
     if (!shown.length) {
-      body += '<p class="dj-placeholder">ไม่มีบันทึกที่ตรงกับตัวกรอง — กด “ล้างตัวกรอง” เพื่อดูทั้งหมด</p>';
+      var selects = false;
+      each(LOG_FILTER_KEYS, function (k) { if (state.filters[k]) selects = true; });
+      var what = q ? (selects ? "ตัวกรองและคำค้น “" + q + "”" : "คำค้น “" + q + "”") : "ตัวกรอง";
+      body += '<p class="dj-placeholder">ไม่มีบันทึกที่ตรงกับ' + esc(what) + " — กด “ล้างตัวกรอง” เพื่อดูทั้งหมด</p>";
     } else {
       var trades = D.liveTrades(state.doc);
       body += '<div class="dj-cards dj-log">';
       each(shown, function (e) { body += entryCard(e, trades); });
       body += "</div>";
     }
-    return block("djLog", title, '<span class="dj-log-count">' + esc(count) + "</span>", body);
+    look.aside = renderFilters(all);
+    return block("djLog", title, '<span class="dj-log-count">' + esc(count) + (q ? esc(" · ค้นหา “" + q + "”") : "") + "</span>", body, look);
   }
 
   // ---------------- ถึงกำหนดทบทวน: การ์ดละ 1 บันทึก (สเปก §7 ข้อ 2) ----------------
@@ -1558,8 +1725,10 @@
 
   function renderReview() {
     var title = "ถึงกำหนดทบทวน";
+    var look = { ico: "clock", hue: "amber" };
+    var hidden = { ico: "clock", hue: "amber", cls: "dj-hidden" };
     renderedReviewIds = [];
-    if (!state.doc) return block("djReview", title, "", "", "dj-hidden");
+    if (!state.doc) return block("djReview", title, "", "", hidden);
     var due = dueList();
     var cards = "";
     each(due, function (x) {
@@ -1569,9 +1738,9 @@
     var warn = reviewPriceWarn();
     var note = lastReviewNote();
     // ไม่มีอะไรครบกำหนด และไม่มีอะไรต้องบอก → ซ่อนทั้งส่วน (หัวข้อยังอยู่ใน DOM)
-    if (!due.length && !warn && !note) return block("djReview", title, "", "", "dj-hidden");
+    if (!due.length && !warn && !note) return block("djReview", title, "", "", hidden);
     var sub = due.length ? '<span class="dj-rv-count">' + due.length + " รายการ · ผลจริงมาถึงแล้ว</span>" : "";
-    return block("djReview", title, sub, note + warn + (cards ? '<div class="dj-cards">' + cards + "</div>" : ""));
+    return block("djReview", title, sub, note + warn + (cards ? '<div class="dj-cards">' + cards + "</div>" : ""), look);
   }
   // ---------------- ไม้จริง (สเปก §5.5 · §7 ข้อ 5) ----------------
   // ตัวเลขทุกตัว (จำนวนที่ถือ · ต้นทุน · กำไรที่รับรู้ · กำไรลอยตัว · ยอดรวมแยกสกุล · คำเตือน) มาจาก fifo() ของเอนจิน — หน้าไม่คิดเอง
@@ -2101,15 +2270,16 @@
 
   function renderTrades() {
     var title = "ไม้จริง";
+    var look = { ico: "arrows", hue: "sky" };
     if (state.tradeEditId && !liveTradeById(state.tradeEditId)) state.tradeEditId = null;   // ไม้ที่แก้อยู่ถูกลบจากที่อื่น
     var parts = tradeParts();
     if (!parts) {
-      var why = state.loading ? "กำลังโหลดไม้จริง…" : "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ “ภาพรวม” ด้านบน";
-      return block("djTrades", title, "", '<p class="dj-placeholder">' + esc(why) + "</p>" + tradeFormHtml());
+      var why = state.loading ? "กำลังโหลดไม้จริง…" : "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ด้านบนของหน้า";
+      return block("djTrades", title, "", '<p class="dj-placeholder">' + esc(why) + "</p>" + tradeFormHtml(), look);
     }
     var sub = '<span class="dj-block-note">ซื้อขายจริง · จับคู่ FIFO · กำไร/ขาดทุนแยกสกุล</span>';
     return block("djTrades", title, sub,
-      '<div id="djTradesTop">' + parts.top + "</div>" + tradeFormHtml() + '<div id="djTradesList">' + parts.list + "</div>");
+      '<div id="djTradesTop">' + parts.top + "</div>" + tradeFormHtml() + '<div id="djTradesList">' + parts.list + "</div>", look);
   }
 
   // ---------------- สถิติ (สเปก §5.6 · §7 ข้อ 6) ----------------
@@ -2164,19 +2334,30 @@
       "</tbody></table></div>";
   }
 
+  // การ์ดของสถิติแต่ละกลุ่ม: ไอคอนสี + หัวข้อ (+ คำอธิบายสั้น) + ตาราง
+  function statCard(hue, ico, title, note, inner) {
+    return '<div class="dj-stat-card" data-hue="' + hue + '"><div class="dj-stat-head"><span class="dj-ico">' + icon(ico) + "</span>" +
+      '<h3 class="dj-sub-h">' + esc(title) + (note ? ' <span class="dj-sub-n">' + esc(note) + "</span>" : "") + "</h3></div>" + inner + "</div>";
+  }
+  function feelLabel(key) {
+    var lk = feelLook(key);
+    return '<span class="dj-feel" data-hue="' + lk.hue + '">' + icon(lk.ico) + "</span>" + esc(thaiOf(E().FEELINGS, key) || key);
+  }
+
   function renderStats() {
     var D = E();
     var title = "สถิติ";
+    var look = { ico: "pie", hue: "violet" };
     var known = state.serverLoaded && !!state.doc;
     if (!known) {
-      var why = state.loading ? "กำลังโหลดบันทึก…" : "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ “ภาพรวม” ด้านบน";
-      return block("djStats", title, "", '<p class="dj-placeholder">' + esc(why) + "</p>");
+      var why = state.loading ? "กำลังโหลดบันทึก…" : "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ด้านบนของหน้า";
+      return block("djStats", title, "", '<p class="dj-placeholder">' + esc(why) + "</p>", look);
     }
     if (!D.liveEntries(state.doc).length) {
-      return block("djStats", title, "", '<p class="dj-placeholder">ยังไม่มีบันทึก — สถิติจะขึ้นเมื่อบันทึกครบกำหนดตามช่วงที่คาดไว้</p>');
+      return block("djStats", title, "", '<p class="dj-placeholder">ยังไม่มีบันทึก — สถิติจะขึ้นเมื่อบันทึกครบกำหนดตามช่วงที่คาดไว้</p>', look);
     }
     var st = statsNow();
-    if (!st) return block("djStats", title, "", '<div class="dj-out-msg is-bad"><span><strong>คิดสถิติไม่สำเร็จ</strong> — ลองรีเฟรชหน้า</span></div>');
+    if (!st) return block("djStats", title, "", '<div class="dj-out-msg is-bad"><span><strong>คิดสถิติไม่สำเร็จ</strong> — ลองรีเฟรชหน้า</span></div>', look);
     var sub = '<span class="dj-block-note">นับเฉพาะบันทึกที่ครบกำหนดตามช่วงที่คาดไว้แล้ว</span>';
     var body = '<p class="dj-stats-note">กลุ่มที่ครบกำหนดน้อยกว่า ' + esc(D.MIN_STAT_N) + " รายการ แสดงแค่จำนวน พร้อมคำว่า “" + THIN_TEXT + "”" +
       " · ผลดี = ซื้อแล้วราคาขึ้น หรือขายแล้วราคาลง เกิน ±" + esc(pctText(D.FLAT_BAND_PCT)) +
@@ -2189,21 +2370,21 @@
         esc(pr.goodN + " จาก " + pr.scoredN) + ") · <b>แหกกฎ ดี " + esc(shareText(ag.goodN, ag.scoredN)) + "</b> (" +
         esc(ag.goodN + " จาก " + ag.scoredN) + ")</p>";
     }
-    body += '<h3 class="dj-sub-h">ตามกฎ vs แหกกฎ</h3>' +
+    body += statCard("green", "scale", "ตามกฎ vs แหกกฎ", "",
       groupTable(groupRow("comp:per-rule", pill(VERDICT_VIEW["per-rule"].cls, VERDICT_VIEW["per-rule"].text), pr) +
-        groupRow("comp:against", pill(VERDICT_VIEW.against.cls, VERDICT_VIEW.against.text), ag));
+        groupRow("comp:against", pill(VERDICT_VIEW.against.cls, VERDICT_VIEW.against.text), ag)));
 
     var feelRows = "", k;
     for (k in st.byFeeling) {
       if (!Object.prototype.hasOwnProperty.call(st.byFeeling, k)) continue;
       var F = st.byFeeling[k];
       if (!F || !(F.n > 0)) continue;
-      feelRows += groupRow("feel:" + k, esc(thaiOf(D.FEELINGS, k) || k), F);
+      feelRows += groupRow("feel:" + k, feelLabel(k), F);
     }
-    body += '<h3 class="dj-sub-h">ตามอารมณ์ตอนตัดสินใจ <span class="dj-sub-n">บันทึกหนึ่งนับในทุกอารมณ์ที่ติ๊ก</span></h3>' +
-      (feelRows ? groupTable(feelRows) : '<p class="dj-placeholder">ยังไม่มีบันทึกที่เลือกอารมณ์</p>');
-    body += '<h3 class="dj-sub-h">ตามที่คาดไว้</h3>' + predTable(st.byPrediction);
-    return block("djStats", title, sub, body);
+    body += statCard("orange", "smile", "ตามอารมณ์ตอนตัดสินใจ", "บันทึกหนึ่งนับในทุกอารมณ์ที่ติ๊ก",
+      feelRows ? groupTable(feelRows) : '<p class="dj-placeholder">ยังไม่มีบันทึกที่เลือกอารมณ์</p>');
+    body += statCard("pink", "target", "ตามที่คาดไว้", "", predTable(st.byPrediction));
+    return block("djStats", title, sub, body, look);
   }
 
   // ---------------- บันทึกใหม่: ฟอร์ม ----------------
@@ -2212,8 +2393,9 @@
     if (days % 7 === 0) return (days / 7) + " สัปดาห์";
     return days + " วัน";
   }
+  // ใช้กับ 3 ช่องที่ต้องเลือกก่อนบันทึก (คาดว่า · ภายใน · ทำอะไร) จึงประกาศ aria-required ด้วย
   function selectHtml(id, name, options, cur, label) {
-    var h = '<select id="' + id + '" class="dj-select" data-dj-field="' + name + '" aria-label="' + esc(label) + '">' +
+    var h = '<select id="' + id + '" class="dj-select" data-dj-field="' + name + '" aria-label="' + esc(label) + '" aria-required="true">' +
       '<option value=""' + (cur === "" || cur == null ? " selected" : "") + ">— เลือก —</option>";
     each(options, function (o) {
       h += '<option value="' + esc(o.value) + '"' + (String(cur) === String(o.value) ? " selected" : "") + ">" + esc(o.label) + "</option>";
@@ -2234,6 +2416,7 @@
   }
   function previewLoading() { return !!(state.preview && state.preview.status === "loading"); }
   function previewLabel() { return previewLoading() ? "กำลังดึงราคา…" : "ดูว่ากฎบอกอะไร"; }
+  function previewInner() { return icon("activity") + "<span>" + esc(previewLabel()) + "</span>"; }
   function formMsgHtml() {
     return state.formError ? '<div id="djFormMsg" class="dj-form-msg" role="alert">' + esc(state.formError) + "</div>" : "";
   }
@@ -2245,11 +2428,13 @@
     var today = todayYmd();
     var dl = '<datalist id="djSymbols">' + symbolOptions() + "</datalist>";
 
+    // ชิปอารมณ์: สี/ไอคอนตาม data-hue (คลาสคงเป็น "dj-chip" / "dj-chip is-on" — syncFormChrome ตั้งคลาสใหม่ทั้งก้อน)
     var chips = "";
     each(D.FEELINGS, function (x) {
       var on = f.feelings.indexOf(x.key) >= 0;
+      var lk = feelLook(x.key);
       chips += '<button type="button" class="dj-chip' + (on ? " is-on" : "") + '" aria-pressed="' + (on ? "true" : "false") +
-        '" data-dj-feel="' + esc(x.key) + '" id="' + esc(feelId(x.key)) + '">' + esc(x.thai) + "</button>";
+        '" data-dj-feel="' + esc(x.key) + '" data-hue="' + lk.hue + '" id="' + esc(feelId(x.key)) + '">' + icon(lk.ico) + esc(x.thai) + "</button>";
     });
     var dirOpts = [], hzOpts = [], actOpts = [];
     each(D.DIRECTIONS, function (x) { dirOpts.push({ value: x.key, label: x.thai }); });
@@ -2261,50 +2446,66 @@
       '<option value="THB"' + (f.currency === "THB" ? " selected" : "") + ">THB</option>" +
       '<option value="USD"' + (f.currency === "USD" ? " selected" : "") + ">USD</option>";
 
+    // ช่องที่ต้องมีก่อนบันทึก: สัญลักษณ์ · วันที่ (ใช้ดูกฎ) · คาดว่า · ภายใน · ทำอะไร (save() ปฏิเสธถ้าไม่มี)
+    var req = '<span class="dj-req" aria-hidden="true">*</span>';
+    // ขั้นมีลำดับจริง: กรอก → ดูว่ากฎบอกอะไร → บันทึก (ปุ่มบันทึกเปิดหลังดูกฎ)
+    function step(n, hue, title, hint, body) {
+      return '<div class="dj-step" data-hue="' + hue + '"><div class="dj-step-head"><span class="dj-step-n" aria-hidden="true">' + n + "</span>" +
+        '<h3 class="dj-step-t" id="djStep' + n + 'T"><span class="dj-sr">ขั้นที่ ' + n + " · </span>" + title + "</h3>" +
+        (hint ? '<span class="dj-step-h">' + hint + "</span>" : "") + "</div>" +
+        '<div class="dj-step-body">' + body + "</div></div>";
+    }
     var form =
-      '<div class="dj-form">' +
-      '<div class="dj-form-grid">' +
-      fieldBox("djSymbol", "สัญลักษณ์",
-        '<input id="djSymbol" class="dj-input" list="djSymbols" data-dj-field="symbol" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="เช่น NVDA · PTT.BK · BTC" value="' + esc(f.symbol) + '">' + dl,
-        "หุ้นไทยลงท้าย .BK") +
-      fieldBox("djDate", "วันที่ตัดสินใจ",
-        '<input id="djDate" class="dj-input" type="date" data-dj-field="date" value="' + esc(f.date || today) + '" max="' + esc(today) + '">', "") +
-      fieldBox("djEvent", "เห็นอะไร / ข่าวอะไร",
-        '<textarea id="djEvent" class="dj-textarea" rows="3" placeholder="เช่น ข่าวผลประกอบการ ตลาดลงแรง เพื่อนบอกต่อ">' + esc(f.event) + "</textarea>", "", "dj-field-wide") +
-      fieldBox("", "ตอนนี้รู้สึก <span class=\"dj-field-h\">(เลือกได้หลายอัน)</span>",
-        '<div class="dj-chips" role="group" aria-label="ตอนนี้รู้สึก">' + chips + "</div>", "", "dj-field-wide") +
-      fieldBox("djDirection", "คาดว่าราคาจะ", selectHtml("djDirection", "direction", dirOpts, f.direction, "คาดว่าราคาจะ"), "") +
-      fieldBox("djHorizon", "ภายใน", selectHtml("djHorizon", "horizon", hzOpts, f.horizonDays == null ? "" : f.horizonDays, "ภายใน"), "") +
-      fieldBox("djAction", "ทำอะไร", selectHtml("djAction", "action", actOpts, f.action, "ทำอะไร"),
-        "ที่ทำจริง ไม่ใช่ที่คิดว่าจะทำ") +
-      '<div class="dj-field dj-field-check">' +
-      '<label id="djConvictionWrap" class="dj-check' + (f.action === "buy" ? "" : " dj-hidden") + '">' +
-      '<input type="checkbox" id="djConviction" data-dj-field="conviction"' + (f.conviction ? " checked" : "") + ">" +
-      "<span>ศึกษามาดี / มั่นใจ <span class=\"dj-field-h\">(ใช้กับกฎ 3 ย่อ ≥ " + dip + ")</span></span></label></div>" +
-      fieldBox("djPlan", "แผน / หมายเหตุ <span class=\"dj-field-h\">(ไม่บังคับ)</span>",
-        '<textarea id="djPlan" class="dj-textarea is-short" rows="2" placeholder="เช่น ถ้าหลุดแนวรับจะทำอะไรต่อ">' + esc(f.plan) + "</textarea>", "", "dj-field-wide") +
-      '<div class="dj-field dj-field-wide">' +
-      '<label id="djWithTradeWrap" class="dj-check' + (tradeOk ? "" : " dj-hidden") + '">' +
-      '<input type="checkbox" id="djWithTrade" data-dj-field="withTrade"' + (f.withTrade ? " checked" : "") + ">" +
-      "<span>บันทึกไม้จริงด้วย (ซื้อ/ขายไปแล้วจริง)</span></label>" +
-      '<div id="djTradeFields" class="dj-trade-fields' + (f.withTrade && tradeOk ? "" : " dj-hidden") + '">' +
-      fieldBox("djQty", "จำนวน", '<input id="djQty" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.qty) + '">', "") +
-      fieldBox("djPrice", "ราคาต่อหน่วย", '<input id="djPrice" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.price) + '">', "") +
-      fieldBox("djFee", "ค่าธรรมเนียม", '<input id="djFee" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="' + esc(f.fee) + '">', "") +
-      fieldBox("djCurrency", "สกุลเงิน", '<select id="djCurrency" class="dj-select">' + curOpts + "</select>", "") +
-      "</div></div>" +
+      '<div class="dj-steps">' +
+      step(1, "blue", "ข้อมูลพื้นฐาน", "",
+        '<div class="dj-form-grid">' +
+        fieldBox("djSymbol", "สัญลักษณ์" + req,
+          '<input id="djSymbol" class="dj-input" list="djSymbols" data-dj-field="symbol" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-required="true" placeholder="เช่น NVDA · PTT.BK · BTC" value="' + esc(f.symbol) + '">' + dl,
+          "หุ้นไทยลงท้าย .BK") +
+        fieldBox("djDate", "วันที่ตัดสินใจ" + req,
+          '<input id="djDate" class="dj-input" type="date" data-dj-field="date" aria-required="true" value="' + esc(f.date || today) + '" max="' + esc(today) + '">', "") +
+        "</div>") +
+      step(2, "green", "เห็นอะไร / ข่าวอะไร", "",
+        '<div class="dj-field">' +
+        '<textarea id="djEvent" class="dj-textarea" rows="3" aria-labelledby="djStep2T" placeholder="เช่น ข่าวผลประกอบการ ตลาดลงแรง เพื่อนบอกต่อ">' + esc(f.event) + "</textarea></div>" +
+        fieldBox("", "ตอนนี้รู้สึก <span class=\"dj-field-h\">(เลือกได้หลายอัน)</span>",
+          '<div class="dj-chips" role="group" aria-label="ตอนนี้รู้สึก">' + chips + "</div>", "", "dj-field-feel")) +
+      step(3, "sky", "คาดว่าราคาจะไปทางไหน · ทำอะไร", "",
+        '<div class="dj-form-grid">' +
+        fieldBox("djDirection", "คาดว่าราคาจะ" + req, selectHtml("djDirection", "direction", dirOpts, f.direction, "คาดว่าราคาจะ"), "") +
+        fieldBox("djHorizon", "ภายใน" + req, selectHtml("djHorizon", "horizon", hzOpts, f.horizonDays == null ? "" : f.horizonDays, "ภายใน"), "") +
+        fieldBox("djAction", "ทำอะไร" + req, selectHtml("djAction", "action", actOpts, f.action, "ทำอะไร"),
+          "ที่ทำจริง ไม่ใช่ที่คิดว่าจะทำ") +
+        '<div class="dj-field dj-field-check">' +
+        '<label id="djConvictionWrap" class="dj-check' + (f.action === "buy" ? "" : " dj-hidden") + '">' +
+        '<input type="checkbox" id="djConviction" data-dj-field="conviction"' + (f.conviction ? " checked" : "") + ">" +
+        "<span>ศึกษามาดี / มั่นใจ <span class=\"dj-field-h\">(ใช้กับกฎ 3 ย่อ ≥ " + dip + ")</span></span></label></div>" +
+        '<div class="dj-field dj-field-wide dj-field-trade">' +
+        '<label id="djWithTradeWrap" class="dj-check' + (tradeOk ? "" : " dj-hidden") + '">' +
+        '<input type="checkbox" id="djWithTrade" data-dj-field="withTrade"' + (f.withTrade ? " checked" : "") + ">" +
+        "<span>บันทึกไม้จริงด้วย (ซื้อ/ขายไปแล้วจริง)</span></label>" +
+        '<div id="djTradeFields" class="dj-trade-fields' + (f.withTrade && tradeOk ? "" : " dj-hidden") + '">' +
+        fieldBox("djQty", "จำนวน", '<input id="djQty" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.qty) + '">', "") +
+        fieldBox("djPrice", "ราคาต่อหน่วย", '<input id="djPrice" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.price) + '">', "") +
+        fieldBox("djFee", "ค่าธรรมเนียม", '<input id="djFee" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="' + esc(f.fee) + '">', "") +
+        fieldBox("djCurrency", "สกุลเงิน", '<select id="djCurrency" class="dj-select">' + curOpts + "</select>", "") +
+        "</div></div>" +
+        "</div>") +
+      step(4, "amber", "แผน / หมายเหตุ <span class=\"dj-step-opt\">(ไม่บังคับ)</span>", "",
+        '<div class="dj-field">' +
+        '<textarea id="djPlan" class="dj-textarea is-short" rows="2" aria-labelledby="djStep4T" placeholder="เช่น ถ้าหลุดแนวรับจะทำอะไรต่อ">' + esc(f.plan) + "</textarea></div>") +
+      step(5, "violet", "ดูว่ากฎบอกอะไร", "ดึงราคาปิดแล้วบอกว่ากฎ 3 ข้อว่าอย่างไร — ต้องดูก่อนจึงบันทึกได้",
+        '<div id="djRulePanel" class="dj-rule-panel" aria-live="polite">' + renderPanel() + "</div>") +
       "</div>" +
-      '<div class="dj-actions">' +
-      '<button type="button" id="djPreviewBtn" class="dj-btn" data-dj-preview="1"' + (previewLoading() ? " disabled" : "") + ">" +
-      esc(previewLabel()) + "</button>" +
-      '<span class="dj-field-h">ดึงราคาปิดแล้วบอกว่ากฎ 3 ข้อว่าอย่างไร — ต้องดูก่อนจึงบันทึกได้</span></div>' +
-      '<div id="djRulePanel" class="dj-rule-panel" aria-live="polite">' + renderPanel() + "</div>" +
       '<div id="djFormMsgBox">' + formMsgHtml() + "</div>" +
       '<div class="dj-actions dj-save-row">' +
-      '<button type="button" id="djSaveBtn" class="dj-btn dj-btn-primary" data-dj-save="1"' + (canSave() ? "" : " disabled") + ">บันทึก</button>" +
-      '<span id="djSaveStatus" class="dj-save-status">' + saveStatusInner() + "</span></div>" +
-      "</div>";
-    return block("djNew", "บันทึกใหม่", '<span class="dj-block-note">จดตอนที่ตัดสินใจ ก่อนรู้ผล — บันทึกแล้วแก้ไม่ได้</span>', form);
+      '<button type="button" id="djSaveBtn" class="dj-btn dj-btn-primary" data-dj-save="1"' + (canSave() ? "" : " disabled") + ">" +
+      icon("save") + "<span>บันทึก</span></button>" +
+      '<button type="button" id="djPreviewBtn" class="dj-btn" data-dj-preview="1"' + (previewLoading() ? " disabled" : "") + ">" +
+      previewInner() + "</button>" +
+      '<span id="djSaveStatus" class="dj-save-status">' + saveStatusInner() + "</span></div>";
+    return block("djNew", "บันทึกใหม่", '<span class="dj-block-note">จดตอนที่ตัดสินใจ ก่อนรู้ผล — บันทึกแล้วแก้ไม่ได้</span>', form,
+      { ico: "plus", hue: "green", cls: "is-card" });
   }
 
   function saveStatusInner() {
@@ -2567,7 +2768,8 @@
       "</ul>" +
       "</div></details>";
     var disclaimer = '<p class="dj-disclaimer">หน้านี้บอกแค่ว่ากฎที่คุณตั้งเองพูดว่าอะไร และราคาจริงเป็นอย่างไรภายหลัง — ไม่ใช่คำแนะนำการลงทุน</p>';
-    return block("djMethod", "วิธีคิด", "", body + '<div id="djBackup" class="dj-backup">' + backupInner() + "</div>" + disclaimer);
+    return block("djMethod", "วิธีคิด", "", body + '<div id="djBackup" class="dj-backup">' + backupInner() + "</div>" + disclaimer,
+      { ico: "info", hue: "slate" });
   }
 
   // ---------------- สำรองข้อมูล: ส่งออก / นำเข้าไฟล์ .json (สเปก §6 · แบบ thai-dr-page.js) ----------------
@@ -2797,7 +2999,7 @@
     var pb = field("djPreviewBtn");
     if (pb) {
       pb.disabled = previewLoading();
-      pb.innerHTML = esc(previewLabel());
+      pb.innerHTML = previewInner();
     }
     var sb = field("djSaveBtn");
     if (sb) sb.disabled = !canSave();
@@ -2827,6 +3029,25 @@
   function refreshBackup() {
     var el = setInner("djBackup", backupInner());
     if (el) wire(el);
+  }
+
+  // ระหว่างที่ผู้ใช้พิมพ์ในช่องค้นหาบนหัวหน้า: วาดใหม่ทุกส่วน ยกเว้นหัวหน้า (ช่องค้นหา · เคอร์เซอร์ · IME อยู่ครบ)
+  function focusedSearch() {
+    var a;
+    try { a = document.activeElement; } catch (e) { return null; }
+    if (!a || a.id !== "djSearch") return null;
+    return field("djSearch") === a ? a : null;
+  }
+  function renderAroundSearch() {
+    var others = [
+      ["djSummary", renderSummary], ["djReview", renderReview], ["djNew", renderNew], ["djLog", renderLog],
+      ["djTrades", renderTrades], ["djStats", renderStats]
+    ];
+    each(others, function (o) {
+      var el = setSection(o[0], o[1]());
+      if (el) wire(el);
+    });
+    refreshBackup();
   }
 
   // ระหว่างที่ผู้ใช้อยู่ในช่องของฟอร์มไม้จริง: วาดใหม่ทุกส่วนนอกฟอร์มไม้ + ตารางในส่วนไม้จริง (ช่องกรอกไม่ถูกแตะ)
@@ -2883,9 +3104,17 @@
       renderAroundTradeForm();
       return;
     }
+    if (focusedSearch() && field("djLog")) {
+      renderAroundSearch();
+      return;
+    }
     var activeId = null;
     try { activeId = document.activeElement && document.activeElement.id ? document.activeElement.id : null; } catch (e) { activeId = null; }
-    root.innerHTML = renderSummary() + renderReview() + renderNew() + renderLog() + renderTrades() + renderStats() + renderMethod();
+    // จอกว้าง: ฟอร์มบันทึกใหม่ซ้าย · บันทึกทั้งหมด + สถิติขวา (CSS .dj-cols) — จอแคบเรียงคอลัมน์เดียวตามลำดับเดียวกัน
+    root.innerHTML = renderHeader() + renderSummary() + renderReview() +
+      '<div class="dj-cols"><div class="dj-col dj-col-form">' + renderNew() + "</div>" +
+      '<div class="dj-col dj-col-log">' + renderLog() + renderStats() + "</div></div>" +
+      renderTrades() + renderMethod();
     wire(root);
     if (activeId) {
       var again = field(activeId);
@@ -2894,6 +3123,21 @@
   }
 
   function wire(root) {
+    // หัวหน้า: ค้นหาบันทึก (Enter = เลื่อนไปดูผล) · ธีม · ไปที่ฟอร์มบันทึกใหม่
+    each(root.querySelectorAll("[data-dj-search]"), function (el) {
+      el.addEventListener("input", function () { setSearch(el.value); });
+      el.addEventListener("keydown", function (ev) {
+        if (!ev || (ev.key !== "Enter" && ev.keyCode !== 13)) return;
+        if (ev.preventDefault) ev.preventDefault();
+        jumpTo("log");
+      });
+    });
+    each(root.querySelectorAll("[data-dj-theme]"), function (el) {
+      el.addEventListener("click", function () { setTheme(el.getAttribute("data-dj-theme")); });
+    });
+    each(root.querySelectorAll("[data-dj-jump]"), function (el) {
+      el.addEventListener("click", function () { jumpTo(el.getAttribute("data-dj-jump")); });
+    });
     each(root.querySelectorAll("[data-dj-reload]"), function (el) {
       el.addEventListener("click", function () { load(true); });
     });
@@ -2999,6 +3243,13 @@
     try {
       document.addEventListener(PRIVACY_EVENT, function () { onPrivacyChanged(); });
     } catch (e) { /* ไม่มี event ก็ยังใช้หน้าได้ แค่ไม่ re-render ทันที */ }
+    // ปุ่มธีมลอยของทั้งเว็บเปลี่ยน data-theme ได้เอง → ปุ่มธีมบนหัวหน้าต้องตามให้ตรง
+    try {
+      if (typeof MutationObserver === "function" && document.documentElement) {
+        new MutationObserver(function () { syncThemeButtons(); })
+          .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+      }
+    } catch (e) { /* ปุ่มบนหัวหน้าแค่ไม่ตามปุ่มลอย — กดแล้วยังถูกต้อง */ }
     render();
     load(false);
   }
