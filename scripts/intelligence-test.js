@@ -912,6 +912,11 @@ console.log("== margin ไม่รวมรายการพิเศษ (opMa
   var mNo = IE._internal.observationOf(exCfg(null), mockO(), {}, null).metrics.margin;
   var mEx = IE._internal.observationOf(exCfg([40, 40]), mockO(), {}, null).metrics.margin;
   t("observation margin ใช้ค่าชุดเดียวกับ health (20 → 40)", mNo === 20 && mEx === 40, [mNo, mEx]);
+  // KB จริง: META Q3'26 (ค่าข้อตกลงคดี $9.89B) — ใช้ margin ไม่รวมรายการพิเศษ ~35.4% → margin ลดจริง ~4pp แต่ไม่ใช่ "thesis พัง"
+  var metaR = IE.compute("META", snapD, { data: D, TE: TE, VE: VE, PM: PM, prevObs: null });
+  var metaM = pilOf(metaR.health, "margin");
+  t("META (KB จริง) → margin วัดแบบไม่รวมรายการพิเศษ และ health ไม่ใช่ BROKEN",
+    metaM.evidence.indexOf("ไม่รวมรายการพิเศษ") >= 0 && metaR.health.state.key !== "BROKEN", [metaR.health.state.key, metaM.evidence]);
 }
 
 console.log("");
