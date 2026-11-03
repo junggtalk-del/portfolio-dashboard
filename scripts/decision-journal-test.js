@@ -59,6 +59,7 @@ console.log("== symbols ==");
 t("canonical upper/trim", E.canonicalSymbol(" nvda ") === "NVDA");
 t("BTC aliases → BTCUSD", ["btc", "BTC-USD", "btcusd"].every(function (s) { return E.canonicalSymbol(s) === "BTCUSD"; }));
 t("provider BTCUSD → BTC-USD, others unchanged", E.providerSymbol("BTCUSD") === "BTC-USD" && E.providerSymbol("PTT.BK") === "PTT.BK");
+t("ETH aliases → ETHUSD · provider ETH-USD · market CRYPTO (home card 2026-10-30)", ["eth", "ETH-USD", "ethusd"].every(function (s) { return E.canonicalSymbol(s) === "ETHUSD"; }) && E.providerSymbol("ETHUSD") === "ETH-USD" && E.marketOf("ETHUSD") === "CRYPTO" && E.currencyOf("ETHUSD") === "USD");
 t("strips junk but keeps . ^ -", E.canonicalSymbol("brk b/") === "BRKB" && E.canonicalSymbol("^set.bk") === "^SET.BK");
 t("markets", E.marketOf("PTT.BK") === "TH" && E.marketOf("0700.HK") === "ASIA" && E.marketOf("7203.T") === "ASIA" && E.marketOf("BTCUSD") === "CRYPTO" && E.marketOf("ETH-USD") === "CRYPTO" && E.marketOf("NVDA") === "US");
 t("currency", E.currencyOf("PTT.BK") === "THB" && E.currencyOf("NVDA") === "USD" && E.currencyOf("BTCUSD") === "USD");

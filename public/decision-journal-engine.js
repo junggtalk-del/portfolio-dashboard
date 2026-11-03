@@ -124,18 +124,20 @@
   }
 
   // ---------- สัญลักษณ์ / ตลาด / สกุลเงิน ----------
-  // trim → upper → ตัดอักขระนอก A-Z0-9.^- → รวม alias ของบิตคอยน์เป็น BTCUSD (คีย์ canonical)
+  // trim → upper → ตัดอักขระนอก A-Z0-9.^- → รวม alias ของบิตคอยน์/อีเธอเรียมเป็น BTCUSD / ETHUSD (คีย์ canonical)
   function canonicalSymbol(raw) {
     if (typeof raw !== "string") return "";
     var s = raw.replace(/^\s+|\s+$/g, "").toUpperCase().replace(/[^A-Z0-9.^-]/g, "");
     if (s === "BTC" || s === "BTC-USD" || s === "BTCUSD") return "BTCUSD";
+    if (s === "ETH" || s === "ETH-USD" || s === "ETHUSD") return "ETHUSD";
     return s;
   }
 
-  // สัญลักษณ์ที่ส่งให้ /api/ohlc (กติกาเดียวกับ data-snapshot.js): BTCUSD → BTC-USD
+  // สัญลักษณ์ที่ส่งให้ /api/ohlc (กติกาเดียวกับ data-snapshot.js): BTCUSD → BTC-USD · ETHUSD → ETH-USD
   function providerSymbol(canonical) {
     var s = canonicalSymbol(canonical);
     if (s === "BTCUSD") return "BTC-USD";
+    if (s === "ETHUSD") return "ETH-USD";
     return s;
   }
 
@@ -149,7 +151,7 @@
     for (var i = 0; i < ASIA_SUFFIXES.length; i++) {
       if (endsWith(s, ASIA_SUFFIXES[i])) return "ASIA";
     }
-    if (s === "BTCUSD" || endsWith(s, "-USD")) return "CRYPTO";
+    if (s === "BTCUSD" || s === "ETHUSD" || endsWith(s, "-USD")) return "CRYPTO";
     return "US";
   }
 

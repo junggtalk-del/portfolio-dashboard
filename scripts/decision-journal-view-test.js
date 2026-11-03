@@ -636,7 +636,7 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     var body = dj.slice(dj.indexOf("<body"));
     var re = /<script src="([^"]+)"/g, m, out = [];
     while ((m = re.exec(body)) !== null) out.push(m[1]);
-    return out.join("|") === ["/technical-indicators.js?v=20260617-action-priority", "/decision-journal-engine.js?v=20261026-dj-2",
+    return out.join("|") === ["/technical-indicators.js?v=20260617-action-priority", "/decision-journal-engine.js?v=20261030-dj-5",
       "/decision-journal-page.js?v=20261029-dj-4", "/app-navigation.js?v=20261026-nav-27"].join("|");
   })());
   t("lang th + viewport", /<html lang="th">/.test(dj) && /name="viewport"[^>]*width=device-width/.test(dj));
