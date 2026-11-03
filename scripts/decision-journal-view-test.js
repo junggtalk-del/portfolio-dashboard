@@ -626,7 +626,8 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
   }
   // dj-2 (2026-10-26): CSS แก้หน้ากว้างเกินจอมือถือ + ป้ายนำเข้าไฟล์ — bump เพื่อไม่ให้เบราว์เซอร์ใช้ไฟล์เก่าในแคช
   // dj-3 (2026-10-26): ปรับสีและเลย์เอาต์ตามภาพที่ผู้ใช้ส่งมา
-  var want = headRefs(dr).map(function (r) { return r.indexOf("/thai-dr-monitor.css") === 0 ? "/decision-journal.css?v=20261026-dj-3" : r; });
+  // dj-4 (2026-10-29): บันทึกทั้งหมดเป็นรายการแถวย่อ แตะแล้วกางรายละเอียด
+  var want = headRefs(dr).map(function (r) { return r.indexOf("/thai-dr-monitor.css") === 0 ? "/decision-journal.css?v=20261029-dj-4" : r; });
   t("head = thai-dr-monitor head with the page CSS swapped", headRefs(dj).join("|") === want.join("|"), headRefs(dj));
   t("title", /<title>Decision Journal · AI Investment Mission Control<\/title>/.test(dj));
   t("nothing after privacy.js in head", /privacy\.js\?v=[^"]+"><\/script>\s*<\/head>/.test(dj));
@@ -636,7 +637,7 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     var re = /<script src="([^"]+)"/g, m, out = [];
     while ((m = re.exec(body)) !== null) out.push(m[1]);
     return out.join("|") === ["/technical-indicators.js?v=20260617-action-priority", "/decision-journal-engine.js?v=20261026-dj-2",
-      "/decision-journal-page.js?v=20261026-dj-3", "/app-navigation.js?v=20261026-nav-27"].join("|");
+      "/decision-journal-page.js?v=20261029-dj-4", "/app-navigation.js?v=20261026-nav-27"].join("|");
   })());
   t("lang th + viewport", /<html lang="th">/.test(dj) && /name="viewport"[^>]*width=device-width/.test(dj));
 
@@ -3103,6 +3104,69 @@ section("restyle dj-3: header search · theme buttons · jump to the form", func
     t("+ บันทึกใหม่ jumps to the form and focuses the symbol box", clickAttr("data-dj-jump", "new") && focused === 1, focused);
     sym.focus = oldFocus;
     t("no leaks in the header", !LEAK.test(headerHtml()));
+  });
+});
+
+// ============================================================
+// dj-4 (2026-10-29) — บันทึกทั้งหมดเป็นรายการ: แถวย่อบอกแค่สิ่งที่ต้องสแกน · แตะแล้วกางรายละเอียด
+//   ผู้ใช้: "ดูยากมาก เพราะข้อมูลแสดงเยอะ อยากให้เป็น list แล้วถ้าอยากดูรายละเอียดค่อยกดเข้าไป"
+// ============================================================
+function rowOfEntry(id) {   // <summary> ของแถวนั้น
+  var c = cardOf(id), i = c.indexOf("<summary"), j = c.indexOf("</summary>");
+  return i < 0 || j < 0 ? "" : c.slice(i, j + 10);
+}
+function detOf(id) { var m = /<details class="dj-entry-det"[^>]*>/.exec(cardOf(id)); return m ? m[0] : ""; }
+function toggleEntry(id, open) {
+  var el = nodeOf("data-dj-open", id), fn = handlers["data-dj-open|" + id + "|toggle"];
+  if (!el || !fn) return false;
+  el.open = open;
+  fn({ target: el });
+  return true;
+}
+
+section("log as a list: compact rows · tap to expand (dj-4)", function () {
+  var S = P._state;
+  S.openEntries = {};
+  JOURNAL = freshJournal();
+  return freshLogPage().then(function () { return P._loadOutcomes(); }).then(function () {
+    var r1 = rowOfEntry("e_fix1"), r2 = rowOfEntry("e_fix2");
+    t("every log card is a <details> row, collapsed by default",
+      detOf("e_fix1") === '<details class="dj-entry-det" data-dj-open="e_fix1">' && detOf("e_fix2") === '<details class="dj-entry-det" data-dj-open="e_fix2">',
+      [detOf("e_fix1"), detOf("e_fix2")]);
+    t("row line 1: date · symbol · action · compliance",
+      /2026-09-01/.test(r1) && /NVDA/.test(r1) && /class="dj-act" data-hue="violet">ขาย</.test(r1) && /class="dj-pill is-bad">แหกกฎ</.test(r1));
+    t("row shows feelings as coloured icons, named for screen readers",
+      /class="dj-row-feel" data-hue="rose"><svg[\s\S]*?<\/svg><span class="dj-sr">กลัว<\/span>/.test(r1));
+    // e_fix1: คาดลง 1 สัปดาห์ · +7 = 103 เทียบ 100 = +3.0% (เกิน ±2%) → ขึ้น = คาดผิด
+    t("row line 2: expectation → result at the own horizon (scored = % + คาดถูก/ผิด)",
+      /คาดลง · 1 สัปดาห์/.test(textOf(r1)) && /\+3\.0%/.test(r1) && /class="dj-row-pct dj-up"/.test(r1) && /class="dj-pill is-bad">คาดผิด</.test(r1), textOf(r1));
+    // e_fix2: คาดขึ้น 3 เดือน · ครบ 2026-10-20 + 90 = 2027-01-18 ยังไม่ถึง
+    t("pending row says รอผล with the due date kept whole",
+      /คาดขึ้น · 3 เดือน/.test(textOf(r2)) && /รอผล · ครบ <span class="dj-nw">2027-01-18<\/span>/.test(r2), textOf(r2));
+    t("row is short: no rule chips, event text, horizon cells or delete button in the summary",
+      r1.length > 0 && !/dj-rchip|ข่าวร้าย|data-hz=|data-dj-del/.test(r1));
+    t("details stay in the DOM under the row (rules · event · horizon cells · delete)",
+      /กฎบอกว่า/.test(cardOf("e_fix1")) && /ข่าวร้าย ตลาดลง/.test(cardOf("e_fix1")) && /data-hz="7"/.test(cardOf("e_fix1")) && /data-dj-del="e_fix1"/.test(cardOf("e_fix1")));
+    t("summary has an id (keyboard focus survives a re-render)", /<summary class="dj-entry-sum" id="djRow-e_fix1">/.test(cardOf("e_fix1")));
+    t("log header says rows open on tap", /แตะรายการเพื่อดูรายละเอียด/.test(sec("djLog")));
+    // กาง → จำไว้ · วาดใหม่แล้วยังกาง · พับ → ลืม
+    t("expanding a row is remembered", toggleEntry("e_fix1", true) && S.openEntries.e_fix1 === true);
+    P.render();
+    t("…a re-render keeps it open, the other stays closed",
+      detOf("e_fix1") === '<details class="dj-entry-det" data-dj-open="e_fix1" open>' && detOf("e_fix2").indexOf(" open") < 0);
+    t("collapsing forgets it", toggleEntry("e_fix1", false) && !S.openEntries.e_fix1);
+    P.render();
+    t("…and it renders closed again", detOf("e_fix1").indexOf(" open") < 0);
+    // ถามยืนยันลบ → แถวต้องกางให้เห็นปุ่มยืนยัน · ยกเลิก → พับกลับ (ไม่ได้จำว่ากาง)
+    clickAttr("data-dj-del", "e_fix1");
+    t("delete confirm opens its row", detOf("e_fix1").indexOf(" open") > 0 && /data-dj-del-confirm="e_fix1"/.test(cardOf("e_fix1")));
+    clickAttr("data-dj-del-cancel", "e_fix1");
+    t("…cancel closes it again", detOf("e_fix1").indexOf(" open") < 0);
+    t("no NaN/undefined in rows", !LEAK.test(sec("djLog")), (LEAK.exec(sec("djLog")) || [])[0]);
+    var css = readPub("decision-journal.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    t("CSS: summary marker hidden, open row highlighted, chevron turns",
+      /\.dj-entry-sum::-webkit-details-marker\s*\{[^}]*display:\s*none/.test(css) && /\.dj-entry-sum\s*\{[^}]*list-style:\s*none/.test(css) &&
+      /\.dj-entry-det\[open\] > \.dj-entry-sum\s*\{/.test(css) && /\.dj-entry-det\[open\] \.dj-row-chev\s*\{[^}]*rotate/.test(css));
   });
 });
 

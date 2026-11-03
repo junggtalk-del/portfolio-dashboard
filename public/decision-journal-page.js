@@ -85,6 +85,7 @@
     ioMsg: null,            // { cls, text } ผลของการส่งออก/นำเข้าไฟล์สำรอง (ข้อความไทย) หรือ null
     lastImport: null,       // { text } การนำเข้าล่าสุดที่ส่งขึ้นเซิร์ฟเวอร์ — ใช้บอกสถานะข้างปุ่มนำเข้า
     methodOpen: false,      // ผู้ใช้เปิด <details> วิธีคิดอยู่ไหม (วาดใหม่แล้วไม่พับเอง)
+    openEntries: {},        // id → true ของแถวใน "บันทึกทั้งหมด" ที่ผู้ใช้กางดูรายละเอียดอยู่
     locked: false,
     loadError: null,        // เหตุผลที่โหลดเอกสารไม่สำเร็จ (ข้อความไทย) หรือ null
     serverLoaded: false,    // เคยได้สำเนาจากเซิร์ฟเวอร์แล้วหรือยัง (โหลดสำเร็จ / PUT สำเร็จ) — false = state.doc มีแค่ร่างในเครื่อง
@@ -900,6 +901,7 @@
     state.lastImport = null;
     delete state.outcomesById[id];
     delete state.reviewDraft[id];
+    delete state.openEntries[id];
     try { state.symbols = buildSymbols(); } catch (e) { /* รายการสัญลักษณ์เก่ายังใช้ได้ */ }
     return putDoc(local);
   }
@@ -1576,18 +1578,78 @@
       (plan ? '<p class="dj-entry-plan"><span class="dj-entry-k">แผน:</span> ' + esc(plan) + "</p>" : "");
   }
 
+  // ---- แถวย่อของบันทึก (รายการใน "บันทึกทั้งหมด") ----
+  // ผู้ใช้ 2026-10-29: การ์ดเต็มทุกใบดูยาก → เป็นรายการ แตะแถวแล้วค่อยกางรายละเอียด
+  // แถวบอกแค่: วันที่ · สัญลักษณ์ · ทำอะไร · อารมณ์ (ไอคอน) · ตามกฎ/แหกกฎ  และ  คาดว่าอะไร → ผลที่ช่วงที่คาด
+  // ผลจริงอ่านจาก outcomes ของเอนจินชุดเดียวกับช่องผลจริงในรายละเอียด (H.status / H.pct ของช่วงตัวเอง)
+  function rowResultHtml(e) {
+    var D = E();
+    var view = obj(e.view);
+    var own = isNum(view.horizonDays) ? String(view.horizonDays) : "";
+    var o = state.outcomesById[e.id];
+    var sym = D.canonicalSymbol(e.symbol);
+    if (!o || typeof o !== "object") {
+      if (sym && state.priceErrBySymbol[sym]) return '<span class="dj-row-res is-bad">ดึงราคาไม่สำเร็จ</span>';
+      return '<span class="dj-row-res">' + (state.outcomesLoading ? "กำลังดึงราคา…" : "ยังไม่มีผลจริง") + "</span>";
+    }
+    var H = obj(obj(o.horizons)[own]);
+    if (H.status === "pending") {
+      return '<span class="dj-row-res">รอผล' + (H.target ? ' · ครบ <span class="dj-nw">' + esc(H.target) + "</span>" : "") + "</span>";
+    }
+    if (H.status === "scored" && isNum(H.pct)) {
+      var lim = D.FLAT_BAND_PCT + D.EPS_PCT;
+      var cls = Math.abs(H.pct) <= lim ? "" : (H.pct > 0 ? " dj-up" : " dj-down");
+      var pv = PRED_VIEW[o.predicted];
+      return '<span class="dj-row-res"><b class="dj-row-pct' + cls + '">' + esc(fmtPct(H.pct, 1)) + "</b>" +
+        (pv ? pill(pv.cls, pv.text) : "") + "</span>";
+    }
+    return '<span class="dj-row-res">' + (H.status === "no-data" ? "ไม่มีราคา" : "—") + "</span>";
+  }
+  function entryRowHtml(e) {
+    var D = E();
+    var act = obj(e.action), verdict = obj(e.verdict), view = obj(e.view), ctx = obj(e.context), rv = obj(e.review);
+    var vv = VERDICT_VIEW[verdict.compliance] || VERDICT_VIEW["n/a"];
+    var sym = D.canonicalSymbol(e.symbol) || String(e.symbol || "");
+    var feel = "";
+    each(D.FEELINGS, function (x) {
+      if (arr(ctx.feelings).indexOf(x.key) < 0) return;
+      var lk = feelLook(x.key);
+      feel += '<span class="dj-row-feel" data-hue="' + lk.hue + '">' + icon(lk.ico) + '<span class="dj-sr">' + esc(x.thai) + "</span></span>";
+    });
+    var dir = (view.direction === "up" || view.direction === "down") ? "คาด" + thaiOf(D.DIRECTIONS, view.direction) : "ไม่แน่ใจทิศทาง";
+    var hz = isNum(view.horizonDays) ? horizonLabel(view.horizonDays) : "—";
+    // ซ้าย (วันที่ · สัญลักษณ์ · ทำอะไร · อารมณ์) ตัดบรรทัดภายในตัวเอง · ขวา (ตามกฎ/แหกกฎ + ลูกศร) ค้างมุมบนขวาเสมอ
+    return '<span class="dj-row-top"><span class="dj-row-id">' +
+      '<span class="dj-entry-date">' + esc(e.date) + "</span>" +
+      '<strong class="dj-entry-sym">' + esc(sym) + "</strong>" +
+      '<span class="dj-act" data-hue="' + (ACT_HUE[act.kind] || "slate") + '">' + esc(thaiOf(D.ACTIONS, act.kind) || "ไม่ระบุ") + "</span>" +
+      (feel ? '<span class="dj-row-feels">' + feel + "</span>" : "") +
+      (rv.reviewedAt ? '<span class="dj-row-rv">ทบทวนแล้ว</span>' : "") +
+      "</span>" +
+      '<span class="dj-row-end">' + pill(vv.cls, vv.text) + '<span class="dj-row-chev" aria-hidden="true">' + icon("chevron") + "</span></span>" +
+      "</span>" +
+      '<span class="dj-row-sub"><span>' + esc(dir + " · " + hz) + '</span><span class="dj-row-arrow" aria-hidden="true">→</span>' +
+      rowResultHtml(e) + "</span>";
+  }
+
+  // การ์ดบันทึก = แถวย่อ (summary) + รายละเอียดเต็มเมื่อกาง · รายละเอียดอยู่ใน DOM เสมอ (แค่พับไว้)
+  // กาง/พับจำไว้ใน state.openEntries — วาดใหม่ (ราคามาถึง · บันทึกเสร็จ) แล้วไม่พับเอง · ถามยืนยันลบอยู่ = กางไว้
   function entryCard(e, trades) {
     var D = E();
     var ctx = obj(e.context), view = obj(e.view), act = obj(e.action), rules = obj(e.rules), verdict = obj(e.verdict);
     var sym = D.canonicalSymbol(e.symbol) || String(e.symbol || "");
+    var open = !!state.openEntries[e.id] || state.confirmDelId === e.id;
     return '<article class="dj-card dj-entry" data-dj-entry="' + esc(e.id) + '">' +
-      entryHeadHtml(e, "") + rulesSayHtml(rules, verdict) +
+      '<details class="dj-entry-det" data-dj-open="' + esc(e.id) + '"' + (open ? " open" : "") + ">" +
+      '<summary class="dj-entry-sum" id="' + esc("djRow-" + e.id) + '">' + entryRowHtml(e) + "</summary>" +
+      '<div class="dj-entry-body">' +
+      rulesSayHtml(rules, verdict) +
       thoughtHtml(ctx, view, act) +
       outcomeBlock(e) +
       buyBackLine(e, trades) +
       lessonBlock(obj(e.review)) +
       '<div class="dj-entry-foot">' + deleteControls(e, sym) + "</div>" +
-      "</article>";
+      "</div></details></article>";
   }
 
   function renderLog() {
@@ -1621,7 +1683,8 @@
       body += "</div>";
     }
     look.aside = renderFilters(all);
-    return block("djLog", title, '<span class="dj-log-count">' + esc(count) + (q ? esc(" · ค้นหา “" + q + "”") : "") + "</span>", body, look);
+    return block("djLog", title, '<span class="dj-log-count">' + esc(count) + (q ? esc(" · ค้นหา “" + q + "”") : "") + "</span>" +
+      (shown.length ? '<span class="dj-log-hint">แตะรายการเพื่อดูรายละเอียด</span>' : ""), body, look);
   }
 
   // ---------------- ถึงกำหนดทบทวน: การ์ดละ 1 บันทึก (สเปก §7 ข้อ 2) ----------------
@@ -3229,6 +3292,15 @@
     // วิธีคิด: จำว่าเปิด <details> อยู่ไหม · สำรองข้อมูล: ส่งออก / นำเข้าไฟล์
     each(root.querySelectorAll("[data-dj-method]"), function (el) {
       el.addEventListener("toggle", function () { state.methodOpen = !!el.open; });
+    });
+    // บันทึกทั้งหมด: จำว่าแถวไหนกางอยู่ (วาดใหม่แล้วไม่พับเอง)
+    each(root.querySelectorAll("[data-dj-open]"), function (el) {
+      el.addEventListener("toggle", function () {
+        var id = el.getAttribute("data-dj-open");
+        if (!id) return;
+        if (el.open) state.openEntries[id] = true;
+        else delete state.openEntries[id];
+      });
     });
     each(root.querySelectorAll("[data-dj-export]"), function (el) {
       el.addEventListener("click", function () { exportFile(); });
