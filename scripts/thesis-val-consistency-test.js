@@ -141,7 +141,14 @@ var sumTag = /<details class="th-valmore"><summary>([\s\S]*?)<\/summary>/.exec(h
 t("พับแล้วมีป้ายบอกวันที่ที่ประทับไว้ (ใน summary ของปุ่มพับ)",
   !!sumTag && /curated ณ 20[0-9][0-9]-[0-9][0-9]/.test(sumTag[1]),
   sumTag ? sumTag[1] : "(ไม่มี summary)");
-t("ข้อความ curated เดิมยังอยู่ครบ ไม่ได้ลบทิ้ง", h.indexOf("ถูกสุดในกลุ่ม Mag7") >= 0);
+// อ่านจาก KB ปัจจุบัน (เดิมตรึงวลี "ถูกสุดในกลุ่ม Mag7" ของ note asOf 2026-08 — note ถูกเขียนใหม่ตอนอัปเดตงบ Q3'26)
+// ต้องรัดให้อยู่ใน th-valnote ของปุ่มพับ และครบทั้งข้อความ — ต้นข้อความเดียวกันอยู่ในช่อง fundamentals ด้วย
+// ถ้า assert แค่ "มีอยู่ในหน้า" ลบข้อความในปุ่มพับทิ้งแล้วเทสต์ก็ยังผ่าน (เจอจาก mutation test)
+function escH(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+var valMore = /<details class="th-valmore">[\s\S]*?<span class="th-valnote">([\s\S]*?)<\/span><\/details>/.exec(h);
+var metaNote = String(D.companies.META.valuationView.note || "");
+t("ข้อความ curated เดิมยังอยู่ครบ ไม่ได้ลบทิ้ง (ทั้งข้อความ ใน th-valnote ของปุ่มพับ)",
+  metaNote.length > 20 && !!valMore && valMore[1] === escH(metaNote), valMore ? valMore[1].slice(0, 60) : "(ไม่มีปุ่มพับ)");
 t("เลขสดมาก่อนข้อความ curated ในลำดับการอ่าน",
   h.indexOf("th-valnow") >= 0 && h.indexOf("th-valmore") > h.indexOf("th-valnow"));
 
@@ -205,9 +212,12 @@ var m2 = boot("META", snapWith(PX)).html;
 t("GOOG: โชว์ทั้งมุม engine และมุมคน ไม่ได้เลือกข้างเดียว",
   engChip(g) === "ต่ำกว่าโซนอดีตตัวเอง" && humanChip(g) && humanChip(g).v === "สมเหตุสมผล",
   engChip(g) + " / " + (humanChip(g) ? humanChip(g).v : "—"));
-t("META: โชว์ทั้งสองมุมเช่นกัน (engine ว่าพรีเมียม · คนว่าถูก)",
-  engChip(m2) === "สูงกว่าค่ากลางอดีต" && humanChip(m2) && humanChip(m2).v === "ถูก",
-  engChip(m2) + " / " + (humanChip(m2) ? humanChip(m2).v : "—"));
+// เดิมตรึงว่า engine = พรีเมียม · คน = ถูก (กลับข้างกัน) — พอ Q3'26 เข้า TTM แทน Q3'25 ที่โดนภาษีครั้งเดียว ($1.05)
+// TTM EPS 26.55 → 29.33 · P/E ที่ $665.75 จาก 25.1 → 22.7 → engine กลายเป็น "ต่ำกว่าโซนอดีตตัวเอง" ซึ่งถูกตามข้อมูล
+// สิ่งที่เทสต์นี้ล็อกคือ "โชว์ทั้งสองมุมพร้อมป้าย" ไม่ใช่คำตัดสินของตลาด ณ วันหนึ่ง → อ่านคำของ engine จาก §14 ของหน้าเดียวกัน
+t("META: โชว์ทั้งสองมุมเช่นกัน (มุม engine ตาม §14 · มุมคนตาม KB)",
+  !!s14Cls(m2) && engChip(m2) === VX[s14Cls(m2)] && humanChip(m2) && humanChip(m2).v === facCell(m2),
+  engChip(m2) + " / " + (humanChip(m2) ? humanChip(m2).v : "—") + " (§14 " + s14Cls(m2) + ")");
 t("บอกผู้ใช้ว่าสองมุมวัดคนละเรื่อง", g.indexOf("th-valbasis") >= 0);
 t("บอกตรง ๆ ว่ามุมไหนเข้าสูตรคะแนน", /เป็นตัวที่เข้าสูตรคะแนนตัดสินใจ|เข้าสูตรคะแนน/.test(g));
 t("เตือนว่ามุมคนอาจเก่ากว่าเลขสด", g.indexOf("เก่ากว่าเลขสด") >= 0);

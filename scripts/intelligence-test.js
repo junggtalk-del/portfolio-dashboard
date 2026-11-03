@@ -252,8 +252,17 @@ console.log("== เคส 18: stale data ==");
 {
   var rStale = IE.compute("SYN", {}, { data: synthData({ SYN: synthCompany({}) }), TE: TE, o: mockO({ stale: true }) });
   t("o.stale=true → out.stale=true", rStale.stale === true);
-  var rFresh = IE.compute("NVDA", {}, { data: D, TE: TE });
-  t("NVDA asOf ปัจจุบัน → stale=false", rFresh.stale === false, rFresh.stale);
+  // เดิมตรึง NVDA ว่า "สด" — แต่ asOf ของ KB เดินตามปฏิทิน (NVDA asOf 2026-08 กลายเป็น stale เองเมื่อถึง พ.ย. 2026 โดยไม่มีใครแก้อะไร)
+  // → เลือกตัวที่ asOf ใหม่กว่า 3 เดือน (STALE_MONTHS ของ thesis-engine) ตอนรัน ให้เทสต์ล็อก "กติกา" ไม่ใช่ "ชื่อหุ้น"
+  var freshTk = Object.keys(D.companies).filter(function (k) { var sm = TE.staleMonthsOf ? TE.staleMonthsOf(D.companies[k].asOf) : null; return sm != null && sm < 3; })[0];
+  t("KB มีตัวที่ asOf ใหม่กว่า 3 เดือน (ไม่งั้นเทสต์ข้อถัดไปวัดอะไรไม่ได้)", !!freshTk, Object.keys(D.companies).map(function (k) { return k + ":" + D.companies[k].asOf; }));
+  var rFresh = IE.compute(freshTk || "NVDA", {}, { data: D, TE: TE });
+  t("ตัวที่ asOf ปัจจุบัน (" + freshTk + ") → stale=false", rFresh.stale === false, rFresh.stale);
+  var staleTk = Object.keys(D.companies).filter(function (k) { var sm = TE.staleMonthsOf ? TE.staleMonthsOf(D.companies[k].asOf) : null; return sm != null && sm >= 3; })[0];
+  if (staleTk) {
+    var rOld = IE.compute(staleTk, {}, { data: D, TE: TE });
+    t("ตัวที่ asOf เกิน 3 เดือน (" + staleTk + ") → stale=true", rOld.stale === true, rOld.stale);
+  }
 }
 
 console.log("== gateZone — safety gate ของ Accumulation Zone ==");
@@ -870,6 +879,39 @@ console.log("== EPS ที่มีรายการพิเศษ (epsNote) �
   t("GOOG (KB จริง) → สัญญาณ EPS วัดจากกำไรจากการดำเนินงาน และไม่ใช่ warn", gH.evidence.indexOf(OPI) >= 0 && gH.status === "ok", gH.status + " · " + gH.evidence);
   var tH = IE.compute("TSM", snapD, { data: D, TE: TE, VE: VE, PM: PM, prevObs: null }).health.pillars.filter(function (p) { return p.key === "eps"; })[0];
   t("TSM (ไม่มี epsNote ในช่วงที่เทียบ) → ยังวัดจาก EPS", tH.evidence.indexOf(OPI) < 0, tH.evidence);
+}
+
+console.log("== margin ไม่รวมรายการพิเศษ (opMarginExItemsPct) — รายการครั้งเดียวในกำไรดำเนินงาน (2026-10-29) ==");
+{
+  // META Q3'26: ค่าข้อตกลงคดี $9.89B อยู่ในค่าใช้จ่ายดำเนินงาน → margin ตามงบ ~20% · ไม่รวมรายการนี้ ~35%
+  // fixture: margin 40% ทุกไตรมาส รายได้ +25% · 2 ไตรมาสล่าสุดมีค่าใช้จ่ายครั้งเดียว (margin ตามงบ 31% → 20%) · ไม่รวมรายการนี้ = 40% เท่าเดิม
+  function exCfg(ex, mutate) {
+    var Qx = quarters([[100, 4, 40, 5], [100, 4, 40, 5], [100, 4, 40, 5], [100, 4, 40, 5],
+      [125, 5, 40, 5], [125, 5, 40, 5], [125, 3.1, 31, 5], [125, 2.0, 20, 5]]);
+    Qx[6].epsNote = "ค่าใช้จ่ายครั้งเดียว: สำรองคดี + เลิกจ้าง";
+    Qx[7].epsNote = "ค่าข้อตกลงคดีครั้งเดียว";
+    if (ex) { Qx[6].opMarginExItemsPct = ex[0]; Qx[7].opMarginExItemsPct = ex[1]; }
+    if (mutate) mutate(Qx);
+    return synthCompany({ history: { years: synthCompany({}).history.years, quarters: Qx } });
+  }
+  function pilOf(h, key) { return h.pillars.filter(function (p) { return p.key === key; })[0]; }
+  var hNo = healthOf(exCfg(null), mockO());
+  t("ไม่มี opMarginExItemsPct → margin ตามงบ (ทรุด 2 ไตรมาส) + กำไรดำเนินงานตามงบ → BROKEN เหมือนเดิม",
+    pilOf(hNo, "margin").status === "crit" && pilOf(hNo, "eps").status === "crit" && hNo.state.key === "BROKEN",
+    [pilOf(hNo, "margin").status, pilOf(hNo, "eps").status, hNo.state.key]);
+  var hEx = healthOf(exCfg([40, 40]), mockO());
+  t("มี opMarginExItemsPct → margin และกำไรดำเนินงานใช้ค่าไม่รวมรายการพิเศษ (ทั้งคู่ ok) · ไม่ใช่ BROKEN",
+    pilOf(hEx, "margin").status === "ok" && pilOf(hEx, "eps").status === "ok" && hEx.state.key !== "BROKEN",
+    [pilOf(hEx, "margin").status, pilOf(hEx, "eps").status, hEx.state.key]);
+  t("…และบอกบนจอว่าใช้ค่าไม่รวมรายการพิเศษ (margin · EPS)",
+    pilOf(hEx, "margin").evidence.indexOf("ไม่รวมรายการพิเศษ") >= 0 && pilOf(hEx, "eps").evidence.indexOf("(ไม่รวมรายการพิเศษ)") >= 0,
+    [pilOf(hEx, "margin").evidence, pilOf(hEx, "eps").evidence]);
+  t("margin ที่ไม่ได้ใช้ค่าแทน → ไม่ขึ้นข้อความไม่รวมรายการพิเศษ", pilOf(hNo, "margin").evidence.indexOf("ไม่รวมรายการพิเศษ") < 0, pilOf(hNo, "margin").evidence);
+  var hBad = healthOf(exCfg(["abc", ""]), mockO());
+  t("opMarginExItemsPct ที่ไม่ใช่ตัวเลข → ไม่นับ (ใช้ margin ตามงบ)", hBad.state.key === "BROKEN" && pilOf(hBad, "margin").evidence.indexOf("ไม่รวมรายการพิเศษ") < 0, hBad.state.key);
+  var mNo = IE._internal.observationOf(exCfg(null), mockO(), {}, null).metrics.margin;
+  var mEx = IE._internal.observationOf(exCfg([40, 40]), mockO(), {}, null).metrics.margin;
+  t("observation margin ใช้ค่าชุดเดียวกับ health (20 → 40)", mNo === 20 && mEx === 40, [mNo, mEx]);
 }
 
 console.log("");

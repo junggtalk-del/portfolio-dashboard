@@ -17,7 +17,7 @@
   // ตอบคำถามเดียว: "หุ้นลง — นี่คือจังหวะสะสม หรือ thesis กำลังพัง?"
   // ============================================================
 
-  var VERSION = "1.2.0";   // 1.2.0 (2026-10-29): สัญญาณ EPS ที่มี epsNote วัดจากกำไรจากการดำเนินงาน
+  var VERSION = "1.3.0";   // 1.2.0 (2026-10-29): สัญญาณ EPS ที่มี epsNote วัดจากกำไรจากการดำเนินงาน · 1.3.0: ใช้ opMarginExItemsPct เมื่อ KB มี
 
   // ---------------- เกณฑ์ทั้งหมด (deterministic + อธิบายได้) ----------------
   // เกณฑ์ที่มีอยู่แล้วในระบบจะอ่านจาก engine ตัวจริงตอนรัน (ดู thresholds())
@@ -217,15 +217,28 @@
     }
     return false;
   }
-  // series ที่สัญญาณ EPS ใช้จริง: { rows, field, viaOpIncome } — rows ยาวเท่า Q เสมอ (ดัชนีไตรมาสตรงกัน)
+  // operating margin ที่เทียบข้ามไตรมาสได้: ถ้ารายการพิเศษอยู่ "ในกำไรดำเนินงาน" (ค่าข้อตกลงคดี · ปรับโครงสร้าง/
+  //   เลิกจ้าง · ด้อยค่า) KB ใส่ opMarginExItemsPct = margin ไม่รวมรายการนั้น (ตามที่บริษัทเปิดเผย/คิดจากยอดที่เปิดเผย)
+  //   มีค่า = ใช้ค่านั้น · ไม่มี = margin ตามงบ (opMarginPct)
+  //   (META Q3'26: ค่าข้อตกลงคดี $9.89B ทำ margin ตามงบเหลือ ~20% · ไม่รวมรายการนี้ ~35% → ไม่ให้สัญญาณขึ้น "thesis พัง" จากรายการครั้งเดียว)
+  function marginOf(q) {
+    var x = q ? num(q.opMarginExItemsPct) : null;
+    return x != null ? x : (q ? num(q.opMarginPct) : null);
+  }
+  function exItemsIn(Q, idx) {
+    for (var i = 0; i < idx.length; i++) if (idx[i] >= 0 && Q[idx[i]] && num(Q[idx[i]].opMarginExItemsPct) != null) return true;
+    return false;
+  }
+  // series ที่สัญญาณ EPS ใช้จริง: { rows, field, viaOpIncome, exItems } — rows ยาวเท่า Q เสมอ (ดัชนีไตรมาสตรงกัน)
   function earningsSeries(Q) {
-    if (!epsDistorted(Q)) return { rows: Q, field: "epsAdj", viaOpIncome: false };
+    if (!epsDistorted(Q)) return { rows: Q, field: "epsAdj", viaOpIncome: false, exItems: false };
     var rows = [];
     for (var i = 0; i < Q.length; i++) {
-      var r = num(Q[i].revenueB), m = num(Q[i].opMarginPct);
+      var r = num(Q[i].revenueB), m = marginOf(Q[i]);
       rows.push({ opIncB: r != null && m != null ? r * m / 100 : null });
     }
-    return { rows: rows, field: "opIncB", viaOpIncome: true };
+    var n = Q.length;
+    return { rows: rows, field: "opIncB", viaOpIncome: true, exItems: exItemsIn(Q, [n - 1, n - 2, n - 5, n - 6]) };
   }
 
   function computeHealth(cfg, o, monet, TH) {
@@ -255,22 +268,25 @@
     pillars.push(qPillar("revenue", "Revenue growth", "revenueB"));
     var ES = earningsSeries(Q);
     pillars.push(ES.viaOpIncome
-      ? qPillar("eps", "EPS growth", ES.field, ES.rows, "EPS มีรายการพิเศษ (ดู epsNote) — วัดจากกำไรจากการดำเนินงานแทน · ",
+      ? qPillar("eps", "EPS growth", ES.field, ES.rows, "EPS มีรายการพิเศษ (ดู epsNote) — วัดจากกำไรจากการดำเนินงาน" +
+          (ES.exItems ? " (ไม่รวมรายการพิเศษ)" : "") + "แทน · ",
           function (v) { return round1(v) + "B"; })
       : qPillar("eps", "EPS growth", "epsAdj"));
 
-    // --- margin: ล่าสุดเทียบค่าเฉลี่ย 4 ไตรมาสก่อนหน้า ---
+    // --- margin: ล่าสุดเทียบค่าเฉลี่ย 4 ไตรมาสก่อนหน้า (ไตรมาสที่ KB มี margin ไม่รวมรายการพิเศษ ใช้ค่านั้น) ---
     (function () {
       if (!hasQ) { pillars.push(pillar("margin", "Operating margin", "na", "ไตรมาสไม่พอ", true)); return; }
       function dropAt(i) {
-        var cur = num(Q[i].opMarginPct); if (cur == null || i < 4) return null;
-        var base = avg([Q[i - 1].opMarginPct, Q[i - 2].opMarginPct, Q[i - 3].opMarginPct, Q[i - 4].opMarginPct]);
+        var cur = marginOf(Q[i]); if (cur == null || i < 4) return null;
+        var base = avg([marginOf(Q[i - 1]), marginOf(Q[i - 2]), marginOf(Q[i - 3]), marginOf(Q[i - 4])]);
         return base == null ? null : base - cur;
       }
-      var dLast = dropAt(Q.length - 1), dPrev = dropAt(Q.length - 2);
-      var curM = num(Q[Q.length - 1].opMarginPct);
+      var n = Q.length;
+      var dLast = dropAt(n - 1), dPrev = dropAt(n - 2);
+      var curM = marginOf(Q[n - 1]);
       if (dLast == null) { pillars.push(pillar("margin", "Operating margin", "na", "ไม่มีข้อมูล margin", true)); return; }
-      var txt = "ล่าสุด " + round1(curM) + "% เทียบเฉลี่ย 4 ไตรมาสก่อน" + (dLast > 0 ? " ลดลง " + round1(dLast) + "pp" : "");
+      var exPre = exItemsIn(Q, [n - 1, n - 2, n - 3, n - 4, n - 5, n - 6]) ? "ไม่รวมรายการพิเศษ (ดู epsNote) · " : "";
+      var txt = exPre + "ล่าสุด " + round1(curM) + "% เทียบเฉลี่ย 4 ไตรมาสก่อน" + (dLast > 0 ? " ลดลง " + round1(dLast) + "pp" : "");
       if (dLast > CONFIG.marginDropPp && dPrev != null && dPrev > CONFIG.marginDropPp)
         pillars.push(pillar("margin", "Operating margin", "crit", txt + " — ทรุด 2 ไตรมาสติด", true));
       else if (dLast > CONFIG.marginDropPp)
@@ -776,7 +792,7 @@
         revYoY: Q.length >= 5 ? lastYoY("revenueB") : null,
         epsYoY: Q.length >= 5 ? lastYoY(ES.field, ES.rows) : null,
         fcf: lastQ ? num(lastQ.fcfB) : null,
-        margin: lastQ ? num(lastQ.opMarginPct) : null,
+        margin: lastQ ? marginOf(lastQ) : null,   // ชุดเดียวกับ health (ไม่รวมรายการพิเศษเมื่อ KB มี)
         monet: X && X.aiMonetization ? X.aiMonetization.overall : null,
         expectOrd: X && X.expectations ? EXPECT_ORD[X.expectations.state.key] : null,
         valuationAttr: X && X.matrixPoint && X.matrixPoint.valuation && num(X.matrixPoint.valuation.percentile) != null
