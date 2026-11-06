@@ -106,7 +106,7 @@
             "type": "object", "required": ["quarter", "metric", "guided", "actual", "result"],
             "properties": {
               "quarter": { "type": "string", "$comment": "e.g. 2026Q2 (company fiscal labeling allowed, keep consistent per ticker)" },
-              "metric": { "type": "string", "enum": ["revenue", "eps", "opex", "capex", "margin"] },
+              "metric": { "type": "string", "enum": ["revenue", "eps", "opex", "capex", "margin", "gov", "adjEbitda"], "$comment": "gov / adjEbitda (2026-11) = marketplace GOV และ Adjusted EBITDA สำหรับบริษัทที่ guide สองตัวนี้แทน revenue/EPS (เช่น DASH) — Intelligence surprise stats อ่านเฉพาะ revenue/eps จึงไม่กระทบ; metric ที่บริษัทไม่ guide ให้ใส่แถว noGuidance" },
               "guided": { "type": "string", "$comment": "guidance text as announced, ~ prefix for approximations, e.g. ~$47-50B" },
               "actual": { "type": "string" },
               "result": { "type": "string", "enum": ["beat", "inline", "miss", "noGuidance"] },

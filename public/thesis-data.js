@@ -4257,184 +4257,184 @@
       "name": "Advanced Micro Devices",
       "layer": "gpu",
       "thesis": {
-        "statement": "AMD คือ 'ทางเลือกอันดับสอง' ที่น่าเชื่อถือที่สุดของโลกรองจาก NVIDIA ในชิป AI — มีครบทั้ง CPU (EPYC), GPU (Instinct MI350/MI450) และระบบ rack-scale (Helios จากดีล ZT Systems) ดีล OpenAI 6GW และ Oracle ที่ประกาศปลายปี 2025 เป็นจุดเปลี่ยนที่พิสูจน์ว่า hyperscaler ต้องการซัพพลายเออร์รายที่สองจริง หากบริษัท execute แผน MI450 ปี 2026 ได้ตามเป้า รายได้ data center AI ระดับหลายหมื่นล้านดอลลาร์และเป้า EPS ~$20 ระยะยาวจะไม่ใช่แค่ความฝัน",
+        "statement": "AMD คือ 'ทางเลือกอันดับสอง' ที่น่าเชื่อถือที่สุดของโลกรองจาก NVIDIA ในชิป AI — มีครบทั้ง CPU (EPYC), GPU (Instinct MI350/MI450) และระบบ rack-scale (Helios จากดีล ZT Systems) · ดีลระดับกิกะวัตต์กับ OpenAI (6GW) Meta (6GW) และ Anthropic (2GW) บวก Oracle พิสูจน์ว่าผู้สร้างโมเดลระดับ frontier ต้องการซัพพลายเออร์รายที่สองจริง · Q3 2026 คือไตรมาสแรกที่ MI455X และ Helios ถูกส่งมอบจำนวนมากเพื่อรับรู้รายได้ (Data Center +97% YoY) และผู้บริหารให้ภาพปี 2027 ว่ารายได้รวมจะโตเกิน 80% · ราคาที่ต้องจ่ายคือ warrant ให้ลูกค้าสองรายรวมสูงสุด ~320 ล้านหุ้น และเงินทุนหมุนเวียนก้อนใหญ่ช่วง ramp — หาก execute Helios ปี 2027 ได้ตามเป้า เป้า EPS ~$20 ระยะยาวจะไม่ใช่แค่ความฝัน",
         "pillars": [
-          "ดีล OpenAI 6GW (เริ่มส่งมอบ MI450 ครึ่งหลังปี 2026) + Oracle ~50,000 GPU เป็น anchor customer ที่ล็อกดีมานด์หลายปี",
-          "EPYC กินส่วนแบ่งรายได้ server CPU จาก Intel ต่อเนื่องจนเกิน ~40% — เป็นฐานกำไรและความสัมพันธ์ hyperscaler ที่แข็งแรง",
-          "จังหวะออกสินค้าแบบรายปี (MI300→MI350→MI400/Helios) ไล่ทัน cadence ของ NVIDIA แล้ว",
-          "ROCm พัฒนาเร็วขึ้นมาก มี day-0 support โมเดลหลัก ๆ — ช่องว่างซอฟต์แวร์กับ CUDA แคบลงโดยเฉพาะฝั่ง inference",
-          "งบดุลแข็งแรงระดับ net cash และโมเดล fabless ทำให้ FCF ไม่ถูกกดด้วย capex หนักเหมือนผู้เล่น infrastructure"
+          "ลูกค้า anchor ระดับกิกะวัตต์ล็อกดีมานด์หลายปี — OpenAI 6GW และ Meta 6GW (ทั้งคู่ผูก warrant) · Anthropic 2GW (เริ่มครึ่งแรกปี 2027 โดย AMD ลงทุนใน Anthropic สูงสุด $5B) · Oracle — และ Q3 2026 เริ่มส่ง MI455X/Helios จำนวนมากให้ Anthropic, Meta, Microsoft, OpenAI, Oracle แล้ว",
+          "EPYC กินส่วนแบ่งรายได้ server CPU จาก Intel ต่อเนื่องจนเกิน ~40% — EPYC Venice (6th Gen) เริ่มส่งมอบเพื่อรับรู้รายได้ใน Q3 2026 และผู้บริหารคาดรายได้ server โตเท่าตัวในปี 2027",
+          "จังหวะออกสินค้าแบบรายปี (MI300→MI350→MI450/Helios) ไล่ทัน cadence ของ NVIDIA แล้ว — MI450 ออกตามกำหนดใน Q3 2026",
+          "ROCm พัฒนาเร็วขึ้นมาก (ROCm 10 ออกแล้ว · มี day-0 support โมเดลหลัก ๆ · ร่วมพัฒนาซอฟต์แวร์กับ Anthropic) — ช่องว่างซอฟต์แวร์กับ CUDA แคบลงโดยเฉพาะฝั่ง inference",
+          "งบดุลยังเป็น net cash (~$8.7B หลังออกหุ้นกู้ $4.75B) และโมเดล fabless ทำให้ capex ต่ำ — แม้ FCF ช่วงนี้ถูกกดด้วยการสต็อกชิ้นส่วนรอ ramp Helios"
         ]
       },
       "fundamentals": [
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+50% YoY (Q2 2026 — $11.5B สถิติใหม่) · Data Center $6.7B +107% (58% ของรายได้) · Client & Gaming/Embedded ประคอง",
+          "current": "+45% YoY (Q3 2026 — $13.38B สถิติใหม่ · +16% QoQ) · Data Center $8.55B +97% (64% ของรายได้) · guide Q4 ~$17B ±3% (+66% YoY) · ผู้บริหารคาดรายได้ปี 2027 โตเกิน 80%",
           "trend": "up",
-          "score": 90,
+          "score": 92,
           "impact": "positive",
-          "why": "การเติบโตเร่งขึ้นอีก (Q1 +38% → Q2 +50%) นำโดย Data Center ที่เกือบเท่าตัว YoY — EPYC ชิงส่วนแบ่ง server + Instinct GPU ramp เป็นของจริงระดับพันล้าน"
+          "why": "YoY ชะลอเล็กน้อยใน Q3 (Q2 +50% → Q3 +45%) แต่รายได้ทะลุขอบบนของช่วง guidance และ guide Q4 เร่งกลับขึ้นเป็น +66% จาก Helios และ EPYC Venice ที่เริ่ม ramp · ภาพปี 2027 (รายได้โตเกิน 80% · server โตเท่าตัว · Data Center เกิน 80% ของรายได้) คือการเร่งตัวอีกขั้น — Data Center เกือบเท่าตัว YoY เป็นของจริงระดับหลายพันล้านต่อไตรมาส"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "non-GAAP EPS $1.66 (Q2 2026) ชนะคาด ~$1.62 · GAAP EPS $1.38 · net income non-GAAP $2.8B",
+          "current": "non-GAAP EPS $2.09 (Q3 2026 · +74% YoY จาก $1.20) ชนะคาด ~$1.94 · GAAP EPS $1.46 (ปีก่อน $0.75) หลังขาดทุนตีมูลค่า warrant $1.1B · consensus non-GAAP FY2026 ~$8.06 / FY2027 ~$16.27",
           "trend": "up",
-          "score": 83,
+          "score": 86,
           "impact": "positive",
-          "why": "กำไรโตเร็วตามรายได้ Data Center — ช่องว่าง GAAP/non-GAAP ยังกว้างจาก amortization (Xilinx/ZT) และ SBC แต่แนวโน้มกำไรจริงชัดขึ้นทุกไตรมาส"
+          "why": "กำไรโตเร็วกว่ารายได้มาก (non-GAAP operating income $3.92B +75% YoY) สะท้อน operating leverage จริง · GAAP EPS ไตรมาสนี้บิดเบือนทั้งสองทาง — ขาดทุนที่ไม่ใช่เงินสดจากการตีมูลค่า warrant ที่ออกให้ลูกค้า (~$0.66/หุ้น) กับภาษีที่กลับเป็นรายการรับ $555M จึงต้องอ่านจากกำไรดำเนินงาน (GAAP $2.83B +123% YoY) · ช่องว่าง GAAP/non-GAAP ยังกว้างจาก amortization (Xilinx/ZT) และ SBC"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "FCF สถิติใหม่ ~$2.6B (Q1 2026, FCF margin ~25%)",
-          "trend": "up",
-          "score": 78,
-          "impact": "positive",
-          "why": "กระแสเงินสดพุ่งตามกำไรและวินัยเงินทุนหมุนเวียน — แปลงกำไรเป็นเงินสดได้ดีขึ้นมากเทียบปีก่อน"
+          "current": "Q3 2026 FCF $0.55B (OCF $1.20B − capex $0.65B · Q2 $1.56B · Q1 $2.57B) · 9 เดือน ~$4.7B · inventory $11.5B (+~$3B QoQ)",
+          "trend": "down",
+          "score": 62,
+          "impact": "neutral",
+          "why": "FCF รายไตรมาสลดลงสามไตรมาสติดเพราะบริษัทสต็อกเวเฟอร์ ซับสเตรต และหน่วยความจำล่วงหน้าเพื่อ ramp Helios/Venice (inventory เพิ่มจาก $7.9B ปลายปี 2025 เป็น $11.5B) — เป็นการลงทุนเงินทุนหมุนเวียนโดยเจตนา และเก้าเดือนแรกยังดีกว่าปีก่อนเกือบเท่าตัว · แต่การแปลงกำไรเป็นเงินสดไตรมาสนี้อ่อนมาก (FCF margin ~4%) ต้องเห็น inventory กลับมาเป็นรายได้ใน Q4-Q1 ก่อนจึงจะยืนยันได้"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "non-GAAP gross margin ~54% (Q2 2026) · guide Q3 ~56% — ไต่ขึ้นตาม mix Data Center/GPU",
+          "current": "non-GAAP gross margin 55.9% (Q2 56.2% · ตรง guide ~56%) · GAAP 53.9% · GAAP operating margin 21.2% (Q2 17.3%) · non-GAAP 29.3% · guide Q4 gross margin ~55%",
           "trend": "up",
-          "score": 72,
+          "score": 74,
           "impact": "neutral",
-          "why": "margin ฟื้นและขยายตามสัดส่วน Data Center ที่ margin สูงกว่า — แต่ยังต่ำกว่า NVIDIA มากเพราะ mix ยังมี Client/console ปนและ GPU ยังไล่ตามด้านต้นทุน"
+          "why": "operating margin ขยายแรง (GAAP +3.9 จุด QoQ) เพราะรายได้โตเร็วกว่าค่าใช้จ่าย · แต่ gross margin เริ่มทรงตัวถึงลดลง (guide Q4 ~55%) เพราะ Helios ขายเป็นระบบทั้งตู้ที่ margin ต่ำกว่าชิปเดี่ยวและต้นทุน HBM ที่แพงขึ้น — ผู้บริหารไม่ให้ทิศทาง margin รายไตรมาสปี 2027 เพราะขึ้นกับ mix ระหว่าง GPU กับ CPU · ยังต่ำกว่า NVIDIA มาก"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "ไต่ขึ้นตามกำไร แต่ยังถูกกดด้วย amortization จากดีล Xilinx",
+          "current": "ไต่ขึ้นตามกำไร (GAAP operating income $2.83B ต่อไตรมาส) แต่ฐานทุนใหญ่จาก goodwill/amortization ของ Xilinx และ ZT และกำลังจะใหญ่ขึ้นจากดีล World Labs/Taalas",
           "trend": "up",
-          "score": 65,
+          "score": 67,
           "impact": "neutral",
-          "why": "ไต่ขึ้นตามกำไรที่โตเร็ว แต่ยังถูกกดด้วย amortization/goodwill จากดีล Xilinx และ ZT Systems"
+          "why": "กำไรดำเนินงานโตกว่าเท่าตัว YoY ทำให้ผลตอบแทนต่อทุนดีขึ้นชัด · แต่ยังถูกกดด้วย amortization ~$0.53B ต่อไตรมาสจากดีลเก่า และดีลซื้อ World Labs (~$8.2B ด้วยหุ้น) กับ Taalas (~$2.9B) ที่คาดปิดปลายปี 2026 จะเพิ่มฐานทุนอีกโดยยังไม่มีรายได้รองรับ"
         },
         {
           "key": "cash",
           "label": "เงินสด",
-          "current": "เงินสดและเงินลงทุน ~$7B+",
-          "trend": "up",
-          "score": 75,
+          "current": "เงินสดและเงินลงทุนระยะสั้น ~$15.8B (26 ก.ย. 2026) จาก $13.1B ใน Q2 — รวมเงินจากหุ้นกู้ $4.75B ที่ออกเมื่อ ส.ค. 2026",
+          "trend": "flat",
+          "score": 74,
           "impact": "positive",
-          "why": "เงินสดมากกว่าหนี้ (net cash) เพียงพอสำหรับ ramp สินค้าคงคลัง AI, R&D และ M&A ขนาดกลางโดยไม่ต้องกู้เพิ่ม — ยืดหยุ่นกว่าคู่แข่งที่งบดุลตึง"
+          "why": "เงินสดยังมากกว่าหนี้ (net cash ~$8.7B) เพียงพอสำหรับ ramp สินค้าคงคลัง AI, R&D และดีลขนาดกลาง · แต่เงินสดที่เพิ่มมาจากการกู้ ไม่ใช่จากธุรกิจ (FCF ไตรมาสนี้แค่ $0.55B) และมีภาระรออยู่ — ลงทุนใน Anthropic สูงสุด $5B และส่วนเงินสดของดีล Taalas — net cash จึงลดลงจาก ~$9.9B ใน Q2"
         },
         {
           "key": "debt",
           "label": "หนี้สิน",
-          "current": "หนี้ระยะยาว ~$3B — สถานะ net cash",
-          "trend": "flat",
-          "score": 85,
+          "current": "หนี้รวม ~$7.1B (จาก $3.2B ใน Q2) หลังออกหุ้นกู้ $4.75B อายุ 2029-2036 ดอกเบี้ย 4.6-5.5% — ยังเป็น net cash ~$8.7B",
+          "trend": "down",
+          "score": 80,
           "impact": "positive",
-          "why": "ภาระหนี้ต่ำมากเทียบกับขนาดบริษัทและ EBITDA — แทบไม่มีความเสี่ยงทางการเงิน ต่างจากยุคก่อนปี 2018 ที่หนี้เคยเกือบทำให้บริษัทล้ม"
+          "why": "ภาระหนี้ยังต่ำมากเทียบกับกำไรดำเนินงาน (~$11B ต่อปีตามอัตราไตรมาสล่าสุด) และยังเป็น net cash — แทบไม่มีความเสี่ยงทางการเงิน · แต่การกู้เพิ่มเกือบสองเท่าในไตรมาสเดียวเพื่อหนุนเงินทุนหมุนเวียนช่วง ramp แปลว่าทิศทางงบดุลเริ่มใช้เลเวอเรจมากขึ้น"
         },
         {
           "key": "dilution",
           "label": "การเจือจางหุ้น",
-          "current": "SBC ปกติ + warrant ให้ OpenAI สูงสุด ~160M หุ้น (~10% ของหุ้นทั้งหมด)",
+          "current": "หุ้น diluted 1,661 ล้านหุ้น (Q3 2026 · +1.2% YoY) · warrant ราคาใช้สิทธิ $0.01 ให้ OpenAI (ต.ค. 2025) และ Meta (ก.พ. 2026) รายละสูงสุด 160 ล้านหุ้น รวม ~320 ล้านหุ้น (~20% ของหุ้นที่ออกแล้ว) · ดีล World Labs ~$8.2B จ่ายด้วยหุ้นทั้งหมด · Q3 ไม่ได้ซื้อหุ้นคืน",
           "trend": "down",
-          "score": 45,
+          "score": 38,
           "impact": "negative",
-          "why": "warrant ผูกกับ milestone การส่งมอบ 6GW และราคาหุ้นที่สูงขึ้นมาก — ถ้าเจือจางจริงแปลว่ารายได้มหาศาลเข้ามาแล้ว แต่ก็เป็น ~10% dilution ที่ผู้ถือหุ้นต้องนับรวมในโมเดล ถือเป็นต้นทุนของดีลที่แพงที่สุดข้อหนึ่ง"
+          "why": "warrant ทั้งสองก้อนทยอย vest ตามยอดซื้อ GPU ของลูกค้าและเพดานราคาหุ้นที่ไต่ถึง $600 ในงวดสุดท้าย — ถ้าเจือจางเต็มแปลว่ารายได้ระดับหลายหมื่นล้านเข้ามาแล้ว แต่ก็เป็น dilution ~20% ที่ต้องนับรวมในโมเดล · และตั้งแต่ Q3 2026 warrant ถูกบันทึกเป็นหนี้สิน (~$1.2B) ที่ต้องตีมูลค่าใหม่ทุกไตรมาสตามราคาหุ้น ทำให้ GAAP EPS แกว่ง · บวกหุ้นที่จะออกให้ World Labs และ buyback ที่หยุดไป จำนวนหุ้นมีแต่เพิ่ม"
         },
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรเงินทุน",
-          "current": "เทน้ำหนักไป R&D และดีลเชิงกลยุทธ์ (ZT Systems) มากกว่า buyback",
-          "trend": "up",
-          "score": 70,
-          "impact": "positive",
-          "why": "ซื้อ ZT Systems ~$4.9B แล้วขายส่วนโรงงานให้ Sanmina ~$3B เก็บเฉพาะทีมออกแบบ rack-scale — เป็นดีลที่ฉลาดและตรงยุทธศาสตร์ Buyback ชะลอลงเพื่อเก็บกระสุน ramp AI ซึ่งเหมาะสมกับจังหวะ"
+          "current": "R&D (GAAP) $2.80B ต่อไตรมาส (+31% YoY) · ประกาศซื้อ Taalas (~$2.9B เงินสด+หุ้น) และ World Labs (~$8.2B หุ้นล้วน) · ลงทุนใน Anthropic สูงสุด $5B · ออกหุ้นกู้ $4.75B · ไม่ซื้อหุ้นคืนใน Q3 (เหลือวงเงิน $9.2B)",
+          "trend": "down",
+          "score": 64,
+          "impact": "neutral",
+          "why": "R&D และดีล ZT Systems ยังตรงยุทธศาสตร์ และ Taalas (ชิป inference) เติมจุดที่ขาด · แต่การจัดสรรทุนเริ่มกระจายออกนอกแกน — ซื้อ World Labs (แล็บโมเดล spatial intelligence) ด้วยหุ้น ~$8.2B และลงเงินใน Anthropic ซึ่งเป็นลูกค้าเอง (เงินวนกลับมาซื้อชิป AMD) บวก warrant ให้ลูกค้าสองราย — เหตุผลเชิงกลยุทธ์มี แต่ราคาแพงและวัดผลตอบแทนได้ยากกว่าเดิม"
         },
         {
           "key": "valuation",
           "label": "มูลค่าหุ้น",
-          "current": "forward P/E ~55-65x (หลังงบ Q2 หุ้นร่วง ~8% + EPS โตไล่ทัน) · ยังแพงสาย AI compute",
-          "trend": "flat",
-          "score": 36,
+          "current": "ราคาปิด 4 พ.ย. 2026 $488.78 (after-hours หลังงบ +~7.5% แต่ปิดวันถัดมาแค่ +1%) · mcap ~$800B · P/E ~61x กำไร non-GAAP FY2026 ($8.06) · ~30x FY2027 ($16.27) · ต่ำกว่าจุดสูงสุด 52 สัปดาห์ $658.52 ราว 26%",
+          "trend": "up",
+          "score": 40,
           "impact": "negative",
-          "why": "แพงแต่กำไรเริ่มโตไล่ทัน multiple เร็วขึ้น (Q3 guide +41%, DC เท่าตัว) — ตลาดหักคะแนนหลังงบทั้งที่ beat เพราะคาดสูงเกินและกังวล margin/inventory · margin of safety ยังบาง"
+          "why": "ยังแพงเมื่อเทียบกำไรปีนี้ แต่ถ้ากำไร FY2027 โตเท่าตัวตาม consensus ราคา ~30 เท่าก็ไม่สุดโต่งสำหรับการเติบโตระดับนี้ · ประเด็นคือ consensus FY2027 กว้างมาก (EPS $9.60-23.66) สะท้อนว่าทั้งหมดขึ้นกับการ ramp Helios ปี 2027 และราคาหุ้นเหวี่ยงแรง (ร่วง 10.9% ในวันเดียวเมื่อ 30 ต.ค. จาก guide ของ Intel) · margin of safety ยังบาง"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
         "consistency": 68,
         "recurringPct": null,
-        "note": "คุณภาพรายได้ดีขึ้นเชิงโครงสร้าง — สัดส่วน Data Center พุ่งเป็น 58% ของรายได้ (จาก GPU/EPYC ที่ margin สูงและ recurring จากลูกค้า hyperscaler) · Client/Gaming เป็นวัฏจักรและ Embedded ทยอยฟื้น — mix กำลังเอียงไปทาง AI compute มากขึ้นเรื่อย ๆ",
+        "note": "คุณภาพรายได้ดีขึ้นเชิงโครงสร้าง — Data Center พุ่งเป็น 64% ของรายได้ (จาก 58% ใน Q2) และผู้บริหารคาดเกิน 80% ในปี 2027 · รายได้ส่วนนี้ผูกกับสัญญาหลายปีระดับกิกะวัตต์ (OpenAI, Meta, Anthropic, Oracle) แต่ก็กระจุกตัวกับลูกค้าไม่กี่รายมากขึ้นและเป็นการขายตามรอบ ramp ไม่ใช่รายได้ประจำ · YoY Q3 ชะลอเล็กน้อย (+50% → +45%) ก่อนที่ guide Q4 จะเร่งกลับเป็น +66% · Client & Gaming หดตัวจากตลาดพีซีที่ถูกราคาหน่วยความจำกดและคอนโซลที่ปลายวัฏจักร ส่วน Embedded ฟื้นต่อเนื่อง",
         "segments": [
           {
             "name": "Data Center (EPYC + Instinct GPU)",
-            "sharePct": 58,
-            "growthNote": "$6.7B (+107% YoY) — เครื่องยนต์หลัก, EPYC ชิงแชร์ server + Instinct GPU ramp",
+            "sharePct": 64,
+            "growthNote": "$8.55B (+97% YoY · Q2 $6.72B) กำไรจากการดำเนินงาน $2.88B — ไตรมาสแรกที่ส่ง MI455X/Helios และ EPYC Venice เพื่อรับรู้รายได้ · guide Q4 เร่งต่อ",
             "trend": "up"
           },
           {
             "name": "Client & Gaming (Ryzen, Radeon, คอนโซล)",
-            "sharePct": 34,
-            "growthNote": "ประคองตัว — Ryzen แข็ง, gaming/คอนโซลชะลอตามวัฏจักร",
-            "trend": "flat"
+            "sharePct": 28,
+            "growthNote": "$3.72B (~−8% YoY) — Client $2.95B (+7%) แต่ยอดขายพีซีชะลอปลายไตรมาสจากราคาหน่วยความจำ · Gaming $0.77B (−40%) · ผู้บริหารวางแผนให้ตลาดพีซีปี 2027 หดตัวสองหลัก",
+            "trend": "down"
           },
           {
             "name": "Embedded (Xilinx FPGA)",
             "sharePct": 8,
-            "growthNote": "ทยอยฟื้นจากช่วง destocking",
+            "growthNote": "$1.11B (+29% YoY · Q2 $0.98B) กำไรจากการดำเนินงาน $0.45B — ฟื้นต่อเนื่องหลังช่วง destocking",
             "trend": "up"
           }
         ]
       },
       "aiExecution": {
-        "score": 76,
+        "score": 80,
         "items": [
           {
-            "item": "Instinct MI350 series (เปิดตัว มิ.ย. 2026)",
+            "item": "Instinct MI450 (MI455X) + Helios rack-scale",
             "status": "executing",
-            "evidence": "เคลม ~4x AI compute และ ~35x inference เทียบ MI300 — Data Center GPU ramp ดันรายได้ DC เกือบเท่าตัว YoY"
+            "evidence": "Q3 2026 เริ่มส่ง MI455X จำนวนมากและลูกค้ารายแรกเปิดใช้ Helios ได้เร็ว · HPE/Vultr ติดตั้ง Helios ชุดแรก · ผู้บริหารคาดการติดตั้ง Helios เพิ่มขึ้นมากใน Q4 — เป็นตัวพิสูจน์ว่า AMD แข่งระดับระบบได้ ไม่ใช่แค่ชิปเดี่ยว"
           },
           {
-            "item": "Instinct MI400 / Helios rack-scale (2026+)",
-            "status": "on-track",
-            "evidence": "โรดแมป rack-scale ชน NVIDIA rubin/GB — เป็นตัวพิสูจน์ว่า AMD แข่งระดับระบบได้ ไม่ใช่แค่ชิปเดี่ยว"
-          },
-          {
-            "item": "ดีล OpenAI (warrant สูงสุด ~160M หุ้น)",
-            "status": "on-track",
-            "evidence": "ลูกค้า AI ระดับ frontier ยืนยันดีมานด์ Instinct — แลกกับ dilution ที่ต้องจับตา"
-          },
-          {
-            "item": "EPYC ชิงส่วนแบ่ง server CPU",
+            "item": "ลูกค้า anchor ระดับกิกะวัตต์ (OpenAI · Meta · Anthropic · Oracle)",
             "status": "executing",
-            "evidence": "server CPU โตแรง (แชร์เพิ่มต่อเนื่องจาก Intel) — ฐานกำไร Data Center ที่มั่นคงหนุน GPU ramp"
+            "evidence": "OpenAI 6GW และ Meta 6GW (ผูก warrant รายละสูงสุด 160 ล้านหุ้น) · Anthropic 2GW เริ่มครึ่งแรกปี 2027 โดย AMD ลงทุนใน Anthropic สูงสุด $5B (ก.ค. 2026) · ลูกค้าทั้งหมดนี้รวม Microsoft และ Oracle ใช้ Helios กับ MI450 แล้ว — แต่ upside กระจุกที่ลูกค้าไม่กี่รายซึ่งยังพึ่งการระดมทุน"
+          },
+          {
+            "item": "EPYC ชิงส่วนแบ่ง server CPU + Venice",
+            "status": "executing",
+            "evidence": "เริ่มส่ง EPYC Venice เพื่อรับรู้รายได้ใน Q3 · OEM/ODM ตกลงทำมากกว่า 240 แพลตฟอร์ม · ได้ลูกค้า EPYC รายใหม่หลายสิบราย · OpenAI เลือก EPYC Turin เป็น host CPU ของ accelerator ที่ออกแบบเอง · ผู้บริหารคาดรายได้ server โตเท่าตัวในปี 2027"
           },
           {
             "item": "ROCm software stack",
             "status": "on-track",
-            "evidence": "ยังตามหลัง CUDA มาก — เป็นคอขวดสำคัญของการแข่งฝั่ง GPU ที่ต้องเร่ง"
+            "evidence": "ออก ROCm 10 แล้ว และเริ่มความร่วมมือหลายปีกับ Anthropic ที่ใช้ Claude ช่วยเร่งพัฒนาซอฟต์แวร์ของ AMD — ยังตามหลัง CUDA มาก โดยเฉพาะงาน training จึงยังเป็นคอขวดสำคัญของการแข่งฝั่ง GPU"
+          },
+          {
+            "item": "ซัพพลายและต้นทุนสำหรับ ramp ปี 2027",
+            "status": "on-track",
+            "evidence": "ผู้บริหารบอกว่าจองเวเฟอร์ ซับสเตรต advanced packaging และหน่วยความจำพอรองรับรายได้ server ที่โตเท่าตัวแล้ว (inventory พุ่งเป็น $11.5B) · แต่ราคา HBM ที่แพงขึ้นกดดัน gross margin (guide Q4 ~55%) และดีมานด์ยังเกินซัพพลาย"
           }
         ]
       },
       "competitive": {
         "overall": "strengthening",
-        "moat": "moat ของ AMD มาจากสามชั้น: (1) x86 duopoly — โลกมีแค่ Intel กับ AMD ที่ทำ server CPU x86 ได้ และตอนนี้ AMD คือฝ่ายชนะเชิงเทคโนโลยี (2) เป็นบริษัทเดียวนอกจาก NVIDIA ที่มี GPU data center ระดับ frontier พร้อม roadmap รายปี + rack-scale ครบวงจร (3) ความเชี่ยวชาญ chiplet/advanced packaging ที่สะสมมาก่อนใคร จุดอ่อนเชิง moat คือซอฟต์แวร์ — ROCm ยังไม่สร้าง lock-in แบบ CUDA ทำให้ AMD ชนะด้วย 'ของดี ราคาคุ้ม เปิดกว้าง' มากกว่าการล็อกลูกค้า",
+        "moat": "moat ของ AMD มาจากสามชั้น: (1) x86 duopoly — โลกมีแค่ Intel กับ AMD ที่ทำ server CPU x86 ได้ และตอนนี้ AMD คือฝ่ายชนะเชิงเทคโนโลยี (2) เป็นบริษัทเดียวนอกจาก NVIDIA ที่มี GPU data center ระดับ frontier พร้อม roadmap รายปี + rack-scale ครบวงจร และได้สัญญาระดับกิกะวัตต์จากผู้สร้างโมเดล frontier สามราย (OpenAI, Meta, Anthropic) (3) ความเชี่ยวชาญ chiplet/advanced packaging ที่สะสมมาก่อนใคร จุดอ่อนเชิง moat คือซอฟต์แวร์ — ROCm ยังไม่สร้าง lock-in แบบ CUDA ทำให้ AMD ชนะด้วย 'ของดี ราคาคุ้ม เปิดกว้าง' และสัญญาผูกผลประโยชน์ (warrant/เงินลงทุน) มากกว่าการล็อกลูกค้าด้วยซอฟต์แวร์",
         "factors": [
           {
             "key": "marketLeadership",
             "label": "ผู้นำตลาด",
             "status": "strengthening",
-            "note": "เป็นเบอร์สองใน AI GPU ที่ทิ้งห่างเบอร์สาม และเป็นผู้ชนะใน server CPU (ส่วนแบ่งรายได้ >~40% และเพิ่มขึ้น) — แต่ยังห่างจาก NVIDIA ใน accelerator มาก (ส่วนแบ่งหลักเดียว)"
+            "note": "เป็นเบอร์สองใน AI GPU ที่ทิ้งห่างเบอร์สาม — Data Center $8.55B (+97% YoY) และลูกค้า Helios ครบทั้ง Anthropic, Meta, Microsoft, OpenAI, Oracle · เป็นผู้ชนะใน server CPU (ส่วนแบ่งรายได้ >~40% และคาดรายได้ server โตเท่าตัวปี 2027) — แต่ยังห่างจาก NVIDIA ใน accelerator มาก"
           },
           {
             "key": "techLeadership",
             "label": "ผู้นำเทคโนโลยี",
             "status": "stable",
-            "note": "เด่นเรื่อง chiplet, ความจุ/แบนด์วิดท์ HBM ต่อการ์ด และ perf/TCO ฝั่ง inference — แต่ระดับระบบ (interconnect, ซอฟต์แวร์, rack integration) NVIDIA ยังนำหนึ่งก้าว"
+            "note": "เด่นเรื่อง chiplet, ความจุ/แบนด์วิดท์ HBM ต่อการ์ด และ perf/TCO ฝั่ง inference — บริษัทเคลมว่า MI455X นำด้าน compute flops ความจุหน่วยความจำ และ scale-out bandwidth แต่เป็นคำเคลมของบริษัทเอง และระดับระบบ (interconnect, ซอฟต์แวร์, rack integration) NVIDIA ยังนำหนึ่งก้าว"
           },
           {
             "key": "executionSpeed",
             "label": "ความเร็วในการ execute",
             "status": "strengthening",
-            "note": "ไล่ทัน cadence รายปีของ NVIDIA แล้ว (MI300→MI350→MI400) และปิดดีล ZT/ขายโรงงานต่อได้เร็ว — ประวัติ execution ของทีม Lisa Su ตั้งแต่ Zen คือดีที่สุดในอุตสาหกรรม"
+            "note": "รายได้ Q3 2026 ทะลุขอบบนของ guidance · MI455X/Helios และ EPYC Venice เริ่มส่งมอบเพื่อรับรู้รายได้ในไตรมาสเดียวกันตามกำหนด · ไล่ทัน cadence รายปีของ NVIDIA แล้ว — ประวัติ execution ของทีม Lisa Su ตั้งแต่ Zen คือดีที่สุดในอุตสาหกรรม"
           },
           {
             "key": "switchingCost",
@@ -4446,19 +4446,19 @@
             "key": "ecosystem",
             "label": "ecosystem",
             "status": "strengthening",
-            "note": "แนวร่วม 'มาตรฐานเปิด' ขยายเร็ว — OpenAI, Oracle, Meta, Microsoft ใช้ Instinct จริง, UALink มีพันธมิตรทั้งอุตสาหกรรม — แต่ขนาดรวมยังเล็กกว่าจักรวาล CUDA มาก"
+            "note": "แนวร่วม 'มาตรฐานเปิด' ขยายเร็ว — OpenAI, Meta, Anthropic, Microsoft, Oracle ใช้ Instinct จริง · HPE/Vultr ติดตั้ง Helios · EuroHPC เลือก MI430X สำหรับ LUMI-AI · UALink มีพันธมิตรทั้งอุตสาหกรรม — แต่ขนาดรวมยังเล็กกว่าจักรวาล CUDA มาก"
           },
           {
             "key": "developerAdoption",
             "label": "developer adoption",
             "status": "strengthening",
-            "note": "ROCm ใช้งานได้จริงบน framework หลักและมี day-0 model support แล้ว นักพัฒนาเริ่มมองเป็นทางเลือกจริงจัง — โตจากฐานต่ำ ยังห่าง CUDA หลายเท่าตัวทั้งจำนวนคนและเครื่องมือ"
+            "note": "ROCm 10 ใช้งานได้จริงบน framework หลักและมี day-0 model support · Anthropic ร่วมพัฒนาซอฟต์แวร์กับ AMD — นักพัฒนาเริ่มมองเป็นทางเลือกจริงจัง แต่ยังโตจากฐานต่ำ ห่าง CUDA หลายเท่าตัวทั้งจำนวนคนและเครื่องมือ"
           },
           {
             "key": "customerLockin",
             "label": "การล็อกอินลูกค้า",
             "status": "strengthening",
-            "note": "เปลี่ยนจากขายเป็นรอบ ๆ มาเป็นสัญญาหลายปี — ดีล 6GW กับ OpenAI พร้อม warrant ผูกผลประโยชน์ และ design win rack-scale ทำให้ลูกค้าถอนตัวยากขึ้นกว่ายุคขายการ์ดเดี่ยว"
+            "note": "เปลี่ยนจากขายเป็นรอบ ๆ มาเป็นสัญญาหลายปี — OpenAI 6GW และ Meta 6GW ผูก warrant รายละสูงสุด 160 ล้านหุ้น · Anthropic 2GW ผูกกับเงินลงทุนของ AMD สูงสุด $5B · design win rack-scale ทำให้ลูกค้าถอนตัวยากขึ้นกว่ายุคขายการ์ดเดี่ยว แต่เป็นการล็อกด้วยสัญญาและผลประโยชน์ทางการเงิน ไม่ใช่ซอฟต์แวร์"
           },
           {
             "key": "moat",
@@ -4469,91 +4469,97 @@
         ]
       },
       "capitalAllocation": {
-        "score": 70,
-        "verdict": "จัดสรรทุนแบบ 'ทุ่มเพื่อชิงหน้าต่าง AI' อย่างมีวินัย — R&D และดีลเชิงกลยุทธ์มาก่อน buyback ซึ่งถูกต้องกับจังหวะนี้ จุดที่ต้องจับตาคือ dilution จาก warrant OpenAI ที่เป็นต้นทุนแฝงก้อนใหญ่ที่สุด",
+        "score": 64,
+        "verdict": "จัดสรรทุนแบบ 'ทุ่มเพื่อชิงหน้าต่าง AI' — R&D และดีล ZT Systems ยังตรงยุทธศาสตร์ แต่ปี 2026 เริ่มใช้เครื่องมือที่แพงขึ้นและวัดผลยากขึ้น: warrant ให้ลูกค้าสองรายรวมสูงสุด ~320 ล้านหุ้น · ลงเงินใน Anthropic ซึ่งเป็นลูกค้าเองสูงสุด $5B · ซื้อ World Labs ด้วยหุ้น ~$8.2B · และกู้ $4.75B ขณะที่หยุดซื้อหุ้นคืน — ทุกอย่างมีเหตุผลเชิงกลยุทธ์ แต่ต้นทุนแฝงต่อผู้ถือหุ้นสูงขึ้นชัด",
         "items": [
           {
             "label": "R&D",
-            "current": "~$7B/ปี และเพิ่มขึ้นเร็ว — เทไปที่ Instinct roadmap, ROCm และ rack-scale",
+            "current": "GAAP $2.80B ต่อไตรมาส (Q3 2026 · +31% YoY) — run-rate ~$11B/ปี เทไปที่ Instinct roadmap, ROCm และ rack-scale",
             "assessment": "good",
-            "why": "นี่คือสงครามที่ชนะด้วย R&D — การเร่ง cadence เป็นรายปีและปิดช่องว่างซอฟต์แวร์คือการใช้เงินที่ให้ผลตอบแทนสูงสุดของบริษัท"
+            "why": "นี่คือสงครามที่ชนะด้วย R&D — การเร่ง cadence เป็นรายปีและปิดช่องว่างซอฟต์แวร์คือการใช้เงินที่ให้ผลตอบแทนสูงสุดของบริษัท และ MI450/Venice ที่ออกตามกำหนดคือหลักฐาน"
           },
           {
-            "label": "M&A (ZT Systems)",
-            "current": "ซื้อ ~$4.9B ต้นปี 2025 แล้วขายธุรกิจโรงงานให้ Sanmina ~$3B เก็บทีมออกแบบไว้",
-            "assessment": "good",
-            "why": "ได้ความสามารถ rack-scale ที่จำเป็นต่อ MI450/Helios ด้วยต้นทุนสุทธิต่ำมาก และไม่ต้องแบกธุรกิจ manufacturing margin ต่ำ — เป็นตัวอย่างการทำดีลที่เฉียบคม"
+            "label": "M&A (ZT Systems · Taalas · World Labs)",
+            "current": "ZT ~$4.9B แล้วขายโรงงานให้ Sanmina ~$3B · ประกาศซื้อ Taalas ~$2.9B (เงินสด+หุ้น รวมส่วนจ่ายตามเงื่อนไข ~$1.4B · ส.ค. 2026) และ World Labs ~$8.2B หุ้นล้วน (ก.ย. 2026) คาดปิดปลายปี 2026",
+            "assessment": "neutral",
+            "why": "ZT คือดีลที่เฉียบคม และ Taalas (ชิป inference) เติมจุดที่ขาด · แต่ World Labs เป็นแล็บโมเดล spatial intelligence ที่ห่างจากธุรกิจหลักและจ่ายด้วยหุ้นมูลค่าสูง — ยังตัดสินไม่ได้ว่าคุ้ม"
+          },
+          {
+            "label": "ลงทุนในลูกค้าและหุ้นกู้",
+            "current": "ลงทุนใน Anthropic สูงสุด $5B (ก.ค. 2026 · ควบคู่สัญญา 2GW) · ออกหุ้นกู้ $4.75B (ส.ค. 2026)",
+            "assessment": "neutral",
+            "why": "ช่วยล็อกลูกค้า frontier รายที่สามและหาเงินทุนหมุนเวียนช่วง ramp ด้วยต้นทุนดอกเบี้ย 4.6-5.5% · แต่การให้เงินลูกค้าแล้วลูกค้าเอาไปซื้อชิปของตัวเองคือรูปแบบเงินวน (circular financing) ที่เพิ่มความเสี่ยงถ้ารอบ AI ชะลอ"
           },
           {
             "label": "Buyback",
-            "current": "มี authorization หลายพันล้านดอลลาร์ แต่ซื้อคืนช้าลงชัดเจนช่วง ramp AI",
+            "current": "Q3 2026 ไม่ซื้อหุ้นคืน (9 เดือน $221M) · วงเงินคงเหลือ $9.2B",
             "assessment": "neutral",
-            "why": "เข้าใจได้ที่เก็บเงินสดไว้หนุน working capital ของ MI450 — แต่แปลว่า buyback ยังไม่พอชดเชย SBC ทำให้จำนวนหุ้นไม่ลดลง"
+            "why": "เข้าใจได้ที่เก็บเงินสดไว้หนุน inventory และ working capital ของ Helios — แต่แปลว่า buyback ไม่ได้ชดเชย SBC และ warrant เลย จำนวนหุ้นมีแต่เพิ่ม"
           },
           {
-            "label": "การเจือจาง (SBC + warrant OpenAI)",
-            "current": "SBC ระดับปกติของ semi บวก warrant สูงสุด ~160M หุ้นผูก milestone 6GW",
+            "label": "การเจือจาง (SBC + warrant OpenAI/Meta)",
+            "current": "SBC ~$0.52B ต่อไตรมาส · warrant ราคาใช้สิทธิ $0.01 ให้ OpenAI และ Meta รายละสูงสุด 160 ล้านหุ้น vest ตามยอดซื้อ GPU และเพดานราคาหุ้นถึง $600",
             "assessment": "neutral",
-            "why": "warrant คือราคาที่จ่ายเพื่อล็อกลูกค้า AI ที่ใหญ่ที่สุดในโลก — ถ้า exercise เต็มคือ dilution ~10% แต่แลกกับรายได้ระดับหลายหมื่นล้านดอลลาร์ ถือว่าโครงสร้าง align ผลประโยชน์ได้ฉลาด แม้ไม่ฟรี"
+            "why": "warrant คือราคาที่จ่ายเพื่อล็อกลูกค้า AI รายใหญ่ระดับ 6GW สองราย — ถ้า exercise เต็มคือ dilution ~20% แต่แลกกับรายได้ระดับหลายหมื่นล้านดอลลาร์และ vest เฉพาะเมื่อราคาหุ้นสูงขึ้นมาก โครงสร้างจึง align ผลประโยชน์ได้ แม้ไม่ฟรีและทำให้กำไร GAAP แกว่งทุกไตรมาส"
           },
           {
-            "label": "CapEx",
-            "current": "ต่ำตามโมเดล fabless — พึ่ง TSMC สำหรับการผลิตทั้งหมดของชิปหลัก",
+            "label": "CapEx และปันผล",
+            "current": "capex Q3 2026 $0.65B (9 เดือน ~$1.8B) ต่ำตามโมเดล fabless · ไม่จ่ายปันผล",
             "assessment": "good",
-            "why": "ไม่ต้องเผาเงินสร้างโรงงานเอง ทำให้ FCF margin มี upside สูงเมื่อรายได้สเกล — ความเสี่ยงถูกย้ายไปอยู่ที่การจองกำลังผลิต TSMC แทน"
-          },
-          {
-            "label": "เงินปันผล",
-            "current": "ไม่จ่ายปันผล",
-            "assessment": "neutral",
-            "why": "เหมาะสมกับบริษัท growth ที่ผลตอบแทนจากการลงทุนภายในสูงกว่าการคืนเงินสดมาก"
+            "why": "ไม่ต้องเผาเงินสร้างโรงงานเอง ทำให้ FCF margin มี upside สูงเมื่อรายได้สเกล (ความเสี่ยงย้ายไปอยู่ที่การจองกำลังผลิต TSMC แทน) · การไม่จ่ายปันผลเหมาะกับบริษัทที่ผลตอบแทนจากการลงทุนภายในสูงกว่ามาก"
           }
         ]
       },
       "valuationView": {
         "level": "expensive",
-        "note": "forward P/E ~55-65x (หลังงบ Q2 2026 หุ้นร่วง ~8% แม้ beat) — ยังแพงในกลุ่ม AI compute แต่กำไรกำลังโตไล่ทัน multiple เร็วขึ้น (Data Center เกือบเท่าตัว YoY, Q3 guide +41%) · เดิมพันที่ตลาดจ่ายล่วงหน้าคือ MI350/MI400 ramp + ดีล OpenAI · ถ้า execution รายไตรมาสสะดุด หุ้นเหวี่ยงแรง — ความเสี่ยง valuation ยังสูงสุดในสาย AI compute"
+        "note": "ราคาปิด 4 พ.ย. 2026 $488.78 (mcap ~$800B) — P/E ~61x กำไร non-GAAP FY2026 ($8.06) และ ~30x FY2027 ($16.27 · 49 นักวิเคราะห์ · ช่วงกว้าง $9.60-23.66) · หลังงบ Q3 ราคาขึ้น ~7.5% ใน after-hours แต่ปิดวันถัดมาเพิ่มแค่ ~1% และยังต่ำกว่าจุดสูงสุด 52 สัปดาห์ $658.52 ราว 26% หลังหุ้นชิปทั้งกลุ่มถูกขายจาก guide ของ Intel (30 ต.ค. −10.9%) · เดิมพันที่ตลาดจ่ายล่วงหน้าคือ Helios ramp ปี 2027 (รายได้โตเกิน 80%) บวกดีลกิกะวัตต์สามราย · ถ้ากำไรปี 2027 มาตามคาด ~30 เท่าไม่สุดโต่ง แต่ถ้า ramp สะดุด หุ้นเหวี่ยงแรง — ความเสี่ยง valuation ยังสูงในสาย AI compute"
       },
       "whatChanged": [
         {
-          "metric": "รายได้รวม (Q2 2026)",
-          "prev": "Q1'26 $10.3B (+38%)",
-          "now": "$11.5B (+50% YoY) — สถิติใหม่",
+          "metric": "รายได้รวมและ guidance (Q2 → Q3 2026)",
+          "prev": "$11.54B (+50% YoY) · guide Q3 ~$13.0B ±$0.3B",
+          "now": "$13.38B (+45% YoY · +16% QoQ) ทะลุขอบบนของ guide · guide Q4 ~$17B ±3% (+66% YoY) และคาดรายได้ปี 2027 โตเกิน 80%",
           "direction": "positive"
         },
         {
           "metric": "Data Center",
-          "prev": "Q1'26 $5.8B (+57%)",
-          "now": "$6.7B (+107% YoY, 58% ของรายได้)",
+          "prev": "$6.72B (+107% YoY · 58% ของรายได้) กำไรดำเนินงาน ~$2.1B",
+          "now": "$8.55B (+97% YoY · 64% ของรายได้) กำไรดำเนินงาน $2.88B — ไตรมาสแรกที่ส่ง MI455X/Helios และ EPYC Venice จำนวนมาก",
           "direction": "positive"
         },
         {
-          "metric": "non-GAAP EPS",
-          "prev": "$1.37",
-          "now": "$1.66 (ชนะคาด ~$1.62)",
+          "metric": "EPS (non-GAAP / GAAP)",
+          "prev": "$1.66 / $1.38 (GAAP มีกำไรเงินลงทุน ~$0.29)",
+          "now": "$2.09 (+74% YoY ชนะคาด ~$1.94) / $1.46 (ขาดทุนตีมูลค่า warrant ~$0.66 · ภาษีเป็นรายการรับ $555M)",
           "direction": "positive"
         },
         {
-          "metric": "Guidance ไตรมาสถัดไป (Q3)",
-          "prev": "Q2 guide ~$11.2B",
-          "now": "$12.7-13.3B (+~41% YoY, เหนือคาด $12.5B)",
-          "direction": "positive"
+          "metric": "อัตรากำไร",
+          "prev": "gross margin non-GAAP 56.2% · GAAP operating margin 17.3%",
+          "now": "gross margin 55.9% (ตาม guide ~56%) · GAAP operating margin 21.2% · แต่ guide Q4 gross margin ~55% จาก mix Helios และต้นทุน HBM",
+          "direction": "neutral"
         },
         {
-          "metric": "ปฏิกิริยาราคาหลังงบ",
-          "prev": "—",
-          "now": "ร่วง ~8% แม้ beat (ตลาดคาดสูงเกิน · กังวล margin/inventory)",
+          "metric": "FCF / inventory / หนี้",
+          "prev": "FCF $1.56B · inventory ~$8.5B · หนี้ $3.2B",
+          "now": "FCF $0.55B · inventory $11.5B (+~$3B QoQ สต็อกรอ ramp) · หนี้ $7.1B หลังออกหุ้นกู้ $4.75B",
+          "direction": "negative"
+        },
+        {
+          "metric": "Client & Gaming",
+          "prev": "$3.84B (Client $3.06B · Gaming $0.78B)",
+          "now": "$3.72B — Client $2.95B (+7% YoY) · Gaming $0.77B (−40% YoY) · พีซีชะลอปลายไตรมาสและคาดตลาดพีซีปี 2027 หดสองหลักจากราคาหน่วยความจำ",
           "direction": "negative"
         }
       ],
       "risks": [
-        "Execution risk ปี 2026 กระจุกที่ MI450/Helios (GPU ตัวแรกบน TSMC 2nm) — ถ้า ramp สะดุด (yield, HBM supply, rack integration) ราคาหุ้นที่ price-in ความสำเร็จไว้เกือบเต็มจะปรับลงแรง",
-        "Valuation ~65-75x forward — แพงที่สุดในกลุ่มสาย AI compute margin of safety บางมาก หุ้นเหวี่ยงแรงตามข่าว execution รายไตรมาส",
+        "Execution risk ช่วงปลายปี 2026-2027 กระจุกที่ Helios/MI455X (GPU ตัวแรกบน TSMC 2nm) — บริษัทสต็อก inventory ไว้แล้ว $11.5B และให้ภาพรายได้ปี 2027 โตเกิน 80% ถ้า ramp สะดุด (yield, HBM, rack integration) ทั้ง inventory และราคาหุ้นที่ price-in ความสำเร็จไว้จะถูกกดแรง",
+        "Valuation ~61x กำไร non-GAAP ปีนี้ / ~30x ปี 2027 (mcap ~$800B) และ consensus ปี 2027 กว้างมาก ($9.60-23.66) — margin of safety บาง หุ้นเหวี่ยงแรงตามข่าวทั้งของตัวเองและของกลุ่ม (ร่วง 10.9% ในวันเดียวจาก guide ของ Intel)",
         "ช่องว่างซอฟต์แวร์กับ CUDA ยังกว้าง โดยเฉพาะ training — ถ้า ROCm ตามไม่ทัน ลูกค้าอาจใช้ AMD แค่เป็นเครื่องมือต่อรองราคากับ NVIDIA",
-        "การกระจุกตัวของ upside ที่ OpenAI — ดีล 6GW + warrant ~160M หุ้น (~10%) ผูกกับลูกค้ารายเดียวที่ยังขาดทุนหนักและพึ่งการระดมทุน (ความเสี่ยง circular financing ของทั้งอุตสาหกรรม AI)",
-        "โดนบีบสองทาง: NVIDIA Rubin จากด้านบน + custom ASIC ของ hyperscaler (TPU, Trainium, MTIA) กินงาน inference ปริมาณมาก · และพึ่ง TSMC/ไต้หวันเกือบ 100% + ข้อจำกัดส่งออกจีน (บทเรียน MI308)"
+        "การกระจุกตัวและเงินวน — upside ผูกกับ OpenAI, Meta, Anthropic ซึ่งบางรายยังขาดทุนหนักและพึ่งการระดมทุน · warrant สองก้อนรวมสูงสุด ~320 ล้านหุ้น (~20%) และ AMD ลงเงินใน Anthropic สูงสุด $5B เพื่อให้ซื้อชิปตัวเอง (circular financing) · warrant ยังถูกตีมูลค่าใหม่ทุกไตรมาสทำให้กำไร GAAP แกว่งตามราคาหุ้น",
+        "โดนบีบหลายทาง: NVIDIA Rubin จากด้านบน + custom ASIC ของ hyperscaler (TPU, Trainium, MTIA) กินงาน inference ปริมาณมาก · ต้นทุน HBM ที่แพงขึ้นกด gross margin · ตลาดพีซีปี 2027 คาดหดสองหลัก · และพึ่ง TSMC/ไต้หวันเกือบ 100% + ข้อจำกัดส่งออกจีน (บทเรียน MI308)"
       ],
-      "asOf": "2026-08",
+      "asOf": "2026-11",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดปลายเดือนธันวาคม (สัปดาห์สุดท้ายของ ธ.ค.) — FY2025 สิ้นสุด ธ.ค. 2025 รายงานผลเมื่อ 3 ก.พ. 2026",
         "epsBasis": "diluted GAAP (ไม่เคยแตกหุ้นในช่วงนี้ จึงเป็น current share basis อยู่แล้ว)",
@@ -4604,7 +4610,7 @@
             "priceFYEnd": 214.16
           }
         ],
-        "notes": "ไม่มีการแตกหุ้นในช่วง FY2021-FY2025 ราคาและ EPS จึงเป็นฐานหุ้นปัจจุบันอยู่แล้ว | GAAP EPS ตั้งแต่ FY2022 ถูกกดต่ำมากจากค่าตัดจำหน่าย intangible ของดีล Xilinx (ประมาณปีละ $2-3B) — non-GAAP EPS สูงกว่ามาก: FY2021 $2.79, FY2022 $3.50, FY2023 $2.65, FY2024 $3.31, FY2025 $4.17 | จำนวนหุ้น diluted กระโดดจาก ~1.23B (FY2021) เป็น ~1.6B (FY2022 เป็นต้นไป) เพราะซื้อ Xilinx ด้วยหุ้นล้วน ไม่ใช่ error จาก split | FY2025 มี net charge ~$440M จาก export control ชิป MI308 (GAAP op margin จริงต่ำกว่าศักยภาพเล็กน้อย) และ FCF พุ่งเป็น $6.7B ตามรอบ Data Center/AI | ตัวเลขปัดเศษตามเกณฑ์ curated KB (~2-3%)",
+        "notes": "ไม่มีการแตกหุ้นในช่วง FY2021-FY2025 ราคาและ EPS จึงเป็นฐานหุ้นปัจจุบันอยู่แล้ว | GAAP EPS ตั้งแต่ FY2022 ถูกกดต่ำมากจากค่าตัดจำหน่าย intangible ของดีล Xilinx (ประมาณปีละ $2-3B) — non-GAAP EPS สูงกว่ามาก: FY2021 $2.79, FY2022 $3.50, FY2023 $2.65, FY2024 $3.31, FY2025 $4.17 | จำนวนหุ้น diluted กระโดดจาก ~1.23B (FY2021) เป็น ~1.6B (FY2022 เป็นต้นไป) เพราะซื้อ Xilinx ด้วยหุ้นล้วน ไม่ใช่ error จาก split | FY2025 มี net charge ~$440M จาก export control ชิป MI308 (GAAP op margin จริงต่ำกว่าศักยภาพเล็กน้อย) และ FCF พุ่งเป็น $6.7B ตามรอบ Data Center/AI | ตัวเลขปัดเศษตามเกณฑ์ curated KB (~2-3%) | Q3'26 จบ 26 ก.ย. 2026 (ปีบัญชี 52/53 สัปดาห์จบวันเสาร์) · ตั้งแต่ Q3 2026 warrant ที่ออกให้ลูกค้า (OpenAI ต.ค. 2025 · Meta ก.พ. 2026) ถูกบันทึกเป็นหนี้สินที่ต้องตีมูลค่าใหม่ทุกไตรมาสตามราคาหุ้นใน other income (expense) — GAAP EPS จะแกว่งด้วยรายการนี้ต่อไป ดู epsNote ก่อนเทียบข้ามไตรมาส · FCF = OCF จากการดำเนินงานต่อเนื่อง − capex ตามนิยามบริษัท · ราคาสิ้นงวด Q3'26 ใช้ราคาปิด 30 ก.ย. 2026 ($611.76 Yahoo Finance) · Q2'26 เพิ่ม epsNote (กำไรเงินลงทุน ~$483M) และแก้ priceQEnd 570→580.91 ตามราคาปิด Yahoo 2026-06-30 (2026-11)",
         "sources": [
           "https://www.amd.com/en/newsroom/press-releases/2026-2-3-amd-reports-fourth-quarter-and-full-year-2025-fina.html",
           "https://www.amd.com/en/newsroom/press-releases/2025-2-4-amd-reports-fourth-quarter-and-full-year-2024-fina.html",
@@ -4612,7 +4618,15 @@
           "https://ir.amd.com/news-events/press-releases/detail/1044/amd-reports-fourth-quarter-and-full-year-2021-financial-results",
           "https://stockanalysis.com/stocks/amd/financials/cash-flow-statement/",
           "https://www.macrotrends.net/stocks/charts/AMD/amd/free-cash-flow",
-          "https://www.statmuse.com/money/ask/amd-stock-price-on-december-31-2025"
+          "https://www.statmuse.com/money/ask/amd-stock-price-on-december-31-2025",
+          "https://www.sec.gov/Archives/edgar/data/0000002488/000000248826000188/q32026991.htm",
+          "https://www.sec.gov/Archives/edgar/data/2488/000000248826000191/amd-20260926.htm",
+          "https://www.sec.gov/Archives/edgar/data/2488/000000248826000045/amd-20260223.htm",
+          "https://www.fool.com/earnings/call-transcripts/2026/11/04/amd-amd-q3-2026-earnings-call-transcript/",
+          "https://www.investing.com/news/transcripts/earnings-call-transcript-amd-tops-q3-2026-estimates-as-stock-jumps-after-hours-93CH-4996894",
+          "https://finance.yahoo.com/quote/AMD/history",
+          "https://stockanalysis.com/stocks/amd/forecast/",
+          "https://www.marketscreener.com/quote/stock/ADVANCED-MICRO-DEVICES-19475876/finances/"
         ],
         "quarters": [
           {
@@ -4721,22 +4735,64 @@
             "epsAdj": 1.38,
             "opMarginPct": 17.3,
             "fcfB": 1.56,
-            "priceQEnd": 570
+            "priceQEnd": 580.91,
+            "epsNote": "GAAP EPS $1.38 รวมกำไรจากเงินลงทุนระยะยาว ~$483M (~$0.29/หุ้น · อยู่ใต้กำไรดำเนินงาน ไม่ใช่รายการต่อเนื่อง) — ตัดออกเหลือ ~$1.09 · บันทึกย้อนหลังเมื่อ พ.ย. 2026 ตอนต่อแถว Q3'26 เพื่อให้ฐานเทียบตรงกัน"
+          },
+          {
+            "q": "Q3'26",
+            "endYm": "2026-09",
+            "endDate": "2026-09-26",
+            "revenueB": 13.38,
+            "epsAdj": 1.46,
+            "opMarginPct": 21.2,
+            "fcfB": 0.55,
+            "priceQEnd": 612,
+            "epsNote": "GAAP $1.46 มีรายการที่ไม่ใช่การดำเนินงานปนอยู่สามก้อน — ขาดทุนที่ไม่ใช่เงินสดจากการตีมูลค่า warrant ที่ออกให้ลูกค้า (OpenAI/Meta) $1,097M (~−$0.66/หุ้น ใต้กำไรดำเนินงาน) · กำไรจากเงินลงทุน $67M (~+$0.04/หุ้น) · และภาษีที่กลับเป็นรายการรับ $555M ทั้งที่กำไรก่อนภาษี $1.87B (excess tax benefit จาก SBC และรายการภาษีเฉพาะครั้ง) · ตัดสองรายการแรกออกและคิดภาษีที่อัตรา 13% แบบ non-GAAP ของบริษัทแทน EPS จะราว ~$1.52 (non-GAAP $2.09)"
           }
         ]
       },
-      "nextEarnings": "2026-11",
+      "nextEarnings": "2027-02",
       "forwardView": {
-        "asOf": "2026-08",
+        "asOf": "2026-11",
         "estimateHistory": [
           {
             "asOf": "2026-08",
             "fy": "FY2026",
             "eps": 7.56,
             "revenue": 50.8
+          },
+          {
+            "asOf": "2026-11",
+            "fy": "FY2026",
+            "eps": 8.06,
+            "revenue": 51.2
           }
         ],
         "guidanceTrack": [
+          {
+            "quarter": "Q3 2026",
+            "metric": "revenue",
+            "guided": "~$13.0B ±$0.3B",
+            "actual": "~$13.38B",
+            "result": "beat",
+            "magnitudePct": 2.9
+          },
+          {
+            "quarter": "Q3 2026",
+            "metric": "margin",
+            "guided": "non-GAAP gross margin ~56%",
+            "actual": "non-GAAP 55.9% (GAAP 53.9%)",
+            "result": "inline",
+            "magnitudePct": -0.1
+          },
+          {
+            "quarter": "Q3 2026",
+            "metric": "eps",
+            "guided": "ไม่ให้ guidance EPS",
+            "actual": "non-GAAP $2.09 (GAAP $1.46)",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
           {
             "quarter": "Q2 2026",
             "metric": "revenue",
@@ -4765,20 +4821,27 @@
         "consensus": [
           {
             "fy": "FY2026",
-            "revenue": 50.8,
-            "eps": 7.56,
+            "revenue": 51.2,
+            "eps": 8.06,
             "confidence": "high",
             "basis": "non-GAAP"
           },
           {
             "fy": "FY2027",
-            "revenue": null,
-            "eps": 15.46,
-            "confidence": "medium",
+            "revenue": 90.9,
+            "eps": 16.27,
+            "confidence": "high",
             "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2028",
+            "revenue": 128.1,
+            "eps": 20.95,
+            "confidence": "medium",
+            "basis": "unknown"
           }
         ],
-        "note": "AMD ให้ guidance รายได้เป็นค่ากลาง ±$300M ทุกไตรมาส — ยืนยันได้ 3 ไตรมาส beat ทุกครั้ง และขนาด beat แคบลงเรื่อย ๆ (7.3% → 5.1% → 2.7%) · guidance Q3 2026 = ~$13.0B ±$0.3B (+41% YoY) · consensus FY2026 EPS ~$7.56 / FY2027 ~$15.46 (44 นักวิเคราะห์ · non-GAAP ต่างจากตาราง KB ที่เป็น GAAP) · FY2027 revenue อยู่หลัง paywall จึงเว้นไว้ · ไม่ใส่ endDate เพราะ AMD จบงวดวันเสาร์ (ไม่ตรงสิ้นเดือน) และยังไม่ได้ยืนยันวันรายไตรมาส"
+        "note": "Q3 2026 รายได้ทะลุจุดกึ่งกลาง guide 2.9% (beat สี่ไตรมาสติดที่บันทึกไว้ ขนาดทรงตัวแถว 3-7%) และ gross margin 55.9% ตาม guide ~56% · guide Q4 เปลี่ยนวิธีให้ช่วงจาก ±$300M เป็น ±3% (~$17B) · consensus non-GAAP หลังงบ (Yahoo/S&P Global 4 พ.ย.) FY2026 EPS $8.06 / FY2027 $16.27 ขึ้นจาก $7.56 / $15.46 เมื่อ ส.ค. แต่รายได้ FY2026 $51.2B ยังไม่สะท้อน guide Q4 (9 เดือนจริง + guide ≈ $52.2B) ส่วน FY2028 ($128.1B / EPS $20.95) มาจาก MarketScreener แหล่งเดียวและไม่ระบุฐาน — ห้ามต่อเส้นกับ EPS จริง"
       }
     },
     "HOOD": {
@@ -4786,172 +4849,183 @@
       "name": "Robinhood Markets",
       "layer": "enterprise",
       "thesis": {
-        "statement": "Robinhood กำลังเปลี่ยนจาก 'แอปเทรดหุ้นฟรี' เป็นแพลตฟอร์มการเงินครบวงจรของ retail รุ่นใหม่ — หุ้น/options/crypto/prediction markets + Gold subscription ที่พ่วง banking, retirement และ AI (Cortex) เข้าด้วยกัน ฐานลูกค้า 27.4 ล้านบัญชีอายุเฉลี่ยน้อยคือ runway ของ wallet share ยาวหลายทศวรรษ เดิมพันหลักคือแปลง active trader ให้เป็นความสัมพันธ์การเงินตลอดชีวิต — หมายเหตุ: จัดใน layer enterprise (applied AI/platform) เพื่อการเทียบกลุ่มแบบหยาบ ไม่ใช่บริษัทโครงสร้างพื้นฐาน AI",
+        "statement": "Robinhood กำลังเปลี่ยนจาก 'แอปเทรดหุ้นฟรี' เป็นแพลตฟอร์มการเงินครบวงจรของ retail รุ่นใหม่ — หุ้น/options/crypto/prediction markets + Gold subscription ที่พ่วง banking, retirement และ AI (Cortex, Agentic Trading) เข้าด้วยกัน ฐานลูกค้า 28.7 ล้านบัญชีอายุเฉลี่ยน้อยคือ runway ของ wallet share ยาวหลายทศวรรษ เดิมพันหลักคือแปลง active trader ให้เป็นความสัมพันธ์การเงินตลอดชีวิต · Q3 2026 ยืนยันว่าขาใหม่โตจริง (event contracts รายได้ 6 เท่า YoY · Gold 5.2 ล้านคน · platform assets $396B) แต่ยังไม่พอให้รายได้รวมโตแรงเมื่อ crypto หด 55% และดอกเบี้ยขาลงกด net interest — รายได้รวมจึงโตเหลือ +12% จาก +32% ในไตรมาสก่อน — หมายเหตุ: จัดใน layer enterprise (applied AI/platform) เพื่อการเทียบกลุ่มแบบหยาบ ไม่ใช่บริษัทโครงสร้างพื้นฐาน AI",
         "pillars": [
-          "Gold flywheel — สมาชิก 4.3 ล้าน (+36% YoY, สถิติใหม่) ผูกลูกค้าด้วย banking/retirement match/Cortex ทำ switching cost สูงขึ้นเรื่อย ๆ",
-          "Prediction markets โต +320% YoY — asset class ใหม่ที่ HOOD เป็นผู้นำฝั่ง retail และเพิ่มรายได้ที่ไม่พึ่งวัฏจักร crypto",
-          "การกระจายรายได้ดีขึ้น: net interest ~40% ของรายได้ + equities/options โตสองหลัก ทำให้พึ่ง crypto น้อยลงทุกไตรมาส",
-          "เข้า S&P 500 (ก.ย. 2025) + ปี 2025 เป็นปีสถิติทั้งรายได้และกำไร — พ้นสถานะ meme stock สู่บริษัทกำไรจริง",
-          "ขยายพรมแดน: Bitstamp (สถาบัน/crypto), TradePMR (RIA custody), tokenized stocks ใน EU + แผน Robinhood Chain"
+          "Gold flywheel — สมาชิก 5.2 ล้าน (+34% YoY, สถิติใหม่) และลูกค้าใหม่ราว 40% สมัคร Gold · ผูกลูกค้าด้วย banking (เงินฝาก ~$5B) / retirement (AUC $36.6B +51% YoY) / Cortex ทำ switching cost สูงขึ้นเรื่อย ๆ",
+          "Prediction markets — event contracts 16.4 พันล้านสัญญาใน Q3 2026 (มากกว่า 7 เท่า YoY) รายได้ $173M (6 เท่า) และ Rothera (JV ที่เข้าถือ MIAXdx 90% เมื่อ ม.ค. 2026) ทำรายได้ต่อปีเกิน $100M ตั้งแต่ไตรมาสเต็มแรก — ขาที่ไม่พึ่งวัฏจักร crypto",
+          "การกระจายรายได้ดีขึ้น: มี 14 ธุรกิจที่รายได้ต่อปี ≥$100M · options/equities/event contracts โตตั้งแต่สองหลักถึงหลายเท่า จน crypto เหลือ ~8% ของรายได้ และ net interest ~29% (Q3'25 ~36%) — พึ่งขาใดขาหนึ่งน้อยลงทุกไตรมาส",
+          "เข้า S&P 500 (ก.ย. 2025) + ปี 2025 เป็นปีสถิติทั้งรายได้และกำไร · 9 เดือนแรกปี 2026 รายได้ ~$3.80B (+~19% YoY) และ Q3 เป็นรายได้รายไตรมาสสูงสุดเป็นประวัติการณ์ — พ้นสถานะ meme stock สู่บริษัทกำไรจริง",
+          "ขยายพรมแดน: Robinhood Chain ขึ้น mainnet (1 ก.ค. 2026) และติดห้าอันดับแรกด้านรายได้/วอลุ่มตั้งแต่ไตรมาสแรก · Bitstamp (สถาบัน/crypto), TradePMR (RIA custody), WonderFi (แคนาดา) · เปิด crypto ใน UK ได้ใบอนุญาต DFSA ดูไบ (เปิดปี 2027) และ MAS สิงคโปร์อนุมัติในหลักการ"
         ]
       },
       "fundamentals": [
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+15% YoY (Q1 2026 — $1.07B) แต่ลดลงจาก Q4 2025 ($1.28B) และพลาด consensus",
-          "trend": "flat",
-          "score": 62,
+          "current": "+12% YoY (Q3 2026 — $1.42B สถิติใหม่) ชะลอจาก +32% ใน Q2 · ต่ำกว่า consensus ส่วนใหญ่ (~$1.44-1.45B) เล็กน้อย · 9 เดือนแรก ~+19%",
+          "trend": "down",
+          "score": 58,
           "impact": "neutral",
-          "why": "ยังโตจากปีก่อนแต่โมเมนตัมสะดุด — crypto revenue หด −47% กดภาพรวม ขณะที่ธุรกิจ non-crypto (options, equities +46%, event contracts +320%, net interest) ยังโตแข็งแรง คุณภาพการโตดีขึ้นแม้ตัวเลขรวมแผ่ว"
+          "why": "ขาที่ไม่ใช่ crypto ยังโตแรง — options +31%, equities +41%, event contracts 6 เท่า, รายได้อื่น (ส่วนใหญ่ค่าสมาชิก Gold) +61% · แต่ crypto หด 55% และ net interest พลิกเป็น −9% YoY จากดอกเบี้ยขาลง (CFO: ดอกเบี้ยทุก 25bp ≈ 1.5% ของรายได้) ทำให้ตัวเลขรวมชะลอแรงบนฐาน Q3'25 ที่ crypto ยังคึกคัก — คุณภาพการโตดีขึ้น แต่ความเร็วลดลงชัดเจน"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "Q1 2026 EPS $0.38 (พลาด est $0.41) · guide Q2 ~$0.45, Q3 ~$0.50",
+          "current": "Q3 2026 GAAP EPS $0.51 (−16% YoY · ต่ำกว่า consensus ~$0.55-0.56) รวมขาดทุนตีมูลค่า RVI ~$0.07 → ไม่รวมรายการ ~$0.58 · adjusted EPS $0.60 (−3% YoY) · กำไรดำเนินงาน (รายได้ − ค่าใช้จ่ายรวม) ~$685M (+~9% YoY, +~19% QoQ)",
           "trend": "flat",
-          "score": 65,
+          "score": 55,
           "impact": "neutral",
-          "why": "กำไรจริงต่อเนื่องหลายไตรมาสแล้ว (TTM EPS ~$2+) แต่ Q1 พลาดคาดจาก crypto — guidance บอกว่าบริษัทมองกำไรฟื้นทันทีใน Q2/Q3"
+          "why": "กำไรจากธุรกิจหลักยังโต แต่ EPS ตามงบลดลงจากสองเรื่องที่ไม่ใช่ตัวธุรกิจ: ขาดทุนตีมูลค่าหุ้น Robinhood Ventures Fund I ที่ถืออยู่ และอัตราภาษีที่แท้จริงกลับมา ~24% จาก ~12% ใน Q3'25 · TTM GAAP EPS ~$2.17 · consensus FY2026 (non-GAAP) $2.42 โตจากปีก่อนเพียง ~3% — ปี 2026 คือปีที่กำไรต่อหุ้นทรงตัวหลังปี 2025 ที่โตแรง ส่วนการโตรอบถัดไปฝากไว้กับปี 2027"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "เป็นบวกต่อเนื่อง — โมเดล asset-light, capex ต่ำ",
+          "current": "Q3 2026: OCF $1.23B − capex ~$10M ≈ +$1.22B · 9 เดือน OCF $3.98B · capex รวมซอฟต์แวร์ ~$63M ใน 9 เดือน — โมเดล asset-light",
           "trend": "up",
           "score": 75,
           "impact": "positive",
-          "why": "ธุรกิจ platform ไม่ต้องลงทุนหนัก กระแสเงินสดแปลงจากกำไรได้ดี รองรับทั้ง M&A และ buyback พร้อมกัน"
+          "why": "ธุรกิจ platform แทบไม่ต้องลงทุนในสินทรัพย์ กำไรแปลงเป็นเงินสดได้ดี รองรับทั้ง M&A และ buyback · แต่ OCF ของโบรกเกอร์แกว่งตาม working capital (เงินลูกค้า / margin book) จึงไม่ควรอ่านรายไตรมาส (Q3'25 −$1.58B · Q1'26 +$2.03B) — ภาพรวม 9 เดือนแรกบวกราว $3.9B"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "โครงสร้างกำไรแข็งแรงขึ้นทุกปี — 2025 เป็นปีสถิติกำไร",
-          "trend": "up",
+          "current": "operating margin (รายได้ − ค่าใช้จ่ายรวม) 48.1% (Q2 43.9% · Q3'25 ~49.8%) · adjusted EBITDA $808M margin 57% · ค่าใช้จ่ายรวม $739M (+16% YoY)",
+          "trend": "flat",
           "score": 72,
           "impact": "positive",
-          "why": "รายได้โตเร็วกว่าต้นทุนดำเนินงานชัดเจน (operating leverage ของ platform) — แต่ margin ผันผวนตามวอลุ่มเทรดมากกว่าบริษัทซอฟต์แวร์"
+          "why": "margin สูงมากสำหรับโบรกเกอร์และดีขึ้นจาก Q2 ชัดเจน (รายได้โต 9% QoQ ขณะที่ค่าใช้จ่ายแทบไม่ขยับ) · แต่ YoY ค่าใช้จ่ายรวมโต 16% เร็วกว่ารายได้ 12% (adjusted opex+SBC โต 8%) — operating leverage ยังขึ้นกับวอลุ่มเทรด · บริษัทลดเพดานกรอบค่าใช้จ่ายปี 2026 ลง $25M เป็น $2.675-2.75B"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "สูงตามโมเดล platform แต่แกว่งตามวัฏจักรตลาด",
+          "current": "ROE ~21% (TTM) บนส่วนของผู้ถือหุ้น ~$10.1B — สูงตามโมเดล platform แต่แกว่งตามวัฏจักรตลาด",
           "trend": "flat",
           "score": 65,
           "impact": "neutral",
-          "why": "ทุนที่ใช้ต่ำทำให้ผลตอบแทนช่วงตลาดคึกสูงมาก — ด้านกลับคือปีตลาดซบผลตอบแทนหดเร็วเช่นกัน"
+          "why": "ทุนที่ใช้ต่ำทำให้ผลตอบแทนช่วงตลาดคึกสูงมาก — ด้านกลับคือปีตลาดซบผลตอบแทนหดเร็วเช่นกัน · ปีนี้กำไรทรงตัวขณะที่ส่วนของผู้ถือหุ้นโตต่อ ผลตอบแทนจึงไม่ได้ขยับขึ้น"
         },
         {
           "key": "cash",
           "label": "เงินสดในมือ",
-          "current": "สภาพคล่องแข็งแรง (ระดับหลายพันล้าน$)",
-          "trend": "flat",
+          "current": "เงินสดและรายการเทียบเท่า ~$5.8B (30 ก.ย. 2026) จาก ~$4.3B สิ้นปี 2025 — ส่วนหนึ่งมาจากหุ้นกู้แปลงสภาพ $2.2B (มิ.ย. 2026)",
+          "trend": "up",
           "score": 78,
           "impact": "positive",
-          "why": "เงินสดเพียงพอทำ M&A ต่อเนื่อง (Bitstamp, TradePMR) โดยไม่ต้องเพิ่มทุน — งบดุลสะอาด"
+          "why": "เงินสดเพียงพอทำ M&A ต่อเนื่อง (Bitstamp, TradePMR, WonderFi, MIAXdx) และ buyback โดยไม่ต้องเพิ่มทุน · ส่วนที่เพิ่มขึ้นปีนี้มาจากทั้งกระแสเงินสดของธุรกิจและเงินกู้แปลงสภาพ ไม่ใช่จากธุรกิจล้วน"
         },
         {
           "key": "debt",
           "label": "หนี้สิน",
-          "current": "หนี้ต่ำมากเทียบขนาดธุรกิจ",
-          "trend": "flat",
-          "score": 80,
+          "current": "เงินกู้ระยะยาว ~$2.7B — หลักคือหุ้นกู้แปลงสภาพดอกเบี้ย 0% $2.2B ครบกำหนด 2029 (ราคาแปลง $174.42) ที่ออกเมื่อ มิ.ย. 2026 · ยังเป็นเงินสดสุทธิ ~$3B",
+          "trend": "down",
+          "score": 72,
           "impact": "positive",
-          "why": "แทบไม่มีหนี้เชิงโครงสร้าง — ความเสี่ยงงบดุลหลักคือด้าน operations (margin lending) ซึ่งบริหารตามเกณฑ์กำกับ"
+          "why": "จากที่แทบไม่มีหนี้เชิงโครงสร้าง กลายเป็นมีหนี้ก้อนแรก แต่ต้นทุนดอกเบี้ยเป็นศูนย์และเงินสดยังมากกว่าหนี้ราวสองเท่า · ความเสี่ยงงบดุลหลักยังเป็นด้าน operations (margin book $22.1B +59% YoY) ซึ่งบริหารตามเกณฑ์กำกับ"
         },
         {
           "key": "dilution",
           "label": "การเจือจางของหุ้น",
-          "current": "SBC สูงตามแบบ fintech โต — buyback ชดเชยได้บางส่วน",
+          "current": "หุ้น diluted 911 ล้านหุ้น (Q3 2026) จาก 918 ล้านใน Q3'25 (−~1%) · buyback สะสม $1.3B (27 ล้านหุ้น เฉลี่ย ~$48) ตั้งแต่ Q3'24 · SBC ~$85M ต่อไตรมาส",
           "trend": "flat",
-          "score": 60,
+          "score": 62,
           "impact": "neutral",
-          "why": "ค่าตอบแทนหุ้นพนักงานยังหนัก จำนวนหุ้นไม่ลดลงสุทธิ — ดีขึ้นจากยุคแรกแต่ยังเป็นต้นทุนแฝงที่ต้องติดตาม"
+          "why": "buyback เริ่มชดเชย SBC ได้จนจำนวนหุ้นลดลงเล็กน้อยสุทธิ — ดีขึ้นจากยุคแรก · แต่ Q3 ซื้อคืนเพียง $25M (จาก $414M ใน Q2) และหุ้นกู้แปลงสภาพอาจเพิ่มหุ้นราว 12.6 ล้านหุ้นถ้าราคาเกิน $174.42 (มี capped call ช่วยลดผลถึง ~$237.85)"
         },
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรเงินทุน",
-          "current": "M&A เชิงกลยุทธ์ (Bitstamp, TradePMR) + โครงการ buyback",
-          "trend": "up",
-          "score": 70,
+          "current": "M&A เชิงกลยุทธ์ (Bitstamp, TradePMR, WonderFi, MIAXdx ผ่าน Rothera) · buyback ~$689M ใน 9 เดือนแรกปี 2026 · หุ้นกู้แปลงสภาพ 0% $2.2B",
+          "trend": "flat",
+          "score": 68,
           "impact": "positive",
-          "why": "ซื้อกิจการเพื่อเปิดตลาดใหม่ (สถาบัน, RIA) ด้วยราคาสมเหตุสมผล และเริ่มคืนเงินผู้ถือหุ้น — วินัยดีขึ้นชัดเจน"
+          "why": "ซื้อกิจการเพื่อเปิดตลาดใหม่ (สถาบัน, RIA, แคนาดา, exchange ของ prediction markets) ในขนาดที่ไม่กระทบงบดุล และ Rothera ทำรายได้ต่อปีเกิน $100M ตั้งแต่ไตรมาสเต็มแรก · ซื้อหุ้นคืนสะสมที่ราคาเฉลี่ย ~$48 ถือว่าจังหวะดีมาก แต่ Q3 แทบหยุดซื้อ และหุ้นกู้แปลงสภาพเป็นภาระที่ต้องจัดการในอนาคต"
         },
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "P/E ~50x (ราคา ~$101 · market cap ~$96B, ก.ค. 2026)",
-          "trend": "down",
-          "score": 35,
-          "impact": "negative",
-          "why": "แพงจัดเทียบ broker ดั้งเดิม (~15-25x) — ตลาดจ่ายพรีเมียมให้การเติบโตของ ecosystem ราคาย่อจาก high ปลายปี 2025 แล้วแต่ยังไม่ถูก และหุ้นถูกลงโทษแรงทุกครั้งที่พลาดคาด"
+          "current": "ราคา $87.41 (4 พ.ย. 2026 · mcap ~$79B) · P/E ย้อนหลัง ~40x (GAAP TTM $2.17) · ~36x ของ consensus FY2026 non-GAAP $2.42 · ~26x ของ FY2027 $3.39",
+          "trend": "up",
+          "score": 44,
+          "impact": "neutral",
+          "why": "ราคาลง ~23% จากต้นปีและ ~22% ในหนึ่งเดือน (ลง ~10% ในสามวันหลังงบ) ทำให้ multiple หดจาก ~50x เหลือ ~40x — ถูกลงมากแต่ยังแพงกว่า broker ดั้งเดิม (~15-25x) และราคายังรวมการเติบโตของกำไรปี 2027 ราว 40% ที่นักวิเคราะห์คาดไว้ ถ้ากำไรไม่เร่งตามคาด multiple ยังหดได้อีก"
         }
       ],
       "revenueQuality": {
         "acceleration": "decelerating",
         "consistency": 55,
-        "recurringPct": 40,
-        "note": "รายได้เทรดผันผวนตามตลาดสูงมาก (จุดอ่อนเชิงโครงสร้าง) แต่คุณภาพกำลังดีขึ้น: net interest ~40% ของรายได้ + Gold subscription โตสม่ำเสมอ และ prediction markets เพิ่มขาใหม่ที่ไม่ผูกกับ crypto — YoY growth ชะลอจาก +27% (Q4 2025) เหลือ +15% (Q1 2026) เพราะ crypto ซบ",
+        "recurringPct": 39,
+        "note": "รายได้เทรดผันผวนตามตลาดสูงมาก (จุดอ่อนเชิงโครงสร้าง) แต่ส่วนผสมดีขึ้นต่อเนื่อง: Q3 2026 net interest ~29% + รายได้อื่น (ส่วนใหญ่ค่าสมาชิก Gold) ~10% · crypto เหลือ ~8% · event contracts ~12% และบริษัทมี 14 ธุรกิจที่รายได้ต่อปี ≥$100M — แต่ YoY growth ยังแกว่งแรง +27% (Q4'25) → +15% (Q1'26) → +32% (Q2'26) → +12% (Q3'26) ตามวัฏจักร crypto และทิศทางดอกเบี้ย",
         "segments": [
           {
-            "name": "Net interest (margin/securities lending)",
-            "sharePct": 37,
-            "growthNote": "~$390-410M โตต่อเนื่องตามฐานสินทรัพย์และ securities lending (Q4 2025 +39% YoY)",
-            "trend": "up"
+            "name": "Net interest (margin/securities lending/cash sweep)",
+            "sharePct": 29,
+            "growthNote": "$415M (−9% YoY · Q2 $389M +9%) — margin book สถิติใหม่ $22.1B (+59%) แต่ดอกเบี้ยขาลงและ cash sweep −9% YoY กดรายได้ · ดอกเบี้ยทุก 25bp ≈ 1.5% ของรายได้รวม",
+            "trend": "down"
           },
           {
             "name": "Options trading",
-            "sharePct": 25,
-            "growthNote": "แกนรายได้เทรดหลัก — วอลุ่มโตสองหลัก YoY ต่อเนื่อง (Q4 2025 +41%)",
+            "sharePct": 28,
+            "growthNote": "$399M (+31% YoY · Q2 $342M) — สัญญาที่ซื้อขาย 905 ล้านสัญญา (+48%) สถิติใหม่",
             "trend": "up"
           },
           {
-            "name": "Prediction markets & other transaction",
-            "sharePct": 13,
-            "growthNote": "+320% YoY — เครื่องยนต์ใหม่ที่โตแรงสุด วอลุ่ม event contracts ทำสถิติ",
+            "name": "Prediction markets (event contracts)",
+            "sharePct": 12,
+            "growthNote": "$173M (6 เท่า YoY · Q2 $156M) — 16.4 พันล้านสัญญา (มากกว่า 7 เท่า) · Rothera ทำรายได้ต่อปีเกิน $100M ในไตรมาสเต็มแรก",
+            "trend": "up"
+          },
+          {
+            "name": "Equities + ธุรกรรมอื่น",
+            "sharePct": 12,
+            "growthNote": "equities $121M (+41% YoY · Q2 $129M) วอลุ่ม $992B สถิติใหม่ (+53%) + รายได้ธุรกรรมอื่น ~$54M",
+            "trend": "up"
+          },
+          {
+            "name": "รายได้อื่น (ส่วนใหญ่ค่าสมาชิก Gold)",
+            "sharePct": 10,
+            "growthNote": "$142M (+61% YoY · Q2 $143M) · Gold 5.2 ล้านคน (+34%)",
             "trend": "up"
           },
           {
             "name": "Crypto trading",
-            "sharePct": 13,
-            "growthNote": "−47% YoY ($134M) — หดสองไตรมาสติดตามตลาด crypto ที่ซบเซา",
+            "sharePct": 8,
+            "growthNote": "$120M (−55% YoY · Q2 $100M) — วอลุ่ม $50B (−38%) · หดสี่ไตรมาสติดแม้ฟื้นเล็กน้อย QoQ",
             "trend": "down"
-          },
-          {
-            "name": "Equities + Gold subscriptions + อื่นๆ",
-            "sharePct": 12,
-            "growthNote": "equities +46% YoY · Gold 4.3M subs (+36%, สถิติใหม่)",
-            "trend": "up"
           }
         ]
       },
       "aiExecution": {
-        "score": 60,
+        "score": 63,
         "items": [
           {
             "item": "Robinhood Legend (แพลตฟอร์ม active trader)",
             "status": "executing",
-            "evidence": "ดันวอลุ่ม options/equities โตสองหลัก — ยกระดับจากแอปมือถือสู่เครื่องมือเทรดจริงจัง ดึงลูกค้า serious trader จาก broker เดิม"
+            "evidence": "วอลุ่มหุ้น $992B (+53%) และ options 905 ล้านสัญญา (+48%) ทำสถิติใหม่ใน Q3 2026 · บริษัทระบุว่าส่วนแบ่งตลาดโตสองหลัก YoY ทั้งหุ้น options crypto และ margin — ดึงลูกค้า serious trader จาก broker เดิมได้จริง"
           },
           {
-            "item": "Prediction markets (event contracts)",
+            "item": "Prediction markets + Rothera (exchange ของตัวเอง)",
             "status": "executing",
-            "evidence": "+320% YoY วอลุ่มทำสถิติ — เป็นผู้นำ retail ใน asset class ใหม่ก่อนคู่แข่งรายใหญ่ขยับตัว"
+            "evidence": "event contracts 16.4 พันล้านสัญญา (มากกว่า 7 เท่า YoY) รายได้ $173M · Rothera ทำรายได้ต่อปีเกิน $100M ในไตรมาสเต็มแรก ซื้อขายไปแล้วกว่า 6.4 พันล้านสัญญาและปรับค่าธรรมเนียมเป็นแบบ dynamic — เป็นผู้นำ retail ใน asset class ใหม่"
           },
           {
-            "item": "Cortex — AI assistant ในแอป",
+            "item": "Cortex + Agentic Trading (AI ในแอป)",
             "status": "on-track",
-            "evidence": "ผู้ช่วยวิเคราะห์หุ้น/ตอบคำถามสำหรับสมาชิก Gold — ยังช่วง adoption แรก เป็นตัวเพิ่มมูลค่าแพ็กเกจมากกว่าเครื่องผลิตรายได้ตรง"
+            "evidence": "ลูกค้าราว 200,000 รายเปิดบัญชี Agentic Trading สร้างวอลุ่มกว่า $1.6B และยอดเงินในบัญชี ~$250M · ยังช่วง adoption แรก เป็นตัวเพิ่มมูลค่าแพ็กเกจมากกว่าเครื่องผลิตรายได้ตรง"
           },
           {
             "item": "Gold ecosystem (banking + retirement + Strategies)",
-            "status": "on-track",
-            "evidence": "สมาชิก 4.3M (+36%) — ขยายจากเทรดสู่บัญชีเงินเดือน/IRA match/ที่ปรึกษาอัตโนมัติ ผูกลูกค้าระยะยาว"
+            "status": "executing",
+            "evidence": "Gold 5.2 ล้าน (+34%) · Banking เงินฝากเกือบ $5B จากลูกค้ากว่า 350,000 ราย · Strategies ลูกค้า 350,000 ราย AUM กว่า $2B · Retirement AUC $36.6B (+51%) — ขยายจากเทรดสู่บัญชีการเงินหลัก"
           },
           {
             "item": "Tokenization / Robinhood Chain",
             "status": "on-track",
-            "evidence": "หุ้น tokenized ใน EU + แผน chain ของตัวเอง — วิสัยทัศน์ไกลแต่รายได้จริงยังเล็กมาก ต้องรอ regulation ชัด"
+            "evidence": "Chain ขึ้น mainnet และติดห้าอันดับแรกด้านรายได้และวอลุ่มตั้งแต่ไตรมาสแรก (DEX volume กว่า $80B · ค่าธรรมเนียม chain กว่า $50M) + หุ้น tokenized ใน EU · แต่ส่วนที่เป็นรายได้ของบริษัทเองยังเล็ก (Truist ลดคาดการณ์รายได้ Chain ปี 2027 จาก $146M เหลือ $30M)"
+          },
+          {
+            "item": "ขยายต่างประเทศ",
+            "status": "on-track",
+            "evidence": "เปิด crypto ใน UK · ได้ใบอนุญาต DFSA ดูไบ (เปิดปี 2027) · MAS สิงคโปร์อนุมัติในหลักการเป็นศูนย์กลาง APAC · WonderFi เพิ่มฐาน crypto ในแคนาดา — ยังเป็นสัดส่วนรายได้เล็ก"
           }
         ]
       },
@@ -4963,79 +5037,85 @@
             "key": "marketLeadership",
             "label": "ผู้นำตลาด",
             "status": "strengthening",
-            "note": "ผู้นำ retail trading รุ่นใหม่ในสหรัฐฯ ชัดเจน + เข้า S&P 500 แล้ว — แต่ AUC ยังเล็กมากเทียบ Schwab/Fidelity"
+            "note": "ผู้นำ retail trading รุ่นใหม่ในสหรัฐฯ ชัดเจน ส่วนแบ่งตลาดโตสองหลัก YoY ในทุกสินทรัพย์หลัก + platform assets $396B (+19%) — แต่ AUC ยังเล็กมากเทียบ Schwab/Fidelity"
           },
           {
             "key": "techLeadership",
             "label": "ผู้นำเทคโนโลยี",
             "status": "stable",
-            "note": "UX/มือถือเป็นเบอร์หนึ่ง Legend ปิดช่องว่างฝั่ง desktop — ฟีเจอร์เชิงลึกยังตาม broker ใหญ่ในบางด้าน"
+            "note": "UX/มือถือเป็นเบอร์หนึ่ง Legend ปิดช่องว่างฝั่ง desktop · Agentic Trading และ Robinhood Chain เป็นของใหม่ที่ broker ดั้งเดิมยังไม่มี — แต่ยังเร็วเกินจะเรียกว่าผู้นำเทคโนโลยี"
           },
           {
             "key": "executionSpeed",
             "label": "ความเร็วในการ execute",
             "status": "strengthening",
-            "note": "ออกผลิตภัณฑ์ใหม่เร็วที่สุดในอุตสาหกรรม — prediction markets, banking, tokenization, Cortex ภายในปีเดียว"
+            "note": "Rothera ทำรายได้ต่อปีเกิน $100M ตั้งแต่ไตรมาสเต็มแรก · Chain ขึ้น mainnet และ Agentic Trading มีลูกค้า ~200,000 รายภายในไม่กี่เดือน — ออกผลิตภัณฑ์เร็วที่สุดในอุตสาหกรรม"
           },
           {
             "key": "switchingCost",
             "label": "ต้นทุนการย้ายค่าย",
             "status": "strengthening",
-            "note": "Gold + IRA match + banking ทำให้ย้ายออกแพงขึ้นเรื่อย ๆ — จากแอปเทรดที่ลบง่าย กลายเป็นบัญชีการเงินหลัก"
+            "note": "Retirement AUC $36.6B (+51%) · Banking เงินฝาก ~$5B · Gold 5.2 ล้าน — จากแอปเทรดที่ลบง่าย กลายเป็นบัญชีการเงินหลัก"
           },
           {
             "key": "ecosystem",
             "label": "ecosystem",
             "status": "strengthening",
-            "note": "จากเทรดอย่างเดียว → super-app การเงิน (เทรด/ออม/เกษียณ/ธนาคาร/AI) — ยิ่งใช้หลายบริการยิ่งผูกแน่น"
+            "note": "14 ธุรกิจที่รายได้ต่อปี ≥$100M — เทรด/ออม/เกษียณ/ธนาคาร/AI/blockchain ยิ่งใช้หลายบริการยิ่งผูกแน่น"
           },
           {
             "key": "developerAdoption",
             "label": "developer adoption",
             "status": "stable",
-            "note": "ไม่ใช่ open platform — มิตินี้ไม่ใช่สนามแข่งหลักของ HOOD (ต่างจากบริษัทโครงสร้าง AI)"
+            "note": "Robinhood Chain เป็นแพลตฟอร์มแรกที่เปิดให้นักพัฒนา (DEX volume กว่า $80B ในไตรมาสแรก) แต่รายได้ที่ตกถึงบริษัทยังเล็ก — มิตินี้ยังไม่ใช่สนามแข่งหลักของ HOOD"
           },
           {
             "key": "customerLockin",
             "label": "การล็อกอินลูกค้า",
             "status": "strengthening",
-            "note": "IRA match มีเงื่อนไขถือยาว + เงินเดือนเข้าบัญชี Robinhood — ลูกค้า Gold churn ต่ำลง"
+            "note": "IRA match มีเงื่อนไขถือยาว + เงินเดือนเข้าบัญชี Robinhood · ลูกค้าใหม่ราว 40% สมัคร Gold และ Banking กลายเป็นปลายทางอันดับหนึ่งของเงินที่ถอนจากบัญชีโบรกเกอร์"
           },
           {
             "key": "moat",
             "label": "moat",
             "status": "stable",
-            "note": "brand + ความเร็ว + ecosystem กว้างขึ้น แต่คู่แข่งแต่ละแนวแข็งแรง (Schwab/Fidelity ฝั่งสินทรัพย์, Coinbase ฝั่ง crypto, Kalshi ฝั่ง prediction)"
+            "note": "brand + ความเร็ว + ecosystem กว้างขึ้น แต่คู่แข่งแต่ละแนวแข็งแรง (Schwab/Fidelity ฝั่งสินทรัพย์, Coinbase ฝั่ง crypto, Kalshi/Polymarket ฝั่ง prediction)"
           }
         ]
       },
       "capitalAllocation": {
-        "score": 70,
-        "verdict": "จัดสรรทุนดีขึ้นชัดเจน — M&A เปิดตลาดใหม่ในราคาสมเหตุสมผล + เริ่ม buyback จริงจัง จุดที่ต้องตามคือ SBC ที่ยังสูงและวินัยการซื้อกิจการเมื่อราคาหุ้นตัวเองแพง",
+        "score": 68,
+        "verdict": "จัดสรรทุนดีขึ้นชัดเจน — M&A เปิดตลาดใหม่ในขนาดสมเหตุสมผล (Rothera คืนทุนเป็นรายได้เร็ว) และซื้อหุ้นคืนสะสมที่ราคาเฉลี่ยต่ำ ~$48 · จุดที่ต้องตามคือ SBC ที่ยังสูง การซื้อคืนที่แผ่วลงมากใน Q3 และหุ้นกู้แปลงสภาพ $2.2B ที่เพิ่มภาระและโอกาสเจือจางในอนาคต",
         "items": [
           {
             "label": "M&A",
-            "current": "Bitstamp (สถาบัน/crypto ทั่วโลก) + TradePMR (RIA custody)",
+            "current": "Bitstamp (สถาบัน/crypto) + TradePMR (RIA) + WonderFi (แคนาดา · มิ.ย. 2026) + MIAXdx 90% ผ่าน Rothera (ม.ค. 2026)",
             "assessment": "good",
-            "why": "ซื้อความสามารถ/ใบอนุญาตที่สร้างเองช้า — เปิดตลาดสถาบันและที่ปรึกษาโดยไม่เจือจางหนัก"
+            "why": "ซื้อความสามารถ/ใบอนุญาตที่สร้างเองช้า — เปิดตลาดสถาบัน ที่ปรึกษา ต่างประเทศ และ exchange ของ prediction markets โดยไม่เจือจางหนัก · Rothera ทำรายได้ต่อปีเกิน $100M ตั้งแต่ไตรมาสเต็มแรก"
           },
           {
             "label": "Buyback",
-            "current": "มีโครงการซื้อหุ้นคืนต่อเนื่อง",
+            "current": "Q3 2026 $25M (0.2 ล้านหุ้น เฉลี่ย ~$105) จาก $414M ใน Q2 · สะสม $1.3B (27 ล้านหุ้น เฉลี่ย ~$48) ตั้งแต่ Q3'24",
             "assessment": "neutral",
-            "why": "ช่วยชดเชย SBC บางส่วนแต่จำนวนหุ้นยังไม่ลดสุทธิ — ยังไม่ถึงขั้นคืนทุนแบบ big tech"
+            "why": "จังหวะซื้อสะสมดีมากและจำนวนหุ้นเริ่มลดสุทธิ · แต่ปริมาณไม่สม่ำเสมอ — Q3 แทบหยุดซื้อ จึงยังไม่ถึงขั้นคืนทุนแบบ big tech"
           },
           {
             "label": "SBC / การเจือจาง",
-            "current": "สูงตามแบบบริษัทเทคโต",
+            "current": "~$85M ต่อไตรมาส (9 เดือน $277M)",
             "assessment": "neutral",
-            "why": "ต้นทุนแฝงที่กดผู้ถือหุ้น — แลกกับการรักษาทีมในตลาดแรงงานแข่งสูง"
+            "why": "ต้นทุนแฝงที่กดผู้ถือหุ้น — แลกกับการรักษาทีมในตลาดแรงงานแข่งสูง · ปัจจุบัน buyback ชดเชยได้แล้ว"
+          },
+          {
+            "label": "หุ้นกู้แปลงสภาพ",
+            "current": "$2.2B ดอกเบี้ย 0% ครบกำหนด 2029 ราคาแปลง $174.42 + capped call ถึง ~$237.85 · ใช้ ~$290M ซื้อหุ้นคืนพร้อมกัน (มิ.ย. 2026)",
+            "assessment": "neutral",
+            "why": "ได้เงินทุนต้นทุนต่ำมากในจังหวะที่ราคาหุ้นสูง · แต่เปลี่ยนบริษัทจากไม่มีหนี้เป็นมีหนี้ และอาจเจือจาง ~12.6 ล้านหุ้นถ้าราคาขึ้นไปเกินราคาแปลง"
           },
           {
             "label": "การลงทุนภายใน (ผลิตภัณฑ์ใหม่)",
-            "current": "เทเข้า Legend, prediction markets, banking, Cortex, tokenization",
+            "current": "เทเข้า Legend, Rothera/prediction markets, banking, Cortex/Agentic Trading, Robinhood Chain",
             "assessment": "good",
-            "why": "อัตราการออกผลิตภัณฑ์ต่อปีสูงสุดในกลุ่ม และหลายตัวแปลงเป็นรายได้จริงแล้ว (prediction +320%)"
+            "why": "อัตราการออกผลิตภัณฑ์ต่อปีสูงสุดในกลุ่ม และหลายตัวแปลงเป็นรายได้จริงแล้ว (event contracts $173M ต่อไตรมาส · 14 ธุรกิจรายได้ต่อปี ≥$100M)"
           },
           {
             "label": "เงินปันผล",
@@ -5046,55 +5126,55 @@
         ]
       },
       "valuationView": {
-        "level": "expensive",
-        "note": "P/E ~50x (ราคา ~$101, mcap ~$96B) — แพงกว่า broker ดั้งเดิมหลายเท่า ตลาดจ่ายให้การเติบโตของ ecosystem และ optionality (prediction/tokenization) ราคาแพงแบบนี้ทำให้หุ้นเหวี่ยงแรงมากรอบงบ โดยเฉพาะเมื่อพลาดคาด"
+        "level": "premium",
+        "note": "ราคา $87.41 (4 พ.ย. 2026 · mcap ~$79B) — P/E ย้อนหลัง ~40x (GAAP TTM $2.17) · ~36x ของ consensus FY2026 non-GAAP $2.42 · ~26x ของ FY2027 $3.39 · จากราคาปิดสิ้นไตรมาส $112.50 (30 ก.ย.) ลงมาราว 22% (รวมช่วงลง ~10% ในสามวันหลังรายได้ Q3 ต่ำกว่า consensus เล็กน้อย) และ −23% จากต้นปี · multiple หดจาก ~50x มาเหลือ ~40x จึงขยับจากระดับแพงจัดมาเป็นพรีเมียม แต่ยังแพงกว่า broker ดั้งเดิมหลายเท่า และตั้งอยู่บนสมมติฐานกำไรปี 2027 โต ~40% · เป้าเฉลี่ยนักวิเคราะห์ ~$131"
       },
       "whatChanged": [
         {
-          "metric": "รายได้รวม (Q4 2025 → Q1 2026)",
-          "prev": "$1.28B (+27% YoY)",
-          "now": "$1.07B (+15% YoY, พลาด est $1.17B)",
+          "metric": "รายได้รวม (Q2 → Q3 2026)",
+          "prev": "$1.31B (+32% YoY)",
+          "now": "$1.42B (+12% YoY) สถิติใหม่แต่โตช้าลงมาก และต่ำกว่า consensus ~$1.44-1.45B เล็กน้อย — ราคาลง ~10% ในสามวันหลังงบ",
           "direction": "negative"
         },
         {
-          "metric": "Crypto revenue",
-          "prev": "$221M (−38% YoY)",
-          "now": "$134M (−47% YoY) — หดแรงสองไตรมาสติด",
+          "metric": "ขาที่ผูกกับวัฏจักร (crypto / net interest)",
+          "prev": "crypto $100M (−38% YoY) · net interest $389M (+9% YoY)",
+          "now": "crypto $120M (−55% YoY) · net interest $415M (−9% YoY) จากดอกเบี้ยขาลงและ cash sweep ที่ลดลง",
           "direction": "negative"
         },
         {
           "metric": "Prediction markets (event contracts)",
-          "prev": "โตแรงต่อเนื่อง (Q4 อื่นๆ transaction +300%)",
-          "now": "+320% YoY วอลุ่มทำสถิติ",
+          "prev": "$156M (~10 เท่า YoY) · 13.6 พันล้านสัญญา",
+          "now": "$173M (6 เท่า YoY) · 16.4 พันล้านสัญญา · Rothera รายได้ต่อปีเกิน $100M ในไตรมาสเต็มแรก",
           "direction": "positive"
         },
         {
-          "metric": "Robinhood Gold",
-          "prev": "~4M subs",
-          "now": "4.3M subs (+36% YoY, สถิติใหม่)",
+          "metric": "Gold / platform assets / net deposits",
+          "prev": "Gold 4.8 ล้าน · platform assets $369B · net deposits $21.7B",
+          "now": "Gold 5.2 ล้าน (+34% YoY) · $396B (+19% YoY) · net deposits $15.7B (ต.ค. เดือนเดียวเกิน $13B รวม $6B จากเงินบริจาคของครอบครัว Dell เข้า Trump Accounts)",
           "direction": "positive"
         },
         {
-          "metric": "Funded customers",
-          "prev": "~27M",
-          "now": "27.4M (+1.7M / +6% YoY)",
-          "direction": "positive"
+          "metric": "operating margin / EPS",
+          "prev": "43.9% · GAAP $0.62 (รวมกำไร deconsolidate RVI ~$0.14 → ~$0.48) · adjusted $0.48",
+          "now": "48.1% · GAAP $0.51 (รวมขาดทุนตีมูลค่า RVI ~$0.07 → ~$0.58) · adjusted $0.60 — ดีขึ้น QoQ แต่ GAAP −16% YoY จากภาษีที่กลับสู่ระดับปกติ",
+          "direction": "neutral"
         },
         {
-          "metric": "Guidance",
-          "prev": "—",
-          "now": "Q2 EPS ~$0.45 · Q3 ~$0.50 · Q2 rev ~$1.23B (มองกำไรฟื้นทันที)",
-          "direction": "positive"
+          "metric": "กรอบค่าใช้จ่ายปี 2026 (adjusted opex+SBC)",
+          "prev": "$2.675-2.775B",
+          "now": "$2.675-2.75B (ลดเพดาน $25M) · แผนปี 2027 จะประกาศ ม.ค.-ก.พ.",
+          "direction": "neutral"
         }
       ],
       "risks": [
-        "รายได้ผูกกับวอลุ่มเทรดและอารมณ์ตลาด — bear market หรือ retail เงียบ = รายได้หดเร็วและแรง (consistency ต่ำเชิงโครงสร้าง)",
-        "Crypto revenue หด −38% → −47% สองไตรมาสติด — ถ้าลามไปขา options/prediction ภาพการโตทั้งบริษัทจะเปลี่ยน",
-        "Valuation ~50x ไม่เผื่อความผิดพลาด — พลาด consensus ครั้งเดียวหุ้นถูกลงโทษหนัก (งบ Q4 2025 ร่วง ~8%)",
-        "Regulatory หลายแนวพร้อมกัน: PFOF, prediction markets (CFTC), crypto, banking — กติกาเปลี่ยนได้ทุกไตรมาส",
-        "งบ Q2 2026 ออก 29 ก.ค. 2026 (หนึ่งวันหลังอัปเดตข้อมูลนี้) — ควรรัน /thesis-update HOOD ซ้ำหลังงบเพื่อ refresh ทันที"
+        "รายได้ผูกกับวอลุ่มเทรดและอารมณ์ตลาด — bear market หรือ retail เงียบ = รายได้หดเร็วและแรง (consistency ต่ำเชิงโครงสร้าง) · CFO ส่งสัญญาณว่า spread ช่วงต้น Q4 แคบลง ซึ่งอาจกดรายได้ธุรกรรม crypto และหุ้น",
+        "Crypto revenue หด −38% → −47% → −55% และ net interest พลิกเป็น −9% YoY ตามดอกเบี้ยขาลง (ทุก 25bp ≈ 1.5% ของรายได้) — ถ้าวัฏจักรสองขานี้ยังลงพร้อมกัน ขาใหม่ (event contracts, Gold) ต้องโตเร็วกว่าเดิมอีกจึงจะพยุงการเติบโตรวมได้",
+        "Valuation ~40x ของกำไรย้อนหลังยังไม่เผื่อความผิดพลาด — งบ Q3 รายได้ต่ำกว่าคาดเพียง ~1-2% หุ้นก็ลง ~10% ในสามวัน และราคาปัจจุบันยังรวมการเติบโตของกำไรปี 2027 ราว 40% ไว้แล้ว",
+        "Regulatory หลายแนวพร้อมกัน: PFOF, prediction markets (CFTC และการดำเนินการของหน่วยงานระดับรัฐต่อ event contracts), crypto, banking — กติกาเปลี่ยนได้ทุกไตรมาส และ event contracts คือขาที่โตเร็วที่สุดตอนนี้",
+        "แผนค่าใช้จ่ายปี 2027 ยังไม่ประกาศ (จะให้ ม.ค.-ก.พ.) และค่าใช้จ่ายรวม Q3 โต 16% YoY เร็วกว่ารายได้ — ถ้าการลงทุนผลิตภัณฑ์ใหม่ (Chain, ต่างประเทศ, Agentic Trading) เร่งขึ้นขณะที่รายได้วัฏจักรอ่อน margin จะถูกบีบ"
       ],
-      "asOf": "2026-08",
+      "asOf": "2026-11",
       "history": {
         "fyNote": "ปีบัญชีสิ้นสุดเดือนธันวาคม (ปีปฏิทิน) — ข้อมูล 5 ปีล่าสุดที่รายงานแล้วคือ FY2021 ถึง FY2025 (IPO ก.ค. 2021 แต่มีงบเต็มปี 2021)",
         "epsBasis": "diluted GAAP; HOOD ไม่เคยแตกหุ้น จึงเป็น basis ปัจจุบันอยู่แล้ว (split factor = 1 ทุกปี)",
@@ -5145,7 +5225,7 @@
             "priceFYEnd": 113.1
           }
         ],
-        "notes": "HOOD ไม่เคยแตกหุ้น ราคาและ EPS ทุกปีเป็น basis ปัจจุบันโดยไม่ต้องปรับ; EPS FY2021 ติดลบหนัก (-$7.49) จากขาดทุน GAAP ~$3.7B ที่ส่วนใหญ่เป็น stock-based compensation ก้อนใหญ่ตอน IPO และจำนวนหุ้นถัวเฉลี่ยต่ำเพราะ IPO กลางปี (~492M หุ้น) ส่วนปีอื่น implied diluted shares เสถียร ~879M→919M; งบกำไรขาดทุนของ HOOD ไม่มีบรรทัด operating income แยก จึงคำนวณ operating margin จาก (total net revenues − total operating expenses)/revenue ตามแนวทาง aggregator (operating income -1,641/-1,011/-536/+1,054/+2,094 $M); FCF (OCF − capex) ผันผวนแรงตาม working capital ของธุรกิจโบรกเกอร์ (segregated cash / payables to users) เช่น FY2024 OCF ติดลบ -$157M ทั้งที่กำไรสุทธิ $1.4B ขณะที่ FY2023 OCF บวก $1.18B ทั้งที่ยังขาดทุน — ไม่ควรใช้ FCF เป็นตัวชี้วัดหลักของบริษัทนี้ (capex เล็กมาก $2-63M/ปี); OCF ยืนยันตรงกับ SEC XBRL (10-K) ทุกปี; ราคาปิดสิ้นปี 2025 ($113.10) ยืนยันจาก StatMuse — คิดเป็นผลตอบแทนปีปฏิทิน 2025 ประมาณ +203.5% จากราคาปิดสิ้นปี 2024 ($37.26); FY2025 net income $1.9B เทียบ $1.4B ใน FY2024 ซึ่งรวม one-time benefit $424M (tax benefit + regulatory accrual reversal, +$0.47 ต่อหุ้น) ใน Q4 2024; ตัวเลข revenue ปัดเป็น 1 ทศนิยม ($1.815B→1.8, $1.358B→1.4, $1.865B→1.9, $2.951B→3.0, $4.473B→4.5)",
+        "notes": "HOOD ไม่เคยแตกหุ้น ราคาและ EPS ทุกปีเป็น basis ปัจจุบันโดยไม่ต้องปรับ; EPS FY2021 ติดลบหนัก (-$7.49) จากขาดทุน GAAP ~$3.7B ที่ส่วนใหญ่เป็น stock-based compensation ก้อนใหญ่ตอน IPO และจำนวนหุ้นถัวเฉลี่ยต่ำเพราะ IPO กลางปี (~492M หุ้น) ส่วนปีอื่น implied diluted shares เสถียร ~879M→919M; งบกำไรขาดทุนของ HOOD ไม่มีบรรทัด operating income แยก จึงคำนวณ operating margin จาก (total net revenues − total operating expenses)/revenue ตามแนวทาง aggregator (operating income -1,641/-1,011/-536/+1,054/+2,094 $M); FCF (OCF − capex) ผันผวนแรงตาม working capital ของธุรกิจโบรกเกอร์ (segregated cash / payables to users) เช่น FY2024 OCF ติดลบ -$157M ทั้งที่กำไรสุทธิ $1.4B ขณะที่ FY2023 OCF บวก $1.18B ทั้งที่ยังขาดทุน — ไม่ควรใช้ FCF เป็นตัวชี้วัดหลักของบริษัทนี้ (capex เล็กมาก $2-63M/ปี); OCF ยืนยันตรงกับ SEC XBRL (10-K) ทุกปี; ราคาปิดสิ้นปี 2025 ($113.10) ยืนยันจาก StatMuse — คิดเป็นผลตอบแทนปีปฏิทิน 2025 ประมาณ +203.5% จากราคาปิดสิ้นปี 2024 ($37.26); FY2025 net income $1.9B เทียบ $1.4B ใน FY2024 ซึ่งรวม one-time benefit $424M (tax benefit + regulatory accrual reversal, +$0.47 ต่อหุ้น) ใน Q4 2024; ตัวเลข revenue ปัดเป็น 1 ทศนิยม ($1.815B→1.8, $1.358B→1.4, $1.865B→1.9, $2.951B→3.0, $4.473B→4.5); Q3'26 (เพิ่ม 2026-11): operating margin = (1,424 − 739) ÷ 1,424 = 48.1% ตามสูตรเดียวกับทั้งชุด (ตรวจแล้วว่า Q2'26 43.9% = (1,308 − 734) ÷ 1,308 ไม่ใช่กำไรก่อนภาษี $709M) · FCF = OCF $1,225M − ซื้อ PP&E $10M ≈ $1.22B (ไม่หัก capitalized software $11M — สูตรเดียวกับ Q1'26/Q2'26 ที่ตรวจย้อนจาก OCF 9 เดือน $3,983M) · ราคาสิ้นงวด $112.50 = ราคาปิด 30 ก.ย. 2026 จาก StatMuse · EPS $0.51 เป็น diluted GAAP จาก 8-K (8-K/A ที่ยื่นวันเดียวกันแก้เฉพาะผลภาษีของรายการ non-GAAP ไม่กระทบตัวเลข GAAP) · priceQEnd ตรวจกับราคาปิด Yahoo วันซื้อขายสุดท้ายของเดือนสิ้นไตรมาส (2026-11): Q3'23 10.5 → 9.81, Q4'23 13 → 12.74, Q1'24 19 → 20.13, Q2'24 21.5 → 22.71, Q3'24 24.5 → 23.42, Q4'24 40.5 → 37.26, Q1'25 45 → 41.62, Q3'25 130 → 143.18, Q1'26 100 → 69.3, Q2'26 91 → 100.28",
         "sources": [
           "https://stockanalysis.com/stocks/hood/financials/",
           "https://stockanalysis.com/stocks/hood/financials/cash-flow-statement/",
@@ -5155,7 +5235,12 @@
           "https://www.statmuse.com/money/ask/hood-stock-price-on-december-30-2022",
           "https://www.statmuse.com/money/ask/hood-stock-price-on-december-29-2023",
           "https://www.statmuse.com/money/ask/hood-stock-price-on-december-31-2024",
-          "https://www.statmuse.com/money/ask/hood-stock-price-on-december-31-2025"
+          "https://www.statmuse.com/money/ask/hood-stock-price-on-december-31-2025",
+          "https://www.sec.gov/Archives/edgar/data/0001783879/000178387926000164/q32026robinhoodexhibit991.htm",
+          "https://www.sec.gov/Archives/edgar/data/0001783879/000178387926000170/q32026robinhoodamendedex991.htm",
+          "https://www.sec.gov/Archives/edgar/data/0001783879/000178387926000167/hood-20260930.htm",
+          "https://www.sec.gov/Archives/edgar/data/1783879/000178387926000113/q22026robinhoodexhibit991.htm",
+          "https://www.statmuse.com/money/ask/hood-stock-price-on-september-30-2026"
         ],
         "quarters": [
           {
@@ -5165,7 +5250,7 @@
             "epsAdj": -0.09,
             "opMarginPct": -15.6,
             "fcfB": null,
-            "priceQEnd": 10.5,
+            "priceQEnd": 9.81,
             "endDate": "2023-09-30"
           },
           {
@@ -5175,7 +5260,7 @@
             "epsAdj": 0.03,
             "opMarginPct": 14.6,
             "fcfB": null,
-            "priceQEnd": 13,
+            "priceQEnd": 12.74,
             "endDate": "2023-12-31"
           },
           {
@@ -5185,7 +5270,7 @@
             "epsAdj": 0.18,
             "opMarginPct": 25.6,
             "fcfB": null,
-            "priceQEnd": 19,
+            "priceQEnd": 20.13,
             "endDate": "2024-03-31"
           },
           {
@@ -5195,7 +5280,7 @@
             "epsAdj": 0.21,
             "opMarginPct": 27.7,
             "fcfB": 0.05,
-            "priceQEnd": 21.5,
+            "priceQEnd": 22.71,
             "endDate": "2024-06-30"
           },
           {
@@ -5205,7 +5290,7 @@
             "epsAdj": 0.17,
             "opMarginPct": 23.7,
             "fcfB": 1.81,
-            "priceQEnd": 24.5,
+            "priceQEnd": 23.42,
             "endDate": "2024-09-30"
           },
           {
@@ -5215,7 +5300,7 @@
             "epsAdj": 1.01,
             "opMarginPct": 54.8,
             "fcfB": -1.4,
-            "priceQEnd": 40.5,
+            "priceQEnd": 37.26,
             "endDate": "2024-12-31"
           },
           {
@@ -5225,7 +5310,7 @@
             "epsAdj": 0.37,
             "opMarginPct": 39.9,
             "fcfB": 0.64,
-            "priceQEnd": 45,
+            "priceQEnd": 41.62,
             "endDate": "2025-03-31"
           },
           {
@@ -5245,7 +5330,7 @@
             "epsAdj": 0.61,
             "opMarginPct": 49.8,
             "fcfB": -1.58,
-            "priceQEnd": 130,
+            "priceQEnd": 143.18,
             "endDate": "2025-09-30"
           },
           {
@@ -5265,7 +5350,7 @@
             "epsAdj": 0.38,
             "opMarginPct": 38.5,
             "fcfB": 2.03,
-            "priceQEnd": 100,
+            "priceQEnd": 69.3,
             "endDate": "2026-03-31"
           },
           {
@@ -5275,24 +5360,57 @@
             "epsAdj": 0.62,
             "opMarginPct": 43.9,
             "fcfB": 0.71,
-            "priceQEnd": 91,
+            "priceQEnd": 100.28,
             "endDate": "2026-06-30",
             "epsNote": "EPS $0.62 รวม ~$0.14 จากการ deconsolidate กองทุน Robinhood Ventures Fund I (กำไร ~$129M ครั้งเดียว) — ตัดรายการนี้ออกจะเหลือ ~$0.48 · net income ไตรมาสนี้ $573M"
+          },
+          {
+            "q": "Q3'26",
+            "endYm": "2026-09",
+            "revenueB": 1.42,
+            "epsAdj": 0.51,
+            "opMarginPct": 48.1,
+            "fcfB": 1.22,
+            "priceQEnd": 112.5,
+            "endDate": "2026-09-30",
+            "epsNote": "EPS $0.51 รวมขาดทุนที่ยังไม่เกิดขึ้นจริง ~$67M (~$0.07/หุ้น) ส่วนใหญ่จากการตีมูลค่าหุ้น Robinhood Ventures Fund I (RVI) ที่ยังถืออยู่ตามราคาตลาด (อยู่ใต้กำไรดำเนินงาน) — ตัดรายการนี้ออกจะเหลือ ~$0.58 (adjusted EPS ของบริษัท $0.60) · net income $476M · รายการนี้อาจเกิดซ้ำได้ทั้งบวกและลบตราบที่ยังถือหุ้น RVI"
           }
         ]
       },
-      "nextEarnings": "2026-11-04",
+      "nextEarnings": "2027-02",
       "forwardView": {
-        "asOf": "2026-08",
+        "asOf": "2026-11",
         "estimateHistory": [
           {
             "asOf": "2026-08",
             "fy": "FY2026",
             "eps": 2.48,
             "revenue": 5.16
+          },
+          {
+            "asOf": "2026-11",
+            "fy": "FY2026",
+            "eps": 2.42,
+            "revenue": 5.32
           }
         ],
         "guidanceTrack": [
+          {
+            "quarter": "Q3 2026",
+            "metric": "revenue",
+            "guided": "ไม่ให้ guidance",
+            "actual": "$1.42B (+12% YoY)",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q3 2026",
+            "metric": "eps",
+            "guided": "ไม่ให้ guidance",
+            "actual": "GAAP $0.51 · adjusted $0.60",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
           {
             "quarter": "Q2 2026",
             "metric": "revenue",
@@ -5321,20 +5439,27 @@
         "consensus": [
           {
             "fy": "FY2026",
-            "revenue": 5.16,
-            "eps": 2.48,
+            "revenue": 5.32,
+            "eps": 2.42,
             "confidence": "high",
             "basis": "non-GAAP"
           },
           {
             "fy": "FY2027",
+            "revenue": 6.9,
+            "eps": 3.39,
+            "confidence": "medium",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2028",
             "revenue": null,
-            "eps": 3.2,
+            "eps": 4.37,
             "confidence": "medium",
             "basis": "non-GAAP"
           }
         ],
-        "note": "Robinhood ไม่ให้ guidance รายได้รายไตรมาส (ให้เป็นกรอบค่าใช้จ่าย adjusted opex+SBC รายปีแทน) — แถว guidance จึงเป็น noGuidance ตามจริง ไม่ใช่ข้อมูลขาด · Q2 2026: รายได้ $1.31B (+32% YoY) · net deposits $21.7B · platform assets $369B (+32% YoY) · adjusted EBITDA margin 57% · consensus FY2026 EPS ~$2.48 / FY2027 ~$3.20 (28 นักวิเคราะห์ · non-GAAP) — KB ใช้ GAAP จึงเป็นคนละฐาน · งบ Q3 ประกาศ 4 พ.ย. 2026"
+        "note": "Robinhood ไม่ให้ guidance รายได้หรือ EPS รายไตรมาส (ให้เฉพาะกรอบ adjusted opex+SBC รายปี ซึ่ง Q3 ลดเพดานเป็น $2.675-2.75B) แถว guidance จึงเป็น noGuidance ตามจริง · consensus FY2026 ลดจาก $2.48 เป็น $2.42 (non-GAAP · stockanalysis 32 นักวิเคราะห์ ตรงกับ TIKR normalized) ขณะที่รายได้ขยับขึ้นเป็น $5.32B ส่วน FY2027 $3.39 / รายได้ ~$6.9B และ FY2028 $4.37 มาจาก TIKR (normalized) แหล่งเดียว — Finviz/MarketBeat ให้ FY2027 ~$2.97-2.98 โดยไม่ระบุฐาน และทั้งหมดเป็นคนละฐานกับ EPS GAAP ใน KB"
       }
     },
     "LLY": {
@@ -7330,56 +7455,56 @@
       "name": "Palantir Technologies",
       "layer": "enterprise",
       "thesis": {
-        "statement": "PLTR คือผู้นำซอฟต์แวร์ AI สำหรับองค์กรและภาครัฐ — Gotham (รัฐบาล/กลาโหม) + Foundry (พาณิชย์) + AIP (Artificial Intelligence Platform) ที่จุดการเติบโตรอบใหม่ · มุม AI ของ thesis คือ 'จาก POC สู่ production': AIP bootcamp เปลี่ยนการทดลองเป็นระบบใช้งานจริงได้เร็ว ทำให้ US commercial โตระเบิด (+149% YoY) ขณะฐานรัฐบาลยังโตแข็ง (+90%) · คูเมืองคือ ontology + การผูกข้อมูล/เวิร์กโฟลว์ลูกค้าลึกจน switching cost สูงมาก · เดิมพันจริงคือ valuation สุดขั้ว (forward P/E ~80x) — การเติบโตต้องแรงและยาวพอที่จะ justify multiple ไม่งั้นเสี่ยง multiple compression รุนแรง",
+        "statement": "PLTR คือผู้นำซอฟต์แวร์ AI สำหรับองค์กรและภาครัฐ — Gotham (รัฐบาล/กลาโหม) + Foundry (พาณิชย์) + AIP (Artificial Intelligence Platform) ที่จุดการเติบโตรอบใหม่ · มุม AI ของ thesis คือ 'จาก POC สู่ production': AIP bootcamp เปลี่ยนการทดลองเป็นระบบใช้งานจริงได้เร็ว ทำให้ US commercial โตระเบิด (+148% YoY ใน Q3 2026) จนแซงรายได้รัฐบาลสหรัฐเป็นครั้งแรก ขณะฐานรัฐบาลยังโตแข็ง (+96%) · คูเมืองคือ ontology + การผูกข้อมูล/เวิร์กโฟลว์ลูกค้าลึกจน switching cost สูงมาก · เดิมพันจริงคือ valuation สุดขั้ว (forward P/E ~76x จากกำไร 12 เดือนข้างหน้า · ~101x จากกำไรปี 2026) — การเติบโตต้องแรงและยาวพอที่จะ justify multiple ไม่งั้นเสี่ยง multiple compression รุนแรง · สัญญาณที่ต้องเฝ้าคือยอดสัญญาใหม่ (TCV) ที่โตแค่ +6% YoY ใน Q3 ขณะรายได้ยังเร่งตัว",
         "pillars": [
-          "AIP = เครื่องยนต์การเติบโต — bootcamp เปลี่ยน POC เป็น production เร็ว ดัน US commercial +149% YoY (Q2 2026)",
-          "ฐานรัฐบาล/กลาโหมมั่นคงและโตต่อ (+90% US gov) — สัญญาระยะยาว entrenchment สูง ผู้เล่นใหม่เข้าแทนยาก",
+          "AIP = เครื่องยนต์การเติบโต — bootcamp เปลี่ยน POC เป็น production เร็ว ดัน US commercial +148% YoY เป็น $984M (Q3 2026) แซง US government เป็นครั้งแรก",
+          "ฐานรัฐบาล/กลาโหมมั่นคงและโตต่อ (US gov $953M +96% YoY) — สัญญาระยะยาว entrenchment สูง ผู้เล่นใหม่เข้าแทนยาก",
           "Ontology + data integration = คูเมือง — ผูกข้อมูลและเวิร์กโฟลว์ลูกค้าลึก switching cost สูงมากเมื่อขึ้น production",
-          "Rule of 40 = 155% (ดีที่สุดในกลุ่มซอฟต์แวร์) — โต 93% พร้อม adj operating margin 62% และ FCF แรงในเวลาเดียวกัน",
-          "Land-and-expand: remaining US commercial deal value >$6.24B (>2x YoY) · ปิดดีล ≥$1M ถึง 220 ดีลใน Q2"
+          "Rule of 40 = 158% (ดีที่สุดในกลุ่มซอฟต์แวร์) — โต 96% พร้อม adj operating margin 62% และ adj FCF margin 53% ในเวลาเดียวกัน",
+          "Land-and-expand: remaining US commercial deal value $6.52B (+79% YoY) · ปิดดีล ≥$1M 212 ดีลใน Q3 — แต่ RDV โตแค่ +4% QoQ ต้องดูว่า pipeline ตามรายได้ทันหรือไม่"
         ]
       },
       "fundamentals": [
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "~+93% YoY (Q2 2026 — $1.94B) · US commercial +149% · US gov +90% — เร่งตัวต่อเนื่อง",
+          "current": "+96% YoY (Q3 2026 — $2.313B · +20% QoQ) · US commercial +148% · US gov +96% · ทะลุจุดกึ่งกลาง guide 7.0% · guide Q4 $2.649-2.653B (~+88% YoY)",
           "trend": "up",
-          "score": 92,
+          "score": 93,
           "impact": "positive",
-          "why": "การเติบโตเร่งขึ้นจริงและกระจายทั้งพาณิชย์และรัฐ — US commercial เกือบ 2.5 เท่า YoY จาก AIP ที่เปลี่ยนดีมานด์ AI เป็นสัญญาจริง · FY26 guide ยกเป็น $8.15B (+82%)"
+          "why": "การเติบโตเร่งขึ้นห้าไตรมาสติด (+63% → +70% → +85% → +93% → +96%) และกระจายทั้งพาณิชย์และรัฐ — US commercial เกือบ 2.5 เท่า YoY จาก AIP จนแซงรายได้รัฐบาลสหรัฐเป็นครั้งแรก · FY26 guide ยกเป็น $8.530-8.534B (~+91%) จาก $8.150-8.158B · ข้อควรระวัง: ยอดสัญญาใหม่ (TCV +6% YoY) และ RDV (+4% QoQ) โตช้ากว่ารายได้มาก"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไร",
-          "current": "adj EPS $0.41 (Q2 2026, ชนะคาด ~$0.28) · GAAP กำไรต่อเนื่อง",
+          "current": "GAAP EPS $0.44 (= adjusted $0.44 · ชนะ consensus ~$0.41) จาก $0.18 ปีก่อน (+144%) · Q2 $0.41 · GAAP operating income $1.085B (+176% YoY · +19% QoQ)",
           "trend": "up",
           "score": 88,
           "impact": "positive",
-          "why": "กำไรโตเร็วกว่ารายได้เพราะ operating leverage สูง — margin ขยายพร้อมการโต (ต่างจากบริษัทโตเร็วทั่วไปที่ต้องเผาเงิน)"
+          "why": "กำไรโตเร็วกว่ารายได้เพราะ operating leverage สูง — margin ขยายพร้อมการโต (ต่างจากบริษัทโตเร็วทั่วไปที่ต้องเผาเงิน) · EPS QoQ โตแค่ +7% ช้ากว่ากำไรดำเนินงาน (+19%) เพราะรายการอื่นติดลบ $26M ใน Q3 (ขาดทุนที่ยังไม่รับรู้จากหุ้นจดทะเบียนที่ถือ) เทียบกับครึ่งปีแรกที่บวกรวม ~$160M — ไม่ใช่ธุรกิจชะลอ"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "adj FCF guide FY26 ~$4.5-4.7B (FCF margin ~55%)",
+          "current": "adj FCF Q3 $1.216B (margin 53%) · OCF $1.205B · capex 9 เดือน ~$30M · guide FY26 ยกเป็น $4.8-5.0B จาก $4.5-4.7B",
           "trend": "up",
           "score": 90,
           "impact": "positive",
-          "why": "เครื่องผลิตเงินสดชั้นดี — โมเดล asset-light + prepay จากลูกค้ารัฐ ทำให้ FCF margin สูงผิดปกติสำหรับบริษัทโตเร็ว"
+          "why": "เครื่องผลิตเงินสดชั้นดี — โมเดล asset-light + prepay จากลูกค้า ทำให้ FCF margin สูงผิดปกติสำหรับบริษัทโตเร็ว · FCF margin Q3 ลดจาก 63% ใน Q2 เป็น 53% ตามจังหวะการวางบิล/รับชำระจากลูกค้า (ลูกหนี้เพิ่ม ~$0.84B ใน 9 เดือน) ไม่ใช่ธุรกิจแย่ลง และบริษัทยก guide FCF ทั้งปีขึ้น"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "adj operating margin ~62% (Q2 2026) · Rule of 40 = 155%",
-          "trend": "up",
+          "current": "adj operating margin 62% (Q3 2026 · เท่า Q2) · GAAP operating margin ~47% · gross margin 83% · Rule of 40 = 158%",
+          "trend": "flat",
           "score": 90,
           "impact": "positive",
-          "why": "margin ระดับท็อปของอุตสาหกรรมและยังขยาย — operating leverage ของแพลตฟอร์มซอฟต์แวร์ที่ scale แล้ว (หมายเหตุ: เป็น adjusted ที่บวก SBC กลับ)"
+          "why": "margin ระดับท็อปของอุตสาหกรรม — adj 62% และ GAAP ~47% ทรงตัวที่ระดับสูงสุดเป็นประวัติการณ์ (ปีก่อน adj ~51% / GAAP ~33%) · gross margin ลดเหลือ 83% จาก ~86% ในครึ่งปีแรกเพราะค่า cloud hosting ภายนอกเพิ่ม · guide Q4 adj operating income $1.640-1.644B ≈ margin ~62% เท่าเดิม (หมายเหตุ: adjusted บวก SBC กลับ)"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "สูง — asset-light, กำไรจริง, ไม่ต้องลงทุน capex หนัก",
+          "current": "สูง — asset-light (capex 9 เดือนแค่ ~$30M) · กำไร GAAP ~$1.13B ต่อไตรมาส · ไม่ต้องลงทุน capex หนัก",
           "trend": "up",
           "score": 75,
           "impact": "positive",
@@ -7388,16 +7513,16 @@
         {
           "key": "cash",
           "label": "สภาพคล่อง",
-          "current": "เงินสด + เงินลงทุน ~$6B+ · ไม่มีหนี้",
+          "current": "เงินสด + US Treasury ~$10.4B (30 ก.ย. 2026) จาก $9.2B ใน Q2 · ไม่มีหนี้",
           "trend": "up",
-          "score": 86,
+          "score": 88,
           "impact": "positive",
-          "why": "งบดุลแข็งมาก เงินสดหนา ไม่มีภาระหนี้ — ยืดหยุ่นสูงและทน downturn ได้ดี"
+          "why": "งบดุลแข็งมาก เงินสดเพิ่ม ~$1.2B ในไตรมาสเดียว ไม่มีภาระหนี้ — ยืดหยุ่นสูงและทน downturn ได้ดี"
         },
         {
           "key": "debt",
           "label": "หนี้สิน",
-          "current": "ไม่มีหนี้ระยะยาว — net cash เต็มตัว",
+          "current": "ไม่มีหนี้ — วงเงินกู้หมุนเวียน $500M ยังไม่ได้เบิก (ครบกำหนด มี.ค. 2027) · net cash เต็มตัว",
           "trend": "flat",
           "score": 92,
           "impact": "positive",
@@ -7406,53 +7531,53 @@
         {
           "key": "dilution",
           "label": "การเจือจางของหุ้น",
-          "current": "SBC สูงตามสไตล์บริษัทซอฟต์แวร์โตเร็ว — เจือจางต่อเนื่องแม้อัตราเริ่มดีขึ้น",
-          "trend": "flat",
-          "score": 45,
-          "impact": "negative",
-          "why": "จุดอ่อนหลัก — margin/EPS ที่โชว์เป็น adjusted บวก SBC กลับ ทำให้ 'กำไรจริง' ต่อหุ้นถูกเจือจาง · ต้องดูว่าอัตรา dilution ลดลงตามการ scale ไหม"
+          "current": "SBC Q3 $319M (~14% ของรายได้ · ปีก่อน ~15%) · หุ้น diluted เฉลี่ย 2,574 ล้าน เทียบ 2,571 ล้านปีก่อน · หุ้นออกจำหน่าย 2,409 ล้าน (+1.1% YoY) · ซื้อหุ้นคืนแค่ ~$1.5M ใน 9 เดือน",
+          "trend": "up",
+          "score": 52,
+          "impact": "neutral",
+          "why": "ดีขึ้นจากเดิม — SBC ยังเพิ่มตามขนาด (+85% YoY) แต่สัดส่วนต่อรายได้ลดลง และจำนวนหุ้นเพิ่มแค่ราว 1% ต่อปี · ยังไม่ใช่จุดแข็งเพราะไม่มีการซื้อหุ้นคืนมาหักล้าง และ margin/EPS ที่โชว์เป็น adjusted บวก SBC กลับ"
         },
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรเงินทุน",
-          "current": "มีโครงการ buyback + ลงทุนหนักใน R&D/AIP · ไม่มีปันผล (ยังโตเร็ว)",
-          "trend": "up",
-          "score": 68,
+          "current": "แทบไม่ซื้อหุ้นคืน (9 เดือนปี 2026 ~$1.5M) · capex ต่ำมาก · ไม่มีปันผล · เงินสดสะสม $10.4B เพิ่ม ~$1.2B ต่อไตรมาส",
+          "trend": "flat",
+          "score": 62,
           "impact": "neutral",
-          "why": "ทีมบริหารเน้นการเติบโตเป็นหลัก การซื้อหุ้นคืนบางส่วนช่วยชดเชย dilution — ยังพิสูจน์วินัยการจัดสรรทุนระยะยาวไม่นานพอ"
+          "why": "ทีมบริหารเน้นการเติบโตเป็นหลักและเก็บเงินสดไว้ — ปี 2026 แทบไม่ได้ใช้โครงการซื้อหุ้นคืน (ช่วงเดียวกันปีก่อน ~$56M) จึงไม่มีอะไรหักล้าง SBC · เงินสดที่สะสมเร็วยังไม่มีแผนใช้ที่ชัด — วินัยการจัดสรรทุนระยะยาวยังพิสูจน์ไม่ได้"
         },
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "forward P/E ~80x (สูงกว่ามัธยฐานซอฟต์แวร์ ~4 เท่า) — แพงสุดขั้ว",
-          "trend": "down",
-          "score": 18,
+          "current": "ราคา $171.70 (4 พ.ย. 2026) · mcap ~$414B · forward P/E ~76x (12 เดือนข้างหน้า non-GAAP) · ~101x กำไรปี 2026 ($1.70) · ~69x ปี 2027 ($2.48) · P/S ~48x รายได้ปี 2026",
+          "trend": "flat",
+          "score": 20,
           "impact": "negative",
-          "why": "ตลาดจ่ายล่วงหน้าให้การเติบโตหลายปี — แม้ธุรกิจดีเยี่ยม แต่ margin of safety แทบไม่มี ความเสี่ยง multiple compression สูงที่สุดในพอร์ต AI · ราคาแพงคือความเสี่ยงหลัก ไม่ใช่คุณภาพธุรกิจ"
+          "why": "ตลาดจ่ายล่วงหน้าให้การเติบโตหลายปี — แม้ธุรกิจดีเยี่ยม แต่ margin of safety แทบไม่มี · ราคาถอยจากจุดสูงสุด 52 สัปดาห์ $212.94 มา ~19% ทำให้ multiple ลดจาก ~80x เหลือ ~76x เท่านั้น ยังแพงสุดขั้ว · ราคาแพงคือความเสี่ยงหลัก ไม่ใช่คุณภาพธุรกิจ"
         }
       ],
       "revenueQuality": {
         "acceleration": "accelerating",
         "consistency": 85,
         "recurringPct": 80,
-        "note": "คุณภาพรายได้สูงและเร่งตัว — US commercial ขับด้วย AIP (land-and-expand, remaining deal value >$6.24B) และฐานรัฐบาลที่เหนียวและคาดการณ์ได้ · รายได้ส่วนใหญ่เป็น subscription/สัญญาต่อเนื่อง แต่ฝั่งรัฐมี lumpiness จากสัญญาก้อนใหญ่เป็นครั้งคราว",
+        "note": "คุณภาพรายได้สูงและเร่งตัวห้าไตรมาสติด — US commercial ขับด้วย AIP (land-and-expand) จนแซงรายได้รัฐบาลสหรัฐเป็นครั้งแรก และฐานรัฐบาลยังเหนียวและคาดการณ์ได้ · แต่ยอดสัญญาใหม่ Q3 (TCV $2.918B) โตแค่ +6% YoY และ US commercial RDV ($6.517B) +4% QoQ — รายได้กำลังโตเร็วกว่ายอดจองใหม่ ต้องเฝ้าว่าจะกระทบการเติบโตปี 2027 หรือไม่ · รายได้ส่วนใหญ่เป็น subscription/สัญญาต่อเนื่อง แต่ฝั่งรัฐมี lumpiness จากสัญญาก้อนใหญ่เป็นครั้งคราว",
         "segments": [
           {
             "name": "US Government (Gotham/กลาโหม)",
-            "sharePct": 42,
-            "growthNote": "$809M (+90% YoY) — ฐานเหนียว entrenchment สูง โตเร็วขึ้นจาก AI defense",
+            "sharePct": 41,
+            "growthNote": "$953M (+96% YoY · +18% QoQ) — ฐานเหนียว entrenchment สูง โตเร็วขึ้นจาก AI defense",
             "trend": "up"
           },
           {
             "name": "US Commercial (AIP/Foundry)",
-            "sharePct": 39,
-            "growthNote": "$764M (+149% YoY) — เครื่องยนต์การเติบโต land-and-expand จาก AIP bootcamp",
+            "sharePct": 43,
+            "growthNote": "$984M (+148% YoY · +29% QoQ) — แซง US government เป็นครั้งแรก · guide ทั้งปี >$3.559B (≥143%)",
             "trend": "up"
           },
           {
             "name": "International (commercial + government)",
-            "sharePct": 19,
-            "growthNote": "โตช้ากว่า US — ยุโรปยังอืด แต่ตะวันออกกลาง/พันธมิตรกลาโหมเริ่มขยับ",
+            "sharePct": 16,
+            "growthNote": "~$376M (+26% YoY · +4% QoQ) — commercial ~$184M (~+21%) · government ~$193M (~+31%) · โตช้ากว่า US มาก สัดส่วนลดจาก 25% เหลือ 16% ในหนึ่งปี",
             "trend": "flat"
           }
         ]
@@ -7463,12 +7588,12 @@
           {
             "item": "AIP (Artificial Intelligence Platform) → production",
             "status": "executing",
-            "evidence": "bootcamp เปลี่ยน POC เป็นระบบใช้จริงเร็ว — US commercial +149% YoY คือหลักฐานว่าเปลี่ยนดีมานด์ AI เป็นรายได้จริงได้"
+            "evidence": "bootcamp เปลี่ยน POC เป็นระบบใช้จริงเร็ว — US commercial $984M (+148% YoY · +29% QoQ) แซง US government เป็นครั้งแรก คือหลักฐานว่าเปลี่ยนดีมานด์ AI เป็นรายได้จริงได้"
           },
           {
             "item": "AI ด้านกลาโหม/รัฐ (Gotham, Warp Speed)",
             "status": "executing",
-            "evidence": "US gov +90% YoY — สัญญากลาโหม/หน่วยงานความมั่นคงที่ผู้เล่นใหม่เข้าแทนยากมาก"
+            "evidence": "US gov $953M (+96% YoY · +18% QoQ) — สัญญากลาโหม/หน่วยงานความมั่นคงที่ผู้เล่นใหม่เข้าแทนยากมาก"
           },
           {
             "item": "Ontology + Apollo (deployment layer)",
@@ -7477,8 +7602,8 @@
           },
           {
             "item": "โมเมนตัมดีลใหญ่",
-            "status": "executing",
-            "evidence": "ปิดดีล ≥$1M ถึง 220 ดีล (98 ดีล ≥$5M, 70 ดีล ≥$10M) ใน Q2 · remaining US commercial deal value >$6.24B"
+            "status": "on-track",
+            "evidence": "ปิดดีล ≥$1M 212 ดีล (107 ดีล ≥$5M · 64 ดีล ≥$10M) ใน Q3 · แต่ TCV $2.918B (+6% YoY) ลดจาก $3.373B ใน Q2 · US commercial TCV $1.463B (+11%) · RDV $6.517B (+79% YoY แต่ +4% QoQ) — ยอดจองใหม่โตช้ากว่ารายได้ชัด"
           },
           {
             "item": "ขยายสู่ verticals ใหม่ (manufacturing, healthcare, การเงิน)",
@@ -7495,7 +7620,7 @@
             "key": "marketLeadership",
             "label": "ผู้นำตลาด",
             "status": "strengthening",
-            "note": "ผู้นำซอฟต์แวร์ AI สำหรับองค์กร/รัฐที่ขึ้น production จริง — นำหน้าคู่แข่งด้าน 'ใช้งานได้จริงในสเกลใหญ่'"
+            "note": "ผู้นำซอฟต์แวร์ AI สำหรับองค์กร/รัฐที่ขึ้น production จริง — US commercial แซง US government เป็นครั้งแรกใน Q3 2026 สะท้อนว่าชนะในตลาดองค์กรด้วย ไม่ใช่แค่ฝั่งรัฐ"
           },
           {
             "key": "techLeadership",
@@ -7507,7 +7632,7 @@
             "key": "executionSpeed",
             "label": "ความเร็วในการ execute",
             "status": "strengthening",
-            "note": "bootcamp ปิดดีลและขึ้น production เร็วผิดปกติ — เปลี่ยนวงจรขายองค์กรที่เคยยาวให้สั้นลง"
+            "note": "bootcamp ปิดดีลและขึ้น production เร็วผิดปกติ · รายได้ทะลุจุดกึ่งกลาง guidance เก้าไตรมาสติด (Q3 2026 +7.0%) และยก guide ทั้งปีทุกครั้งที่รายงานงบในปี 2026 (พ.ค. · ส.ค. · พ.ย.)"
           },
           {
             "key": "switchingCost",
@@ -7542,86 +7667,92 @@
         ]
       },
       "capitalAllocation": {
-        "score": 68,
-        "verdict": "เน้นการเติบโตเป็นหลัก + เริ่มซื้อหุ้นคืนบางส่วนเพื่อชดเชย dilution · วินัยการจัดสรรทุนระยะยาวยังพิสูจน์ไม่นานพอ แต่งบดุลปลอดหนี้ให้ความยืดหยุ่นสูง",
+        "score": 62,
+        "verdict": "เน้นการเติบโตเป็นหลักและสะสมเงินสด (เงินสด + treasuries $10.4B) · ปี 2026 แทบไม่ได้ซื้อหุ้นคืน (~$1.5M ใน 9 เดือน) จึงไม่มีอะไรหักล้าง SBC แม้อัตราเจือจางจะต่ำลงเหลือราว 1% ต่อปี · วินัยการจัดสรรทุนระยะยาวยังพิสูจน์ไม่นานพอ แต่งบดุลปลอดหนี้ให้ความยืดหยุ่นสูง",
         "items": [
           {
             "label": "โครงการซื้อหุ้นคืน",
-            "current": "มี buyback authorization เพื่อชดเชย SBC บางส่วน",
+            "current": "แทบไม่ได้ใช้ในปี 2026 — ซื้อคืน ~$1.5M ใน 9 เดือน (ช่วงเดียวกันปีก่อน ~$56M)",
             "assessment": "neutral",
-            "why": "ช่วยลดแรงเจือจาง แต่ยังไม่มากพอกลบ SBC ทั้งหมด — เป็นสัญญาณเริ่มใส่ใจ dilution"
+            "why": "การไม่ซื้อคืนที่ valuation ระดับ ~100 เท่าของกำไรอาจสมเหตุสมผล แต่แปลว่า SBC ~$319M ต่อไตรมาสไม่มีอะไรหักล้าง"
           },
           {
             "label": "ลงทุน R&D / AIP",
-            "current": "ลงทุนหนักต่อเนื่องในแพลตฟอร์ม AIP และ ontology",
+            "current": "R&D Q3 $220M (+52% YoY) — ลงทุนต่อเนื่องในแพลตฟอร์ม AIP และ ontology",
             "assessment": "good",
             "why": "เป็นหัวใจของคูเมืองและการเติบโต — ROI ปรากฏชัดใน US commercial ที่โตระเบิด"
           },
           {
             "label": "การลงทุนเชิงกลยุทธ์",
-            "current": "ลงทุนในบริษัทพันธมิตร/ลูกค้าบางราย",
+            "current": "ถือหุ้นบริษัทพันธมิตร/ลูกค้าบางราย (ทั้งจดทะเบียนและไม่จดทะเบียน) — กำไร/ขาดทุนตีมูลค่าเข้ารายการอื่นทุกไตรมาส",
             "assessment": "neutral",
-            "why": "เพิ่มการผูกลูกค้า แต่ต้องระวังการลงทุนที่วนกลับมาเป็นรายได้ตัวเอง (round-tripping)"
+            "why": "เพิ่มการผูกลูกค้า แต่ต้องระวังการลงทุนที่วนกลับมาเป็นรายได้ตัวเอง (round-tripping) และทำให้กำไร GAAP แกว่งตามราคาหุ้นที่ถือ"
           },
           {
             "label": "เงินปันผล",
-            "current": "ไม่มี — เก็บกระแสเงินสดไว้ลงทุน/ซื้อหุ้นคืน",
+            "current": "ไม่มี — เก็บกระแสเงินสดไว้ลงทุน",
             "assessment": "neutral",
-            "why": "เหมาะกับช่วงเติบโตเร็ว — คืนทุนผ่าน buyback มากกว่าปันผล"
+            "why": "เหมาะกับช่วงเติบโตเร็ว"
+          },
+          {
+            "label": "เงินสดสะสม",
+            "current": "เงินสด + treasuries $10.4B เพิ่ม ~$1.2B ต่อไตรมาส · ไม่มีหนี้",
+            "assessment": "neutral",
+            "why": "ให้ความยืดหยุ่นสูงมาก แต่ยังไม่มีแผนใช้เงินก้อนนี้ที่ชัดเจน ผลตอบแทนของเงินสดต่ำกว่าผลตอบแทนของธุรกิจหลักมาก"
           }
         ]
       },
       "valuationView": {
         "level": "expensive",
-        "note": "forward P/E ~80x (แพงกว่ามัธยฐานซอฟต์แวร์ ~4 เท่า) — แพงที่สุดในบรรดาหุ้น AI ขนาดใหญ่ · ธุรกิจคุณภาพเยี่ยม (Rule of 40 = 155%, FCF margin ~55%) แต่ราคาสะท้อนการเติบโตหลายปีล่วงหน้าไปแล้ว margin of safety แทบไม่มี · ความเสี่ยงหลักไม่ใช่คุณภาพธุรกิจ แต่คือ multiple compression — ถ้าการเติบโตชะลอแม้เล็กน้อย หุ้นเหวี่ยงลงแรง · เป็นตัวที่ 'ธุรกิจนำหน้าคู่แข่ง แต่ราคานำหน้าธุรกิจ' ชัดที่สุดในพอร์ต"
+        "note": "forward P/E ~76x (12 เดือนข้างหน้า non-GAAP) · ~101x กำไรปี 2026 ($1.70) · ~69x ปี 2027 ($2.48) · P/S ~48x รายได้ปี 2026 ที่ราคา $171.70 (mcap ~$414B) — ยังแพงที่สุดในบรรดาหุ้น AI ขนาดใหญ่ · ธุรกิจคุณภาพเยี่ยม (Rule of 40 = 158%, adj FCF margin ~53%) แต่ราคาสะท้อนการเติบโตหลายปีล่วงหน้าไปแล้ว margin of safety แทบไม่มี · ตลาดตอบสนองงบที่ชนะคาดทุกตัวด้วยการเปิดลบ ~6% (ปิด −1.6% ที่ $175.40 วันที่ 3 พ.ย.) หลังร่วง ~9% ในสามวันก่อนงบ — ความเสี่ยงหลักไม่ใช่คุณภาพธุรกิจ แต่คือ multiple compression ถ้าการเติบโตชะลอแม้เล็กน้อย · เป็นตัวที่ 'ธุรกิจนำหน้าคู่แข่ง แต่ราคานำหน้าธุรกิจ' ชัดที่สุดในพอร์ต"
       },
       "whatChanged": [
         {
-          "metric": "รายได้เติบโต YoY (Q2 2026)",
-          "prev": "Q1'26 ~+72%",
-          "now": "+93% YoY ($1.94B) — เร่งตัว",
+          "metric": "รายได้เติบโต YoY",
+          "prev": "Q2 2026 +93% ($1.935B) · ชนะจุดกึ่งกลาง guide 7.5%",
+          "now": "Q3 2026 +96% ($2.313B · +20% QoQ) · ชนะจุดกึ่งกลาง guide 7.0% — เร่งตัวไตรมาสที่ห้าติด",
           "direction": "positive"
         },
         {
-          "metric": "US Commercial YoY",
-          "prev": "~+120%",
-          "now": "+149% YoY ($764M)",
+          "metric": "US Commercial",
+          "prev": "$764M (+149% YoY)",
+          "now": "$984M (+148% YoY · +29% QoQ) — แซง US government เป็นครั้งแรก",
+          "direction": "positive"
+        },
+        {
+          "metric": "US Government",
+          "prev": "$809M (+90% YoY)",
+          "now": "$953M (+96% YoY · +18% QoQ)",
           "direction": "positive"
         },
         {
           "metric": "FY 2026 guidance",
-          "prev": "$7.65-7.66B",
-          "now": "$8.15-8.16B (+82% YoY) — ยกขึ้น",
+          "prev": "รายได้ $8.150-8.158B · adj FCF $4.5-4.7B · US commercial >$3.424B",
+          "now": "รายได้ $8.530-8.534B (~+91% YoY) · adj FCF $4.8-5.0B · US commercial >$3.559B · guide Q4 $2.649-2.653B",
           "direction": "positive"
         },
         {
-          "metric": "Q3 2026 guidance (ใหม่)",
-          "prev": "—",
-          "now": "$2.160-2.164B (~+83% YoY) — ทะลุ $2B ต่อไตรมาสครั้งแรก",
-          "direction": "positive"
+          "metric": "ยอดสัญญาใหม่ (TCV / RDV)",
+          "prev": "TCV $3.373B (+49% YoY) · US commercial TCV $2.132B (+153%) · RDV $6.238B (+124% YoY)",
+          "now": "TCV $2.918B (+6% YoY) · US commercial TCV $1.463B (+11%) · RDV $6.517B (+79% YoY · +4% QoQ) — ยอดจองใหม่ชะลอชัด",
+          "direction": "negative"
         },
         {
-          "metric": "adj EPS",
-          "prev": "คาด ~$0.28",
-          "now": "$0.41 (ชนะคาดชัด)",
-          "direction": "positive"
-        },
-        {
-          "metric": "Rule of 40",
-          "prev": "~145%",
-          "now": "155% (12 ไตรมาสติดที่ขยายตัว)",
-          "direction": "positive"
+          "metric": "EPS / margin / Rule of 40",
+          "prev": "GAAP EPS $0.41 · GAAP operating margin 47.1% · adj 62% · Rule of 40 155%",
+          "now": "GAAP EPS $0.44 (= adjusted · +144% YoY) · GAAP operating margin 46.9% · adj 62% · Rule of 40 158% — margin ทรงตัวที่ระดับสูงสุด",
+          "direction": "neutral"
         }
       ],
       "risks": [
-        "Valuation สุดขั้ว (forward P/E ~80x) — ความเสี่ยง multiple compression สูงที่สุดในพอร์ต หุ้นเหวี่ยงแรงตามข่าว/โมเมนตัม",
-        "SBC/dilution สูง — margin และ EPS ที่โชว์เป็น adjusted บวก SBC กลับ 'กำไรจริง' ต่อหุ้นถูกเจือจาง",
+        "Valuation สุดขั้ว (forward P/E ~76x จากกำไร 12 เดือนข้างหน้า · ~101x กำไรปี 2026) — ความเสี่ยง multiple compression สูงที่สุดในพอร์ต หุ้นเหวี่ยงแรงตามข่าว/โมเมนตัม · งบ Q3 ที่ชนะคาดทุกตัวยังทำให้ราคาเปิดลบ ~6%",
+        "ยอดสัญญาใหม่ชะลอ — TCV Q3 2026 +6% YoY (Q2 +49%) และ US commercial RDV +4% QoQ ขณะรายได้โต +96% · ถ้า pipeline ไม่เร่งตาม การเติบโตปี 2027 อาจชะลอแรงกว่าที่ consensus (~$13.0B, ~+52%) คาด",
+        "SBC สูง (~$319M ต่อไตรมาส ~14% ของรายได้) และแทบไม่มีการซื้อหุ้นคืน — margin และ EPS ที่โชว์เป็น adjusted บวก SBC กลับ 'กำไรจริง' ต่อหุ้นถูกเจือจาง แม้อัตราเพิ่มของจำนวนหุ้นจะลดลงเหลือราว 1% ต่อปี",
         "พึ่งรัฐบาล/สัญญาก้อนใหญ่ — รายได้ฝั่งรัฐ lumpy และอ่อนไหวต่อการเมือง/งบประมาณ",
-        "Key-man risk (Alex Karp) + วัฒนธรรมองค์กรเฉพาะตัวที่ผูกกับผู้นำ",
-        "คู่แข่ง hyperscaler / foundation model providers ขยับเข้าพื้นที่ AI application ระดับองค์กร"
+        "คู่แข่ง hyperscaler / foundation model providers ขยับเข้าพื้นที่ AI application ระดับองค์กร · บวก key-man risk (Alex Karp) และวัฒนธรรมองค์กรเฉพาะตัวที่ผูกกับผู้นำ"
       ],
-      "asOf": "2026-08",
-      "nextEarnings": "2026-11",
+      "asOf": "2026-11",
+      "nextEarnings": "2027-02",
       "history": {
         "years": [
           {
@@ -7663,11 +7794,11 @@
           {
             "fy": "FY2025",
             "endYm": "2025-12",
-            "revenueB": 4.4,
-            "epsAdj": 0.7,
-            "opMarginPct": 45,
-            "fcfB": 1.9,
-            "priceFYEnd": 170
+            "revenueB": 4.48,
+            "epsAdj": 0.75,
+            "opMarginPct": 50,
+            "fcfB": 2.1,
+            "priceFYEnd": 177.8
           }
         ],
         "quarters": [
@@ -7732,7 +7863,7 @@
             "epsAdj": 0.08,
             "opMarginPct": 19.9,
             "fcfB": 0.304,
-            "priceQEnd": 88
+            "priceQEnd": 84.4
           },
           {
             "q": "Q2'25",
@@ -7759,7 +7890,7 @@
             "epsAdj": 0.24,
             "opMarginPct": 40.9,
             "fcfB": 0.764,
-            "priceQEnd": 170
+            "priceQEnd": 177.75
           },
           {
             "q": "Q1'26",
@@ -7768,7 +7899,7 @@
             "epsAdj": 0.34,
             "opMarginPct": 46.2,
             "fcfB": 0.892,
-            "priceQEnd": 140
+            "priceQEnd": 146.28
           },
           {
             "q": "Q2'26",
@@ -7777,22 +7908,54 @@
             "epsAdj": 0.41,
             "opMarginPct": 47.1,
             "fcfB": 1.202,
-            "priceQEnd": 155
+            "priceQEnd": 116.67
+          },
+          {
+            "q": "Q3'26",
+            "endYm": "2026-09",
+            "endDate": "2026-09-30",
+            "revenueB": 2.313,
+            "epsAdj": 0.44,
+            "opMarginPct": 46.9,
+            "fcfB": 1.197,
+            "priceQEnd": 187
           }
         ],
-        "epsBasis": "diluted adjusted (non-GAAP) EPS — PLTR ไม่เคยแตกหุ้น จึงเป็นฐานหุ้นปัจจุบันทุกปี · GAAP เพิ่งพลิกบวกปี 2023 ตัวเลขก่อนหน้าจึงใช้ฐาน adjusted เพื่อเทียบกันได้"
+        "epsBasis": "รายไตรมาส (history.quarters) = diluted GAAP EPS ตามงบ · รายปี (history.years) = diluted adjusted (non-GAAP) EPS · PLTR ไม่เคยแตกหุ้น จึงเป็นฐานหุ้นปัจจุบันทุกงวด · ตั้งแต่ปี 2026 GAAP กับ adjusted EPS เท่ากัน (Q2 $0.41 · Q3 $0.44) แต่ก่อนหน้านั้น GAAP ต่ำกว่ามาก (เช่น Q4'24 GAAP $0.03 เทียบ adjusted $0.14 · FY2025 GAAP $0.63 เทียบ adjusted $0.75)",
+        "notes": "EPS รายไตรมาสเป็น diluted GAAP ส่วนรายปีเป็น diluted adjusted และ opMarginPct ก็แยกฐานแบบเดียวกัน (รายไตรมาส GAAP · รายปี adjusted) — ก่อนปี 2026 จึงเทียบสองตารางตรง ๆ ไม่ได้ · fcfB ทั้งรายปีและรายไตรมาสคิดแบบกระแสเงินสดจากการดำเนินงานลบ capex ไม่ใช่ adjusted FCF ของบริษัท (FY2025 = $2.134B − $0.034B ≈ $2.10B เทียบ adjusted FCF ที่รายงาน $2.270B) · แถว FY2025 แทนค่าประมาณเดิมด้วยตัวเลขจริงจาก 8-K งบ Q4 2025 เมื่อ 2026-11 · priceQEnd ของ Q1'25, Q4'25, Q1'26 และ Q2'26 แก้เป็นราคาปิดวันทำการสุดท้ายของเดือนสิ้นไตรมาสจาก Yahoo Finance เมื่อ 2026-11 (เดิม 88 / 170 / 140 / 155) และ priceFYEnd ของ FY2025 ปรับตามราคาปิดสิ้นปีเดียวกัน",
+        "sources": [
+          "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000004/a2025q4ex991earningsrelease.htm",
+          "https://www.sec.gov/Archives/edgar/data/1321655/000132165525000007/a2024q4ex991earningsrelease.htm",
+          "https://www.sec.gov/Archives/edgar/data/0001321655/000132165526000045/a2026q3ex991pressrelease.htm",
+          "https://www.sec.gov/Archives/edgar/data/1321655/000132165526000048/pltr-20260930.htm",
+          "https://finance.yahoo.com/quote/PLTR/history/"
+        ]
       },
       "forwardView": {
-        "asOf": "2026-08",
+        "asOf": "2026-11",
         "estimateHistory": [
           {
             "asOf": "2026-08",
             "fy": "FY2026",
             "eps": 1.6,
             "revenue": 8.19
+          },
+          {
+            "asOf": "2026-11",
+            "fy": "FY2026",
+            "eps": 1.7,
+            "revenue": 8.55
           }
         ],
         "guidanceTrack": [
+          {
+            "quarter": "Q3 2026",
+            "metric": "revenue",
+            "guided": "~$2.160-2.164B",
+            "actual": "~$2.313B",
+            "result": "beat",
+            "magnitudePct": 7
+          },
           {
             "quarter": "Q2 2026",
             "metric": "revenue",
@@ -7861,74 +8024,81 @@
         "consensus": [
           {
             "fy": "FY2026",
-            "revenue": 8.19,
-            "eps": 1.6,
+            "revenue": 8.55,
+            "eps": 1.7,
             "confidence": "high",
             "basis": "non-GAAP"
           },
           {
             "fy": "FY2027",
-            "revenue": 12.18,
-            "eps": 2.31,
-            "confidence": "high",
+            "revenue": 13,
+            "eps": 2.48,
+            "confidence": "medium",
             "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2028",
+            "revenue": 18.98,
+            "eps": 3.29,
+            "confidence": "medium",
+            "basis": "unknown"
           }
         ],
-        "note": "consensus จาก 28 นักวิเคราะห์ (StockAnalysis ระบุฐาน non-GAAP adjusted) · consensus FY2026 revenue ~$8.19B สูงกว่า guidance บริษัทเอง ~$8.15-8.16B เล็กน้อย (ตลาดคาด beat ต่อ) · guidance ของ PLTR เป็นช่วงแคบมาก (±$2-4M) magnitude จึงสะท้อน beat จริงล้วน · เก็บได้ 8 ไตรมาสที่ยืนยันตัวเลขได้ (Q1-Q2 2024 ยังหาช่วง guidance เดิมยืนยันไม่ได้ จึงไม่เติม)"
+        "note": "Q3 2026 รายได้ทะลุจุดกึ่งกลาง guidance 7.0% เป็นไตรมาสที่เก้าติด และบริษัทยก guide ปี 2026 เป็น $8.530-8.534B ทำให้ consensus FY2026 ขยับจาก $8.19B / EPS $1.60 (ส.ค.) เป็น $8.55B / $1.70 (non-GAAP · StockAnalysis และ Yahoo ตรงกัน · MarketScreener $1.68) · FY2027 รายได้ ~$13.0B ตรงกันสองแหล่งแต่ EPS ต่างกัน (Yahoo normalized $2.48 จาก 30 นักวิเคราะห์ vs MarketScreener $2.27) จึงให้ความมั่นใจระดับกลาง ส่วน FY2028 (~$19.0B / $3.29) มาจาก MarketScreener แหล่งเดียวที่ไม่ระบุฐาน EPS"
       }
     },
     "SHOP": {
       "ticker": "SHOP",
       "name": "Shopify Inc.",
       "layer": "enterprise",
-      "asOf": "2026-08",
-      "nextEarnings": "2026-10",
+      "asOf": "2026-11",
+      "nextEarnings": "2027-02",
       "thesis": {
         "statement": "Shopify เป็นโครงสร้างพื้นฐานการค้าขายออนไลน์ที่พ่อค้าตั้งแต่รายเล็กถึงองค์กรใช้ขายของ — จุดสำคัญคือรายได้ 78% ไม่ใช่ค่าสมาชิก แต่เป็นส่วนแบ่งจากยอดขายจริงของพ่อค้า (take rate บน GMV) จึงโตตามการค้าที่ไหลผ่านแพลตฟอร์ม ไม่ใช่ตามจำนวนร้านที่สมัคร",
         "pillars": [
-          "Merchant Solutions 78% ของรายได้ โต +37% YoY — ผูกกับ GMV ที่ไหลผ่านระบบ ($116B ใน Q2'26 · +32%)",
-          "GMV โตเกิน 30% ห้าไตรมาสติด — กำลังกินส่วนแบ่งตลาด e-commerce ต่อเนื่อง ไม่ใช่โตตามตลาด",
-          "จบยุคเผาเงินแล้ว: op margin จาก −8.5% (FY2022) เป็น 12.7% (FY2025) · FCF $2.0B/ปี และ 18% margin ในไตรมาสล่าสุด",
-          "ขายธุรกิจ logistics ทิ้งปี 2023 กลับมาเป็น asset-light software — ต้นทุนคงที่ต่ำ ขยายได้โดยไม่ต้องลงทุนหนัก",
-          "AI (Sidekick / Shopify Magic / agentic commerce) เป็นเรื่องเล่าหลัก แต่บริษัทยังไม่เปิดตัวเลข adoption — ยังพิสูจน์ผลกระทบต่อรายได้ไม่ได้"
+          "Merchant Solutions 78% ของรายได้ โต +35% YoY — ผูกกับ GMV ที่ไหลผ่านระบบ ($119B ใน Q3'26 · +29%) และ Shopify Payments ที่ครอบคลุม 68% ของ GMV (ปีก่อน 65%)",
+          "GMV โตเกิน 30% ห้าไตรมาสติดก่อนชะลอเหลือ 29% (ค่าเงินคงที่ 30%) ใน Q3'26 — ยังกินส่วนแบ่งตลาด e-commerce ต่อเนื่อง แต่ต้องดูว่าการชะลอเป็นแค่ฐานที่สูงขึ้นหรือเป็นแนวโน้ม",
+          "จบยุคเผาเงินแล้ว: op margin จาก −14.7% (FY2022) เป็น 12.7% (FY2025) และ 15.2% ใน Q3'26 · FCF 4 ไตรมาสล่าสุด ~$2.7B (22% margin ในไตรมาสล่าสุด) · ไม่มีหนี้เงินกู้และเริ่มซื้อหุ้นคืนจริงจัง",
+          "ขายธุรกิจ logistics ทิ้งปี 2023 กลับมาเป็น asset-light software — ต้นทุนคงที่ต่ำ capex แทบเป็นศูนย์ ขยายได้โดยไม่ต้องลงทุนหนัก",
+          "AI (Sidekick / agentic commerce) เป็นเรื่องเล่าหลัก — Q3'26 บริษัทให้ตัวเลขการเติบโตแล้ว (คำสั่งซื้อที่มาจาก AI ~3.3 เท่า YoY) แต่ยังไม่เปิดสัดส่วนต่อ GMV จึงยังพิสูจน์ผลต่อรายได้ไม่ได้"
         ]
       },
       "fundamentals": [
         {
           "key": "revenueGrowth",
           "label": "การเติบโตรายได้",
-          "current": "~+34% YoY (Q2'26 $3,583M)",
-          "trend": "up",
-          "score": 90,
+          "current": "~+32% YoY (Q3'26 $3,742M · ตรงกรอบ low-thirties ที่ guide) · GMV +29%",
+          "trend": "flat",
+          "score": 86,
           "impact": "positive",
-          "why": "โต 34% สองไตรมาสติด และ GMV โตเกิน 30% ห้าไตรมาสติด — เร่งขึ้นจาก FY2025 ที่โต 30% ทั้งปี ถือว่าเร็วมากสำหรับฐานรายได้ระดับ $14B/ปี"
+          "why": "รายได้โตในกรอบ 30-34% มาหกไตรมาสติดและ guide Q4 ยัง low-thirties — เร็วมากสำหรับฐานรายได้ ~$14B/ปี · แต่ Q3 ชะลอจาก 34% เป็น 31.6% (บริษัทปัดเป็น 32%) และออกมาตรงกรอบพอดี ไม่เกินเหมือนสองไตรมาสก่อน ขณะที่ GMV ชะลอจาก 32% เป็น 29% (ค่าเงินคงที่ 30%) ต่ำกว่าที่นักวิเคราะห์คาดเล็กน้อย และหลุดระดับ 30% หลังเกินมาห้าไตรมาสติด · รายได้ยังโตเร็วกว่า GMV เพราะสัดส่วน Shopify Payments เพิ่มขึ้น (68% ของ GMV จาก 65%)"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตกำไรต่อหุ้น",
-          "current": "~$1.16 (Q2'26 GAAP) แต่วัดแนวโน้มไม่ได้",
-          "trend": "flat",
-          "score": 40,
+          "current": "Q3'26 GAAP $0.36 (ปีก่อน $0.20) · non-GAAP $0.49 (ปีก่อน $0.34) · กำไรสุทธิไม่รวมเงินลงทุน $584M (+59% YoY)",
+          "trend": "up",
+          "score": 50,
           "impact": "neutral",
-          "why": "GAAP EPS ถูกครอบงำโดยการตีมูลค่าเงินลงทุนในหุ้น: Q1 ติดลบทุกปี (−0.21 / −0.53 / −0.45) ทั้งที่กำไรจากการดำเนินงานเป็นบวก และ FY2025 EPS 0.94 ต่ำกว่า FY2024 1.55 แม้ op margin ดีขึ้น — ตัวเลขนี้ไม่สะท้อนธุรกิจ ให้ดู op income/FCF แทน"
+          "why": "GAAP EPS ยังถูกครอบงำโดยการตีมูลค่าเงินลงทุนในหุ้น: Q1 ติดลบทุกปี (−0.21 / −0.53 / −0.45) · Q2'26 +1.16 จากกำไรตีมูลค่า ~$1,063M · Q3'26 +0.36 หลังขาดทุนตีมูลค่า ~$122M — ตัวเลขนี้ไม่สะท้อนธุรกิจ · แต่ฐานกำไรจริงโตชัด: กำไรจากการดำเนินงาน +66% YoY และกำไรสุทธิไม่รวมเงินลงทุน +59% (ในนั้นมีประโยชน์ภาษีครั้งเดียว $63M — ตัดออกแล้วยังโตราว 42%) จึงให้คะแนนสูงขึ้นแต่ยังกลาง ๆ เพราะตัวเลขที่รายงานแกว่งจนใช้วัดแนวโน้มตรง ๆ ไม่ได้"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "~$654M ไตรมาสล่าสุด (18% ของรายได้) · FY2025 ~$2.0B",
+          "current": "~$816M ไตรมาสล่าสุด (22% ของรายได้ · ปีก่อน 18%) · 4 ไตรมาสล่าสุด ~$2.7B · guide Q4 margin ใกล้ Q4'25 (19%)",
           "trend": "up",
-          "score": 85,
+          "score": 87,
           "impact": "positive",
-          "why": "FCF margin ขยับจากติดลบใน FY2022 เป็น 17% ทั้งปี FY2025 และ 18% ในไตรมาสล่าสุด · เป็นตัวชี้คุณภาพกำไรที่เชื่อได้มากกว่า EPS ของบริษัทนี้"
+          "why": "FCF margin ขยับจากติดลบใน FY2022 เป็น 17% ทั้งปี FY2025 และ 22% ใน Q3'26 เกินกรอบ high-teens ถึง low-twenties ที่ให้ไว้ · capex แทบเป็นศูนย์ ($2M) เพราะเป็น asset-light · ข้อควรรู้: ตั้งแต่ เม.ย. 2026 บริษัทย้ายกระแสเงินสดของ merchant cash advance ไปอยู่ในกิจกรรมลงทุน ทำให้ FCF Q3 สูงขึ้นราว $30M (ตัดผลนี้ออก margin ยัง ~21%) · ยังเป็นตัวชี้คุณภาพกำไรที่เชื่อได้มากกว่า EPS ของบริษัทนี้"
         },
         {
           "key": "margin",
           "label": "อัตรากำไรจากการดำเนินงาน",
-          "current": "~13.6% (Q2'26 · op income $488M)",
+          "current": "~15.2% (Q3'26 · op income $568M · ปีก่อน 12.1% · Q2'26 13.6%)",
           "trend": "up",
-          "score": 72,
+          "score": 75,
           "impact": "positive",
-          "why": "op income $488M เทียบ $291M ปีก่อน (+68%) · ทิศทางขยายชัดจาก −8.5% ใน FY2022 → 12.7% FY2025 แต่ยังต่ำกว่า software ชั้นนำ เพราะ 78% ของรายได้เป็น take rate ที่มีต้นทุนจ่ายจริง (payment processing) ไม่ใช่ margin แบบ subscription"
+          "why": "op income $568M เทียบ $343M ปีก่อน (+66%) มาจากการคุมค่าใช้จ่าย — opex 32.4% ของรายได้ (ปีก่อน 36.8% · ต่ำกว่ากรอบ 33-34% ที่ให้ไว้) และความเสียหายจากธุรกรรม/สินเชื่อลดเหลือ $120M จาก $148M · ส่วน gross margin กลับลดเป็น 47.6% จาก 48.9% เพราะรายได้ Merchant Solutions ที่ margin ต่ำกว่า (~38.5%) กินสัดส่วนมากขึ้น และ margin ฝั่ง subscription ลดเหลือ ~79% จาก ~82% · ทิศทางขยายชัดจาก −14.7% ใน FY2022 → 12.7% FY2025 แต่ยังต่ำกว่า software ชั้นนำ เพราะ 78% ของรายได้เป็น take rate ที่มีต้นทุนจ่ายจริง (payment processing) ไม่ใช่ margin แบบ subscription"
         },
         {
           "key": "roic",
@@ -7942,76 +8112,76 @@
         {
           "key": "cash",
           "label": "เงินสดและสภาพคล่อง",
-          "current": "เงินสดสุทธิเป็นบวก + ประกาศซื้อหุ้นคืน ~$2B (ปลายปี 2025)",
-          "trend": "up",
+          "current": "เงินสด + หลักทรัพย์ระยะสั้น ~$4.73B + เงินลงทุนระยะยาว ~$0.52B (30 ก.ย. 2026) ≈ $5.25B · ไม่มีหนี้เงินกู้ · ถือหุ้นบริษัทอื่นอีก ~$5.4B",
+          "trend": "flat",
           "score": 78,
           "impact": "positive",
-          "why": "สร้าง FCF ~$2B/ปี และมีโปรแกรมซื้อหุ้นคืน $2B — สถานะการเงินเปลี่ยนจากยุคที่ต้องระดมทุน มาเป็นคืนเงินผู้ถือหุ้นได้"
+          "why": "สภาพคล่องลดจาก ~$6.75B ต้นปีเพราะใช้ซื้อหุ้นคืน ~$2.48B ใน 9 เดือนและปล่อยสินเชื่อร้านค้าเพิ่ม ไม่ใช่เพราะธุรกิจเผาเงิน — FCF ~$2.7B/ปีเติมกลับทุกไตรมาส · พอร์ตสินเชื่อ Shopify Capital โตเป็น $2.35B (ต้นปี $1.78B) ผูกเงินสดส่วนหนึ่งไว้ · สถานะการเงินเปลี่ยนจากยุคที่ต้องระดมทุนมาเป็นคืนเงินผู้ถือหุ้นได้"
         },
         {
           "key": "debt",
           "label": "หนี้สิน",
-          "current": "ยังไม่มีตัวเลขหนี้สุทธิที่ยืนยันในรอบนี้",
+          "current": "ไม่มีเงินกู้หรือหุ้นกู้ในงบดุล (30 ก.ย. 2026) — หนี้สินรวม ~$1.9B เป็นหนี้สินจากการดำเนินงานทั้งหมด",
           "trend": "flat",
-          "score": 68,
-          "impact": "neutral",
-          "why": "ในอดีตออกหุ้นกู้แปลงสภาพ (convertible notes) แต่ยังไม่ได้ตัวเลขคงเหลือที่ยืนยันได้รอบนี้ · เมื่อดูจาก FCF ที่เป็นบวกแรงและมีการซื้อหุ้นคืน ภาระหนี้ไม่ใช่ประเด็นเร่งด่วน"
+          "score": 85,
+          "impact": "positive",
+          "why": "งบดุล 30 ก.ย. 2026 มีหนี้สินรวม ~$1.92B แบ่งเป็นเจ้าหนี้การค้า $630M ภาษีเงินได้รอตัดบัญชี $63M และหนี้สินอื่น $1.22B (บริษัทระบุว่าเป็นค่าใช้จ่ายค้างจ่าย รายได้รับล่วงหน้า และหนี้สินตามสัญญาเช่า) — ไม่มีรายการหุ้นกู้แปลงสภาพหรือเงินกู้ตั้งแต่งบดุลสิ้นปี 2025 · เทียบกับสภาพคล่อง ~$5.25B และ FCF ~$2.7B/ปี ภาระหนี้ไม่ใช่ประเด็น"
         },
         {
           "key": "dilution",
           "label": "การเพิ่มทุน / SBC",
-          "current": "SBC ~$150M/ไตรมาส (~4% ของรายได้) หักล้างด้วยการซื้อหุ้นคืน",
+          "current": "หุ้น diluted 1,290.7 ล้าน (Q3'26) ลดลง ~1.7% YoY จาก 1,312.9 ล้าน · SBC $140M (~3.7% ของรายได้) · guide Q4 $155M",
           "trend": "up",
-          "score": 66,
-          "impact": "neutral",
-          "why": "SBC ตามที่บริษัทให้กรอบไว้สำหรับ Q3'26 คือ $150M บนรายได้ ~$3.6B ราว 4% — ไม่ต่ำแต่ไม่สุดโต่งสำหรับ software · ทิศทางเป็นมิตรขึ้นเพราะเริ่มซื้อหุ้นคืน $2B ซึ่งชดเชยการออกหุ้นใหม่"
+          "score": 74,
+          "impact": "positive",
+          "why": "จำนวนหุ้นลดลง YoY เพราะซื้อหุ้นคืน 21.1 ล้านหุ้นใน 9 เดือนแรกของปี 2026 มากกว่าหุ้นที่ออกใหม่จาก SBC · SBC Q3 $140M ต่ำกว่ากรอบ $150M ที่ให้ไว้ และ ~3.7% ของรายได้ไม่สุดโต่งสำหรับ software · ความเสี่ยงคือถ้าหยุดซื้อหุ้นคืน จำนวนหุ้นจะกลับมาเพิ่มตาม SBC"
         },
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรทุน",
-          "current": "asset-light + ซื้อหุ้นคืน $2B",
+          "current": "asset-light + ซื้อหุ้นคืน ~$2.48B ใน 9 เดือน (วงเงินรวม $5B · เหลือ ~$2.52B)",
           "trend": "up",
-          "score": 76,
+          "score": 78,
           "impact": "positive",
-          "why": "ตัดสินใจขายธุรกิจคลังสินค้า/โลจิสติกส์ทิ้งในปี 2023 (ยอมรับความผิดพลาดเร็ว) แล้วกลับมาโฟกัสซอฟต์แวร์ · เปลี่ยนจากลงทุนหนักมาคืนเงินผู้ถือหุ้น ถือว่าวินัยดีขึ้นชัด"
+          "why": "ตัดสินใจขายธุรกิจคลังสินค้า/โลจิสติกส์ทิ้งในปี 2023 (ยอมรับความผิดพลาดเร็ว) แล้วกลับมาโฟกัสซอฟต์แวร์ · ปี 2026 เริ่มคืนเงินผู้ถือหุ้นจริงจัง — ซื้อหุ้นคืนเฉลี่ย ~$117/หุ้น ต่ำกว่าราคาปัจจุบัน (~$153) และเพิ่มวงเงินจาก $2B เป็น $5B ใน Q2 · ข้อสังเกตคือเงินที่ใช้ซื้อหุ้นคืน 9 เดือน (~$2.48B) เกิน FCF ของงวดเดียวกัน (~$1.95B) จึงกินสภาพคล่องที่สะสมไว้"
         },
         {
           "key": "valuation",
           "label": "Valuation (ถูก=คะแนนสูง)",
-          "current": "P/E TTM ~99x · forward P/E ~77x (non-GAAP)",
+          "current": "P/E TTM ~93x (GAAP) · forward ~81x (FY2026 non-GAAP) / ~62x (FY2027) · EV/Sales TTM ~13.6x",
           "trend": "flat",
           "score": 22,
           "impact": "negative",
-          "why": "ราคา ~$147 หาร TTM EPS ~$1.48 ได้ ~99 เท่า และหาร consensus FY2026 non-GAAP $1.90 ได้ ~77 เท่า — แพงมากแม้เทียบการเติบโต 34% · ต้องโตระดับนี้ต่อหลายปีจึงจะสมเหตุสมผล ความคาดหวังถูกใส่ในราคาไว้เยอะ"
+          "why": "ราคา ~$153 (4 พ.ย. 2026) หาร GAAP EPS TTM ~$1.64 ได้ ~93 เท่า หาร consensus FY2026 non-GAAP $1.89 ได้ ~81 เท่า และ FY2027 ~$2.45 ได้ ~62 เท่า · FCF yield แค่ ~1.4% — แพงมากแม้เทียบการเติบโต ~30% · งบ Q3 ชี้ว่าตลาดลงโทษแรงแม้พลาดคาดเพียงเล็กน้อย (ปิด −8.7% วันงบเพราะ GMV ต่ำกว่าคาด ~1%) ความคาดหวังถูกใส่ในราคาไว้เยอะ"
         }
       ],
       "revenueQuality": {
-        "acceleration": "accelerating",
+        "acceleration": "steady",
         "consistency": 72,
         "recurringPct": 22,
-        "note": "จุดที่คนเข้าใจผิดบ่อยที่สุดของ SHOP: รายได้ส่วนใหญ่ไม่ใช่ subscription — Subscription Solutions มีแค่ 22% (MRR $221M · +19% YoY) ที่เหลือ 78% เป็น Merchant Solutions ซึ่งคือส่วนแบ่งจากยอดขายจริงของพ่อค้า (payments/capital/markets/POS) จึงผูกกับการบริโภคและเป็น cyclical มากกว่า SaaS ทั่วไป · บริษัทเปิดเผยรายได้เพียง 2 สายนี้ ไม่ได้แตกย่อยกว่านี้ จึงไม่แบ่ง segment เพิ่มเพื่อไม่ให้เป็นการเดาสัดส่วน",
+        "note": "จุดที่คนเข้าใจผิดบ่อยที่สุดของ SHOP: รายได้ส่วนใหญ่ไม่ใช่ subscription — Subscription Solutions มีแค่ 22% (MRR $230M · +19% YoY) ที่เหลือ 78% เป็น Merchant Solutions ซึ่งคือส่วนแบ่งจากยอดขายจริงของพ่อค้า (payments/capital/markets/POS) จึงผูกกับการบริโภคและเป็น cyclical มากกว่า SaaS ทั่วไป · รายได้โตในกรอบ 30-34% มาหกไตรมาสติดและ guide Q4 ยัง low-thirties แต่ GMV ชะลอจาก 35% (Q1'26) → 32% → 29% ใน Q3'26 — ที่รายได้ยังโตเร็วกว่า GMV เพราะ Shopify Payments กินสัดส่วน GMV มากขึ้น (68% จาก 65%) · บริษัทเปิดเผยรายได้เพียง 2 สายนี้ ไม่ได้แตกย่อยกว่านี้ จึงไม่แบ่ง segment เพิ่มเพื่อไม่ให้เป็นการเดาสัดส่วน",
         "segments": [
           {
             "name": "Merchant Solutions (payments / capital / markets / POS)",
             "sharePct": 78,
-            "growthNote": "+37% YoY ($2,781M) — โตเร็วกว่าฝั่ง subscription เกือบเท่าตัว ผูกกับ GMV $116B ที่ไหลผ่านระบบ",
+            "growthNote": "+35% YoY ($2,906M · ค่าเงินคงที่ +36%) — โตเร็วกว่าฝั่ง subscription เกือบเท่าตัว ผูกกับ GMV $119B และ Shopify Payments ที่ครอบคลุม 68% ของ GMV · gross margin ฝั่งนี้ ~38.5% (ปีก่อน ~38.2%)",
             "trend": "up"
           },
           {
             "name": "Subscription Solutions (ค่าสมาชิกแพลตฟอร์ม + apps/themes)",
             "sharePct": 22,
-            "growthNote": "+22% YoY ($802M) · MRR $221M (+19%) — ส่วนที่เป็นรายได้ประจำแท้ ๆ",
+            "growthNote": "+20% YoY ($836M) · MRR $230M (+19%) — ส่วนที่เป็นรายได้ประจำแท้ ๆ แต่ต่ำกว่าที่นักวิเคราะห์คาด (~$848M) และ gross margin ลดเหลือ ~79% จาก ~82% ปีก่อน (ผู้บริหารโยงกับต้นทุน AI ของ Sidekick และ hosting)",
             "trend": "up"
           }
         ]
       },
       "aiExecution": {
-        "score": 55,
+        "score": 60,
         "items": [
           {
             "item": "Sidekick — ผู้ช่วย AI ในหลังบ้านร้านค้า",
             "status": "executing",
-            "evidence": "ผู้บริหารย้ำว่า AI ขยายสิ่งที่พ่อค้าทำได้ แต่บริษัทไม่เปิดตัวเลขผู้ใช้หรือผลต่อรายได้ จึงยังวัดผลไม่ได้"
+            "evidence": "ไตรมาสนี้บริษัทให้ตัวเลขการใช้งาน: บทสนทนากับ Sidekick +14% QoQ และต้นทุนต่อบทสนทนาลด ~28% (ตามสไลด์และการประชุมนักวิเคราะห์ Q3'26) · แต่ gross margin ฝั่ง subscription ลดเหลือ ~79% จาก ~82% ปีก่อน ซึ่งผู้บริหารโยงกับต้นทุน AI ของ Sidekick และ hosting — ยังไม่มีตัวเลขผลต่อรายได้"
           },
           {
             "item": "Shopify Magic — สร้างข้อความ/รูปสินค้าด้วย AI",
@@ -8021,17 +8191,17 @@
           {
             "item": "Agentic commerce — ให้ AI agent ซื้อของแทนผู้ใช้",
             "status": "on-track",
-            "evidence": "เป็นธีมที่ตลาดให้ราคา เพราะ SHOP ถือ catalog สินค้าและระบบชำระเงินอยู่แล้ว แต่ยังอยู่ช่วงต้น ยังไม่เห็น GMV ที่มาจากช่องทางนี้"
+            "evidence": "Q3'26 traffic จาก AI เข้าร้านค้าโต ~2.6 เท่า และคำสั่งซื้อที่มาจาก AI โต ~3.3 เท่า YoY (ตามสไลด์ประกอบงบ) ผู้บริหารมองว่าเทศกาลปลายปีนี้เป็นครั้งแรกที่การช้อปผ่าน AI เป็นกระแสหลัก — แต่บริษัทยังไม่เปิดสัดส่วน GMV ที่มาจากช่องทางนี้ จึงยังวัดขนาดจริงไม่ได้"
           },
           {
             "item": "ใช้ AI ลดต้นทุนภายใน (support / เขียนโค้ด)",
             "status": "executing",
-            "evidence": "op margin ขยายพร้อมกับที่บริษัทพูดถึงการใช้ AI ภายใน แต่ยังแยกไม่ได้ว่าส่วนไหนมาจาก AI ส่วนไหนมาจากการคุมค่าใช้จ่ายปกติ"
+            "evidence": "opex ลดจาก 36.8% เหลือ 32.4% ของรายได้ในหนึ่งปี ทั้งที่ R&D ยังโต 33% · บริษัทพูดถึงการใช้ AI ภายในต่อเนื่อง แต่ยังแยกไม่ได้ว่าส่วนไหนมาจาก AI ส่วนไหนมาจากการคุมค่าใช้จ่ายปกติ"
           },
           {
             "item": "ตำแหน่งเป็น 'ท่อ' ของการค้า AI",
             "status": "on-track",
-            "evidence": "ถ้าการซื้อของย้ายไปอยู่บน AI agent จริง SHOP ได้เปรียบเพราะเป็นเจ้าของทั้งข้อมูลสินค้าและ checkout — แต่ก็เสี่ยงถูกลดบทบาทเป็นแค่หลังบ้านถ้า agent ของเจ้าอื่นคุมหน้าร้าน"
+            "evidence": "ถ้าการซื้อของย้ายไปอยู่บน AI agent จริง SHOP ได้เปรียบเพราะเป็นเจ้าของทั้งข้อมูลสินค้า (Catalog) และ checkout — ผู้บริหารระบุว่าการค้นหาที่ใช้ Catalog แปลงเป็นยอดขายได้ดีกว่าการค้นหาผ่าน AI ทั่วไป แต่ก็เสี่ยงถูกลดบทบาทเป็นแค่หลังบ้านถ้า agent ของเจ้าอื่นคุมหน้าร้าน"
           }
         ]
       },
@@ -8043,7 +8213,7 @@
             "key": "marketLeadership",
             "label": "ความเป็นผู้นำตลาด",
             "status": "strengthening",
-            "note": "เบอร์สองของ e-commerce สหรัฐเมื่อวัดด้วย GMV รองจาก Amazon และช่องว่างกับอันดับถัด ๆ ไปยังถ่างขึ้น"
+            "note": "เบอร์สองของ e-commerce สหรัฐเมื่อวัดด้วย GMV รองจาก Amazon · GMV Q3'26 โต 29% (อเมริกาเหนือ +28% · ยุโรป +33% ค่าเงินคงที่) ยังเร็วกว่าตลาด e-commerce โดยรวมมากแม้ชะลอจาก 32% ใน Q2"
           },
           {
             "key": "techLeadership",
@@ -8055,13 +8225,13 @@
             "key": "executionSpeed",
             "label": "ความเร็วในการส่งของ",
             "status": "strengthening",
-            "note": "ปล่อยฟีเจอร์เป็นรอบ (Editions) ถี่และตรงเวลา · ขยาย enterprise กับออฟไลน์ได้พร้อมกันโดย margin ยังขยาย"
+            "note": "ปล่อยฟีเจอร์เป็นรอบ (Editions) ถี่และตรงเวลา · Q3'26 opex ต่ำกว่ากรอบและ FCF margin เกินกรอบที่ให้ไว้ ขณะที่รายได้ออกมาตรงกรอบพอดี (ไม่เกินเหมือน Q1-Q2) · ขยาย enterprise กับออฟไลน์ได้พร้อมกันโดย margin ยังขยาย"
           },
           {
             "key": "switchingCost",
             "label": "ต้นทุนการย้ายระบบ",
             "status": "strengthening",
-            "note": "ยิ่งใช้ Shopify Payments/Capital/POS ยิ่งย้ายยาก เพราะกระทบกระแสเงินสดและการขายทันทีที่ย้าย"
+            "note": "Shopify Payments ครอบคลุม 68% ของ GMV (ปีก่อน 65%) — ยิ่งใช้ Payments/Capital/POS ยิ่งย้ายยาก เพราะกระทบกระแสเงินสดและการขายทันทีที่ย้าย"
           },
           {
             "key": "ecosystem",
@@ -8090,32 +8260,38 @@
         ]
       },
       "capitalAllocation": {
-        "score": 76,
-        "verdict": "วินัยดีขึ้นชัดเจนหลังบทเรียนโลจิสติกส์ — เลิกลงทุนหนักในสิ่งที่ไม่ใช่จุดแข็ง กลับมาเป็นซอฟต์แวร์ที่สร้างเงินสดแล้วคืนผู้ถือหุ้น",
+        "score": 78,
+        "verdict": "วินัยดีขึ้นชัดเจนหลังบทเรียนโลจิสติกส์ — เลิกลงทุนหนักในสิ่งที่ไม่ใช่จุดแข็ง กลับมาเป็นซอฟต์แวร์ที่สร้างเงินสด และปี 2026 เริ่มคืนเงินผู้ถือหุ้นจริงจัง (ซื้อหุ้นคืน ~$2.48B ใน 9 เดือนจากวงเงิน $5B จนจำนวนหุ้นลดลง YoY) · จุดที่ต้องจับตาคือพอร์ตสินเชื่อร้านค้าที่โตเร็ว และพอร์ตเงินลงทุนในหุ้นที่ทำให้กำไรตามบัญชีแกว่ง",
         "items": [
           {
             "label": "ซื้อหุ้นคืน",
-            "current": "~$2B (ประกาศปลายปี 2025)",
+            "current": "วงเงินรวม $5B ($2B อนุมัติ Q1 2026 มีผล 17 ก.พ. + เพิ่ม $3B ใน Q2) · ซื้อแล้ว 21.1 ล้านหุ้น ~$2.48B เฉลี่ย ~$117/หุ้น ใน 9 เดือน · เหลือ ~$2.52B",
             "assessment": "good",
-            "why": "ครั้งแรกที่คืนเงินผู้ถือหุ้นเป็นก้อน — ช่วยหักล้าง SBC ที่ออกใหม่ทุกไตรมาส"
+            "why": "ครั้งแรกที่คืนเงินผู้ถือหุ้นเป็นก้อน และซื้อที่ราคาเฉลี่ยต่ำกว่าราคาปัจจุบัน (~$153) — หุ้น diluted ลดลง ~1.7% YoY ทั้งที่มี SBC ~$140M/ไตรมาส · แต่ใช้เงินเกิน FCF ของงวดเดียวกัน จึงทำให้สภาพคล่องลดลง"
           },
           {
             "label": "ขายธุรกิจโลจิสติกส์",
             "current": "ขายทิ้งปี 2023 (Deliverr / 6 River)",
             "assessment": "good",
-            "why": "ยอมตัดขาดทุนเร็วแทนดันต่อ — คืน margin และความเรียบง่ายให้ธุรกิจหลัก"
+            "why": "ยอมรับความผิดพลาดและถอยออกเร็วแทนดันต่อ — คืน margin และความเรียบง่ายให้ธุรกิจหลัก"
           },
           {
             "label": "เงินลงทุนในหุ้นบริษัทอื่น",
-            "current": "พอร์ตเงินลงทุนขนาดใหญ่ ตีมูลค่าผ่านงบกำไรขาดทุน",
+            "current": "equity & other investments ~$4.9B + เงินลงทุนตามวิธีส่วนได้เสีย ~$0.5B (30 ก.ย. 2026) ตีมูลค่าผ่านงบกำไรขาดทุน",
             "assessment": "neutral",
-            "why": "สร้างกำไรทางบัญชีก้อนใหญ่ในบางไตรมาส (Q2'26 ~$1,063M) แต่ทำให้ EPS อ่านไม่รู้เรื่องและไม่ใช่ผลจากการดำเนินงาน"
+            "why": "สร้างกำไร/ขาดทุนทางบัญชีก้อนใหญ่สลับกัน (Q2'26 กำไร ~$1,063M · Q3'26 ขาดทุน ~$122M สุทธิภาษี) ทำให้ EPS อ่านไม่รู้เรื่องและไม่ใช่ผลจากการดำเนินงาน · Q3 ยังซื้อเงินลงทุนเพิ่ม $161M"
           },
           {
             "label": "ลงทุนใน R&D / AI",
-            "current": "opex กรอบ 33-34% ของรายได้",
+            "current": "opex 32.4% ของรายได้ใน Q3'26 (กรอบ 33-34%) · R&D $497M (+33% YoY) · guide Q4 29-30%",
             "assessment": "good",
-            "why": "คุมกรอบค่าใช้จ่ายเป็น % ของรายได้ชัดเจน ทำให้โตแล้ว margin ขยายไปด้วย ไม่ใช่โตแล้วเผาเงิน"
+            "why": "คุมค่าใช้จ่ายรวมได้ดีกว่ากรอบที่ให้ไว้ ขณะที่ R&D โตเร็วกว่าค่าใช้จ่ายส่วนอื่น (การตลาด +14% · G&A +13%) — ลงทุนเพิ่มในสิ่งที่สร้างผลิตภัณฑ์ ไม่ใช่โตแล้วเผาเงิน"
+          },
+          {
+            "label": "สินเชื่อร้านค้า (Shopify Capital)",
+            "current": "สินเชื่อและเงินทดรองร้านค้าสุทธิ $2.35B (ต้นปี $1.78B) · ปล่อยใหม่ $1.70B ใน Q3 (ปีก่อน $1.0B)",
+            "assessment": "neutral",
+            "why": "ช่วยผูกพ่อค้าและเพิ่มรายได้ Merchant Solutions แต่เป็นการใช้งบดุลรับความเสี่ยงเครดิตที่โตเร็ว · ความเสียหายจากธุรกรรมและสินเชื่อ Q3 ลดเหลือ $120M (ปีก่อน $148M) จึงยังคุมได้ในวันนี้"
           },
           {
             "label": "ไม่จ่ายปันผล",
@@ -8127,59 +8303,59 @@
       },
       "valuationView": {
         "level": "expensive",
-        "note": "P/E TTM ~99 เท่า (ราคา ~$147 / TTM EPS ~$1.48) และ forward ~77 เท่าบนฐาน non-GAAP · ที่สำคัญกว่าคือ P/E ย้อนหลังของ SHOP แทบใช้ไม่ได้ เพราะ FY2022 ขาดทุนและ FY2023 EPS แค่ 0.10 ทำให้ P/E พุ่งเป็นหลายร้อยเท่า — ควรตัดสินด้วย FCF และการเติบโตของ GMV แทนตัวคูณกำไร"
+        "note": "ราคา ~$153 (4 พ.ย. 2026 · mcap ~$197B · EV ~$192B) · P/E TTM ~93 เท่า (GAAP EPS TTM ~$1.64) · forward ~81 เท่าของ consensus FY2026 non-GAAP $1.89 และ ~62 เท่าของ FY2027 ~$2.45 (ฐานไม่ระบุ) · EV/Sales TTM ~13.6 เท่า · หลังงบ Q3 ราคาปิด −8.7% เหลือ $142.57 แม้รายได้ตรงกรอบและกำไรดีกว่าคาด เพราะ GMV ($119.1B) และรายได้ subscription ต่ำกว่าที่นักวิเคราะห์คาดเล็กน้อย ก่อนเด้งกลับ $153 วันถัดมา (ยังต่ำกว่าราคาปิดสูงสุด $179 เมื่อ 12 ต.ค. ~15%) · P/E ย้อนหลังของ SHOP ยังใช้เทียบไม่ได้ เพราะ FY2022 ขาดทุนและ FY2023 EPS แค่ 0.10 — ควรตัดสินด้วย FCF (4 ไตรมาสล่าสุด ~$2.7B → FCF yield ~1.4%) และการเติบโตของ GMV แทนตัวคูณกำไร"
       },
       "whatChanged": [
         {
-          "metric": "รายได้ (Q1'26 → Q2'26)",
-          "prev": "$3,170M (+34% YoY)",
-          "now": "$3,583M (+34% YoY)",
-          "direction": "positive"
+          "metric": "รายได้ (Q2'26 → Q3'26)",
+          "prev": "$3,583M (+34% YoY) · เกินกรอบ high-twenties ~4%",
+          "now": "$3,742M (+32% YoY) · ตรงกรอบ low-thirties ที่ guide ไว้พอดี ไม่เกินเหมือนสองไตรมาสก่อน",
+          "direction": "neutral"
         },
         {
           "metric": "GMV",
-          "prev": "ทะลุ $100B ครั้งแรกในไตรมาส",
-          "now": "$116B (+32% YoY) — เกิน 30% ห้าไตรมาสติด",
-          "direction": "positive"
+          "prev": "$115.6B (+32% YoY) — เกิน 30% ห้าไตรมาสติด",
+          "now": "$119.1B (+29% · ค่าเงินคงที่ +30%) ต่ำกว่าที่นักวิเคราะห์คาด ~$120.0B · ราคาปิดวันงบ −8.7% ก่อนเด้งกลับวันถัดมา",
+          "direction": "negative"
         },
         {
-          "metric": "กำไรจากการดำเนินงาน",
-          "prev": "—",
-          "now": "$488M (+68% YoY) · margin ~13.6%",
+          "metric": "กำไรจากการดำเนินงาน / opex",
+          "prev": "$488M · margin 13.6% · opex 34.0% ของรายได้",
+          "now": "$568M (+66% YoY) · margin 15.2% · opex 32.4% (ต่ำกว่ากรอบ 33-34%)",
           "direction": "positive"
         },
         {
           "metric": "กระแสเงินสดอิสระ",
-          "prev": "margin ~15%",
-          "now": "$654M · margin 18% (ปีก่อน 16%)",
+          "prev": "$654M · margin 18%",
+          "now": "$816M · margin 22% (ปีก่อน 18%) — เกินกรอบ high-teens ถึง low-twenties",
           "direction": "positive"
         },
         {
-          "metric": "GAAP EPS",
-          "prev": "−$0.45 (ขาดทุนจากตีมูลค่าเงินลงทุน)",
-          "now": "+$1.16 — แต่รวมกำไรตีมูลค่า ~$1,063M · ตัดออกแล้วกำไรจริง $439M",
+          "metric": "GAAP EPS / กำไรไม่รวมเงินลงทุน",
+          "prev": "$1.16 (รวมกำไรตีมูลค่า ~$1,063M) · กำไรไม่รวมเงินลงทุน $439M",
+          "now": "$0.36 (รวมขาดทุนตีมูลค่า ~$122M) · กำไรไม่รวมเงินลงทุน $584M (มีประโยชน์ภาษีครั้งเดียว $63M) · non-GAAP $0.49 vs คาด ~$0.46",
+          "direction": "positive"
+        },
+        {
+          "metric": "กรอบไตรมาสหน้า",
+          "prev": "Q3: รายได้ low-thirties · gross profit mid-to-high twenties · opex 33-34% · FCF margin high-teens ถึง low-twenties",
+          "now": "Q4: รายได้ low-thirties · gross profit high-twenties · opex 29-30% · SBC $155M · FCF margin ใกล้ Q4'25 (19%)",
           "direction": "neutral"
-        },
-        {
-          "metric": "กรอบไตรมาสหน้า (Q3'26)",
-          "prev": "คาดรายได้โต high-twenties %",
-          "now": "คาดโต low-thirties % · FCF margin high-teens ถึง low-twenties",
-          "direction": "positive"
         }
       ],
       "risks": [
-        "รายได้ 78% ผูกกับยอดขายจริงของพ่อค้า — ถ้าการบริโภคชะลอ รายได้จะลงเร็วกว่าบริษัท SaaS ที่เก็บค่าสมาชิกล่วงหน้า",
-        "ราคาแพงมาก (P/E TTM ~99 · forward ~77) — ถ้าการเติบโตหลุดจากระดับ 30% ลงมา ตัวคูณอาจถูกกดลงแรงกว่าที่กำไรลด",
-        "GAAP EPS ถูกครอบงำโดยการตีมูลค่าเงินลงทุน ทำให้กำไรที่รายงานเหวี่ยงแรงและอ่านทิศทางธุรกิจจากงบไม่ได้",
+        "รายได้ 78% ผูกกับยอดขายจริงของพ่อค้า — ถ้าการบริโภคชะลอ รายได้จะลงเร็วกว่าบริษัท SaaS ที่เก็บค่าสมาชิกล่วงหน้า และพอร์ตสินเชื่อ Shopify Capital ที่โตเร็ว ($2.35B จาก $1.78B ต้นปี) จะรับแรงกระแทกพร้อมกัน",
+        "ราคาแพงมาก (P/E TTM ~93 · forward ~81 เท่าของ FY2026 non-GAAP / ~62 เท่าของ FY2027) — งบ Q3 แสดงแล้วว่าแค่ GMV ชะลอเหลือ 29% และต่ำกว่าคาด ~1% ราคาก็ปิดร่วง 8.7% ในวันเดียว ถ้าการเติบโตหลุดจากระดับ 30% ต่อเนื่อง ตัวคูณอาจถูกกดลงแรงกว่าที่กำไรลด",
+        "GAAP EPS ถูกครอบงำโดยการตีมูลค่าเงินลงทุนในหุ้น (Q2'26 กำไร ~$1,063M · Q3'26 ขาดทุน ~$122M) ทำให้กำไรที่รายงานเหวี่ยงแรงและอ่านทิศทางธุรกิจจากงบไม่ได้",
         "Amazon และผู้เล่นราคาถูกกดทั้งส่วนแบ่งตลาดและ take rate ได้ตลอด — คูเมืองเป็นเรื่องต้นทุนการย้าย ไม่ใช่การผูกขาด",
-        "ถ้าการซื้อของย้ายไปอยู่บน AI agent ของเจ้าอื่น Shopify อาจถูกลดบทบาทเหลือแค่หลังบ้าน เสียการเข้าถึงลูกค้าและอำนาจกำหนดราคา"
+        "ถ้าการซื้อของย้ายไปอยู่บน AI agent ของเจ้าอื่น Shopify อาจถูกลดบทบาทเหลือแค่หลังบ้าน เสียการเข้าถึงลูกค้าและอำนาจกำหนดราคา — และต้นทุน AI เริ่มกด gross margin ฝั่ง subscription แล้ว (~79% จาก ~82%)"
       ],
       "history": {
         "fyNote": "ปีบัญชีตรงกับปีปฏิทิน (สิ้นสุด 31 ธ.ค.)",
-        "epsBasis": "diluted GAAP, split-adjusted (ปรับ 10:1 split มิ.ย. 2022 ทุกปี) · ⚠ สำคัญ: GAAP EPS ของ SHOP ถูกครอบงำโดยกำไร/ขาดทุนจากการตีมูลค่าเงินลงทุนในหุ้น (mark-to-market) ซึ่งไม่ใช่ผลการดำเนินงาน — Q1 ติดลบทุกปี (Q1'24 −0.21 · Q1'25 −0.53 · Q1'26 −0.45) ทั้งที่ op income เป็นบวก และ Q2'26 +1.16 รวมกำไรตีมูลค่า ~$1,063M (ตัดออกแล้วกำไรจริง $439M) · เทียบ EPS ข้ามไตรมาสหรือข้ามปีของบริษัทนี้ตรง ๆ ไม่ได้",
+        "epsBasis": "diluted GAAP, split-adjusted (ปรับ 10:1 split มิ.ย. 2022 ทุกปี) · ⚠ สำคัญ: GAAP EPS ของ SHOP ถูกครอบงำโดยกำไร/ขาดทุนจากการตีมูลค่าเงินลงทุนในหุ้น (mark-to-market) ซึ่งไม่ใช่ผลการดำเนินงาน — Q1 ติดลบทุกปี (Q1'24 −0.21 · Q1'25 −0.53 · Q1'26 −0.45) ทั้งที่ op income เป็นบวก · Q2'26 +1.16 รวมกำไรตีมูลค่า ~$1,063M (ตัดออกแล้วกำไรจริง $439M) · Q3'26 +0.36 รวมขาดทุนตีมูลค่า ~$122M สุทธิภาษีและประโยชน์ภาษีครั้งเดียว $63M (ตัดทั้งสองรายการออก ~$0.40) · เทียบ EPS ข้ามไตรมาสหรือข้ามปีของบริษัทนี้ตรง ๆ ไม่ได้",
         "marginNote": "opMarginPct ใส่เฉพาะงวดที่คำนวณจาก operating income ที่บริษัทแจ้งเองได้ (ยืนยันด้วย gross profit − opex) · ตัวเลข operating margin ของแหล่งรวมข้อมูลภายนอกสูงกว่านี้อย่างเป็นระบบ (Q2'26: 17.55% vs 13.6% ที่คำนวณจากเลขบริษัท) จึงไม่นำมาใช้ · งวดที่ยืนยันไม่ได้เว้นว่างไว้",
-        "notes": "ราคาสิ้นงวดดึงจาก /api/ohlc (แหล่งเดียวกับที่หน้าเว็บใช้ · ปรับ split แล้ว) · รายได้/EPS จาก press release และงบรายไตรมาสของบริษัท",
-        "sources": "shopify.com/news (press release รายไตรมาส) · SEC 10-Q · /api/ohlc สำหรับราคา",
+        "notes": "ราคาสิ้นงวดดึงจาก /api/ohlc (แหล่งเดียวกับที่หน้าเว็บใช้ · ปรับ split แล้ว) · รายได้/EPS จาก press release และงบรายไตรมาสของบริษัท · แถว Q4'24, Q1'25, Q2'25, Q3'25 และ Q1'26 เติม opMarginPct/fcfB ย้อนหลังเมื่อ 2026-11 จากตัวเลขใน press release ของบริษัท (opMarginPct = กำไรจากการดำเนินงาน GAAP ÷ รายได้ · fcfB = FCF ที่บริษัทรายงาน = OCF − capex ตามนิยามเดียวกับแถวเดิม)",
+        "sources": "shopify.com/news (press release รายไตรมาส) · SEC 10-Q · /api/ohlc สำหรับราคา · SEC 8-K + 10-Q Q3 2026 (3 พ.ย. 2026) · https://www.sec.gov/Archives/edgar/data/1594805/000159480526000067/exhibit991pressreleaseq320.htm · https://www.sec.gov/Archives/edgar/data/1594805/000159480526000068/shop-20260930.htm · https://www.sec.gov/Archives/edgar/data/1594805/000159480526000046/exhibit991pressreleaseq220.htm · https://www.sec.gov/Archives/edgar/data/1594805/000159480526000018/exhibit991pressreleaseq120.htm · https://www.sec.gov/Archives/edgar/data/1594805/000159480526000006/exhibit991pressreleaseq420.htm",
         "years": [
           {
             "fy": "FY2021",
@@ -8273,6 +8449,8 @@
             "endDate": "2024-12-31",
             "revenueB": 2.812,
             "epsAdj": 0.99,
+            "opMarginPct": 16.5,
+            "fcfB": 0.611,
             "priceQEnd": 106.33
           },
           {
@@ -8281,6 +8459,8 @@
             "endDate": "2025-03-31",
             "revenueB": 2.36,
             "epsAdj": -0.53,
+            "opMarginPct": 8.6,
+            "fcfB": 0.363,
             "priceQEnd": 95.48,
             "epsNote": "ขาดทุนตีมูลค่าเงินลงทุนกดให้ EPS ติดลบ ขณะที่รายได้โตและกำไรจากการดำเนินงานเป็นบวก"
           },
@@ -8291,6 +8471,7 @@
             "revenueB": 2.68,
             "epsAdj": 0.69,
             "opMarginPct": 10.9,
+            "fcfB": 0.422,
             "priceQEnd": 115.35
           },
           {
@@ -8299,6 +8480,8 @@
             "endDate": "2025-09-30",
             "revenueB": 2.844,
             "epsAdj": 0.2,
+            "opMarginPct": 12.1,
+            "fcfB": 0.507,
             "priceQEnd": 148.61
           },
           {
@@ -8317,6 +8500,8 @@
             "endDate": "2026-03-31",
             "revenueB": 3.17,
             "epsAdj": -0.45,
+            "opMarginPct": 12.1,
+            "fcfB": 0.476,
             "priceQEnd": 118.62,
             "epsNote": "EPS ติดลบเป็นปีที่สามติดในไตรมาสแรก จากการตีมูลค่าเงินลงทุน — รายได้ไตรมาสนี้โต 34% และ GMV ทะลุ $100B ครั้งแรก"
           },
@@ -8330,20 +8515,61 @@
             "fcfB": 0.654,
             "priceQEnd": 114.18,
             "epsNote": "GAAP EPS $1.16 รวมกำไรตีมูลค่าเงินลงทุน ~$1,063M (สุทธิภาษี) — ตัดรายการนี้ออกกำไรจริงเหลือ $439M (ปีก่อน $338M) · กำไรจากการดำเนินงานจริง $488M"
+          },
+          {
+            "q": "Q3'26",
+            "endYm": "2026-09",
+            "endDate": "2026-09-30",
+            "revenueB": 3.742,
+            "epsAdj": 0.36,
+            "opMarginPct": 15.2,
+            "fcfB": 0.816,
+            "priceQEnd": 148.3,
+            "epsNote": "GAAP EPS $0.36 รวมขาดทุนจากเงินลงทุนในหุ้น (ตีมูลค่า + ตามวิธีส่วนได้เสีย) ~$138M ก่อนภาษี / ~$122M สุทธิภาษี (~−$0.09/หุ้น) และประโยชน์ภาษีครั้งเดียวจากการกลับรายการ valuation allowance $63M (~+$0.05/หุ้น) — ทั้งสองรายการอยู่ใต้กำไรจากการดำเนินงาน · ตัดผลเงินลงทุนออก กำไรสุทธิ $584M (~$0.45/หุ้น · ปีก่อน $367M) ตัดภาษีครั้งเดียวออกด้วยเหลือราว $521M (~$0.40/หุ้น) · กำไรจากการดำเนินงานจริง $568M"
           }
         ]
       },
       "forwardView": {
-        "asOf": "2026-08",
+        "asOf": "2026-11",
         "estimateHistory": [
           {
             "asOf": "2026-08",
             "fy": "FY2026",
             "eps": 1.9,
             "revenue": 15.23
+          },
+          {
+            "asOf": "2026-11",
+            "fy": "FY2026",
+            "eps": 1.89,
+            "revenue": 15.32
           }
         ],
         "guidanceTrack": [
+          {
+            "quarter": "Q3 2026",
+            "metric": "revenue",
+            "guided": "โต low-thirties % YoY (ตีความ ~30-33% → จุดกึ่งกลาง ~31.5% ≈ ~$3.74B จากฐาน Q3'25 $2.844B)",
+            "actual": "$3.742B (+31.6% YoY · บริษัทปัดเป็น 32%)",
+            "result": "inline",
+            "magnitudePct": 0.1
+          },
+          {
+            "quarter": "Q3 2026",
+            "metric": "margin",
+            "guided": "FCF margin high-teens ถึง low-twenties (ตีความ ~17-23% → จุดกึ่งกลาง ~20%)",
+            "actual": "FCF margin 21.8% ($816M)",
+            "result": "beat",
+            "magnitudePct": 9
+          },
+          {
+            "quarter": "Q3 2026",
+            "metric": "eps",
+            "guided": "Shopify ไม่ให้ guidance EPS (ให้เฉพาะอัตราการเติบโตรายได้/gross profit · opex % ของรายได้ · SBC · FCF margin)",
+            "actual": "GAAP $0.36 · non-GAAP $0.49",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
           {
             "quarter": "Q2 2026",
             "metric": "revenue",
@@ -8351,25 +8577,65 @@
             "actual": "~$3.583B (+34% YoY)",
             "result": "beat",
             "magnitudePct": 4
+          },
+          {
+            "quarter": "Q2 2026",
+            "metric": "margin",
+            "guided": "FCF margin mid-teens (ตีความ ~14-16% → จุดกึ่งกลาง ~15%)",
+            "actual": "FCF margin 18.3% ($654M)",
+            "result": "beat",
+            "magnitudePct": 21.7
+          },
+          {
+            "quarter": "Q2 2026",
+            "metric": "eps",
+            "guided": "Shopify ไม่ให้ guidance EPS (ให้เฉพาะอัตราการเติบโตรายได้/gross profit · opex % ของรายได้ · SBC · FCF margin)",
+            "actual": "GAAP $1.16 (รวมกำไรตีมูลค่าเงินลงทุน)",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "revenue",
+            "guided": "โต low-thirties % YoY (ตีความ ~30-33% → จุดกึ่งกลาง ~31.5% ≈ ~$3.10B จากฐาน Q1'25 $2.36B)",
+            "actual": "$3.170B (+34% YoY)",
+            "result": "beat",
+            "magnitudePct": 2.1
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "margin",
+            "guided": "FCF margin low-to-mid teens ต่ำกว่า Q1'25 เล็กน้อย (ตีความ ~12-15% → จุดกึ่งกลาง ~13.5%)",
+            "actual": "FCF margin 15.0% ($476M)",
+            "result": "beat",
+            "magnitudePct": 11.3
+          },
+          {
+            "quarter": "Q1 2026",
+            "metric": "eps",
+            "guided": "Shopify ไม่ให้ guidance EPS (ให้เฉพาะอัตราการเติบโตรายได้/gross profit · opex % ของรายได้ · SBC · FCF margin)",
+            "actual": "GAAP −$0.45 (ขาดทุนตีมูลค่าเงินลงทุน)",
+            "result": "noGuidance",
+            "magnitudePct": null
           }
         ],
         "consensus": [
           {
             "fy": "FY2026",
-            "revenue": 15.23,
-            "eps": 1.9,
+            "revenue": 15.32,
+            "eps": 1.89,
             "confidence": "high",
             "basis": "non-GAAP"
           },
           {
             "fy": "FY2027",
-            "revenue": null,
-            "eps": null,
-            "confidence": "low",
+            "revenue": 19.34,
+            "eps": 2.45,
+            "confidence": "medium",
             "basis": "unknown"
           }
         ],
-        "note": "Shopify ให้ guidance เป็น 'อัตราการเติบโตแบบบรรยาย' (เช่น 'low-thirties percentage rate') ไม่ใช่ช่วงตัวเงิน จึงต้องแปลงเป็นรายได้โดยอ้างฐานไตรมาสเดียวกันปีก่อนเพื่อให้เทียบกับหุ้นตัวอื่นได้ · แถวเดียวที่บันทึกคือ Q2 2026: บริษัทให้กรอบ 'high-twenties' (อ่านเป็น 28-29% → จุดกึ่งกลาง ~$3.44B) ทำได้ $3.583B = เกินคาด ~4% · ไตรมาสก่อนหน้ายังยืนยันคำ guidance ที่ให้ไว้ตอนนั้นไม่ได้ครบ จึงไม่บันทึกแทนการเดา · กรอบ Q3 2026: รายได้โต low-thirties % · gross profit โต mid-to-high twenties % · opex 33-34% ของรายได้ · SBC $150M · FCF margin high-teens ถึง low-twenties · consensus FY2026 EPS ~$1.90 (44 นักวิเคราะห์ · non-GAAP) เป็นคนละฐานกับตาราง KB ที่เป็น GAAP เส้นคาดบนกราฟจึงเป็นจุดแยก · FY2027 อยู่หลัง paywall จึงเว้นไว้ · วันประกาศงบ Q3 บริษัทยังไม่ประกาศ (แหล่งภายนอกคาด 22 ต.ค. ถึงต้น พ.ย.) จึงบันทึกเป็นระดับเดือน"
+        "note": "Shopify ให้ guidance เป็นคำบรรยายอัตราการเติบโต (เช่น 'low-thirties') ไม่ใช่ช่วงตัวเงินและไม่ให้ EPS จึงแปลงเป็นช่วงตัวเลขเองตามที่ระบุในแต่ละแถว (เป็นการตีความ) — Q3 2026 รายได้ตรงกรอบพอดี (inline) ขณะที่ FCF margin 22% เกินกรอบ และ opex 32.4% ต่ำกว่ากรอบ 33-34% ส่วนแถว Q1-Q2 2026 ที่เพิ่มยืนยันจาก press release บน SEC แล้ว · consensus FY2026 $15.32B / EPS $1.89 non-GAAP (stockanalysis ระบุฐานชัด ตรงกับ Yahoo 38 นักวิเคราะห์) ส่วน FY2027 $19.34B / EPS ~$2.45 (Yahoo 39-48 นักวิเคราะห์ ใกล้ Finviz $2.44) ไม่ระบุฐานและ Zacks ให้ต่ำกว่ามาก ($1.84) จึงให้ความมั่นใจระดับกลาง ส่วน FY2028 มีเพียง Zacks EPS $2.80 จาก 4 นักวิเคราะห์โดยไม่มีรายได้ จึงยังไม่บันทึก"
       }
     },
     "DDOG": {
@@ -8377,74 +8643,74 @@
       "name": "Datadog, Inc.",
       "layer": "enterprise",
       "thesis": {
-        "statement": "Datadog คือชั้น observability ที่ระบบคลาวด์สมัยใหม่ต้องมี — ยิ่งองค์กรย้ายงานขึ้นคลาวด์และเริ่มรันงาน AI มากเท่าไหร่ จำนวนสิ่งที่ต้องเฝ้าดูก็ยิ่งเพิ่มตามโดยอัตโนมัติ รายได้จึงโตตามปริมาณการใช้งานของลูกค้าโดยไม่ต้องขายใหม่ทุกครั้ง และการขายผลิตภัณฑ์ตัวที่สองสามสี่ให้ลูกค้าเดิมคือเครื่องยนต์หลักที่ทำให้เติบโตเร็วกว่าตลาด — จุดที่ต้องระวังคือรายได้แบบนับตามการใช้งานเป็นดาบสองคม เมื่อลูกค้ารายใหญ่ปรับลดการใช้ รายได้หายทันทีโดยไม่ต้องยกเลิกสัญญา",
+        "statement": "Datadog คือชั้น observability ที่ระบบคลาวด์สมัยใหม่ต้องมี — ยิ่งองค์กรย้ายงานขึ้นคลาวด์และเริ่มรันงาน AI มากเท่าไหร่ จำนวนสิ่งที่ต้องเฝ้าดูก็ยิ่งเพิ่มตามโดยอัตโนมัติ รายได้จึงโตตามปริมาณการใช้งานของลูกค้าโดยไม่ต้องขายใหม่ทุกครั้ง และการขายผลิตภัณฑ์ตัวที่สองสามสี่ให้ลูกค้าเดิมคือเครื่องยนต์หลักที่ทำให้เติบโตเร็วกว่าตลาด — จุดที่ต้องระวังคือรายได้แบบนับตามการใช้งานเป็นดาบสองคม เมื่อลูกค้ารายใหญ่ปรับลดการใช้ รายได้หายทันทีโดยไม่ต้องยกเลิกสัญญา · Q3 2026 เห็นทั้งสองด้านพร้อมกัน: รายได้โต 35% และกำไรดำเนินงาน non-GAAP ขึ้นเป็น 28% ขณะที่ลูกค้ากลุ่มที่ไม่ใช่ AI เร่งตัวเป็นไตรมาสที่ห้าติด แต่ลูกค้ารายใหญ่ที่สุดลดการใช้จริง และ guide Q4 ที่สมมติให้รายนี้ใช้แค่ขั้นต่ำตามสัญญาทำให้การเติบโตที่แนะไว้ชะลอเหลือ +25-26%",
         "pillars": [
-          "แพลตฟอร์มเดียวจบ — ลูกค้าที่ใช้ 4 ผลิตภัณฑ์ขึ้นไปเพิ่มเป็น 58% (จาก 52%) และใช้ 10 ตัวขึ้นไป 13% (จาก 7%) ยิ่งใช้หลายตัวยิ่งย้ายออกยาก",
-          "รายได้นับตามการใช้งาน (usage-based) — เมื่อ workload ของลูกค้าโต รายได้โตเองโดยไม่ต้องเจรจาสัญญาใหม่ สะท้อนเป็น net revenue retention ระดับ low 120s ต่อเนื่อง",
-          "คลื่น AI เป็นตัวเร่งชั้นใหม่ — ลูกค้ากลุ่ม AI-native กว่า 750 ราย (31 รายจ่ายเกิน $1M/ปี · 8 รายเกิน $10M/ปี) บวกผลิตภัณฑ์สาย LLM Observability / Bits AI / AI Guard ที่ขายเข้าฐานลูกค้าเดิมได้ทันที",
-          "ฐานลูกค้าองค์กรแน่น — ลูกค้า ARR เกิน $100k มี ~4,720 ราย (จาก ~3,850 ปีก่อน) คิดเป็น ~91% ของ ARR ทั้งหมด และ gross retention ระดับ mid-to-high 90s",
-          "กระแสเงินสดแข็งแรงกว่ากำไรบัญชีมาก — FCF ทะลุ $1B ต่อปีแล้ว บนงบดุลที่มีเงินสดสุทธิ ~$3.7B ทำให้ลงทุนต่อได้โดยไม่ต้องพึ่งตลาดทุน"
+          "แพลตฟอร์มเดียวจบ — ลูกค้าที่ใช้ 4 ผลิตภัณฑ์ขึ้นไปเพิ่มเป็น 61% (จาก 54% ปีก่อน) · 6 ตัวขึ้นไป 41% (จาก 31%) · 10 ตัวขึ้นไป 16% (จาก 8%) ยิ่งใช้หลายตัวยิ่งย้ายออกยาก",
+          "รายได้นับตามการใช้งาน (usage-based) — เมื่อ workload ของลูกค้าโต รายได้โตเองโดยไม่ต้องเจรจาสัญญาใหม่ สะท้อนเป็น net revenue retention ระดับ low 120s ต่อเนื่อง และรายได้จากลูกค้าที่ไม่ใช่ AI เร่งขึ้นเป็นไตรมาสที่ห้าติด (โต high-20s%)",
+          "คลื่น AI เป็นตัวเร่งชั้นใหม่ — ลูกค้ากลุ่ม AI-native กว่า 850 ราย (จาก ~750 ใน Q2 · 39 รายจ่ายเกิน $1M/ปี) และบริษัท AI ชั้นนำ 15 อันดับแรกเป็นลูกค้าทั้งหมด บวกผลิตภัณฑ์สาย LLM Observability / Bits AI / AI Guard และโมเดลของตัวเอง Scout ที่ขายเข้าฐานลูกค้าเดิมได้ทันที (ราวหนึ่งในสามของลูกค้าใช้ผลิตภัณฑ์ AI แล้ว)",
+          "ฐานลูกค้าองค์กรแน่น — ลูกค้า ARR เกิน $100k มี ~4,860 ราย (จาก ~4,060 ปีก่อน) คิดเป็น ~91% ของ ARR ทั้งหมด และ gross retention ระดับ mid-to-high 90s",
+          "กระแสเงินสดแข็งแรงกว่ากำไรบัญชีมาก — FCF ย้อนหลัง 12 เดือน ~$1.1B (margin ~26%) บนงบดุลที่มีเงินสดสุทธิ ~$3.9B ทำให้ลงทุนต่อได้โดยไม่ต้องพึ่งตลาดทุน"
         ]
       },
       "fundamentals": [
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "+36% YoY (Q2 2026 — $1.12B) · guide Q3 $1.135-1.145B = +28-29% เท่านั้น",
-          "trend": "flat",
-          "score": 80,
+          "current": "+35% YoY (Q3 2026 — $1.197B) ทะลุจุดกึ่งกลาง guide 5.0% · guide Q4 $1.19-1.20B = +25-26% (สมมติลูกค้ารายใหญ่ที่สุดใช้แค่ขั้นต่ำตามสัญญา) · ทั้งปี $4.515-4.525B ≈ +32%",
+          "trend": "down",
+          "score": 78,
           "impact": "positive",
-          "why": "ไตรมาสล่าสุดเร่งขึ้นจาก +32% เป็น +36% และทะลุกรอบบนของ guidance แต่บริษัทระบุเองว่าลูกค้ารายใหญ่ที่สุดลดการใช้งานตั้งแต่ Q3 และได้ตัดความเสี่ยงนั้นออกจาก guidance แล้ว ตัวเลขที่แนะไว้จึงชะลอเหลือ +28-29% — โตเร็วอยู่ แต่ทิศทางไม่ได้ขึ้นต่อ"
+          "why": "Q3 ยังโต 35% ใกล้เคียง +36% ใน Q2 และทะลุจุดกึ่งกลาง guidance เป็นไตรมาสที่สี่ติดในระดับ 4-5% · ลูกค้าที่ไม่ใช่ AI เร่งขึ้นเป็นไตรมาสที่ห้าติด (high-20s%) แปลว่าฐานธุรกิจหลักไม่ได้อ่อนลง · แต่ guide Q4 แทบไม่โตจาก Q3 เพราะสมมติให้ลูกค้ารายใหญ่ที่สุดจ่ายแค่ขั้นต่ำตามสัญญา (ถ้าไม่นับรายนี้บริษัทบอกว่าโต low-to-mid 30s%) — ต่อให้ทะลุ guide 4-5% ตามรูปแบบเดิม การเติบโตไตรมาสหน้าก็ยังชะลอลงจากระดับ 35%"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "Q2 2026: GAAP EPS $0.12 (ปีก่อน $0.01) · non-GAAP $0.65 · guide ทั้งปี non-GAAP $2.50-2.54",
+          "current": "Q3 2026: GAAP EPS $0.32 (ปีก่อน $0.10 · Q2 $0.12) · non-GAAP $0.81 (+47% YoY · guide $0.63-0.65) · guide ทั้งปี non-GAAP $2.73-2.75 (จาก $2.50-2.54) · guide Q4 non-GAAP $0.69-0.71",
           "trend": "up",
-          "score": 60,
+          "score": 65,
           "impact": "neutral",
-          "why": "ดีขึ้นชัดเทียบปีก่อนที่เกือบเท่าศูนย์ แต่ต้องอ่านให้ตรง — กำไร GAAP ยังบางมาก ($0.12) ส่วน non-GAAP $0.65 สูงกว่าถึง 5 เท่าเพราะตัดค่าหุ้นพนักงาน (SBC) ออก และปี FY2025 กำไร GAAP ต่อหุ้นกลับ *ลดลง* เหลือ $0.31 จาก $0.52 ทั้งที่รายได้โต 28% จึงยังพิสูจน์ไม่ได้ว่ากำไรบัญชีจะโตตามรายได้อย่างสม่ำเสมอ"
+          "why": "ดีขึ้นชัดทั้งสองฐาน — GAAP EPS เพิ่มเป็นสามเท่าเทียบปีก่อนเพราะกำไรจากการดำเนินงานตามบัญชีขึ้นเป็น $75M (จาก −$6M ปีก่อน) และ non-GAAP ชนะ guidance ถึง 27% · แต่กำไร GAAP ยังบาง ($0.32 เทียบ non-GAAP $0.81 ส่วนต่างเกือบทั้งหมดคือ SBC) และ guide Q4 non-GAAP $0.69-0.71 ต่ำกว่า Q3 เพราะ margin จะกลับลงมาราว 24% เมื่อลูกค้ารายใหญ่ที่สุดจ่ายแค่ขั้นต่ำ จึงยังเร็วไปที่จะถือว่ากำไรบัญชีโตอย่างสม่ำเสมอแล้ว"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "Q2 2026 FCF $279M (~25% ของรายได้) · OCF $316M · ทั้งปี FY2025 แตะ $1.0B แล้ว",
-          "trend": "up",
-          "score": 86,
+          "current": "Q3 2026 FCF $251M (~21% ของรายได้ · Q2 $279M หรือ ~25%) · OCF $290M · FCF ย้อนหลัง 12 เดือน margin ~26% (~$1.1B)",
+          "trend": "flat",
+          "score": 84,
           "impact": "positive",
-          "why": "จุดแข็งที่สุดของงบ — โมเดล SaaS เก็บเงินล่วงหน้า บวก capex ต่ำ ทำให้แปลงรายได้เป็นเงินสดได้ราวหนึ่งในสี่ ต่างจากกำไรบัญชีที่เกือบศูนย์อย่างสิ้นเชิง เงินสดส่วนนี้คือสิ่งที่ทำให้ลงทุนสร้างผลิตภัณฑ์ใหม่ได้ต่อเนื่องโดยไม่ต้องออกหุ้นเพิ่ม"
+          "why": "ยังเป็นจุดแข็งที่สุดของงบ — โมเดล SaaS เก็บเงินล่วงหน้า บวก capex ต่ำ (~3-4% ของรายได้) ทำให้แปลงรายได้เป็นเงินสดได้ราวหนึ่งในสี่ ต่างจากกำไรบัญชีที่ยังบางอย่างสิ้นเชิง · ไตรมาสนี้ FCF ลดลง QoQ และโตช้ากว่ารายได้ (~+19% YoY ตามสูตร OCF ลบ capex ในตาราง เทียบรายได้ +35%) จึงให้ทิศทางทรงตัว ไม่ใช่ดีขึ้น"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "non-GAAP operating margin 23% · GAAP operating margin 0% · gross margin 79.6% (จาก 80.9% ปีก่อน)",
-          "trend": "flat",
-          "score": 55,
+          "current": "GAAP operating margin 6.2% (Q2 0.5%) · non-GAAP 28% (Q2 23% · guide Q3 ~23%) · gross margin non-GAAP 81.2% (Q2 79.6%) · guide Q4 non-GAAP operating margin ~24%",
+          "trend": "up",
+          "score": 62,
           "impact": "neutral",
-          "why": "ช่องว่าง 23 จุดระหว่าง GAAP กับ non-GAAP คือค่าหุ้นพนักงานเกือบทั้งหมด — แปลว่ากำไรที่ฝ่ายบริหารพูดถึงยังไม่ใช่กำไรที่ผู้ถือหุ้นได้จริงหลังนับการเจือจาง · gross margin ค่อย ๆ ลดลงจากต้นทุนโครงสร้างพื้นฐานของงาน AI ที่กินทรัพยากรมากกว่างานเดิม ฝ่ายบริหารบอกว่ายังอยู่ในกรอบ ~80% ที่เคยเป็นมา"
+          "why": "Q3 คือไตรมาสที่ GAAP operating margin สูงที่สุดในตารางย้อนหลัง และ gross margin ฟื้นกลับเหนือ 80% หลังลดลงใน Q2 · แต่ช่องว่าง ~22 จุดระหว่าง GAAP กับ non-GAAP ยังเป็นค่าหุ้นพนักงานเกือบทั้งหมด (SBC $237M ≈ 20% ของรายได้) และ margin ที่พุ่งขึ้นไตรมาสนี้มีส่วนจากรายได้ที่ทะลุเป้า — guide Q4 ให้ non-GAAP กลับมาราว 24% ทั้งปี 24% จึงยังไม่ใช่ระดับใหม่ที่ยืนได้"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "GAAP operating income ~$5M บนรายได้ $1.12B — ผลตอบแทนทางบัญชีเกือบเป็นศูนย์",
+          "current": "GAAP operating income ~$75M บนรายได้ $1.20B (6.2%) — ดีที่สุดในรอบหลายปีแต่ผลตอบแทนทางบัญชียังต่ำ",
           "trend": "up",
-          "score": 48,
+          "score": 52,
           "impact": "neutral",
-          "why": "ตัวเลขทางบัญชีแทบไม่มีผลตอบแทนเพราะกำไรจากการดำเนินงานยังเกือบศูนย์ ผลตอบแทนจริงอยู่ในรูปกระแสเงินสด ($1B/ปี) ไม่ใช่กำไร · ทิศทางดีขึ้นช้า ๆ ตามสเกล แต่บริษัทเลือกเอากำไรไปลงทุนต่อมากกว่าปล่อยให้ตกถึงบรรทัดล่าง จึงยังตัดสินความสามารถในการทำกำไรระยะยาวไม่ได้"
+          "why": "กำไรจากการดำเนินงานตามบัญชีเพิ่งขยับจากเกือบศูนย์ขึ้นมาเป็นหลักสิบล้านดอลลาร์ต่อไตรมาส ผลตอบแทนจริงยังอยู่ในรูปกระแสเงินสด (~$1.1B ต่อปี) มากกว่ากำไร · ทิศทางดีขึ้นตามสเกล แต่บริษัทยังเลือกเอากำไรไปลงทุนต่อ และ guide Q4 ให้ margin กลับลง จึงยังตัดสินความสามารถในการทำกำไรระยะยาวไม่ได้"
         },
         {
           "key": "cash",
           "label": "เงินสดในมือ",
-          "current": "เงินสดและหลักทรัพย์ ~$5.0B (30 มิ.ย. 2026) — เงินสดสุทธิหลังหักหนี้ ~$3.7B",
+          "current": "เงินสดและหลักทรัพย์ ~$5.23B (30 ก.ย. 2026 จาก ~$5.0B ใน Q2) — เงินสดสุทธิหลังหักหนี้ ~$3.9B",
           "trend": "up",
           "score": 90,
           "impact": "positive",
-          "why": "งบดุลแข็งแรงมากและยังสร้างเงินสดเพิ่มทุกไตรมาส ทำให้ทนช่วงที่ลูกค้าชะลอการใช้งานได้สบาย และมีกระสุนสำหรับซื้อกิจการเสริมโดยไม่ต้องออกหุ้นใหม่"
+          "why": "งบดุลแข็งแรงมากและยังสร้างเงินสดเพิ่มทุกไตรมาส ทำให้ทนช่วงที่ลูกค้ารายใหญ่ลดการใช้งานได้สบาย และมีกระสุนสำหรับซื้อกิจการเสริมโดยไม่ต้องออกหุ้นใหม่"
         },
         {
           "key": "debt",
           "label": "ภาระหนี้",
-          "current": "หนี้รวม ~$1.28B — หลักคือหุ้นกู้แปลงสภาพ 0.00% ครบกำหนดปี 2029 มูลค่า $1.0B (ยังไม่เข้าเงื่อนไขแปลง)",
+          "current": "หนี้รวม ~$1.31B — หลักคือหุ้นกู้แปลงสภาพ 0.00% ครบกำหนด ธ.ค. 2029 มูลค่า $1.0B (ไม่เข้าเงื่อนไขแปลงใน Q3) บวกหนี้สัญญาเช่า ~$0.32B",
           "trend": "flat",
           "score": 78,
           "impact": "positive",
@@ -8453,73 +8719,73 @@
         {
           "key": "dilution",
           "label": "การเจือจางของหุ้น",
-          "current": "หุ้น diluted 371 ล้านหุ้น (Q2 2026) · guide ทั้งปี 376 ล้านหุ้น · SBC สูงจนทำให้ GAAP margin ต่างจาก non-GAAP 23 จุด",
+          "current": "หุ้น diluted 375 ล้านหุ้น (Q3 2026 จาก 371 ล้านใน Q2 · ~4-5% YoY) · guide Q4 379 ล้านหุ้น · SBC $237M ต่อไตรมาส (~20% ของรายได้) · หุ้นที่ออกแล้ว ~361 ล้านหุ้น (28 ต.ค. 2026)",
           "trend": "down",
-          "score": 32,
+          "score": 30,
           "impact": "negative",
-          "why": "จุดอ่อนที่สุดของหุ้นตัวนี้ — บริษัทไม่มีโครงการซื้อหุ้นคืน จำนวนหุ้นจึงเพิ่มขึ้นทุกปีจากค่าตอบแทนพนักงานที่จ่ายเป็นหุ้น และยังมีหุ้นกู้แปลงสภาพรออยู่อีก ผู้ถือหุ้นเดิมจึงถูกลดสัดส่วนต่อเนื่องแม้ธุรกิจจะดี กำไรต่อหุ้นจึงโตช้ากว่ากำไรรวมเสมอ"
+          "why": "จุดอ่อนที่สุดของหุ้นตัวนี้และยังไม่ดีขึ้น — ไม่มีโครงการซื้อหุ้นคืน จำนวนหุ้น diluted เพิ่มราว 1% ต่อไตรมาสจากค่าตอบแทนพนักงานที่จ่ายเป็นหุ้น (SBC เพิ่มจาก $220M เป็น $237M ใน Q3) บวกหุ้นที่ออกจ่ายค่าซื้อกิจการ และยังมีหุ้นกู้แปลงสภาพรออยู่อีก ผู้ถือหุ้นเดิมจึงถูกลดสัดส่วนต่อเนื่องแม้ธุรกิจจะดี"
         },
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรทุน",
-          "current": "ไม่มีปันผล ไม่มี buyback — เงินสดเกือบทั้งหมดกลับเข้า R&D และทีมขาย บวกซื้อกิจการขนาดเล็กเสริมผลิตภัณฑ์",
+          "current": "ไม่มีปันผล ไม่มี buyback — เงินสดเกือบทั้งหมดกลับเข้า R&D และทีมขาย · ซื้อกิจการเล็ก 3 ดีลใน 9 เดือนแรกปี 2026 รวม ~$192M (จ่ายเป็นหุ้นบางส่วน ~0.8 ล้านหุ้น) · capex ~3-4% ของรายได้",
           "trend": "flat",
           "score": 60,
           "impact": "neutral",
-          "why": "เหมาะกับบริษัทที่ยังอยู่ในช่วงขยายตลาด และการลงทุนก็เห็นผลจริง (ลูกค้าที่ใช้ 10 ผลิตภัณฑ์ขึ้นไปเพิ่มจาก 7% เป็น 13% ในปีเดียว) แต่เมื่อ FCF แตะ $1B/ปีแล้วและยังไม่มีอะไรมาชดเชยการเจือจางจาก SBC เลย ถือเป็นช่องว่างที่ผู้ถือหุ้นระยะยาวควรจับตา"
+          "why": "เหมาะกับบริษัทที่ยังอยู่ในช่วงขยายตลาด และการลงทุนก็เห็นผลจริง (ลูกค้าที่ใช้ 10 ผลิตภัณฑ์ขึ้นไปเพิ่มจาก 8% เป็น 16% ในปีเดียว) แต่เมื่อ FCF ~$1.1B ต่อปีแล้วและยังไม่มีอะไรมาชดเชยการเจือจางจาก SBC เลย ถือเป็นช่องว่างที่ผู้ถือหุ้นระยะยาวควรจับตา"
         },
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "ราคา ~$221 · mcap ~$82B (หุ้น diluted 371 ล้าน × ราคา) · forward P/E ~87x จาก consensus non-GAAP FY2026 $2.53 · trailing GAAP P/E ~447x",
+          "current": "ราคาปิด $188.72 (4 พ.ย. 2026 · −14.4% วันงบ) · mcap ~$68B · EV ~$64B ≈ ~15x รายได้ย้อนหลัง 12 เดือน · forward P/E ~69x จากจุดกึ่งกลาง guide non-GAAP FY2026 $2.74 / ~63x จาก consensus FY2027 $2.98 · trailing GAAP P/E ~263x",
           "trend": "up",
-          "score": 25,
+          "score": 33,
           "impact": "negative",
-          "why": "แพงมากไม่ว่าจะวัดด้วยฐานไหน — 87 เท่าของกำไร non-GAAP ที่ยังไม่นับ SBC และ 447 เท่าของกำไร GAAP จริง ราคาปัจจุบันจึงต้องการให้บริษัทโตระดับ 25-30% ต่อไปอีกหลายปีโดยไม่สะดุด · ที่ให้คะแนนสูงกว่าจุดต่ำสุดเล็กน้อยเพราะราคาลงมาแล้ว ~23% จากจุดสูงสุด $288 (4 ส.ค. 2026) หลังงบ"
+          "why": "ยังแพงไม่ว่าจะวัดด้วยฐานไหน — ราว 63-69 เท่าของกำไร non-GAAP ที่ยังไม่นับ SBC และกว่า 260 เท่าของกำไร GAAP จริง · ที่ให้คะแนนสูงขึ้นจากรอบก่อนเพราะราคาลงมาแรง: ร่วง ~21% ในสัปดาห์ก่อนงบแล้วลงอีก 14% วันประกาศ เหลือต่ำกว่าราคาปิดสูงสุด $293.26 (9 ต.ค. 2026) ราว 36% ขณะที่กำไร non-GAAP ทั้งปีถูกยกขึ้น ~9% multiple จึงหดลงชัด แต่ยังต้องการให้บริษัทโต 25-30% ต่อเนื่องอีกหลายปี"
         }
       ],
       "revenueQuality": {
-        "acceleration": "accelerating",
-        "consistency": 82,
+        "acceleration": "steady",
+        "consistency": 78,
         "recurringPct": 95,
-        "note": "คุณภาพรายได้สูงในเชิงความสม่ำเสมอ — เกือบทั้งหมดเป็น subscription ที่นับตามการใช้งาน ลูกค้า ARR เกิน $100k จำนวน ~4,720 ราย คิดเป็น ~91% ของ ARR และ gross revenue retention อยู่ระดับ mid-to-high 90s แปลว่าแทบไม่มีใครเลิกใช้ ส่วน net revenue retention ระดับ low 120s สะท้อนว่าลูกค้าเดิมใช้จ่ายเพิ่มขึ้นเองทุกปี · จุดอ่อนสำคัญคือความกระจุกตัว — บริษัทเปิดเผยว่าลูกค้ารายใหญ่ที่สุด (บริษัท AI ที่ไม่เปิดชื่อ ต่อสัญญาระดับเก้าหลักและใช้ถึง 17 ผลิตภัณฑ์) ลดการใช้งานตั้งแต่ Q3 2026 ซึ่งเพียงรายเดียวก็กดประมาณการทั้งปีได้ · หมายเหตุ: Datadog ไม่ได้แบ่งรายได้เป็น segment ผลิตภัณฑ์ ตัวเลขด้านล่างจึงเป็นการแบ่งตามภูมิภาคซึ่งเป็นชุดเดียวที่บริษัทรายงานจริงใน 10-Q",
+        "note": "คุณภาพรายได้สูงในเชิงความสม่ำเสมอ — เกือบทั้งหมดเป็น subscription ที่นับตามการใช้งาน ลูกค้า ARR เกิน $100k จำนวน ~4,860 ราย คิดเป็น ~91% ของ ARR และ gross revenue retention อยู่ระดับ mid-to-high 90s แปลว่าแทบไม่มีใครเลิกใช้ ส่วน net revenue retention ระดับ low 120s สะท้อนว่าลูกค้าเดิมใช้จ่ายเพิ่มขึ้นเองทุกปี · RPO $3.85B (+38% YoY) · จุดอ่อนสำคัญคือความกระจุกตัวซึ่งเห็นเป็นตัวเลขแล้วใน Q3 2026 — ลูกค้ารายใหญ่ที่สุด (บริษัท AI ที่ไม่เปิดชื่อ ใช้ 17 ผลิตภัณฑ์) ลดการใช้งานแต่ยังสูงกว่าขั้นต่ำตามสัญญา และ guide Q4 ที่สมมติให้รายนี้จ่ายแค่ขั้นต่ำทำให้การเติบโตที่แนะไว้เหลือ +25-26% ขณะที่ไม่นับรายนี้บริษัทบอกว่าโต low-to-mid 30s% · บริษัทยังต่อสัญญาล่วงหน้ากับลูกค้า AI รายใหญ่บางรายด้วย commit ที่สูงขึ้นแลกราคาต่อหน่วยที่ดีขึ้นให้ลูกค้า ซึ่งกดรายได้ระยะสั้นเล็กน้อย · หมายเหตุ: Datadog ไม่ได้แบ่งรายได้เป็น segment ผลิตภัณฑ์ ตัวเลขด้านล่างจึงเป็นการแบ่งตามภูมิภาคซึ่งเป็นชุดเดียวที่บริษัทรายงานจริงใน 10-Q",
         "segments": [
           {
             "name": "อเมริกาเหนือ",
-            "sharePct": 73,
-            "growthNote": "ตลาดหลัก — ฐานลูกค้าองค์กรใหญ่และกลุ่ม AI-native เกือบทั้งหมดอยู่ที่นี่ (ครึ่งปีแรก 2026)",
+            "sharePct": 74,
+            "growthNote": "$881M ใน Q3 2026 (+39% YoY) — ตลาดหลัก ฐานลูกค้าองค์กรใหญ่และกลุ่ม AI-native เกือบทั้งหมดอยู่ที่นี่",
             "trend": "up"
           },
           {
             "name": "นอกอเมริกาเหนือ",
-            "sharePct": 27,
-            "growthNote": "สัดส่วนลดลงเล็กน้อยจาก ~28% ใน Q1 เพราะฝั่งอเมริกาเหนือโตเร็วกว่า ไม่ใช่เพราะต่างประเทศหดตัว",
+            "sharePct": 26,
+            "growthNote": "$316M ใน Q3 2026 (+25% YoY) — สัดส่วนลดลงจาก ~27% เพราะฝั่งอเมริกาเหนือโตเร็วกว่า ไม่ใช่เพราะต่างประเทศหดตัว",
             "trend": "flat"
           }
         ]
       },
       "aiExecution": {
-        "score": 80,
+        "score": 82,
         "items": [
           {
             "item": "ลูกค้ากลุ่ม AI-native เป็นคลื่นรายได้ชั้นใหม่",
             "status": "executing",
-            "evidence": "กว่า 750 รายใช้งานอยู่ — ในนั้น 31 รายจ่ายเกิน $1M/ปี และ 8 รายเกิน $10M/ปี · เป็นกลุ่มที่โตเร็วที่สุดแต่ก็ผันผวนที่สุด เพราะจ่ายตามการใช้งานจริงและปรับลดได้ทันทีเมื่อบริษัทเหล่านั้นหันไปคุมต้นทุน"
+            "evidence": "กว่า 850 รายใช้งานอยู่ (จาก ~750 ใน Q2) — ในนั้น 39 รายจ่ายเกิน $1M/ปี (จาก 31) และบริษัท AI ชั้นนำ 15 อันดับแรกเป็นลูกค้าทั้งหมด · เป็นกลุ่มที่โตเร็วที่สุดแต่ก็ผันผวนที่สุด ลูกค้ารายใหญ่ที่สุดซึ่งเป็นบริษัท AI ลดการใช้งานจริงใน Q3 และ guide Q4 สมมติให้จ่ายแค่ขั้นต่ำตามสัญญา"
           },
           {
             "item": "ผลิตภัณฑ์สาย AI Observability (LLM Observability, AI Guard, Data Observability, Agent Console)",
             "status": "executing",
-            "evidence": "เปิดตัวชุดใหญ่กว่า 100 ฟีเจอร์ในงาน DASH 2026 รวมถึง AI Guard สำหรับความปลอดภัยของ agent และผู้ช่วยเขียนโค้ด — ขายเข้าฐานลูกค้าเดิมได้ทันทีโดยไม่ต้องหาลูกค้าใหม่"
+            "evidence": "ราวหนึ่งในสามของลูกค้าทั้งหมด (~33,500 ราย) ใช้ผลิตภัณฑ์ AI อย่างน้อยหนึ่งตัวแล้ว · ต่อยอดจากชุดกว่า 100 ฟีเจอร์ในงาน DASH 2026 — ขายเข้าฐานลูกค้าเดิมได้ทันทีโดยไม่ต้องหาลูกค้าใหม่"
           },
           {
-            "item": "Bits AI — ผู้ช่วย AI ที่ทำงานแทนทีม DevOps",
+            "item": "Bits AI และโมเดลของตัวเอง Scout",
             "status": "on-track",
-            "evidence": "ขยายจากผู้ช่วยตอบคำถามเป็นชุดงาน DevOps / Development / Data Analysis · ยังอยู่ช่วงเริ่มต้น ยังไม่มีตัวเลขรายได้แยกให้เห็น"
+            "evidence": "ผู้บริหารเรียก Bits AI ว่าเป็นผลิตภัณฑ์ที่ลูกค้านำไปใช้เร็วที่สุดในประวัติบริษัท และเปิดตัว Scout 1.0 โมเดลเฉพาะทางสำหรับสืบสวนปัญหาในระบบจริง ซึ่งบริษัทระบุว่าทำได้เทียบเท่าหรือดีกว่าโมเดลแนวหน้าในงานนี้ด้วยต้นทุนต่ำกว่ามาก · ยังไม่มีตัวเลขรายได้แยกให้เห็น"
           },
           {
             "item": "ขายผลิตภัณฑ์เพิ่มให้ลูกค้าเดิม (land-and-expand)",
             "status": "executing",
-            "evidence": "ลูกค้าที่ใช้ 4 ผลิตภัณฑ์ขึ้นไป 58% (จาก 52%) · 6 ตัวขึ้นไป 37% (จาก 29%) · 10 ตัวขึ้นไป 13% (จาก 7%) — ตัวเลขชุดนี้คือหลักฐานตรงที่สุดว่าแพลตฟอร์มเดียวจบใช้ได้จริง"
+            "evidence": "ลูกค้าที่ใช้ 4 ผลิตภัณฑ์ขึ้นไป 61% (จาก 54% ปีก่อน) · 6 ตัวขึ้นไป 41% (จาก 31%) · 10 ตัวขึ้นไป 16% (จาก 8%) · ชุด Infrastructure Monitoring เพียงชุดเดียว ARR เกิน $2B โต mid-30s% — หลักฐานตรงที่สุดว่าแพลตฟอร์มเดียวจบใช้ได้จริง"
           },
           {
             "item": "Bring Your Own Cloud — ให้ลูกค้าเก็บข้อมูลไว้ในคลาวด์ตัวเอง",
@@ -8536,25 +8802,25 @@
             "key": "marketLeadership",
             "label": "ผู้นำตลาด",
             "status": "strengthening",
-            "note": "เป็นผู้นำ observability ยุคคลาวด์ ลูกค้า ARR เกิน $100k เพิ่มจาก ~3,850 เป็น ~4,720 รายในหนึ่งปี และรายได้โตเร็วกว่าคู่แข่งเดิมอย่างชัดเจน"
+            "note": "เป็นผู้นำ observability ยุคคลาวด์ ลูกค้า ARR เกิน $100k เพิ่มจาก ~4,060 เป็น ~4,860 รายในหนึ่งปี รายได้โตเร็วกว่าคู่แข่งเดิมอย่างชัดเจน และ Q3 2026 ถูก Gartner ระบุเป็น \"Company to Beat\" ด้าน observability กับเป็น Leader ใน Forrester Wave สาย AIOps ปีที่สองติด"
           },
           {
             "key": "techLeadership",
             "label": "ผู้นำเทคโนโลยี",
             "status": "strengthening",
-            "note": "ออกผลิตภัณฑ์เร็วผิดปกติสำหรับบริษัทขนาดนี้ — กว่า 100 ฟีเจอร์ในงานเดียว และเข้าสาย AI observability ก่อนคู่แข่งส่วนใหญ่"
+            "note": "ออกผลิตภัณฑ์เร็วผิดปกติสำหรับบริษัทขนาดนี้ — กว่า 100 ฟีเจอร์ในงานเดียว เข้าสาย AI observability ก่อนคู่แข่งส่วนใหญ่ และเริ่มสร้างโมเดลของตัวเอง (Scout 1.0) แทนการพึ่งโมเดลภายนอกอย่างเดียว"
           },
           {
             "key": "executionSpeed",
             "label": "ความเร็วในการลงมือ",
             "status": "strengthening",
-            "note": "ทะลุกรอบบนของ guidance ตัวเองสามไตรมาสติดในระดับ 4-5% ทุกครั้ง สะท้อนทั้งฝีมือและการตั้งเป้าแบบระมัดระวัง"
+            "note": "ทะลุจุดกึ่งกลาง guidance รายได้ตัวเองสี่ไตรมาสติดในระดับ 4-5% ทุกครั้ง (Q3 2026 +5.0%) และ non-GAAP EPS ทะลุ 7-27% สะท้อนทั้งฝีมือและการตั้งเป้าแบบระมัดระวัง"
           },
           {
             "key": "switchingCost",
             "label": "ต้นทุนการย้ายไปใช้เจ้าอื่น",
             "status": "strengthening",
-            "note": "สัดส่วนลูกค้าที่ใช้ 10 ผลิตภัณฑ์ขึ้นไปเพิ่มจาก 7% เป็น 13% ในปีเดียว — ยิ่งผูกหลายตัว การย้ายยิ่งกลายเป็นโครงการใหญ่ระดับองค์กร ไม่ใช่แค่เปลี่ยนเครื่องมือ"
+            "note": "สัดส่วนลูกค้าที่ใช้ 10 ผลิตภัณฑ์ขึ้นไปเพิ่มจาก 8% เป็น 16% ในปีเดียว — ยิ่งผูกหลายตัว การย้ายยิ่งกลายเป็นโครงการใหญ่ระดับองค์กร ไม่ใช่แค่เปลี่ยนเครื่องมือ"
           },
           {
             "key": "ecosystem",
@@ -8572,7 +8838,7 @@
             "key": "customerLockin",
             "label": "การผูกลูกค้า",
             "status": "stable",
-            "note": "gross retention ระดับ mid-to-high 90s แปลว่าแทบไม่มีใครเลิกใช้ แต่รายได้แบบนับตามการใช้งานทำให้ลูกค้า 'ลดการใช้' ได้โดยไม่ต้องเลิกสัญญา — ซึ่งคือสิ่งที่เกิดกับลูกค้ารายใหญ่ที่สุดใน Q3 2026 พอดี"
+            "note": "gross retention ระดับ mid-to-high 90s แปลว่าแทบไม่มีใครเลิกใช้ แต่รายได้แบบนับตามการใช้งานทำให้ลูกค้า 'ลดการใช้' ได้โดยไม่ต้องเลิกสัญญา — ลูกค้ารายใหญ่ที่สุดลดการใช้จริงใน Q3 2026 แม้ยังสูงกว่าขั้นต่ำตามสัญญา และการต่อสัญญาล่วงหน้ากับลูกค้า AI รายใหญ่ก็มาพร้อมราคาต่อหน่วยที่ลดลง"
           },
           {
             "key": "moat",
@@ -8584,92 +8850,91 @@
       },
       "capitalAllocation": {
         "score": 60,
-        "verdict": "จัดสรรทุนแบบบริษัทที่ยังโต — เงินสดเกือบทั้งหมดกลับเข้า R&D และทีมขาย ซึ่งเห็นผลจริงจากการขายผลิตภัณฑ์เพิ่มให้ลูกค้าเดิม แต่เมื่อ FCF แตะ $1B ต่อปีแล้วยังไม่มีทั้งปันผลและ buyback มาชดเชยการเจือจางจากค่าหุ้นพนักงานเลย นี่คือช่องว่างชัดเจนที่สุดของนโยบายทุน",
+        "verdict": "จัดสรรทุนแบบบริษัทที่ยังโต — เงินสดเกือบทั้งหมดกลับเข้า R&D และทีมขาย ซึ่งเห็นผลจริงจากการขายผลิตภัณฑ์เพิ่มให้ลูกค้าเดิม แต่เมื่อ FCF ~$1.1B ต่อปีและเงินสดสุทธิ ~$3.9B แล้วยังไม่มีทั้งปันผลและ buyback มาชดเชยการเจือจางจากค่าหุ้นพนักงานเลย นี่คือช่องว่างชัดเจนที่สุดของนโยบายทุน",
         "items": [
           {
             "label": "R&D",
-            "current": "ลงทุนหนักต่อเนื่อง — เปิดตัวกว่า 100 ฟีเจอร์ในงาน DASH 2026 ครอบคลุมสาย AI ทั้งชุด",
+            "current": "ลงทุนหนักต่อเนื่อง — Q3 2026 ค่า R&D ตามบัญชี ~$492M (~41% ของรายได้ รวม SBC) · ออก Scout 1.0 และขยาย Bits AI",
             "assessment": "good",
-            "why": "เป็นที่มาของการขายผลิตภัณฑ์ตัวที่สองสามสี่ให้ลูกค้าเดิม ซึ่งวัดผลได้จริงจากสัดส่วนลูกค้าที่ใช้ 10 ตัวขึ้นไปเพิ่มเกือบเท่าตัวในปีเดียว"
+            "why": "เป็นที่มาของการขายผลิตภัณฑ์ตัวที่สองสามสี่ให้ลูกค้าเดิม ซึ่งวัดผลได้จริงจากสัดส่วนลูกค้าที่ใช้ 10 ตัวขึ้นไปเพิ่มเท่าตัวในปีเดียว (8% → 16%)"
           },
           {
             "label": "ทีมขายและการตลาด",
-            "current": "ขยายทีมต่อเนื่องเพื่อดันลูกค้าองค์กรขนาดใหญ่",
+            "current": "ขยายทีมต่อเนื่องเพื่อดันลูกค้าองค์กรขนาดใหญ่ — ลูกค้าใหม่มีส่วน ~30% ของการเติบโตรายได้ YoY ใน Q3",
             "assessment": "good",
-            "why": "ลูกค้า ARR เกิน $100k เพิ่มจาก ~3,850 เป็น ~4,720 รายในปีเดียว และกลุ่มนี้คิดเป็น ~91% ของ ARR — การลงทุนตรงจุด"
+            "why": "ลูกค้า ARR เกิน $100k เพิ่มจาก ~4,060 เป็น ~4,860 รายในปีเดียว และกลุ่มนี้คิดเป็น ~91% ของ ARR — การลงทุนตรงจุด"
           },
           {
             "label": "ซื้อหุ้นคืนและปันผล",
             "current": "ไม่มีทั้งสองอย่าง",
             "assessment": "poor",
-            "why": "มี FCF ระดับ $1B/ปีและเงินสดสุทธิ ~$3.7B แต่ไม่มีอะไรมาหักล้างหุ้นที่เพิ่มจาก SBC เลย ผู้ถือหุ้นเดิมจึงถูกเจือจางต่อเนื่องทั้งที่บริษัทมีเงินพอจะหยุดมันได้"
+            "why": "มี FCF ~$1.1B ต่อปีและเงินสดสุทธิ ~$3.9B แต่ไม่มีอะไรมาหักล้างหุ้นที่เพิ่มจาก SBC (~$237M ต่อไตรมาส) เลย ผู้ถือหุ้นเดิมจึงถูกเจือจางต่อเนื่องทั้งที่บริษัทมีเงินพอจะหยุดมันได้"
           },
           {
             "label": "การซื้อกิจการ",
-            "current": "ซื้อของเล็ก ๆ เสริมผลิตภัณฑ์ ไม่เคยทำดีลใหญ่",
+            "current": "ซื้อของเล็ก ๆ เสริมผลิตภัณฑ์ — 3 ดีลใน 9 เดือนแรกปี 2026 รวม ~$192M (เงินสด ~$99M + หุ้น ~0.8 ล้านหุ้น) ไม่เคยทำดีลใหญ่",
             "assessment": "good",
-            "why": "กลยุทธ์ซื้อเทคโนโลยีมาต่อยอดแล้วขายผ่านช่องทางเดิม มีความเสี่ยงต่ำและไม่ทำให้งบดุลเสียหาย"
+            "why": "กลยุทธ์ซื้อเทคโนโลยีมาต่อยอดแล้วขายผ่านช่องทางเดิม มีความเสี่ยงต่ำและไม่ทำให้งบดุลเสียหาย แม้บางส่วนจ่ายเป็นหุ้นซึ่งเพิ่มการเจือจางเล็กน้อย"
           },
           {
             "label": "งบดุล",
-            "current": "เงินสดและหลักทรัพย์ ~$5.0B · หนี้ ~$1.28B (หุ้นกู้แปลงสภาพ 0% ปี 2029) · เงินสดสุทธิ ~$3.7B",
+            "current": "เงินสดและหลักทรัพย์ ~$5.23B · หนี้ ~$1.31B (หุ้นกู้แปลงสภาพ 0% ปี 2029 + สัญญาเช่า) · เงินสดสุทธิ ~$3.9B",
             "assessment": "good",
-            "why": "แข็งแรงพอจะผ่านช่วงลูกค้าชะลอการใช้งานได้โดยไม่ต้องระดมทุน และดอกเบี้ยรับจากเงินก้อนนี้คือสาเหตุที่กำไรสุทธิยังเป็นบวกทั้งที่กำไรจากการดำเนินงานเกือบศูนย์"
+            "why": "แข็งแรงพอจะผ่านช่วงลูกค้าชะลอการใช้งานได้โดยไม่ต้องระดมทุน และดอกเบี้ยรับจากเงินก้อนนี้คือสาเหตุที่กำไรสุทธิสูงกว่ากำไรจากการดำเนินงานตามบัญชีมาก"
           }
         ]
       },
       "valuationView": {
         "level": "expensive",
-        "note": "forward P/E ~87x จาก consensus non-GAAP FY2026 $2.53 (44 นักวิเคราะห์) และ trailing GAAP P/E ~447x — แพงทั้งสองฐาน · ราคา ~$221, mcap ~$82B (11 ก.ย. 2026) ลงมาแล้ว ~23% จากจุดสูงสุด $288 เมื่อ 4 ส.ค. 2026 โดยร่วง 19% ในวันเดียวหลังประกาศงบ ทั้งที่ผลประกอบการทะลุเป้า เพราะตลาดตกใจกับข่าวลูกค้ารายใหญ่ที่สุดลดการใช้งาน · เป้าเฉลี่ยนักวิเคราะห์ $285.51 สูงกว่าราคาปัจจุบัน ~29% แต่ระดับราคานี้ยังต้องการให้บริษัทโต 25-30% ต่อเนื่องอีกหลายปีโดยไม่สะดุด margin of safety จึงแทบไม่มี"
+        "note": "ราคาปิด $188.72 (4 พ.ย. 2026) mcap ~$68B EV ~$64B ≈ ~15x รายได้ย้อนหลัง 12 เดือน · forward P/E ~69x จากจุดกึ่งกลาง guide non-GAAP FY2026 $2.73-2.75 และ ~63x จาก consensus non-GAAP FY2027 $2.98 (Yahoo ก่อนปรับหลังงบ) · trailing GAAP P/E ~263x (EPS ย้อนหลัง $0.72) — แพงทั้งสองฐาน · ราคาร่วง ~21% ในสัปดาห์ก่อนงบ ($280.82 เมื่อ 27 ต.ค. → $220.52 เมื่อ 3 พ.ย.) แล้วลงอีก 14.4% ในวันงบทั้งที่รายได้และกำไรทะลุเป้า เพราะ guide Q4 ที่สมมติให้ลูกค้ารายใหญ่ที่สุดจ่ายแค่ขั้นต่ำตามสัญญา รวมแล้วต่ำกว่าราคาปิดสูงสุด $293.26 (9 ต.ค.) ราว 36% · เป้าเฉลี่ยนักวิเคราะห์ ~$296 (47 ราย ณ 4 พ.ย.) ยังไม่สะท้อนการปรับลดหลังงบ (เช่น BTIG ลดเป้าเป็น $260) · multiple หดลงมากแล้วแต่ระดับนี้ยังต้องการให้บริษัทโต 25-30% ต่อเนื่องอีกหลายปี margin of safety จึงยังบาง"
       },
       "whatChanged": [
         {
-          "metric": "รายได้ (Q1 → Q2 2026)",
-          "prev": "$1.006B (+32% YoY)",
-          "now": "$1.121B (+36% YoY) — ทะลุกรอบบนของ guidance",
+          "metric": "รายได้ (Q2 → Q3 2026)",
+          "prev": "$1.121B (+36% YoY) — ทะลุจุดกึ่งกลาง guide 4.3%",
+          "now": "$1.197B (+35% YoY) — ทะลุจุดกึ่งกลาง guide 5.0% · ลูกค้าที่ไม่ใช่ AI เร่งขึ้นเป็นไตรมาสที่ห้าติด (high-20s%)",
           "direction": "positive"
         },
         {
-          "metric": "ลูกค้ารายใหญ่ที่สุด",
-          "prev": "ต่อสัญญาระดับเก้าหลัก ใช้ 17 ผลิตภัณฑ์",
-          "now": "ลดการใช้งานตั้งแต่ Q3 2026 — บริษัทตัดความเสี่ยงออกจาก guidance ทั้งหมดแล้ว",
+          "metric": "ลูกค้ารายใหญ่ที่สุดและ guide ไตรมาสถัดไป",
+          "prev": "บริษัทเตือนว่าจะลดการใช้งานตั้งแต่ Q3 · guide Q3 $1.135-1.145B (+28-29%)",
+          "now": "ลดการใช้จริงใน Q3 แต่ยังสูงกว่าขั้นต่ำตามสัญญา · guide Q4 $1.19-1.20B (+25-26% แทบไม่โต QoQ) สมมติจ่ายแค่ขั้นต่ำ — ไม่นับรายนี้โต low-to-mid 30s%",
           "direction": "negative"
         },
         {
-          "metric": "guidance รายได้ทั้งปี 2026",
-          "prev": "$4.06-4.10B (ให้ไว้ตอนงบ Q4 2025)",
-          "now": "$4.45-4.47B — ปรับขึ้นแรงแม้หักผลกระทบลูกค้ารายใหญ่แล้ว",
+          "metric": "อัตรากำไรจากการดำเนินงาน",
+          "prev": "GAAP 0.5% · non-GAAP 23% · gross margin non-GAAP 79.6%",
+          "now": "GAAP 6.2% · non-GAAP 28% (กำไร $334M เทียบ guide $260-270M) · gross margin 81.2% — แต่ guide Q4 non-GAAP กลับมา ~24%",
           "direction": "positive"
         },
         {
-          "metric": "ลูกค้า ARR เกิน $100k",
-          "prev": "~3,850 ราย (ปีก่อน)",
-          "now": "~4,720 ราย = ~91% ของ ARR ทั้งหมด",
+          "metric": "กำไรต่อหุ้นและ guidance ทั้งปี",
+          "prev": "GAAP $0.12 · non-GAAP $0.65 · guide ปี 2026 รายได้ $4.45-4.47B / non-GAAP EPS $2.50-2.54",
+          "now": "GAAP $0.32 · non-GAAP $0.81 (guide $0.63-0.65) · guide ปี 2026 รายได้ $4.515-4.525B / non-GAAP EPS $2.73-2.75",
           "direction": "positive"
         },
         {
-          "metric": "การใช้หลายผลิตภัณฑ์",
-          "prev": "ใช้ 4 ตัวขึ้นไป 52% · 10 ตัวขึ้นไป 7%",
-          "now": "ใช้ 4 ตัวขึ้นไป 58% · 10 ตัวขึ้นไป 13%",
+          "metric": "ลูกค้าและการใช้หลายผลิตภัณฑ์",
+          "prev": "ARR เกิน $100k ~4,720 ราย · ใช้ 4 ตัวขึ้นไป 58% · 10 ตัวขึ้นไป 13% · AI-native ~750 ราย (31 รายเกิน $1M)",
+          "now": "ARR เกิน $100k ~4,860 ราย · 4 ตัวขึ้นไป 61% · 10 ตัวขึ้นไป 16% · AI-native กว่า 850 ราย (39 รายเกิน $1M)",
           "direction": "positive"
         },
         {
           "metric": "ราคาหุ้น",
-          "prev": "$283 (5 ส.ค. 2026)",
-          "now": "$221 — ร่วง 19% ในวันประกาศงบ แล้วลงต่อ รวม ~23% จากจุดสูงสุด",
+          "prev": "$273.85 ณ สิ้นไตรมาส (30 ก.ย.) · ปิดสูงสุด $293.26 (9 ต.ค.)",
+          "now": "$188.72 (4 พ.ย.) — ร่วง ~21% ในสัปดาห์ก่อนงบ แล้วลงอีก 14.4% วันงบ รวม ~36% จากจุดสูงสุด",
           "direction": "negative"
         }
       ],
       "risks": [
-        "รายได้นับตามการใช้งานเป็นดาบสองคม — ลูกค้าลดการใช้ได้ทันทีโดยไม่ต้องยกเลิกสัญญา กรณีลูกค้ารายใหญ่ที่สุดใน Q3 2026 คือตัวอย่างจริงที่กระทบถึงประมาณการทั้งปี ทั้งที่ gross retention ยังอยู่ระดับ mid-to-high 90s",
-        "การกระจุกตัวของลูกค้า AI — กลุ่ม AI-native เป็นส่วนที่โตเร็วที่สุดแต่ผันผวนที่สุด บริษัทเหล่านี้ยังขาดทุนและอยู่ระหว่างคุมต้นทุน หากหันไปใช้เครื่องมือของตัวเองหรือของผู้ให้บริการคลาวด์ รายได้ก้อนนี้หายได้เร็วพอกับตอนที่มันโตขึ้นมา",
-        "ค่าหุ้นพนักงานสูงมากจนบิดภาพกำไร — ช่องว่าง 23 จุดระหว่าง GAAP กับ non-GAAP operating margin คือ SBC เกือบทั้งหมด และบริษัทไม่มี buyback มาหักล้าง ผู้ถือหุ้นจึงถูกเจือจางต่อเนื่อง ตัวเลข non-GAAP ที่ตลาดใช้ตั้งราคาจึงมองข้ามต้นทุนจริงก้อนใหญ่",
-        "ราคาแพงบนความคาดหวังสูง — forward P/E ~87x (non-GAAP) และ trailing GAAP ~447x หากการเติบโตชะลอลงต่ำกว่า 25% multiple จะหดแรงกว่าพื้นฐานที่แย่ลงจริง อย่างที่เห็นจากการร่วง 19% ในวันเดียวทั้งที่งบทะลุเป้า",
-        "การแข่งขันด้านราคาและมาตรฐานเปิด — OpenTelemetry ทำให้ย้ายข้อมูลออกง่ายขึ้น ผู้ให้บริการคลาวด์แถมเครื่องมือพื้นฐานให้ฟรี และคู่แข่งอย่าง Grafana ชูโมเดลต้นทุนต่ำ ลูกค้ารายใหญ่ที่บิลบานปลายจึงมีทางเลือกกดดันราคาเสมอ",
-        "gross margin ค่อย ๆ ถูกกดจากงาน AI — ลดจาก 80.9% เหลือ 79.6% ในหนึ่งปี เพราะงาน AI กินทรัพยากรมากกว่างานเดิม ถ้าสัดส่วนงาน AI โตต่อโดยไม่ปรับราคา กำไรขั้นต้นจะถูกกดต่อเนื่อง"
+        "รายได้นับตามการใช้งานเป็นดาบสองคม — ลูกค้าลดการใช้ได้ทันทีโดยไม่ต้องยกเลิกสัญญา ลูกค้ารายใหญ่ที่สุดลดการใช้จริงใน Q3 2026 และ guide Q4 ที่สมมติให้จ่ายแค่ขั้นต่ำตามสัญญาทำให้การเติบโตที่แนะไว้ตกจาก +35% เหลือ +25-26% (ไม่นับรายนี้ low-to-mid 30s%) ทั้งที่ gross retention ยังอยู่ระดับ mid-to-high 90s — ลูกค้ารายเดียวขยับตัวเลขการเติบโตทั้งบริษัทได้หลายจุด",
+        "การกระจุกตัวของลูกค้า AI — กลุ่ม AI-native (กว่า 850 ราย) เป็นส่วนที่โตเร็วที่สุดแต่ผันผวนที่สุด บริษัทเหล่านี้หลายรายยังขาดทุนและอยู่ระหว่างคุมต้นทุน หากหันไปใช้เครื่องมือของตัวเองหรือของผู้ให้บริการคลาวด์ รายได้ก้อนนี้หายได้เร็วพอกับตอนที่มันโตขึ้นมา และการต่อสัญญาล่วงหน้าด้วยราคาต่อหน่วยที่ดีขึ้นให้ลูกค้าก็กดรายได้ระยะสั้นอยู่แล้ว",
+        "ค่าหุ้นพนักงานสูงมากจนบิดภาพกำไร — SBC ~$237M ต่อไตรมาส (~20% ของรายได้) คือช่องว่างเกือบทั้งหมดระหว่าง GAAP operating margin 6% กับ non-GAAP 28% และบริษัทไม่มี buyback มาหักล้าง จำนวนหุ้น diluted จึงเพิ่มราว 1% ต่อไตรมาส ตัวเลข non-GAAP ที่ตลาดใช้ตั้งราคาจึงมองข้ามต้นทุนจริงก้อนใหญ่",
+        "ราคาแพงบนความคาดหวังสูง — แม้ลงมา ~36% จากจุดสูงสุด ยังเทรดราว 63-69 เท่าของกำไร non-GAAP และกว่า 260 เท่าของกำไร GAAP หากการเติบโตชะลอต่ำกว่า 25% multiple จะหดแรงกว่าพื้นฐานที่แย่ลงจริง อย่างที่เห็นจากการร่วง 19% วันงบ Q2 และ 14% วันงบ Q3 ทั้งที่งบทะลุเป้าทั้งสองครั้ง",
+        "การแข่งขันด้านราคาและต้นทุนงาน AI — OpenTelemetry ทำให้ย้ายข้อมูลออกง่ายขึ้น ผู้ให้บริการคลาวด์แถมเครื่องมือพื้นฐานให้ฟรี และคู่แข่งอย่าง Grafana ชูโมเดลต้นทุนต่ำ ลูกค้ารายใหญ่ที่บิลบานปลายจึงมีทางเลือกกดดันราคาเสมอ · gross margin เคยถูกงาน AI กดลงเหลือ 79.6% ใน Q2 ก่อนฟื้นเป็น 81.2% ใน Q3 ถ้าสัดส่วนงาน AI โตต่อโดยไม่ปรับราคา กำไรขั้นต้นอาจถูกกดอีก"
       ],
-      "asOf": "2026-09",
-      "nextEarnings": "2026-11",
+      "asOf": "2026-11",
+      "nextEarnings": "2027-02",
       "history": {
         "epsBasis": "diluted GAAP (ปีบัญชี = ปีปฏิทิน สิ้นสุด 31 ธ.ค.)",
         "years": [
@@ -8840,22 +9105,44 @@
             "fcfB": 0.306,
             "priceQEnd": 260.36,
             "epsNote": "GAAP $0.12 เทียบ non-GAAP $0.65 — ส่วนต่าง ~$0.53/หุ้นเกือบทั้งหมดคือค่าหุ้นพนักงาน (SBC) ซึ่งเป็นรายจ่ายต่อเนื่องทุกไตรมาส ไม่ใช่รายการพิเศษครั้งเดียว เวลาเทียบกับ consensus ต้องดูให้ตรงฐาน"
+          },
+          {
+            "q": "Q3'26",
+            "endYm": "2026-09",
+            "endDate": "2026-09-30",
+            "revenueB": 1.197,
+            "epsAdj": 0.32,
+            "opMarginPct": 6.2,
+            "fcfB": 0.279,
+            "priceQEnd": 273.85,
+            "epsNote": "GAAP $0.32 เทียบ non-GAAP $0.81 — ส่วนต่าง ~$0.49/หุ้นเกือบทั้งหมดคือค่าหุ้นพนักงาน (SBC $237M ในไตรมาส) ซึ่งเป็นรายจ่ายต่อเนื่องทุกไตรมาส ไม่ใช่รายการพิเศษครั้งเดียว เวลาเทียบกับ consensus ต้องดูให้ตรงฐาน"
           }
         ],
-        "notes": "ปีบัญชีของ Datadog ตรงกับปีปฏิทิน (สิ้นสุด 31 ธ.ค.) และไตรมาสจบสิ้นเดือนปฏิทินทุกไตรมาส · EPS ในตารางเป็น diluted GAAP ทั้งชุด ซึ่งต่ำกว่าตัวเลข non-GAAP ที่บริษัทและนักวิเคราะห์ใช้มาก (เช่น Q2 2026: GAAP $0.12 vs non-GAAP $0.65) เพราะ GAAP รวมค่าหุ้นพนักงานไว้ด้วย · สังเกตว่า FY2025 กำไรต่อหุ้น GAAP *ลดลง* เหลือ $0.31 จาก $0.52 ใน FY2024 ทั้งที่รายได้โต 28% เพราะกำไรจากการดำเนินงานพลิกเป็นลบ (-$42.8M) กำไรสุทธิที่ยังเป็นบวกมาจากดอกเบี้ยรับของเงินสดราว $5B ไม่ใช่จากธุรกิจหลัก · FCF ในตารางนี้คิดแบบ OCF ลบ capex จากแหล่งเดียวกันทั้งชุดเพื่อให้เทียบข้ามไตรมาสได้ ซึ่งสูงกว่าตัวเลข FCF ที่บริษัทรายงานเองเล็กน้อยเพราะบริษัทหักค่าพัฒนาซอฟต์แวร์ที่บันทึกเป็นสินทรัพย์ด้วย (Q2 2026: ตาราง $0.306B vs บริษัทรายงาน $0.279B) · ราคาสิ้นงวดใช้ราคาปิดของวันทำการสุดท้ายที่ไม่เกินวันสิ้นงวด จาก Yahoo Finance (ไม่มี split ในช่วงนี้) · ตัวเลขเป็นค่าประมาณสำหรับ knowledge base (ความแม่นยำ ~1-2%)",
+        "notes": "ปีบัญชีของ Datadog ตรงกับปีปฏิทิน (สิ้นสุด 31 ธ.ค.) และไตรมาสจบสิ้นเดือนปฏิทินทุกไตรมาส · EPS ในตารางเป็น diluted GAAP ทั้งชุด ซึ่งต่ำกว่าตัวเลข non-GAAP ที่บริษัทและนักวิเคราะห์ใช้มาก (เช่น Q2 2026: GAAP $0.12 vs non-GAAP $0.65 · Q3 2026: GAAP $0.32 vs non-GAAP $0.81) เพราะ GAAP รวมค่าหุ้นพนักงานไว้ด้วย · สังเกตว่า FY2025 กำไรต่อหุ้น GAAP *ลดลง* เหลือ $0.31 จาก $0.52 ใน FY2024 ทั้งที่รายได้โต 28% เพราะกำไรจากการดำเนินงานพลิกเป็นลบ (-$42.8M) กำไรสุทธิที่ยังเป็นบวกมาจากดอกเบี้ยรับของเงินสดราว $5B ไม่ใช่จากธุรกิจหลัก · operating margin ในตารางมาจากแหล่งเดียวกันทั้งชุด (stockanalysis) ซึ่งต่างจากตัวเลขบริษัทเล็กน้อยในบางไตรมาส (Q2 2026: ตาราง 0.7% จาก operating income $7.5M vs บริษัทรายงาน $5.5M หรือ ~0.5% · Q3 2026 ตรงกันที่ $74.7M = 6.2%) · FCF ในตารางนี้คิดแบบ OCF ลบ capex จากแหล่งเดียวกันทั้งชุดเพื่อให้เทียบข้ามไตรมาสได้ ซึ่งสูงกว่าตัวเลข FCF ที่บริษัทรายงานเองเล็กน้อยเพราะบริษัทหักค่าพัฒนาซอฟต์แวร์ที่บันทึกเป็นสินทรัพย์ด้วย (Q2 2026: ตาราง $0.306B vs บริษัทรายงาน $0.279B · Q3 2026: ตาราง $0.279B = OCF $290M − capex $10.9M vs บริษัทรายงาน $0.251B) · ราคาสิ้นงวดใช้ราคาปิดของวันทำการสุดท้ายที่ไม่เกินวันสิ้นงวด จาก Yahoo Finance (ไม่มี split ในช่วงนี้) · ตัวเลขเป็นค่าประมาณสำหรับ knowledge base (ความแม่นยำ ~1-2%)",
         "sources": [
           "https://investors.datadoghq.com/news-releases/news-release-details/datadog-announces-second-quarter-2026-financial-results",
           "https://stockanalysis.com/stocks/ddog/financials/",
           "https://www.fool.com/earnings/call-transcripts/2026/08/13/datadog-ddog-q2-2026-earnings-call-transcript/",
           "https://www.sec.gov/Archives/edgar/data/0001561550/000162828026054458/ddog-20260630.htm",
-          "https://query1.finance.yahoo.com/v8/finance/chart/DDOG (historical daily closes)"
+          "https://query1.finance.yahoo.com/v8/finance/chart/DDOG (historical daily closes)",
+          "https://www.sec.gov/Archives/edgar/data/0001561550/000162828026069792/ex-991x20260930x8k.htm",
+          "https://www.sec.gov/Archives/edgar/data/0001561550/000162828026070292/ddog-20260930.htm",
+          "https://transcripts.platformaeronaut.com/transcripts/DDOG-3Q26-transcript",
+          "https://stockanalysis.com/stocks/ddog/financials/?p=quarterly",
+          "https://siliconangle.com/2026/11/04/datadog-falls-14-on-outlook-tied-to-one-customer-as-rapid7-jumps-and-fastly-slides/"
         ]
       },
       "forwardView": {
-        "asOf": "2026-09",
+        "asOf": "2026-11",
         "estimateHistory": [
           {
             "asOf": "2026-09",
+            "fy": "FY2026",
+            "eps": 2.53,
+            "revenue": 4.47
+          },
+          {
+            "asOf": "2026-11",
             "fy": "FY2026",
             "eps": 2.53,
             "revenue": 4.47
@@ -8863,12 +9150,36 @@
         ],
         "guidanceTrack": [
           {
+            "quarter": "Q3 2026",
+            "metric": "revenue",
+            "guided": "$1.135-1.145B",
+            "actual": "$1.197B",
+            "result": "beat",
+            "magnitudePct": 5
+          },
+          {
+            "quarter": "Q3 2026",
+            "metric": "eps",
+            "guided": "non-GAAP $0.63-0.65",
+            "actual": "non-GAAP $0.81 (GAAP $0.32)",
+            "result": "beat",
+            "magnitudePct": 26.6
+          },
+          {
             "quarter": "Q2 2026",
             "metric": "revenue",
             "guided": "$1.07-1.08B",
             "actual": "$1.121B",
             "result": "beat",
             "magnitudePct": 4.3
+          },
+          {
+            "quarter": "Q2 2026",
+            "metric": "eps",
+            "guided": "non-GAAP $0.57-0.59",
+            "actual": "non-GAAP $0.65 (GAAP $0.12)",
+            "result": "beat",
+            "magnitudePct": 12.1
           },
           {
             "quarter": "Q1 2026",
@@ -8879,24 +9190,54 @@
             "magnitudePct": 5.2
           },
           {
+            "quarter": "Q1 2026",
+            "metric": "eps",
+            "guided": "non-GAAP $0.49-0.51",
+            "actual": "non-GAAP $0.60 (GAAP $0.15)",
+            "result": "beat",
+            "magnitudePct": 20
+          },
+          {
             "quarter": "Q4 2025",
             "metric": "revenue",
             "guided": "$912-916M",
             "actual": "$953M",
             "result": "beat",
             "magnitudePct": 4.3
+          },
+          {
+            "quarter": "Q4 2025",
+            "metric": "eps",
+            "guided": "non-GAAP $0.54-0.56",
+            "actual": "non-GAAP $0.59 (GAAP $0.13)",
+            "result": "beat",
+            "magnitudePct": 7.3
           }
         ],
         "consensus": [
           {
             "fy": "FY2026",
-            "revenue": 4.47,
-            "eps": 2.53,
-            "confidence": "high",
+            "revenue": 4.52,
+            "eps": 2.74,
+            "confidence": "low",
             "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": 5.49,
+            "eps": 2.98,
+            "confidence": "medium",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2028",
+            "revenue": 6.78,
+            "eps": null,
+            "confidence": "medium",
+            "basis": "unknown"
           }
         ],
-        "note": "Datadog ให้ guidance เป็นช่วงแคบทุกไตรมาสและทะลุกรอบบนทุกครั้งในสามไตรมาสที่ยืนยันได้ (เกินจุดกึ่งกลาง 4.3-5.2%) — เป็นรูปแบบการตั้งเป้าแบบระมัดระวังที่สม่ำเสมอ ไม่ใช่ความบังเอิญ · guidance ทั้งปี 2026 ถูกยกจาก $4.06-4.10B (ตอนงบ Q4 2025) เป็น $4.45-4.47B แม้จะตัดผลกระทบจากลูกค้ารายใหญ่ที่สุดออกไปแล้ว · consensus FY2026 = รายได้ $4.47B / EPS $2.53 บนฐาน non-GAAP (44 นักวิเคราะห์ · ยืนยันฐานจาก stockanalysis.com) ซึ่งเป็นคนละฐานกับ EPS ในตารางประวัติที่เป็น GAAP · ยังไม่ใส่ consensus FY2027 เพราะหาตัวเลข aggregate แบบเปิดเผยฟรีไม่ได้ในรอบนี้ — ห้ามเดา"
+        "note": "Q3 2026 ทะลุจุดกึ่งกลาง guidance รายได้ 5.0% และ non-GAAP EPS 26.6% (รายได้ทะลุ 4-5% สี่ไตรมาสติด) แต่ guide Q4 ($1.19-1.20B · non-GAAP EPS $0.69-0.71) สมมติให้ลูกค้ารายใหญ่ที่สุดจ่ายแค่ขั้นต่ำตามสัญญา · FY2026 ใช้จุดกึ่งกลาง guidance ที่ยกขึ้นเป็น $4.515-4.525B / $2.73-2.75 แทน consensus ก่อนงบ ($4.47B / $2.53) จึงให้ความมั่นใจต่ำ ส่วน FY2027 มาจาก Yahoo Finance (รายได้ $5.49B ตรงกับ MarketScreener · EPS normalized $2.98 ฐาน non-GAAP ชุดเดียวกับที่ stockanalysis ระบุ) และ FY2028 มีแต่รายได้ $6.78B จาก MarketScreener (EPS ที่แสดงไม่ระบุฐานจึงไม่ใส่) — ตัวเลขปีหน้าทั้งหมดยังเป็นของก่อนงบ Q3 และน่าจะถูกปรับ"
       }
     },
     "INTC": {
@@ -9513,178 +9854,184 @@
       "name": "DoorDash, Inc.",
       "layer": "enterprise",
       "thesis": {
-        "statement": "DoorDash คือเครือข่ายส่งของถึงบ้านที่ชนะสงครามราคาในสหรัฐไปแล้ว และกำลังใช้ตำแหน่งนั้นแปลงตัวเองจาก 'แอปสั่งอาหาร' เป็นโครงสร้างพื้นฐานการส่งของทุกประเภท — ร้านอาหาร ของชำ ค้าปลีก — พร้อมต่อยอดเป็นธุรกิจกำไรสูงอย่างโฆษณาและค่าสมาชิก DashPass ที่แทบไม่มีต้นทุนเพิ่ม · การซื้อ Deliveroo ปิดดีลเมื่อ ต.ค. 2025 ทำให้กลายเป็นผู้เล่นระดับโลกจริง ๆ · แต่จุดที่ต้องจับตาคือกำไรตามบัญชีกลับ *ลดลง* ทั้งที่รายได้โต 36% เพราะบริษัทเลือกเอากำไรไปลงทุนต่อทั้งการรวมกิจการ การขยายหมวดใหม่ และเทคโนโลยีส่งของอัตโนมัติ",
+        "statement": "DoorDash คือเครือข่ายส่งของถึงบ้านที่ชนะสงครามราคาในสหรัฐไปแล้ว และกำลังใช้ตำแหน่งนั้นแปลงตัวเองจาก 'แอปสั่งอาหาร' เป็นโครงสร้างพื้นฐานการส่งของทุกประเภท — ร้านอาหาร ของชำ ค้าปลีก — พร้อมต่อยอดเป็นธุรกิจกำไรสูงอย่างโฆษณาและค่าสมาชิก DashPass ที่แทบไม่มีต้นทุนเพิ่ม · การซื้อ Deliveroo (ปิดดีล ต.ค. 2025) ทำให้กลายเป็นผู้เล่นระดับโลกจริง ๆ และใน Q3 2026 กำไรตามบัญชีกลับมาโต 91% เป็น $466M หลังหดลงสองไตรมาสติด · แต่ภาพกำลังเปลี่ยนอีกรอบ — 29 ต.ค. 2026 บริษัทประกาศซื้อ Instacart มูลค่า ~$17B (จ่ายเป็นเงินสดอย่างน้อย 75% โดยกู้เพิ่ม) เพื่อเอาขนาดในธุรกิจของชำ ซึ่งจะพลิกงบดุลจากเงินสดสุทธิเป็นหนี้สุทธิ และต้องผ่านการพิจารณาด้านการแข่งขัน (antitrust) ที่กินเวลาถึงปลายปี 2027-ครึ่งแรกปี 2028",
         "pillars": [
-          "ครองตลาดส่งอาหารสหรัฐชัดเจน — รายได้ Q2 2026 โต 36% เป็น $4.45B บน Marketplace GOV $33.1B และคำสั่งซื้อ 970 ล้านครั้ง (+27%)",
-          "กำไรตามเกณฑ์ที่บริษัทใช้วัดโตเร็วกว่ารายได้ — Adjusted EBITDA $914M (+40% YoY) และทะลุกรอบบนของเป้าตัวเอง หนุนจากหน่วยเศรษฐกิจของโฆษณาที่ดีขึ้น",
-          "Deliveroo ทำให้เป็นผู้เล่นระดับโลกจริง — ปิดดีล 2 ต.ค. 2025 มูลค่า ~$3.72B ตอนนี้รายได้ต่างประเทศคิดเป็น ~22% และ Wolt กับ Deliveroo ทำกำไรเกินเป้าที่ตั้งไว้",
-          "เครื่องยนต์กำไรชั้นสองกำลังติด — โฆษณาสำหรับร้านค้า ค่าสมาชิก DashPass (ยอดสมาชิกจ่ายเงินในสหรัฐเพิ่มในไตรมาสเดียวมากกว่า 24 เดือนก่อนหน้ารวมกัน) และ SevenRooms ที่ร้านเซ็นใหม่โตกว่า 100% YoY",
-          "กระแสเงินสดแข็งแรงและงบดุลสะอาด — FCF $742M ในไตรมาสเดียว เงินสดและเงินลงทุน ~$6.2B เทียบหนี้ ~$3.3B ซึ่งเกือบทั้งหมดเป็นหุ้นกู้แปลงสภาพดอกเบี้ย 0%"
+          "ครองตลาดส่งอาหารสหรัฐชัดเจน — รายได้ Q3 2026 โต 34% เป็น $4.62B บน Marketplace GOV $33.9B (+36%) และคำสั่งซื้อ 993 ล้านครั้ง (+28%) · ไม่รวม Deliveroo รายได้ยังโต 23% และ GOV ร้านอาหารสหรัฐโตเร่งขึ้นเล็กน้อยทั้งที่ฐานปีก่อนสูง",
+          "กำไรตามเกณฑ์ที่บริษัทใช้วัดโตเร็วกว่ารายได้ — Adjusted EBITDA $1,060M (+41% YoY) คิดเป็น 3.1% ของ GOV สูงสุดในรอบ 5 ไตรมาส และเกินจุดกึ่งกลาง guidance ทุกไตรมาสตั้งแต่ Q3 2025 · ไตรมาสนี้กำไรตามบัญชีตามขึ้นมาด้วย (EPS $1.06 จาก $0.55 ปีก่อน)",
+          "Deliveroo ทำให้เป็นผู้เล่นระดับโลกจริง — รายได้ต่างประเทศ Q3 2026 $997M (~22% ของรายได้รวม +92% YoY) · คำสั่งซื้อของ Deliveroo โตเป็นสองเท่าของอัตราก่อนถูกซื้อ และกำไรจากธุรกิจต่างประเทศสูงกว่าที่บริษัทคาดไว้ตอนเข้าไตรมาส",
+          "เครื่องยนต์กำไรชั้นสองกำลังติด — โฆษณาสำหรับร้านค้า ค่าสมาชิก DashPass (ช่วยลดค่าธรรมเนียมต่อออเดอร์ร้านอาหารสหรัฐลง 9% ใน 2 ปี) และการจองโต๊ะร้านอาหารผ่านแอปที่โตกว่า 340% QoQ · GOV ของชำและค้าปลีกในสหรัฐโตเร็วกว่าร้านอาหารเกินสองเท่า",
+          "Instacart (ถ้าปิดดีลได้) เติมขนาดฝั่งของชำและซอฟต์แวร์ Enterprise ให้ร้านค้าปลีก — บริษัทมองเห็นทางสู่ synergy สุทธิ ≥$500M ต่อปีในหลายปีข้างหน้า แต่ปีแรกหลังปิดดีลจะนำ synergy กลับไปลงทุนเกิน 100%",
+          "กระแสเงินสดแข็งแรง — FCF ไตรมาส $787M (4 ไตรมาสล่าสุด ~$2.2B) เงินสดและเงินลงทุน ~$6.8B เทียบหนี้ ~$3.3B ที่ส่วนใหญ่เป็นหุ้นกู้แปลงสภาพดอกเบี้ย 0% · ฐานนี้คือสิ่งที่ทำให้ใช้เงินกู้ซื้อ Instacart ได้โดยตั้งเป้ารักษาอันดับเครดิตระดับ investment grade"
         ]
       },
       "fundamentals": [
         {
           "key": "revenueGrowth",
           "label": "การเติบโตของรายได้",
-          "current": "+36% YoY (Q2 2026 — $4.45B) · ไม่รวม Deliveroo โต ~23% · guide Q3 GOV $33.0-34.0B",
-          "trend": "up",
-          "score": 85,
+          "current": "+34% YoY (Q3 2026 — $4.62B) · ไม่รวม Deliveroo โต ~23% · guide Q4 GOV $35.4-36.4B (~+21% YoY ที่จุดกึ่งกลาง)",
+          "trend": "flat",
+          "score": 82,
           "impact": "positive",
-          "why": "โตเร็วและเร่งขึ้นจาก +33% ในไตรมาสก่อน โดยคำสั่งซื้อเพิ่ม 27% เป็น 970 ล้านครั้ง · ต้องแยกให้ออกว่าส่วนที่มาจากการซื้อ Deliveroo คิดเป็นราว 13 จุดจาก 36 จุด ธุรกิจเดิมโตราว 23% ซึ่งยังเร็วมากสำหรับธุรกิจที่ใหญ่ขนาดนี้ แต่ไม่ใช่ 36% อย่างที่พาดหัว"
+          "why": "ยังโตเร็วมากสำหรับธุรกิจขนาดนี้ แต่ตัวเลขหัวข่าวชะลอเล็กน้อยจาก +36% เป็น +34% ขณะที่ส่วนที่ไม่รวม Deliveroo ทรงตัวที่ ~23% เท่าไตรมาสก่อน · คำสั่งซื้อโต 28% เป็น 993 ล้านครั้ง (ไม่รวม Deliveroo 17%) · Q4 จะครบรอบปีการซื้อ Deliveroo ตัวเลขหัวข่าวจึงสะท้อนการเติบโตจริงของทั้งกลุ่ม — guide GOV ที่จุดกึ่งกลางเท่ากับโต ~21% YoY ซึ่งเป็นฐานที่ต้องจับตาว่าจะรักษาได้หรือไม่"
         },
         {
           "key": "epsGrowth",
           "label": "การเติบโตของกำไรต่อหุ้น",
-          "current": "Q2 2026: GAAP EPS $0.46 — ลดลงจาก $0.65 เมื่อปีก่อน · กำไรสุทธิ $200M (−30% YoY)",
-          "trend": "down",
-          "score": 38,
-          "impact": "negative",
-          "why": "นี่คือความย้อนแย้งของไตรมาสนี้ — รายได้โต 36% และ Adjusted EBITDA โต 40% แต่กำไรตามบัญชีกลับหดลง 30% · ส่วนต่างอยู่ในรายการที่ Adjusted EBITDA ตัดออกไป คือค่าหุ้นพนักงาน (ปีนี้บริษัทคาดไว้ $1.2-1.3B) ค่าตัดจำหน่ายจากดีล Deliveroo และค่าใช้จ่ายรวมกิจการ · แปลว่าคนที่ดูแต่ตัวเลข Adjusted จะเห็นภาพดีกว่าความจริงที่ผู้ถือหุ้นได้"
+          "current": "Q3 2026: GAAP EPS $1.06 — จาก $0.55 ปีก่อน (+93%) และ $0.46 ไตรมาสก่อน · กำไรสุทธิ $466M (+91% YoY) · 9 เดือนแรก EPS $1.93 vs $1.65 (+17%)",
+          "trend": "up",
+          "score": 65,
+          "impact": "positive",
+          "why": "กำไรตามบัญชีกลับมาโตแรงหลังหดสองไตรมาสติด แต่ต้องอ่านสองชั้น — ฐานปีก่อนต่ำเพราะ Q3 2025 มีค่าใช้จ่ายอื่น $81M และไตรมาสก่อนถูกกดด้วยค่ากันสำรองคดี/ภาษี/กฎระเบียบ $98M กับค่าหุ้นพนักงานที่สูงเป็นพิเศษ ($349M) ซึ่งไตรมาสนี้ลดเหลือ $16M และ $269M · ตัวเลข 9 เดือนแรก (+17%) จึงเป็นภาพที่นิ่งกว่า และช่องว่างกับ Adjusted EBITDA ($1,060M vs กำไรสุทธิ $466M) ยังกว้างจากค่าหุ้นพนักงานและค่าตัดจำหน่ายจากดีล"
         },
         {
           "key": "fcf",
           "label": "กระแสเงินสดอิสระ",
-          "current": "Q2 2026 = $742M (จาก $355M ปีก่อน) · OCF $944M · ทั้งปี FY2025 อยู่ที่ $2.17B",
-          "trend": "up",
-          "score": 88,
+          "current": "Q3 2026 = $787M (+9% YoY) · OCF $994M · 4 ไตรมาสล่าสุด $2.20B · บริษัทเตือนว่าจังหวะจ่ายเงินร้านค้าช่วงสิ้นปีจะหัก FCF ทั้งปี 2026 ลง $700-800M",
+          "trend": "flat",
+          "score": 84,
           "impact": "positive",
-          "why": "จุดแข็งที่สุดของงบ — โมเดลตลาดกลางแทบไม่ต้องลงทุนสินทรัพย์หนัก และเก็บเงินจากผู้บริโภคก่อนจ่ายร้านค้ากับคนส่ง ทำให้เงินสดเข้าเร็วกว่ากำไรบัญชีมาก · เพิ่มขึ้นกว่าเท่าตัวจากปีก่อนแม้จะอยู่ระหว่างรวมกิจการ Deliveroo"
+          "why": "ยังเป็นจุดแข็งที่สุดของงบ — โมเดลตลาดกลางแทบไม่ต้องลงทุนสินทรัพย์หนัก และเก็บเงินจากผู้บริโภคก่อนจ่ายร้านค้ากับคนส่ง · แต่ไตรมาสนี้ FCF โตเพียง 9% ขณะที่ Adjusted EBITDA โต 41% เพราะค่าพัฒนาซอฟต์แวร์ที่บันทึกเป็นสินทรัพย์เพิ่มขึ้น (4 ไตรมาสล่าสุด $488M จาก $301M ปีก่อน) และ Q4 จะเห็นผลจังหวะจ่ายเงินร้านค้าที่บริษัทเตือนไว้ ซึ่งบริษัทอธิบายว่าเป็นเรื่องจังหวะเวลาเทียบกับปลายปี 2025"
         },
         {
           "key": "margin",
           "label": "อัตรากำไร",
-          "current": "operating margin 3.9% (ลดจาก 5.6% ปีก่อน) · Adjusted EBITDA $914M = ~2.8% ของ GOV (+40% YoY)",
-          "trend": "flat",
-          "score": 55,
-          "impact": "neutral",
-          "why": "อ่านได้สองทางและต้องอ่านทั้งสอง — ตามเกณฑ์ที่บริษัทใช้ กำไรโต 40% และทะลุเป้าตัวเอง แต่ตามบัญชีจริง อัตรากำไรจากการดำเนินงานหดจาก 5.6% เหลือ 3.9% เพราะค่าใช้จ่ายโตเร็วกว่ารายได้จากการรวมกิจการและการลงทุนในเทคโนโลยีส่งของอัตโนมัติ · บริษัทเตือนเองว่า Q4 อัตรากำไรจะลดลงตามฤดูกาล"
+          "current": "operating margin ~10.0% (Q3 2026 ตามนิยามในตารางประวัติ · GAAP 9.6%) จาก ~3.9% ไตรมาสก่อนและ ~8.0% ปีก่อน · Adjusted EBITDA $1,060M = 3.1% ของ GOV (+41% YoY)",
+          "trend": "up",
+          "score": 66,
+          "impact": "positive",
+          "why": "ดีดขึ้นแรงทั้งสองเกณฑ์ — ค่าใช้จ่ายขายและการตลาด วิจัย และบริหารลดลงทั้งหมดเมื่อเทียบไตรมาสก่อน โดยค่าใช้จ่ายบริหารลด 21% เพราะค่ากันสำรองคดี/ภาษี/กฎระเบียบลดจาก $98M เหลือ $16M และค่าหุ้นพนักงาน (รวมภาษีเงินเดือนที่เกี่ยวข้อง) ลดจาก $349M เหลือ $269M · Adjusted EBITDA ต่อ GOV 3.1% สูงสุดในรอบ 5 ไตรมาส · ข้อควรระวังคือส่วนหนึ่งของการดีดตัวมาจากค่ากันสำรองที่ผันผวนตามจังหวะ และ guide Q4 Adjusted EBITDA ที่จุดกึ่งกลาง (~$1.0B) ต่ำกว่า Q3 ตามฤดูกาล"
         },
         {
           "key": "roic",
           "label": "ผลตอบแทนต่อเงินลงทุน",
-          "current": "ปรับดีขึ้นต่อเนื่องจากที่เคยติดลบ แต่ยังถูกกดด้วย goodwill ก้อนใหญ่จากดีล Deliveroo (~$3.72B)",
-          "trend": "up",
-          "score": 50,
+          "current": "ปรับดีขึ้นจากกำไรดำเนินงาน Q3 ที่ดีดขึ้น แต่ goodwill + สินทรัพย์ไม่มีตัวตน ~$7.4B (ส่วนใหญ่จาก Deliveroo) ยังเจือจาง และดีล Instacart ~$17B จะเพิ่มฐานทุนอีกมาก",
+          "trend": "flat",
+          "score": 48,
           "impact": "neutral",
-          "why": "ธุรกิจหลักแทบไม่ต้องใช้เงินลงทุน ผลตอบแทนต่อทุนที่ใช้จริงจึงสูง แต่ตัวเลขทางบัญชีถูกเจือจางด้วยสินทรัพย์ไม่มีตัวตนจากการซื้อกิจการสองดีลใหญ่ · ยังพิสูจน์ไม่ได้ว่าเงินที่จ่ายซื้อ Deliveroo จะคืนทุน ต้องดูอีกหลายไตรมาส"
+          "why": "ธุรกิจหลักแทบไม่ต้องใช้เงินลงทุน ผลตอบแทนต่อทุนที่ใช้จริงจึงสูง และไตรมาสนี้กำไรดำเนินงานที่ดีขึ้นช่วยให้ตัวเลขดีขึ้นชั่วคราว · แต่ดีล Instacart ~$17B ใหญ่กว่าส่วนของผู้ถือหุ้นทั้งหมดในวันนี้ (~$10.7B) — ผลตอบแทนต่อเงินลงทุนรวมในอีกหลายปีจะขึ้นกับว่า synergy สุทธิ ≥$500M ต่อปีที่บริษัทตั้งไว้เกิดขึ้นจริงหรือไม่ และดีล Deliveroo เองก็ยังพิสูจน์ความคุ้มค่าไม่ครบ"
         },
         {
           "key": "cash",
           "label": "เงินสดในมือ",
-          "current": "เงินสดและเงินลงทุน ~$6.2B (30 มิ.ย. 2026) — เงินสด $4.42B + ระยะสั้น $0.92B + ระยะยาว $0.87B",
+          "current": "เงินสดและเงินลงทุน ~$6.8B (30 ก.ย. 2026) — เงินสด $5.05B + ระยะสั้น $0.93B + ระยะยาว $0.81B",
           "trend": "up",
-          "score": 85,
+          "score": 82,
           "impact": "positive",
-          "why": "หนาพอจ่ายดีล Deliveroo ด้วยเงินสดทั้งก้อนแล้วยังเหลือ และยังสร้างเงินสดเพิ่มทุกไตรมาส · ให้พื้นที่ทั้งซื้อกิจการต่อและซื้อหุ้นคืนโดยไม่ต้องกู้"
+          "why": "เพิ่มจาก ~$6.2B ไตรมาสก่อน และยังสร้างเงินสดเพิ่มทุกไตรมาส · แต่เงินก้อนนี้ส่วนหนึ่งถูกวางไว้จ่ายค่าตอบแทนเงินสดของดีล Instacart (อย่างน้อย 75% ของ ~$17B) ร่วมกับเงินกู้ใหม่ — เมื่อปิดดีล กันชนเงินสดจะบางลงมากเทียบกับวันนี้"
         },
         {
           "key": "debt",
           "label": "ภาระหนี้",
-          "current": "หนี้รวม ~$3.3B — เกือบทั้งหมดเป็นหุ้นกู้แปลงสภาพดอกเบี้ย 0% ครบกำหนดปี 2030 (~$2.72B) · เงินสดสุทธิ ~$2.9B",
-          "trend": "flat",
-          "score": 78,
-          "impact": "positive",
-          "why": "งบดุลยังเป็นเงินสดสุทธิและต้นทุนดอกเบี้ยเป็นศูนย์ จึงไม่ใช่ความเสี่ยงทางการเงิน · ข้อควรจำคือหุ้นกู้แปลงสภาพคือการเจือจางที่รอเกิดถ้าราคาหุ้นขึ้นถึงระดับแปลง เป็นภาระต่อผู้ถือหุ้นในรูปหุ้น ไม่ใช่ในรูปเงิน"
+          "current": "หนี้ ~$3.3B — หุ้นกู้แปลงสภาพดอกเบี้ย 0% ครบกำหนดปี 2030 (~$2.73B) + หนี้สัญญาเช่า · เงินสดสุทธิ ~$3.5B · มี commitment bridge loan 364 วัน สูงสุด $13.0B สำหรับดีล Instacart",
+          "trend": "down",
+          "score": 62,
+          "impact": "neutral",
+          "why": "วันนี้งบดุลยังเป็นเงินสดสุทธิและต้นทุนดอกเบี้ยแทบเป็นศูนย์ · แต่เมื่อปิดดีล Instacart บริษัทจะใช้เงินสดในมือบวกเงินกู้ระยะยาว (อาจเป็นหุ้นกู้) มาแทน bridge loan — งบดุลจะพลิกเป็นหนี้สุทธิหลายพันล้านดอลลาร์ บริษัทตั้งเป้ารักษาอันดับเครดิตระดับ investment grade · ยังไม่ใช่ความเสี่ยงสภาพคล่องเพราะ Adjusted EBITDA 4 ไตรมาสล่าสุด ~$3.5B แต่ความยืดหยุ่นทางการเงินลดลงชัด และหุ้นกู้แปลงสภาพเดิมยังเป็นการเจือจางที่รอเกิดถ้าราคาหุ้นถึงระดับแปลง"
         },
         {
           "key": "dilution",
           "label": "การเจือจางของหุ้น",
-          "current": "หุ้น diluted 439 ล้านหุ้น · ค่าหุ้นพนักงานปี 2026 คาดไว้ $1.2-1.3B · ซื้อหุ้นคืนแล้ว ~$1.0B จากวงเงินที่อนุมัติ $5.0B",
-          "trend": "flat",
-          "score": 55,
+          "current": "หุ้น diluted 440 ล้านหุ้น (ปีก่อน 442 ล้าน) · ค่าหุ้นพนักงานปี 2026 คาด ~$1.2B · ซื้อหุ้นคืน ~$1.0B ใน H1 (Q3 ไม่ได้ซื้อ) · ดีล Instacart อาจออกหุ้นใหม่สูงสุด ~22 ล้านหุ้น (~5%)",
+          "trend": "down",
+          "score": 50,
           "impact": "neutral",
-          "why": "ค่าหุ้นพนักงานยังสูงราว 1.4% ของมูลค่าตลาดต่อปี ซึ่งเป็นต้นทุนจริงที่ตัวเลข Adjusted EBITDA ไม่นับ · ต่างจากบริษัทเติบโตหลายแห่งตรงที่มีโครงการซื้อหุ้นคืน $5.0B มาชดเชยบ้างแล้ว แต่ทำไปเพียง ~$1.0B จึงยังหักล้างได้ไม่เต็ม"
+          "why": "ค่าหุ้นพนักงาน ~$1.2B ต่อปีเท่ากับ ~1.4% ของมูลค่าตลาด เป็นต้นทุนจริงที่ Adjusted EBITDA ไม่นับ · การซื้อหุ้นคืนช่วงครึ่งแรกปีช่วยให้จำนวนหุ้นไม่เพิ่ม แต่ Q3 ไม่ได้ซื้อเลย และเมื่อปิดดีล Instacart ส่วนที่จ่ายเป็นหุ้น (เพดาน 25% ของค่าตอบแทน) จะเพิ่มจำนวนหุ้นอีก ~5% ขณะที่เงินสดที่ต้องกันไว้จ่ายดีลทำให้พื้นที่ซื้อหุ้นคืนแคบลง"
         },
         {
           "key": "capitalAllocation",
           "label": "การจัดสรรทุน",
-          "current": "ซื้อ Deliveroo ~$3.72B (ปิดดีล ต.ค. 2025) + SevenRooms · ซื้อหุ้นคืน ~$1.0B จากวงเงิน $5.0B · ไม่มีปันผล",
-          "trend": "up",
-          "score": 62,
+          "current": "ประกาศซื้อ Instacart ~$17B (29 ต.ค. 2026) ต่อจาก Deliveroo ~$3.72B (ต.ค. 2025) · ซื้อหุ้นคืน ~$1.0B ในปีนี้ เหลือวงเงิน ~$4.0B · ไม่มีปันผล",
+          "trend": "flat",
+          "score": 55,
           "impact": "neutral",
-          "why": "ใช้เงินสดที่หามาได้ไปซื้อการเข้าถึงตลาดต่างประเทศแทนการสร้างเองซึ่งเร็วกว่ามาก และเริ่มคืนทุนผู้ถือหุ้นผ่านการซื้อหุ้นคืนแล้ว · แต่ดีล Deliveroo เป็นเงินก้อนใหญ่เทียบกำไรที่ทำได้ และยังเร็วเกินจะตัดสินว่าคุ้ม — สิ่งที่เห็นตอนนี้คือกำไรบัญชีถูกกดลงจากค่าตัดจำหน่ายของดีลนี้"
+          "why": "ตรรกะเชิงกลยุทธ์ชัด — ของชำออนไลน์ต้องใช้ขนาดเพื่อกดต้นทุนคลังสินค้าและการส่ง และ Deliveroo เริ่มให้ผลดีกว่าที่คาด · แต่การทุ่มเงิน ~$17B ซึ่งส่วนใหญ่เป็นเงินกู้ ก่อนที่ดีลแรกจะพิสูจน์ความคุ้มค่าเต็มที่ เพิ่มความเสี่ยงอย่างมีนัย (หนี้ · antitrust · ค่ายกเลิก $1.25B ถ้าถูกขวาง · การรวมสองแพลตฟอร์ม) — ต้องใช้เวลาหลายปีจึงตัดสินได้ว่าคุ้ม"
         },
         {
           "key": "valuation",
           "label": "ความน่าสนใจของราคา",
-          "current": "ราคา ~$202 · mcap ~$89B · forward P/E ~35x จาก consensus non-GAAP FY2026 $5.79 · P/E ตามบัญชีจริง ~106x · ราคาลดลง ~13% ตั้งแต่ต้นปี",
+          "current": "ราคา ~$199 (4 พ.ย. 2026) · mcap ~$87B · forward P/E ~34x (non-GAAP FY2026 $5.81) และ ~25x (FY2027 $8.02) · P/E ตามบัญชีจริง ~82x (EPS 4 ไตรมาสล่าสุด $2.42) · ราคาลดลง ~12% ตั้งแต่ต้นปี",
           "trend": "up",
-          "score": 45,
+          "score": 50,
           "impact": "neutral",
-          "why": "ยังไม่ถูก แต่เหตุผลรองรับดีขึ้นกว่าต้นปี — ราคาลงมา 13% ขณะที่รายได้และกระแสเงินสดโตต่อ ทำให้ multiple หดลงเอง · ช่องว่างระหว่าง 35 เท่า (ฐาน non-GAAP) กับ 106 เท่า (ฐานบัญชีจริง) กว้างมาก ซึ่งสะท้อนว่าค่าหุ้นพนักงานและค่าตัดจำหน่ายที่ถูกตัดออกไปเป็นเงินก้อนใหญ่จริง · เป้าเฉลี่ยนักวิเคราะห์ $254 สูงกว่าราคาปัจจุบัน ~26%"
+          "why": "ถูกลงกว่ารอบก่อนในเชิง multiple เพราะกำไรตามบัญชีโตเร็วกว่าราคา (P/E ตามบัญชีลดจาก ~106x เหลือ ~82x) และ forward P/E ฐาน FY2027 ~25x ซึ่ง TIKR ระบุว่าใกล้ระดับต่ำสุดในรอบ 5 ปี · แต่ยังไม่ถูกเมื่อวัดด้วยกำไรตามบัญชี และดีล Instacart เพิ่มความไม่แน่นอนเรื่องหนี้และหุ้นที่จะออกใหม่ซึ่ง multiple ข้างต้นยังไม่ได้ปรับ · เป้าเฉลี่ยนักวิเคราะห์ ~$251 สูงกว่าราคาปัจจุบัน ~27%"
         }
       ],
       "revenueQuality": {
-        "acceleration": "accelerating",
+        "acceleration": "steady",
         "consistency": 80,
         "recurringPct": 55,
-        "note": "คุณภาพรายได้ดีขึ้นชัดในเชิงโครงสร้าง — รายได้มาจากคำสั่งซื้อจำนวนมหาศาลที่เกิดซ้ำทุกสัปดาห์ ไม่ได้พึ่งลูกค้ารายใหญ่ไม่กี่ราย และ Net Revenue Margin อยู่ที่ 13.5% ของ GOV ซึ่งขยับขึ้นต่อเนื่องจากโฆษณาและค่าสมาชิกที่มีอัตรากำไรสูงกว่าค่าส่งปกติ · ตัวเลขการเติบโต 36% ต้องอ่านอย่างระวัง เพราะราว 13 จุดมาจากการรวมงบ Deliveroo เข้ามา ธุรกิจเดิมโตราว 23% · ตัวเลข segment ด้านล่างเป็นการแบ่งตามภูมิภาคซึ่งเป็นชุดเดียวที่บริษัทเปิดเผยใน 10-Q — DoorDash รายงานเป็น segment เดียวและไม่ได้แยกรายได้ตามหมวด (ร้านอาหาร/ของชำ/ค้าปลีก) หรือตามประเภท (ค่าส่ง/โฆษณา/ค่าสมาชิก) ออกมาเป็นตัวเลข",
+        "note": "คุณภาพรายได้ดีในเชิงโครงสร้าง — รายได้มาจากคำสั่งซื้อจำนวนมหาศาลที่เกิดซ้ำทุกสัปดาห์ ไม่ได้พึ่งลูกค้ารายใหญ่ไม่กี่ราย และ Net Revenue Margin อยู่ที่ 13.6% ของ GOV ขยับขึ้นจาก 13.5% ไตรมาสก่อน · ตัวเลขการเติบโต 34% ต้องอ่านอย่างระวัง เพราะราว 11 จุดมาจากการรวมงบ Deliveroo (รายได้ Deliveroo $365M ในไตรมาสนี้) ธุรกิจเดิมโตราว 23% เท่าไตรมาสก่อน — จึงเป็นการเติบโตที่ทรงตัว ไม่ใช่เร่งตัว · ตั้งแต่ Q4 2026 บริษัทจะเลิกแยกตัวเลขไม่รวม Deliveroo เพราะครบรอบปีซื้อกิจการ · ตัวเลข segment ด้านล่างเป็นการแบ่งตามภูมิภาคซึ่งเป็นชุดเดียวที่บริษัทเปิดเผยใน 10-Q — DoorDash รายงานเป็น segment เดียวและไม่ได้แยกรายได้ตามหมวด (ร้านอาหาร/ของชำ/ค้าปลีก) หรือตามประเภท (ค่าส่ง/โฆษณา/ค่าสมาชิก) ออกมาเป็นตัวเลข",
         "segments": [
           {
             "name": "สหรัฐอเมริกา",
             "sharePct": 78,
-            "growthNote": "ตลาดหลักที่ครองส่วนแบ่งเป็นอันดับหนึ่ง — เป็นแหล่งที่มาของกำไรเกือบทั้งหมดและเป็นที่ที่ธุรกิจโฆษณากับ DashPass เติบโตเร็วที่สุด",
+            "growthNote": "ตลาดหลักที่ครองส่วนแบ่งอันดับหนึ่ง — รายได้ Q3 2026 $3.62B (+24% YoY) และเป็นแหล่งกำไรเกือบทั้งหมด · GOV ร้านอาหารโตเร่งขึ้นเล็กน้อย ขณะที่ของชำและค้าปลีกโตเร็วกว่าร้านอาหารเกินสองเท่า",
             "trend": "up"
           },
           {
             "name": "ต่างประเทศ (Wolt · Deliveroo)",
             "sharePct": 22,
-            "growthNote": "สัดส่วนเพิ่มขึ้นก้าวกระโดดหลังปิดดีล Deliveroo เมื่อ ต.ค. 2025 · ทั้ง Wolt และ Deliveroo ทำกำไรได้เกินเป้าที่บริษัทตั้งไว้ในไตรมาสนี้",
+            "growthNote": "รายได้ $997M (+92% YoY) ส่วนใหญ่จากการรวม Deliveroo ($365M) · ไม่รวม Deliveroo ยังโต ~21% และคำสั่งซื้อของทุกแบรนด์ต่างประเทศเร่งตัวขึ้น · กำไรสูงกว่าที่บริษัทคาดไว้ตอนเข้าไตรมาส",
             "trend": "up"
           }
         ]
       },
       "aiExecution": {
-        "score": 52,
+        "score": 55,
         "items": [
           {
             "item": "ใช้ AI เพิ่มรายได้โฆษณาให้ร้านค้า",
             "status": "executing",
-            "evidence": "บริษัทระบุว่าหน่วยเศรษฐกิจที่ดีขึ้นของธุรกิจโฆษณาเป็นหนึ่งในเหตุผลที่ Adjusted EBITDA ทะลุกรอบบนของเป้า — เป็นรายได้ที่แทบไม่มีต้นทุนเพิ่มและไหลลงกำไรเกือบเต็มจำนวน"
+            "evidence": "Q2 2026 บริษัทระบุว่าหน่วยเศรษฐกิจที่ดีขึ้นของธุรกิจโฆษณาเป็นเหตุผลหนึ่งที่ Adjusted EBITDA ทะลุกรอบบนของเป้า — เป็นรายได้ที่แทบไม่มีต้นทุนเพิ่ม · Q3 2026 ไม่ได้เปิดตัวเลขโฆษณาแยก แต่ระบุว่าการรวมกับ Instacart จะเพิ่มขนาดและการขายข้ามหมวดให้ผู้ลงโฆษณา"
           },
           {
-            "item": "ลงทุนในการส่งของอัตโนมัติ (autonomy)",
-            "status": "on-track",
-            "evidence": "บริษัทระบุเองว่าอัตรากำไรครึ่งปีหลังจะถูกกดบางส่วนจากการลงทุนในแพลตฟอร์มเทคโนโลยีและงานด้านระบบอัตโนมัติ — เป็นการลงทุนระยะยาวที่ยังไม่มีตัวเลขรายได้หรือต้นทุนที่ประหยัดได้ให้วัด"
-          },
-          {
-            "item": "ระบบสั่งอาหารและจัดการร้านผ่าน SevenRooms",
+            "item": "AI agent สำหรับผู้บริโภคและองค์กร",
             "status": "executing",
-            "evidence": "ร้านที่เซ็นสัญญาใหม่โตกว่า 100% YoY และระบบสั่งอาหารดิจิทัลมีร้านค้าใช้งานกว่า 150,000 ราย — ขยายจากการส่งของไปเป็นซอฟต์แวร์ที่ร้านใช้ทุกวัน"
+            "evidence": "Q3 2026 เปิดตัว Ask DoorDash (ช่วยหาร้านใหม่ที่ใกล้เคียงกับที่สั่งประจำ และจัดตะกร้าของชำได้เร็วขึ้น) · Text DoorDash (สั่งผ่านข้อความนอกแอป) และ Model Context Protocol (MCP) ให้ AI agent ภายนอก เช่นระบบสั่งอาหารขององค์กร เชื่อมเข้าระบบได้ — ยังไม่มีตัวเลขรายได้ให้วัด"
+          },
+          {
+            "item": "ลงทุนในคลังสินค้าและการส่งของอัตโนมัติ (autonomy)",
+            "status": "on-track",
+            "evidence": "Q3 2026 บริษัทระบุว่ากำลังลงทุนเงินก้อนใหญ่ในคลังสินค้าและการส่งของอัตโนมัติเพื่อสู้ในโลกกายภาพ (atoms) และ outlook ระบุว่าจะเพิ่มการลงทุนในโครงการใหม่ต่อเนื่อง — เป็นการลงทุนระยะยาวที่ยังไม่มีตัวเลขรายได้หรือต้นทุนที่ประหยัดได้ให้วัด"
+          },
+          {
+            "item": "ซอฟต์แวร์และบริการให้ร้านค้า (SevenRooms · การจองโต๊ะ)",
+            "status": "executing",
+            "evidence": "Q3 2026 การจองร้านอาหารผ่าน marketplace สหรัฐโตกว่า 340% QoQ ในพื้นที่เดิม และกว่า 10% ของการจองมาจากผู้ใช้ที่เพิ่งเข้ามาใช้ DoorDash ในไตรมาสนั้น · ก่อนหน้านี้ (Q2 2026) ร้านที่เซ็นสัญญา SevenRooms ใหม่โตกว่า 100% YoY และระบบสั่งอาหารดิจิทัลมีร้านค้าใช้งานกว่า 150,000 ราย"
           },
           {
             "item": "รวม Deliveroo เข้าระบบเทคโนโลยีเดียวกัน",
             "status": "executing",
-            "evidence": "หลังปิดดีล ต.ค. 2025 บริษัทรายงานว่า Deliveroo เร่งการเติบโตของผู้ใช้และคำสั่งซื้อได้ พร้อมทำกำไรเกินเป้าที่ตั้งไว้ตอนเข้าไตรมาส"
+            "evidence": "Q3 2026 คำสั่งซื้อของ Deliveroo โตเป็นสองเท่าของอัตราเมื่อ Q3 2025 ก่อนถูกซื้อ และกำไรจากธุรกิจต่างประเทศสูงกว่าที่คาดไว้ตอนเข้าไตรมาส · แต่บริษัทระบุเองว่าการติดตั้งแพลตฟอร์มเทคโนโลยีระดับโลก (global technology platform) ยังไม่เสร็จ"
           },
           {
             "item": "สถานะในคลื่น AI โดยรวม",
             "status": "at-risk",
-            "evidence": "DoorDash ไม่ใช่ผู้ได้ประโยชน์โดยตรงจากคลื่น AI แบบบริษัทชิปหรือคลาวด์ — AI ที่ใช้เป็นเครื่องมือเพิ่มประสิทธิภาพภายใน ไม่ใช่สินค้าที่ขายได้ · ในทางกลับกัน ถ้าเทคโนโลยีขับเคลื่อนอัตโนมัติมาถึงจริงก่อนที่บริษัทจะพร้อม โครงสร้างต้นทุนคนส่งที่เป็นข้อได้เปรียบวันนี้อาจกลายเป็นภาระ"
+            "evidence": "DoorDash ประกาศชัดใน Q3 2026 ว่าเลือกสู้ในสนามโลกกายภาพ (atoms) คือเครือข่ายส่งของจริง ไม่ใช่การเป็นผู้ช่วย AI ส่วนตัว — AI จึงเป็นเครื่องมือเพิ่มประสิทธิภาพและช่องทางสั่งซื้อ ไม่ใช่สินค้าที่ขายได้ · ความเสี่ยงคือถ้า AI agent ของผู้เล่นรายใหญ่กลายเป็นหน้าร้านหลักของผู้บริโภค DoorDash อาจถูกลดบทบาทเหลือผู้ส่งของ และถ้าการขับเคลื่อนอัตโนมัติมาถึงก่อนที่บริษัทจะพร้อม โครงสร้างต้นทุนคนส่งอาจกลายเป็นภาระ"
           }
         ]
       },
       "competitive": {
         "overall": "strengthening",
-        "moat": "คูเมืองมาจากวงจรที่ป้อนตัวเอง — ผู้ใช้เยอะดึงร้านค้าเข้ามา ร้านเยอะดึงผู้ใช้เพิ่ม และความหนาแน่นของคำสั่งซื้อในแต่ละพื้นที่ทำให้ต้นทุนต่อการส่งถูกลงจนคู่แข่งที่เล็กกว่าตามไม่ทัน · ชั้นที่สองคือ DashPass ที่เปลี่ยนผู้ใช้จร ๆ เป็นสมาชิกรายเดือนซึ่งสั่งบ่อยขึ้นและเปรียบเทียบราคาน้อยลง · จุดอ่อนคือทั้งผู้บริโภคและร้านค้าติดตั้งหลายแอปพร้อมกันได้ฟรี ความภักดีจึงมาจากความเคยชินและความคุ้มค่า ไม่ใช่สัญญาผูกมัด",
+        "moat": "คูเมืองมาจากวงจรที่ป้อนตัวเอง — ผู้ใช้เยอะดึงร้านค้าเข้ามา ร้านเยอะดึงผู้ใช้เพิ่ม และความหนาแน่นของคำสั่งซื้อในแต่ละพื้นที่ทำให้ต้นทุนต่อการส่งถูกลงจนคู่แข่งที่เล็กกว่าตามไม่ทัน · ชั้นที่สองคือ DashPass ที่เปลี่ยนผู้ใช้จร ๆ เป็นสมาชิกรายเดือนซึ่งสั่งบ่อยขึ้นและเปรียบเทียบราคาน้อยลง · ถ้าดีล Instacart ปิดได้ จะเพิ่มความหนาแน่นในเครือข่ายร้านของชำอีกชั้น ซึ่งก็เป็นเหตุผลเดียวกับที่หน่วยงานกำกับการแข่งขันจะตรวจเข้ม · จุดอ่อนคือทั้งผู้บริโภคและร้านค้าติดตั้งหลายแอปพร้อมกันได้ฟรี ความภักดีจึงมาจากความเคยชินและความคุ้มค่า ไม่ใช่สัญญาผูกมัด",
         "factors": [
           {
             "key": "marketLeadership",
             "label": "ผู้นำตลาด",
             "status": "strengthening",
-            "note": "ครองส่วนแบ่งส่งอาหารสหรัฐเป็นอันดับหนึ่งชัดเจน และหลังซื้อ Deliveroo ก็ขึ้นเป็นผู้เล่นระดับโลกที่มีขนาดจริงในยุโรปและเอเชีย"
+            "note": "ครองส่วนแบ่งส่งอาหารสหรัฐอันดับหนึ่งชัดเจน — Q3 2026 GOV ร้านอาหารสหรัฐโตแบบ QoQ เร็วที่สุดของไตรมาส 3 นับตั้งแต่ปี 2020 · หลังซื้อ Deliveroo เป็นผู้เล่นระดับโลก และดีล Instacart (ถ้าผ่าน) จะเพิ่มตำแหน่งในของชำออนไลน์"
           },
           {
             "key": "techLeadership",
             "label": "ผู้นำเทคโนโลยี",
             "status": "stable",
-            "note": "ระบบจัดเส้นทางและจับคู่คนส่งทำได้ดีจนเป็นข้อได้เปรียบด้านต้นทุน แต่ไม่ใช่เทคโนโลยีที่คู่แข่งเลียนแบบไม่ได้ — ความได้เปรียบมาจากขนาดข้อมูลมากกว่าตัวอัลกอริทึม"
+            "note": "ระบบจัดเส้นทางและจับคู่คนส่งเป็นข้อได้เปรียบด้านต้นทุนที่มาจากขนาดข้อมูลมากกว่าตัวอัลกอริทึม · บริษัทยอมรับเองว่าแพลตฟอร์มเทคโนโลยีระดับโลกใหม่ยังติดตั้งไม่เสร็จ และกำลังลงทุนในคลังสินค้าและการส่งของอัตโนมัติ"
           },
           {
             "key": "executionSpeed",
             "label": "ความเร็วในการลงมือ",
             "status": "strengthening",
-            "note": "Adjusted EBITDA ทะลุกรอบบนของเป้าตัวเองในไตรมาสล่าสุด และรวมกิจการ Deliveroo ได้เร็วจนทำกำไรเกินเป้าภายในไม่กี่ไตรมาสหลังปิดดีล"
+            "note": "Adjusted EBITDA เกินจุดกึ่งกลาง guidance ทุกไตรมาสตั้งแต่ Q3 2025 (Q3 2026 +3.4%) และ GOV ไม่เคยต่ำกว่ากรอบ · ทำให้ Deliveroo เร่งการเติบโตได้ภายในหนึ่งปีหลังปิดดีล และเซ็นสัญญาซื้อ Instacart ต่อทันที"
           },
           {
             "key": "switchingCost",
@@ -9696,49 +10043,55 @@
             "key": "ecosystem",
             "label": "ระบบนิเวศ",
             "status": "strengthening",
-            "note": "ขยายจากส่งอาหารไปของชำ ค้าปลีก ซอฟต์แวร์จัดการร้าน (SevenRooms) และบริการส่งให้แบรนด์อื่นใช้ — ยิ่งร้านใช้หลายบริการยิ่งถอนตัวยาก"
+            "note": "ขยายจากส่งอาหารไปของชำ ค้าปลีก การจองโต๊ะ ซอฟต์แวร์จัดการร้าน (SevenRooms) และบริการส่งให้แบรนด์อื่นใช้ · Instacart จะเพิ่มซอฟต์แวร์ Enterprise ที่ร้านของชำใช้สร้างช่องทางขายของตัวเอง — ยิ่งร้านใช้หลายบริการยิ่งถอนตัวยาก"
           },
           {
             "key": "developerAdoption",
             "label": "การยอมรับของนักพัฒนา",
             "status": "stable",
-            "note": "ไม่ใช่มิติที่เกี่ยวข้องกับธุรกิจนี้โดยตรง — สิ่งที่เทียบเคียงได้คือการที่ร้านค้ากว่า 150,000 รายใช้ระบบสั่งอาหารดิจิทัลของบริษัทเป็นช่องทางของตัวเอง"
+            "note": "ไม่ใช่มิติหลักของธุรกิจนี้ — สิ่งที่เทียบเคียงได้คือร้านค้ากว่า 150,000 รายใช้ระบบสั่งอาหารดิจิทัลของบริษัท และ Q3 2026 เปิด Model Context Protocol (MCP) ให้ AI agent ภายนอกเชื่อมต่อได้ ซึ่งยังเร็วเกินจะวัดการยอมรับ"
           },
           {
             "key": "customerLockin",
             "label": "การผูกลูกค้า",
             "status": "strengthening",
-            "note": "สมาชิก DashPass ที่จ่ายเงินในสหรัฐเพิ่มขึ้นในไตรมาสเดียวมากกว่า 24 เดือนก่อนหน้ารวมกัน — สมาชิกสั่งบ่อยกว่าและเทียบราคากับเจ้าอื่นน้อยกว่าผู้ใช้ทั่วไปมาก"
+            "note": "สมาชิก DashPass ในสหรัฐยังโตแรงใน Q3 2026 และช่วยลดค่าธรรมเนียมต่อออเดอร์ร้านอาหารสหรัฐลง 9% ใน 2 ปี — สมาชิกสั่งบ่อยกว่าและเทียบราคากับเจ้าอื่นน้อยกว่าผู้ใช้ทั่วไปมาก"
           },
           {
             "key": "moat",
             "label": "ความแข็งแรงของคูเมืองโดยรวม",
             "status": "strengthening",
-            "note": "แข็งขึ้นจากความหนาแน่นของคำสั่งซื้อที่มากขึ้น ฐานสมาชิกที่โตเร็ว และขนาดระดับโลกหลังดีล Deliveroo · แต่ยังเป็นคูเมืองเชิงขนาดและความเคยชิน ไม่ใช่เชิงเทคโนโลยีที่ลอกไม่ได้"
+            "note": "แข็งขึ้นจากความหนาแน่นของคำสั่งซื้อที่มากขึ้น ฐานสมาชิกที่โตเร็ว และขนาดระดับโลกหลังดีล Deliveroo · Instacart จะเพิ่มขนาดฝั่งของชำอีกชั้นถ้าผ่านการพิจารณาด้านการแข่งขัน · แต่ยังเป็นคูเมืองเชิงขนาดและความเคยชิน ไม่ใช่เชิงเทคโนโลยีที่ลอกไม่ได้"
           }
         ]
       },
       "capitalAllocation": {
-        "score": 62,
-        "verdict": "ใช้เงินสดที่ธุรกิจหามาได้ไปซื้อการเข้าถึงตลาดต่างประเทศแทนการสร้างเอง ซึ่งเร็วกว่าและได้ขนาดทันที พร้อมเริ่มคืนทุนผู้ถือหุ้นผ่านการซื้อหุ้นคืน · แต่ดีล Deliveroo เป็นเงินก้อนใหญ่เทียบกำไรที่ทำได้จริง และผลกระทบที่เห็นชัดที่สุดตอนนี้คือกำไรตามบัญชีถูกกดลงจากค่าตัดจำหน่าย ยังเร็วเกินจะตัดสินว่าคุ้ม",
+        "score": 55,
+        "verdict": "ใช้เงินสดที่ธุรกิจหามาได้ซื้อขนาดแทนการสร้างเองอย่างต่อเนื่อง — Deliveroo เริ่มให้ผลดีกว่าที่คาด (คำสั่งซื้อเร่งตัว กำไรต่างประเทศเกินเป้า) แต่ก่อนจะพิสูจน์ความคุ้มค่าเต็มที่ บริษัทก็ประกาศดีลที่ใหญ่กว่าราว 4.5 เท่าอย่าง Instacart ~$17B ซึ่งต้องกู้เงินและอาจออกหุ้นใหม่ · ตรรกะเชิงกลยุทธ์ชัด (ของชำต้องใช้ขนาดเพื่อกดต้นทุน) แต่ความเสี่ยงด้านหนี้ antitrust และการรวมกิจการสูงขึ้นมาก คะแนนการจัดสรรทุนจึงลดลงจนกว่าจะเห็นผลจริง",
         "items": [
           {
             "label": "ซื้อกิจการ Deliveroo",
             "current": "~$3.72B ปิดดีล 2 ต.ค. 2025 (180 เพนซ์/หุ้น เป็นเงินสด)",
             "assessment": "neutral",
-            "why": "ได้ขนาดในอังกฤษ ยุโรป และเอเชียทันที และรายงานว่าทำกำไรเกินเป้าเร็วกว่าคาด · แต่เป็นเงินก้อนใหญ่และค่าตัดจำหน่ายจากดีลคือสาเหตุหลักที่กำไรบัญชีหดลง 30% ทั้งที่รายได้โต — ต้องดูอีกหลายไตรมาสจึงตัดสินได้"
+            "why": "Q3 2026 คำสั่งซื้อของ Deliveroo โตเป็นสองเท่าของอัตราก่อนถูกซื้อ และกำไรจากต่างประเทศเกินที่คาด — สัญญาณดีขึ้นจากรอบก่อน · แต่ค่าตัดจำหน่ายสินทรัพย์จากการซื้อกิจการ (~$450M ทั้งปี 2026 รวมทุกดีล) ยังกดกำไรบัญชี และต้องดูอีกหลายไตรมาสจึงตัดสินได้ว่าคุ้ม"
+          },
+          {
+            "label": "ซื้อกิจการ Instacart (ยังไม่ปิดดีล)",
+            "current": "~$17B ($65/หุ้น พรีเมียม 26%) · เงินสดอย่างน้อย 75% + หุ้น DASH ไม่เกิน 25% · bridge loan สูงสุด $13.0B · คาดปิดดีลปลายปี 2027-ครึ่งแรกปี 2028",
+            "assessment": "neutral",
+            "why": "ได้ขนาดในของชำออนไลน์และซอฟต์แวร์ Enterprise ที่ DoorDash ยังไม่มี และบริษัทมองเห็น synergy สุทธิ ≥$500M ต่อปีในหลายปีข้างหน้า · แต่จ่ายพรีเมียมสูง ต้องกู้เงินก้อนใหญ่ ปีแรกหลังปิดดีลจะลงทุนเกิน 100% ของ synergy และถ้าถูกขวางด้วยเหตุผลด้าน antitrust ต้องจ่ายค่ายกเลิกให้ Instacart $1.25B"
           },
           {
             "label": "ซื้อกิจการ SevenRooms",
             "current": "ซื้อเข้ามาเสริมฝั่งซอฟต์แวร์จัดการร้าน",
             "assessment": "good",
-            "why": "ร้านที่เซ็นใหม่โตกว่า 100% YoY — เป็นการซื้อเทคโนโลยีมาขายผ่านฐานร้านค้าเดิมที่มีอยู่แล้ว ความเสี่ยงต่ำและต่อยอดได้ทันที"
+            "why": "ร้านที่เซ็นใหม่โตกว่า 100% YoY (ข้อมูล Q2 2026) — เป็นการซื้อเทคโนโลยีมาขายผ่านฐานร้านค้าเดิมที่มีอยู่แล้ว ความเสี่ยงต่ำและต่อยอดได้ทันที"
           },
           {
             "label": "ซื้อหุ้นคืน",
-            "current": "อนุมัติวงเงิน $5.0B (ก.พ. 2025) ทำไปแล้ว ~$1.0B ณ 30 มิ.ย. 2026",
+            "current": "ซื้อคืน 6.8 ล้านหุ้น ~$1.0B (เฉลี่ย ~$155) ในครึ่งแรกปี 2026 · Q3 ไม่ได้ซื้อ · เหลือวงเงิน ~$4.0B จาก $5.0B",
             "assessment": "good",
-            "why": "หายากที่บริษัทเติบโตเร็วจะเริ่มคืนทุนตั้งแต่ตอนนี้ ช่วยหักล้างการเจือจางจากค่าหุ้นพนักงานได้บางส่วน · แต่ทำไปเพียงหนึ่งในห้าของวงเงิน จึงยังชดเชยได้ไม่เต็ม"
+            "why": "ซื้อในจังหวะราคาต่ำ (เฉลี่ย ~$155 เทียบราคาปัจจุบัน ~$199) และช่วยให้จำนวนหุ้นไม่เพิ่มแม้มีค่าหุ้นพนักงาน · แต่ Q3 หยุดซื้อ และเงินสดที่ต้องกันไว้จ่ายดีล Instacart ทำให้พื้นที่ซื้อคืนต่อจากนี้แคบลง"
           },
           {
             "label": "เงินปันผล",
@@ -9748,64 +10101,64 @@
           },
           {
             "label": "งบดุล",
-            "current": "เงินสดและเงินลงทุน ~$6.2B · หนี้ ~$3.3B (หุ้นกู้แปลงสภาพ 0% ปี 2030) → เงินสดสุทธิ ~$2.9B",
-            "assessment": "good",
-            "why": "จ่ายดีลใหญ่ด้วยเงินสดแล้วยังเหลือกันชนหนา และต้นทุนดอกเบี้ยเป็นศูนย์ — ให้พื้นที่ทั้งลงทุนต่อและซื้อหุ้นคืนโดยไม่ต้องกู้"
+            "current": "เงินสดและเงินลงทุน ~$6.8B · หนี้ ~$3.3B (หุ้นกู้แปลงสภาพ 0% ปี 2030 + สัญญาเช่า) → เงินสดสุทธิ ~$3.5B · bridge loan สูงสุด $13.0B สำหรับ Instacart",
+            "assessment": "neutral",
+            "why": "วันนี้ยังแข็งแรงและต้นทุนดอกเบี้ยต่ำมาก แต่เมื่อปิดดีล Instacart บริษัทจะใช้เงินสดในมือบวกเงินกู้ระยะยาวมาแทน bridge loan — งบดุลจะพลิกเป็นหนี้สุทธิ โดยบริษัทตั้งเป้ารักษาอันดับเครดิตระดับ investment grade"
           }
         ]
       },
       "valuationView": {
         "level": "premium",
-        "note": "forward P/E ~35x จาก consensus non-GAAP FY2026 EPS $5.79 (43 นักวิเคราะห์ · รายได้ $17.82B) แต่ถ้าวัดด้วยกำไรตามบัญชีจริงจะอยู่ที่ ~106x — ช่องว่างที่กว้างมากนี้คือค่าหุ้นพนักงานและค่าตัดจำหน่ายจากดีล Deliveroo ที่ถูกตัดออกจากตัวเลข Adjusted · ราคา ~$202, mcap ~$89B (11 ก.ย. 2026) ลดลง ~13% ตั้งแต่ต้นปีจาก $226 โดยเคยลงไปต่ำสุด $147 เมื่อ มี.ค. และขึ้นสูงสุด $237 เมื่อ ส.ค. · หลังประกาศงบ Q2 ราคาปิดบวก ~2.9% ในวันถัดมา ซึ่งต่างจากไตรมาสก่อน ๆ ที่ตลาดกังวลเรื่องการลงทุนเพิ่ม · เป้าเฉลี่ยนักวิเคราะห์ $254 สูงกว่าราคาปัจจุบัน ~26%"
+        "note": "forward P/E ~34x จาก consensus non-GAAP FY2026 EPS $5.81 และ ~25x จาก FY2027 $8.02 (stockanalysis · 39-43 นักวิเคราะห์) ซึ่ง TIKR ระบุว่าใกล้ระดับต่ำสุดในรอบ 5 ปีและต่ำกว่าค่าเฉลี่ย 3 ปี ~39x · แต่ถ้าวัดด้วยกำไรตามบัญชีจริง 4 ไตรมาสล่าสุด (EPS $2.42) จะอยู่ที่ ~82x ลดจาก ~106x ในรอบก่อนเพราะกำไร Q3 ดีดขึ้น · ราคา ~$199, mcap ~$87B (4 พ.ย. 2026) ลดลง ~12% ตั้งแต่ต้นปีจาก $226 · ช่วงข่าวลือดีล Instacart (23-28 ต.ค.) ราคาลงไปปิดต่ำสุด ~$168 ก่อนดีดขึ้น ~5.6% ในวันประกาศงบพร้อมดีล (29 ต.ค. ปิด $179) · เป้าเฉลี่ยนักวิเคราะห์ ~$251 สูงกว่าราคาปัจจุบัน ~27% · multiple ข้างต้นยังไม่ได้ปรับผลของดีล Instacart ต่อหนี้และจำนวนหุ้น"
       },
       "whatChanged": [
         {
-          "metric": "รายได้ (Q1 → Q2 2026)",
-          "prev": "$4.04B (+33% YoY)",
-          "now": "$4.45B (+36% YoY) — ไม่รวม Deliveroo โตราว 23%",
-          "direction": "positive"
+          "metric": "รายได้ (Q2 → Q3 2026)",
+          "prev": "$4.45B (+36% YoY) · ไม่รวม Deliveroo ~23%",
+          "now": "$4.62B (+34% YoY) · ไม่รวม Deliveroo ~23% เท่าเดิม",
+          "direction": "neutral"
         },
         {
           "metric": "Adjusted EBITDA",
-          "prev": "$754M (Q1 2026)",
-          "now": "$914M (+40% YoY) — ทะลุกรอบบนของเป้าตัวเอง",
+          "prev": "$914M (2.8% ของ GOV)",
+          "now": "$1,060M (+41% YoY · 3.1% ของ GOV) — เกินจุดกึ่งกลาง guidance ~3.4%",
           "direction": "positive"
         },
         {
           "metric": "กำไรตามบัญชี",
-          "prev": "กำไรสุทธิ $286M · EPS $0.65 (Q2 2025)",
-          "now": "กำไรสุทธิ $200M (−30% YoY) · EPS $0.46 — อัตรากำไรจากการดำเนินงานหดจาก 5.6% เหลือ 3.9%",
-          "direction": "negative"
+          "prev": "กำไรสุทธิ $200M · EPS $0.46 · operating margin ~3.9%",
+          "now": "กำไรสุทธิ $466M (+91% YoY) · EPS $1.06 · operating margin ~10.0% (GAAP 9.6%) — ค่ากันสำรองคดี/ภาษีลดจาก $98M เหลือ $16M",
+          "direction": "positive"
+        },
+        {
+          "metric": "ดีลซื้อกิจการ",
+          "prev": "รวมกิจการ Deliveroo (ปิดดีล ต.ค. 2025)",
+          "now": "ประกาศซื้อ Instacart ~$17B (เงินสดอย่างน้อย 75% · bridge loan สูงสุด $13.0B · คาดปิดดีลปลายปี 2027-ครึ่งแรกปี 2028 · ค่ายกเลิก $1.25B ถ้าถูก antitrust ขวาง)",
+          "direction": "neutral"
         },
         {
           "metric": "กระแสเงินสดอิสระ",
-          "prev": "$355M (Q2 2025)",
-          "now": "$742M — เพิ่มกว่าเท่าตัว",
-          "direction": "positive"
+          "prev": "$742M (Q2 2026)",
+          "now": "$787M (+9% YoY) — แต่บริษัทเตือนว่าจังหวะจ่ายเงินร้านค้าสิ้นปีจะหัก FCF ทั้งปี 2026 ลง $700-800M",
+          "direction": "neutral"
         },
         {
-          "metric": "สมาชิก DashPass ในสหรัฐ",
-          "prev": "เพิ่มขึ้นเรื่อย ๆ",
-          "now": "เพิ่มในไตรมาสเดียวมากกว่า 24 เดือนก่อนหน้ารวมกัน",
-          "direction": "positive"
-        },
-        {
-          "metric": "guidance Q3 2026",
-          "prev": "—",
-          "now": "Marketplace GOV $33.0-34.0B · Adjusted EBITDA $950M-1,100M — แต่เตือนว่า Q4 อัตรากำไรจะลดตามฤดูกาล",
+          "metric": "guidance ไตรมาสถัดไป",
+          "prev": "Q3: GOV $33.0-34.0B · Adjusted EBITDA $950M-1,100M",
+          "now": "Q4: GOV $35.4-36.4B (~+21% YoY ที่จุดกึ่งกลาง) · Adjusted EBITDA $900M-1,100M (จุดกึ่งกลางต่ำกว่า Q3 ตามฤดูกาล)",
           "direction": "neutral"
         }
       ],
       "risks": [
-        "กำไรตามบัญชีสวนทางกับตัวเลขที่บริษัทใช้วัด — Adjusted EBITDA โต 40% แต่กำไรสุทธิหด 30% ส่วนต่างคือค่าหุ้นพนักงาน ($1.2-1.3B ต่อปี) และค่าตัดจำหน่ายจากดีล Deliveroo ซึ่งเป็นต้นทุนจริงของผู้ถือหุ้น คนที่ดูแต่ตัวเลข Adjusted จะประเมินกำไรสูงเกินจริงอย่างมีนัย",
+        "ช่องว่างระหว่างกำไรตามบัญชีกับตัวเลขที่บริษัทใช้วัดยังกว้าง — Q3 2026 Adjusted EBITDA $1,060M เทียบกำไรสุทธิ $466M ส่วนต่างคือค่าหุ้นพนักงาน (~$1.2B ต่อปี) และค่าเสื่อม/ค่าตัดจำหน่าย (~$1.2B ต่อปี รวม ~$450M จากสินทรัพย์ที่ได้จากการซื้อกิจการ) · กำไรบัญชีไตรมาสนี้ดีดขึ้นส่วนหนึ่งเพราะค่ากันสำรองคดี/ภาษีลดลง จึงยังสรุปไม่ได้ว่าช่องว่างแคบลงถาวร และดีล Instacart จะเพิ่มค่าตัดจำหน่ายก้อนใหม่",
         "ต้นทุนการย้ายของผู้ใช้ต่ำโดยธรรมชาติ — ทั้งผู้บริโภคและร้านค้าลงหลายแอปพร้อมกันได้ฟรี ความได้เปรียบจึงมาจากขนาดและความเคยชิน ไม่ใช่สัญญาผูกมัด ถ้าคู่แข่งยอมขาดทุนอุดหนุนราคาอีกรอบ ส่วนแบ่งเปลี่ยนได้เร็วกว่าที่คิด",
         "ความเสี่ยงด้านกฎหมายแรงงาน — โมเดลทั้งหมดตั้งอยู่บนการที่คนส่งเป็นผู้รับจ้างอิสระ ไม่ใช่พนักงาน หากกฎหมายในตลาดใหญ่เปลี่ยนให้ต้องจ้างเป็นพนักงาน โครงสร้างต้นทุนจะเปลี่ยนทั้งระบบ และความเสี่ยงนี้เพิ่มขึ้นเมื่อขยายเข้ายุโรปผ่าน Deliveroo ซึ่งกฎหมายแรงงานเข้มกว่าสหรัฐ",
-        "ดีล Deliveroo ยังพิสูจน์ไม่ได้ว่าคุ้ม — จ่ายไป ~$3.72B และสิ่งที่เห็นชัดที่สุดตอนนี้คือกำไรบัญชีที่ถูกกดลง หากการรวมกิจการไม่ให้ผลตามที่คาดหรือตลาดยุโรปแข่งขันรุนแรงกว่าที่ประเมิน จะเป็นการใช้เงินสดก้อนใหญ่ที่ไม่คืนทุน",
-        "อ่อนไหวต่อกำลังซื้อผู้บริโภค — การสั่งอาหารส่งถึงบ้านเป็นค่าใช้จ่ายที่ตัดได้ก่อนเมื่อเศรษฐกิจชะลอ ต่างจากสินค้าจำเป็น และบริษัทเตือนเองว่าอัตรากำไร Q4 จะถูกกดจากต้นทุนคนส่งและค่าประกันตามฤดูกาล",
-        "ไม่ใช่ผู้ได้ประโยชน์โดยตรงจากคลื่น AI — AI ที่ใช้เป็นเครื่องมือเพิ่มประสิทธิภาพภายใน ไม่ใช่สินค้าที่ขายได้ · และในระยะยาว ถ้ายานยนต์ขับเคลื่อนอัตโนมัติมาถึงก่อนที่บริษัทจะพร้อม เครือข่ายคนส่งที่เป็นข้อได้เปรียบวันนี้อาจกลายเป็นต้นทุนที่ปรับตัวยาก"
+        "ความเสี่ยงจากการซื้อกิจการซ้อนกันสองดีล — Deliveroo (~$3.72B) ยังอยู่ระหว่างพิสูจน์ความคุ้มค่า และ Instacart (~$17B) ต้องผ่าน antitrust ในสหรัฐ แคนาดา และอิสราเอล ซึ่งกินเวลาถึงปลายปี 2027-ครึ่งแรกปี 2028 · ถ้าถูกขวางต้องจ่ายค่ายกเลิก $1.25B ถ้าผ่านต้องแบกหนี้ก้อนใหญ่ (bridge loan สูงสุด $13.0B) ออกหุ้นใหม่ได้ถึง ~5% และรวมสองแพลตฟอร์มใหญ่ระหว่างที่ระบบเทคโนโลยีของตัวเองยังติดตั้งไม่เสร็จ",
+        "อ่อนไหวต่อกำลังซื้อผู้บริโภค — การสั่งอาหารส่งถึงบ้านเป็นค่าใช้จ่ายที่ตัดได้ก่อนเมื่อเศรษฐกิจชะลอ บริษัทเตือนใน outlook เองว่าการใช้จ่ายผู้บริโภคอาจแย่กว่าที่คาด และสัดส่วนต่างประเทศ ~22% เพิ่มความเสี่ยงค่าเงินกับภูมิรัฐศาสตร์ · guide Q4 Adjusted EBITDA ที่จุดกึ่งกลาง ~$1.0B ต่ำกว่า Q3 สะท้อนต้นทุนตามฤดูกาลและการลงทุนต่อเนื่อง",
+        "ไม่ใช่ผู้ได้ประโยชน์โดยตรงจากคลื่น AI — AI ที่ใช้เป็นเครื่องมือเพิ่มประสิทธิภาพและช่องทางสั่งซื้อ ไม่ใช่สินค้าที่ขายได้ · ถ้า AI agent ของผู้เล่นรายใหญ่กลายเป็นหน้าร้านที่ผู้บริโภคใช้สั่งของ DoorDash อาจเสียความสัมพันธ์ตรงกับลูกค้า (Q3 2026 บริษัทเปิด MCP ให้ agent ภายนอกเชื่อมต่อได้แล้ว) · และในระยะยาว ถ้ายานยนต์ขับเคลื่อนอัตโนมัติมาถึงก่อนที่บริษัทจะพร้อม เครือข่ายคนส่งที่เป็นข้อได้เปรียบวันนี้อาจกลายเป็นต้นทุนที่ปรับตัวยาก"
       ],
-      "asOf": "2026-09",
-      "nextEarnings": "2026-11",
+      "asOf": "2026-11",
+      "nextEarnings": "2027-02",
       "history": {
         "epsBasis": "diluted GAAP (ปีบัญชี = ปีปฏิทิน สิ้นสุด 31 ธ.ค.)",
         "years": [
@@ -9976,10 +10329,24 @@
             "fcfB": 0.883,
             "priceQEnd": 184.53,
             "epsNote": "EPS $0.46 ลดลงจาก $0.65 เมื่อปีก่อน ทั้งที่รายได้โต 36% และ Adjusted EBITDA โต 40% เป็น $914M — ส่วนต่างอยู่ในรายการที่ Adjusted EBITDA ตัดออก คือค่าหุ้นพนักงาน (ทั้งปี 2026 บริษัทคาด $1.2-1.3B) ค่าตัดจำหน่ายจากดีล Deliveroo และค่าใช้จ่ายรวมกิจการ · ไม่ใช่รายการพิเศษครั้งเดียว แต่เป็นต้นทุนต่อเนื่อง"
+          },
+          {
+            "q": "Q3'26",
+            "endYm": "2026-09",
+            "endDate": "2026-09-30",
+            "revenueB": 4.616,
+            "epsAdj": 1.06,
+            "opMarginPct": 10,
+            "fcfB": 0.904,
+            "priceQEnd": 183.55,
+            "epsNote": "EPS $1.06 กระโดดจาก $0.46 ไตรมาสก่อนโดยไม่มีรายการครั้งเดียวขนาดใหญ่ — ส่วนใหญ่มาจากค่ากันสำรองคดี/ภาษี/กฎระเบียบที่ลดจาก $98M เหลือ $16M และค่าหุ้นพนักงานที่ลดจาก $349M เหลือ $269M · รายการที่บริษัทตัดออกในไตรมาสนี้ (คดี/ภาษี $16M · ค่าใช้จ่ายดีล $20M · ปรับโครงสร้าง $1M) รวม ~$0.08/หุ้น → ไม่รวมรายการเหล่านี้ ~$1.14 · ช่องว่างโครงสร้างกับ Adjusted EBITDA $1,060M ยังอยู่ (ค่าหุ้นพนักงาน + ค่าเสื่อม/ค่าตัดจำหน่าย $312M ซึ่งรวมค่าตัดจำหน่ายจากดีล Deliveroo) · ฐานปีก่อน (Q3 2025 EPS $0.55) ถูกกดด้วยค่าใช้จ่ายอื่น $81M"
           }
         ],
-        "notes": "ปีบัญชีของ DoorDash ตรงกับปีปฏิทินและทุกไตรมาสจบสิ้นเดือนปฏิทิน · EPS ในตารางเป็น diluted GAAP ทั้งชุด ซึ่งต่ำกว่าตัวเลข Adjusted ที่บริษัทและนักวิเคราะห์ใช้มาก (consensus FY2026 non-GAAP อยู่ที่ $5.79 ขณะที่ GAAP ล่าสุดอยู่ราว $0.46 ต่อไตรมาส) เพราะ GAAP รวมค่าหุ้นพนักงานและค่าตัดจำหน่ายจากการซื้อกิจการไว้ด้วย — เทียบข้ามฐานไม่ได้ · FCF ในตารางคิดแบบ OCF ลบ capex จากแหล่งเดียวกันทั้งชุดเพื่อให้เทียบข้ามไตรมาสได้ ซึ่งสูงกว่าตัวเลข FCF ที่บริษัทรายงานเอง (Q2 2026: ตาราง $0.883B vs บริษัทรายงาน $0.742B) เพราะบริษัทหักรายการเพิ่มเติมด้วย · ตัวเลข Marketplace GOV ($33.1B ใน Q2 2026) ไม่ได้อยู่ในตารางนี้เพราะเป็นมูลค่าคำสั่งซื้อรวม ไม่ใช่รายได้ — รายได้ที่บริษัทรับรู้คิดเป็น 13.5% ของ GOV · ราคาสิ้นงวดใช้ราคาปิดของวันทำการสุดท้ายที่ไม่เกินวันสิ้นงวด จาก Yahoo Finance · ตัวเลขเป็นค่าประมาณสำหรับ knowledge base (ความแม่นยำ ~1-2%)",
+        "notes": "ปีบัญชีของ DoorDash ตรงกับปีปฏิทินและทุกไตรมาสจบสิ้นเดือนปฏิทิน · EPS ในตารางเป็น diluted GAAP ทั้งชุด ซึ่งต่ำกว่าตัวเลข Adjusted ที่บริษัทและนักวิเคราะห์ใช้มาก (consensus FY2026 non-GAAP อยู่ที่ ~$5.81 ขณะที่ GAAP 9 เดือนแรกของปี 2026 รวมได้ $1.93) เพราะ GAAP รวมค่าหุ้นพนักงานและค่าตัดจำหน่ายจากการซื้อกิจการไว้ด้วย — เทียบข้ามฐานไม่ได้ · operating margin ในตารางใช้นิยามของ stockanalysis ทั้งชุด ซึ่งบวกกลับค่าใช้จ่ายดีล ค่าปรับโครงสร้าง และค่าด้อยค่าสำนักงาน จึงสูงกว่า GAAP เล็กน้อย (Q3 2026 ตาราง ~10.0% vs GAAP 9.6% · Q1 2026 ตาราง 5.3% vs GAAP ~3.7% เพราะค่าปรับโครงสร้าง $48M) · FCF ในตารางคิดแบบ OCF ลบเงินซื้อสินทรัพย์ถาวร จากแหล่งเดียวกันทั้งชุดเพื่อให้เทียบข้ามไตรมาสได้ ซึ่งสูงกว่าตัวเลข FCF ที่บริษัทรายงานเอง (Q3 2026: ตาราง $0.904B vs บริษัทรายงาน $0.787B) เพราะบริษัทหักค่าพัฒนาซอฟต์แวร์ที่บันทึกเป็นสินทรัพย์ด้วย · ตัวเลข Marketplace GOV ($33.9B ใน Q3 2026) ไม่ได้อยู่ในตารางนี้เพราะเป็นมูลค่าคำสั่งซื้อรวม ไม่ใช่รายได้ — รายได้ที่บริษัทรับรู้คิดเป็น 13.6% ของ GOV · ราคาสิ้นงวดใช้ราคาปิดของวันทำการสุดท้ายที่ไม่เกินวันสิ้นงวด จาก Yahoo Finance · ตัวเลขเป็นค่าประมาณสำหรับ knowledge base (ความแม่นยำ ~1-2%)",
         "sources": [
+          "https://www.sec.gov/Archives/edgar/data/1792789/000179278926000062/proddashex991-pressrelease.htm",
+          "https://www.sec.gov/Archives/edgar/data/1792789/000179278926000070/dash-20260930.htm",
+          "https://www.sec.gov/Archives/edgar/data/1792789/000114036126041111/ef20084547_8k.htm",
           "https://ir.doordash.com/news/news-details/2026/DoorDash-Releases-Second-Quarter-2026-Financial-Results/default.aspx",
           "https://www.sec.gov/Archives/edgar/data/0001792789/000179278926000050/dash-20260630.htm",
           "https://stockanalysis.com/stocks/dash/financials/",
@@ -9988,26 +10355,136 @@
         ]
       },
       "forwardView": {
-        "asOf": "2026-09",
+        "asOf": "2026-11",
         "estimateHistory": [
           {
             "asOf": "2026-09",
             "fy": "FY2026",
             "eps": 5.79,
             "revenue": 17.82
+          },
+          {
+            "asOf": "2026-11",
+            "fy": "FY2026",
+            "eps": 5.81,
+            "revenue": 17.95
           }
         ],
-        "guidanceTrack": [],
+        "guidanceTrack": [
+          {
+            "quarter": "2026Q3",
+            "metric": "gov",
+            "guided": "$33.0-34.0B",
+            "actual": "$33.94B",
+            "result": "beat",
+            "magnitudePct": 1.3
+          },
+          {
+            "quarter": "2026Q3",
+            "metric": "adjEbitda",
+            "guided": "$950M-1,100M",
+            "actual": "$1,060M",
+            "result": "beat",
+            "magnitudePct": 3.4
+          },
+          {
+            "quarter": "2026Q3",
+            "metric": "revenue",
+            "guided": "บริษัทไม่ให้ guidance รายได้ (ให้เป็น GOV แทน)",
+            "actual": "$4.62B",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "2026Q3",
+            "metric": "eps",
+            "guided": "บริษัทไม่ให้ guidance กำไรต่อหุ้น",
+            "actual": "$1.06 (GAAP diluted)",
+            "result": "noGuidance",
+            "magnitudePct": null
+          },
+          {
+            "quarter": "2026Q2",
+            "metric": "gov",
+            "guided": "$32.4-33.4B",
+            "actual": "$33.08B",
+            "result": "inline",
+            "magnitudePct": 0.5
+          },
+          {
+            "quarter": "2026Q2",
+            "metric": "adjEbitda",
+            "guided": "$770M-870M",
+            "actual": "$914M",
+            "result": "beat",
+            "magnitudePct": 11.5
+          },
+          {
+            "quarter": "2026Q1",
+            "metric": "gov",
+            "guided": "$31.0-31.8B",
+            "actual": "$31.60B",
+            "result": "inline",
+            "magnitudePct": 0.6
+          },
+          {
+            "quarter": "2026Q1",
+            "metric": "adjEbitda",
+            "guided": "$675M-775M",
+            "actual": "$754M",
+            "result": "beat",
+            "magnitudePct": 4
+          },
+          {
+            "quarter": "2025Q4",
+            "metric": "gov",
+            "guided": "$28.9-29.5B",
+            "actual": "$29.68B",
+            "result": "beat",
+            "magnitudePct": 1.7
+          },
+          {
+            "quarter": "2025Q4",
+            "metric": "adjEbitda",
+            "guided": "$710M-810M",
+            "actual": "$780M",
+            "result": "beat",
+            "magnitudePct": 2.6
+          },
+          {
+            "quarter": "2025Q3",
+            "metric": "gov",
+            "guided": "$24.2-24.7B",
+            "actual": "$25.02B",
+            "result": "beat",
+            "magnitudePct": 2.3
+          },
+          {
+            "quarter": "2025Q3",
+            "metric": "adjEbitda",
+            "guided": "$680M-780M",
+            "actual": "$754M",
+            "result": "beat",
+            "magnitudePct": 3.3
+          }
+        ],
         "consensus": [
           {
             "fy": "FY2026",
-            "revenue": 17.82,
-            "eps": 5.79,
+            "revenue": 17.95,
+            "eps": 5.81,
             "confidence": "high",
+            "basis": "non-GAAP"
+          },
+          {
+            "fy": "FY2027",
+            "revenue": 21.71,
+            "eps": 8.02,
+            "confidence": "medium",
             "basis": "non-GAAP"
           }
         ],
-        "note": "ตาราง guidanceTrack ว่างโดยตั้งใจ ไม่ใช่เพราะหาข้อมูลไม่ได้ — DoorDash ไม่ได้ให้ guidance เป็นรายได้หรือกำไรต่อหุ้น แต่ให้เป็น Marketplace GOV (มูลค่าคำสั่งซื้อรวม) และ Adjusted EBITDA ซึ่งไม่ตรงกับชนิดข้อมูลที่ตารางนี้รองรับ (revenue/eps/opex/capex/margin) การใส่ GOV ลงช่อง revenue จะทำให้หน้าเว็บแสดง 'revenue $33.1B' ขัดกับรายได้จริง $4.45B ในตารางประวัติ จึงเลือกไม่ใส่ · สถิติเท่าที่ยืนยันได้: Q2 2026 Adjusted EBITDA ออกมา $914M ทะลุกรอบบนของเป้าที่บริษัทให้ไว้ และบริษัทระบุเองว่า 'สูงกว่าที่คาดไว้มาก' · guide Q3 2026 = GOV $33.0-34.0B และ Adjusted EBITDA $950M-1,100M พร้อมเตือนว่าอัตรากำไรต่อ GOV จะเพิ่มใน Q3 แล้วลดลงใน Q4 ตามฤดูกาล (ต้นทุนคนส่งและค่าประกันสูงขึ้น บวกการลงทุนในเทคโนโลยีและระบบอัตโนมัติ) · consensus FY2026 = รายได้ $17.82B / EPS $5.79 บนฐาน non-GAAP (43 นักวิเคราะห์ · ยืนยันฐานจาก stockanalysis.com) ซึ่งเป็นคนละฐานกับ EPS ในตารางประวัติที่เป็น GAAP และช่องว่างสองฐานนี้กว้างเป็นพิเศษสำหรับ DASH · ยังไม่ใส่ consensus FY2027 เพราะหาตัวเลข aggregate แบบเปิดเผยฟรีไม่ได้ในรอบนี้ — ห้ามเดา"
+        "note": "DoorDash ไม่ให้ guidance รายได้หรือ EPS แต่ให้ Marketplace GOV และ Adjusted EBITDA รายไตรมาส จึงบันทึก guidanceTrack ด้วย metric gov/adjEbitda (Q3 2026 ใส่แถว revenue/eps เป็น noGuidance เพื่อยืนยันว่าไม่ได้ให้) — ตั้งแต่ Q3 2025 Adjusted EBITDA เกินจุดกึ่งกลางทุกไตรมาส ขณะที่ GOV อยู่ในกรอบหรือเกินเล็กน้อย และ guide Q4 2026 คือ GOV $35.4-36.4B / EBITDA $900M-1,100M · consensus FY2026 (~$17.95B / $5.81) และ FY2027 (~$21.71B / $8.02) เป็นฐาน non-GAAP จาก stockanalysis (ฝั่ง GAAP ของ Yahoo Finance อยู่ราว ~$2.76 / ~$4.58) โดย FY2027 ให้ความมั่นใจระดับกลางเพราะ EPS non-GAAP มีแหล่งเดียวและช่วงประมาณกว้าง ส่วน FY2028 ยังไม่ใส่เพราะตัวเลขฟรีที่หาได้คือ FactSet เดือน ส.ค. 2026 ที่ไม่ระบุฐาน (~$25.4B / ~$6.71) — ห้ามเดา"
       }
     },
     "ABNB": {
