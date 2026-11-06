@@ -48,6 +48,34 @@ function dr(o) {
 var NASDAQ = "The Nasdaq Stock Market";
 var HKEX = "The Stock Exchange of Hong Kong Limited";
 var ARCA = "The New York Stock Exchange Archipelago";
+// "เพิ่งจดทะเบียน" = 5 วันก่อนวันนี้ (เวลาเครื่อง) อยู่ในหน้าต่าง 30 วันเสมอ
+var NEW_LISTING_DATE = (function () {
+  var d = new Date();
+  d.setDate(d.getDate() - 5);
+  var y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+  return y + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day + "T00:00:00+07:00";
+})();
+
+// ---------- หุ้นใน AI Portfolio Manager (/api/portfolio-holdings) ----------
+// รูปร่างเดียวกับ shapeRow ของ api/portfolio-holdings.js — ไม่ใส่ market_value/cost เพราะหน้านี้ต้องไม่ใช้
+function holding(o) {
+  return {
+    id: o.id || o.symbol, canonicalSymbol: o.symbol, displaySymbol: o.symbol,
+    assetName: o.name || o.symbol, assetType: o.assetType || "US_STOCK",
+    providerSymbol: o.symbol, isHolding: o.isHolding !== false, watchlistOnly: o.isHolding === false,
+    portfolioBucket: o.bucket || "", currency: o.ccy || "USD"
+  };
+}
+var FAKE_HOLDINGS = [
+  holding({ symbol: "AAPL", name: "Apple" }),                                   // ธงแดง ไม่มี bucket → foreign-stock
+  holding({ symbol: "GOOGL", name: "Alphabet", bucket: "foreign-stock" }),      // PM แปลงเป็น GOOG
+  holding({ symbol: "NVDA", name: "NVIDIA", bucket: "foreign-stock" }),         // ไม่มี DR ไทยใน fixture
+  holding({ symbol: "MSFT", name: "Microsoft", isHolding: false }),             // watchlist เฉย ๆ ต้องไม่นับ
+  holding({ symbol: "PTT.BK", name: "ปตท.", ccy: "THB" }),                      // หุ้นไทย ตัดออก
+  holding({ symbol: "KFGGRMF", name: "กองทุน RMF", assetType: "THAI_MUTUAL_FUND", ccy: "THB" }),
+  holding({ symbol: "BTC", name: "Bitcoin", bucket: "bitcoin" })
+];
+var holdingsResponse = { ok: true, status: 200, body: { data: FAKE_HOLDINGS } };
 
 var FAKE_ROWS = [
   // สินทรัพย์เดียว 4 DR — ต้องยุบเป็นแถวเดียว
@@ -66,7 +94,8 @@ var FAKE_ROWS = [
   // กองที่จัดไม่ได้ → รอตรวจ
   dr({ symbol: "JEPI01", underlying: "JEPI ETF", underlyingName: "โครงการจัดการลงทุนต่างประเทศ JPMORGAN EQUITY PREMIUM INCOME ETF (JEPI)", exchange: ARCA, classId: "7" }),
   // เพิ่งจดทะเบียน
-  dr({ symbol: "NEWCO01", underlying: "NEWCO", underlyingName: "บริษัท NEW COMPANY (NEWCO)", exchange: NASDAQ, firstTradeDate: "2026-10-05T00:00:00+07:00" }),
+  // วันจดทะเบียนผูกกับ "วันนี้" ไม่ใช่วันตายตัว — เคยตรึง 2026-10-05 แล้วเทสต์แดงเองเมื่อพ้นหน้าต่าง 30 วัน
+  dr({ symbol: "NEWCO01", underlying: "NEWCO", underlyingName: "บริษัท NEW COMPANY (NEWCO)", exchange: NASDAQ, firstTradeDate: NEW_LISTING_DATE }),
   // ไม่มีวันจดทะเบียนจากแหล่ง — ใช้ทดสอบว่า "ค่าว่างต้องไปท้ายตาราง"
   dr({ symbol: "NODATE01", underlying: "NODATE", underlyingName: "บริษัท NO LISTING DATE (NODATE)",
     exchange: NASDAQ, firstTradeDate: null })
@@ -211,6 +240,14 @@ var win = {
         return Promise.resolve({ bars: [{ date: "2026-10-09", close: px }] });
       } });
     }
+    // หุ้นใน AI Portfolio Manager
+    if (u.indexOf("/api/portfolio-holdings") >= 0) {
+      var hr = holdingsResponse;
+      if (hr.throw) return Promise.reject(hr.throw);
+      return Promise.resolve({ ok: hr.ok, status: hr.status, json: function () {
+        return Promise.resolve(hr.body);
+      } });
+    }
     // อัตราแลกเปลี่ยน
     if (u.indexOf("frankfurter") >= 0) {
       return Promise.resolve({ ok: true, status: 200, json: function () {
@@ -285,6 +322,170 @@ function finish() {
   process.exit(fail ? 1 : 0);
 }
 
+// ---- แท็บ Port ต้องตาม AI Portfolio Manager เสมอ (เส้นทางที่ต้องรอ fetch) ----
+// เรียกจากใน runRest ก่อน §25 — จบแล้วต้องคืน rows/holdings/แท็บ ให้เหมือนเดิม (7 สินทรัพย์ · แท็บ all)
+function pmMirrorTests() {
+  console.log("== Port ตาม AI Portfolio Manager เมื่อข้อมูลเปลี่ยน ==");
+  var S = win.ThaiDrPage._state;
+  function keyOfSym(sym) {
+    var k = null;
+    (S.view.assets || []).forEach(function (a) { if (a.underlyingSymbol === sym) k = a.canonicalKey; });
+    return k;
+  }
+  function tickers() { return S.pm.holdings.map(function (h) { return h.ticker; }).join(","); }
+  function holdingsCalls() {
+    return fetchCalls.filter(function (u) { return u.indexOf("/api/portfolio-holdings") >= 0; }).length;
+  }
+  var origRows = S.rows;
+  var origHoldings = holdingsResponse;
+
+  // 1) GOOGL→GOOG ครบวงจร: SET ลิงก์ DR ไป GOOGL แต่ PM เก็บเป็น GOOG → ต้องจับคู่กัน
+  S.rows = origRows.concat([dr({ symbol: "GOOGL01", underlying: "GOOGL",
+    underlyingName: "บริษัท ALPHABET INC. (GOOGL)", exchange: NASDAQ,
+    url: "https://www.nasdaq.com/market-activity/stocks/googl" })]);
+  win.ThaiDrPage._buildView();
+  t("ทะเบียนเปลี่ยน (เพิ่ม DR ของ GOOGL) → buildView จับคู่ใหม่เอง: GOOGL ของ SET = GOOG ของ PM",
+    !!keyOfSym("GOOGL") && S.port[keyOfSym("GOOGL")] === true && Object.keys(S.port).length === 2,
+    Object.keys(S.port));
+  t("unmatched เหลือ NVDA", S.pm.unmatched.join(",") === "NVDA", S.pm.unmatched);
+  // หุ้นเดียว (GOOG ของ PM) มี 2 สินทรัพย์อ้างอิงได้ (SET มีทั้ง GOOG และ GOOGL) → หัวแท็บต้องแยก "หุ้น" กับ "แถว"
+  S.rows = S.rows.concat([dr({ symbol: "GOOG80", underlying: "GOOG",
+    underlyingName: "บริษัท ALPHABET INC. CLASS C (GOOG)", exchange: NASDAQ,
+    url: "https://www.nasdaq.com/market-activity/stocks/goog" })]);
+  win.ThaiDrPage._buildView();
+  S.tab = "port";
+  win.ThaiDrPage.render();
+  t("GOOG มี 2 สินทรัพย์อ้างอิง (GOOG+GOOGL) → หัวแท็บบอก 'มี DR ไทย 2 หุ้น (3 แถว)' ไม่ใช่ '3 หุ้น'",
+    /มี DR ไทย <b class="dr-num">2<\/b> หุ้น \(3 แถว\)/.test(html()) && countOf(/data-dr-row="/g) === 3,
+    [(/มี DR ไทย[^<]*<b[^>]*>[^<]*<\/b>[^<]*/.exec(html()) || [])[0], countOf(/data-dr-row="/g)]);
+  S.tab = "all";
+  t("ticker หุ้นแม่ของสินทรัพย์ GOOGL ถูกแปลงเป็น GOOG",
+    win.ThaiDrPage._assetParentTicker(S.view.assets.filter(function (a) { return a.underlyingSymbol === "GOOGL"; })[0]) === "GOOG");
+  t("สินทรัพย์ที่ไม่มี URL ทางการ (BABA ใน fixture) → ไม่เดา ticker",
+    win.ThaiDrPage._assetParentTicker(S.view.assets.filter(function (a) { return a.underlyingSymbol === "BABA"; })[0]) === null);
+  S.rows = origRows;
+  win.ThaiDrPage._buildView();
+  t("เอา DR ของ GOOGL ออก → กลับมาจับคู่ได้ 1 และสินทรัพย์ 7 เหมือนเดิม",
+    Object.keys(S.port).length === 1 && S.view.assets.length === 7,
+    [Object.keys(S.port).length, S.view.assets.length]);
+
+  // 2) ลำดับจริงใน Chrome: holdings (เล็ก) มาก่อนทะเบียน DR → ตอนนั้น view ยัง null ห้ามล้ม
+  //    (เคยล้มจริง: TypeError ใน recomputePort → แท็บ Port ขึ้น error ทั้งที่ PM ตอบปกติ)
+  var origView = S.view, origSync = S.sync;
+  S.view = null;
+  return win.ThaiDrPage._loadPm().then(function () {
+    t("holdings มาก่อนทะเบียน DR (view ยัง null) → ไม่ล้ม อ่านได้ปกติ",
+      S.pm.state === "ok" && tickers() === "AAPL,GOOG,NVDA" && Object.keys(S.port).length === 0,
+      [S.pm.state, S.pm.error, tickers()]);
+    S.tab = "port";
+    win.ThaiDrPage.render();
+    t("ระหว่างรอทะเบียน DR แท็บ Port บอกว่ารออะไร ไม่ใช่ว่าง",
+      /กำลังโหลดทะเบียน DR|กำลังอ่านหุ้น/.test(html()) || html().indexOf("dr-tablewrap") < 0,
+      (/<h3>[^<]*/.exec(html()) || [])[0]);
+    S.view = origView; S.sync = origSync;
+    win.ThaiDrPage._buildView();
+    t("ทะเบียน DR มาทีหลัง → buildView จับคู่ให้เอง (AAPL)",
+      Object.keys(S.port).length === 1 && S.pm.unmatched.join(",") === "GOOG,NVDA",
+      [Object.keys(S.port), S.pm.unmatched]);
+
+    // 3) ลดหุ้นที่ PM → แท็บ Port ตาม
+    holdingsResponse = { ok: true, status: 200, body: { data: [
+      holding({ symbol: "NVDA", name: "NVIDIA", bucket: "foreign-stock" })
+    ] } };
+    return win.ThaiDrPage._loadPm();
+  }).then(function () {
+    S.tab = "port";
+    win.ThaiDrPage.render();
+    var h = html();
+    t("PM เหลือ NVDA ตัวเดียว → port ว่าง", tickers() === "NVDA" && Object.keys(S.port).length === 0,
+      [tickers(), Object.keys(S.port)]);
+    t("แท็บ Port บอกว่าหุ้นใน PM 1 ตัวยังไม่มี DR ไทย ไม่ใช่ตารางเปล่า",
+      h.indexOf("dr-tablewrap") < 0 && /ยังไม่มี DR ไทยอ้างอิงเลย/.test(h) && h.indexOf("NVDA") >= 0,
+      (/<h3>[^<]*/.exec(h) || [])[0]);
+    t("ตัวเลขบนแท็บ Port = 0", /data-dr-tab="port"[\s\S]{0,160}>0</.test(h),
+      (/data-dr-tab="port"[\s\S]{0,160}/.exec(h) || [])[0]);
+
+    // 4) HTTP 401 (ยังไม่ได้ใส่รหัส) — ต้องมาตอนที่ holdings รอบก่อนยังไม่ว่าง (NVDA)
+    //    ไม่งั้นจับไม่ได้ว่า error แล้วแอบใช้ holdings เก่า
+    holdingsResponse = { ok: false, status: 401, body: {} };
+    return win.ThaiDrPage._loadPm();
+  }).then(function () {
+    var h = html();
+    t("อ่าน PM ไม่ได้ (401) → แท็บบอกเหตุผล + ปุ่มลองใหม่ ไม่ใช่หน้าว่าง",
+      S.pm.state === "error" && /ไม่สำเร็จ/.test(h) && h.indexOf("401") >= 0 && h.indexOf("data-dr-pmretry") >= 0,
+      [S.pm.state, S.pm.error]);
+    t("401 → ไม่แอบใช้ holdings รอบก่อน (NVDA ต้องหาย)", S.pm.holdings.length === 0 && Object.keys(S.port).length === 0,
+      [tickers(), Object.keys(S.port)]);
+
+    // 5) เครือข่ายล่ม
+    holdingsResponse = { throw: new TypeError("Failed to fetch") };
+    return win.ThaiDrPage._loadPm();
+  }).then(function () {
+    t("เครือข่ายล่ม → ข้อความไทยอ่านรู้เรื่อง",
+      S.pm.state === "error" && S.pm.error === "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้", [S.pm.state, S.pm.error]);
+
+    // 6) คำตอบผิดรูป (ไม่มี data[]) — ต้องเป็น error ไม่ใช่ค้างที่ "กำลังอ่าน…"
+    holdingsResponse = { ok: true, status: 200, body: apiPayload };
+    return win.ThaiDrPage._loadPm();
+  }).then(function () {
+    t("คำตอบผิดรูป → error ไม่ค้างที่ 'กำลังอ่าน'",
+      S.pm.state === "error" && /รูปแบบ/.test(String(S.pm.error)), [S.pm.state, S.pm.error]);
+
+    // 6b) PM ไม่มีหุ้นต่างประเทศธงแดงเลย (มีแต่หุ้นไทย)
+    holdingsResponse = { ok: true, status: 200, body: { data: [holding({ symbol: "PTT.BK", ccy: "THB" })] } };
+    return win.ThaiDrPage._loadPm();
+  }).then(function () {
+    var h = html();
+    t("PM ไม่มีหุ้นต่างประเทศธงแดง → บอกตรง ๆ + ลิงก์ไป PM ไม่ใช่ตารางเปล่า",
+      S.pm.state === "ok" && /ยังไม่มีหุ้นธงแดงในกลุ่มหุ้นต่างประเทศ/.test(h) &&
+      h.indexOf('href="/portfolio-manager"') >= 0 && h.indexOf("dr-tablewrap") < 0,
+      [S.pm.state, (/<h3>[^<]*/.exec(h) || [])[0]]);
+
+    // 7) กดปุ่มอ่านใหม่ → กลับมาปกติ
+    holdingsResponse = origHoldings;
+    var n0 = holdingsCalls();
+    t("กดปุ่มอ่านจาก PM ใหม่ได้", clickAttr("data-dr-pmretry", "1") === true);
+    return flush().then(function () {
+      t("ลองใหม่ยิง /api/portfolio-holdings อีกครั้ง", holdingsCalls() === n0 + 1, [n0, holdingsCalls()]);
+      t("ลองใหม่สำเร็จ → กลับมาเห็น AAPL ในแท็บ Port",
+        S.pm.state === "ok" && Object.keys(S.port).length === 1 && countOf(/data-dr-row="/g) === 1,
+        [S.pm.state, Object.keys(S.port), countOf(/data-dr-row="/g)]);
+
+      // 8) กดโหลดราคาในแท็บ Port → ยิงเฉพาะตัวในพอร์ต (1) แล้วได้ราคาจริงกลับมา
+      var savedStats = S.stats;
+      S.stats = {};
+      win.ThaiDrPage.render();
+      var aaplKey = keyOfSym("AAPL");
+      var ohlc0 = fetchCalls.filter(function (u) { return u.indexOf("/api/ohlc") >= 0; }).length;
+      t("กดโหลดราคาในแท็บ Port แล้วคิวมีเท่าจำนวนในพอร์ต (1)", (function () {
+        if (!clickAttr("data-dr-loadstats", "1")) return "กดไม่ได้";
+        var run = S.statsRun;
+        return !!run && run.total === 1;
+      })() === true, S.statsRun ? [S.statsRun.total, "ควรเป็น 1"] : "ไม่มี statsRun");
+      return flush().then(function () {
+        var ohlc1 = fetchCalls.filter(function (u) { return u.indexOf("/api/ohlc") >= 0; }).length;
+        t("ยิง /api/ohlc ครั้งเดียว (AAPL) ไม่ใช่ทั้งตาราง", ohlc1 - ohlc0 === 1, ohlc1 - ohlc0);
+        t("ได้ราคาหุ้นแม่ AAPL กลับมาในแท็บ Port",
+          !!S.stats[aaplKey] && S.stats[aaplKey].state === "ok" && S.statsRun && S.statsRun.running === false,
+          S.stats[aaplKey] && S.stats[aaplKey].state);
+        S.stats = savedStats;
+
+        // 9) ปุ่ม "โหลดใหม่" หลัก ต้องอ่าน PM ใหม่ด้วย (ผู้ใช้เพิ่มหุ้นที่ PM แล้วกดปุ่มนี้)
+        S.tab = "all";
+        win.ThaiDrPage.render();
+        var n1 = holdingsCalls();
+        t("กดโหลดใหม่ได้", clickAttr("data-dr-reload", "1") === true);
+        return win.ThaiDrPage.load(false).then(flush).then(function () {
+          t("โหลดใหม่ → อ่าน PM ใหม่ด้วย", holdingsCalls() === n1 + 1, [n1, holdingsCalls()]);
+          t("หลังโหลดใหม่ port ยังตรงกับ PM และสินทรัพย์ยัง 7",
+            Object.keys(S.port).length === 1 && S.view.assets.length === 7,
+            [Object.keys(S.port).length, S.view.assets.length]);
+        });
+      });
+    });
+  });
+}
+
 var watchdog = setTimeout(function () {
   console.error("  ✗ หน้าเว็บ: timeout");
   fail++;
@@ -296,8 +497,10 @@ win.ThaiDrPage.load(false).then(function () {
 
   console.log("== §19 จำนวน DR กับจำนวนสินทรัพย์ต้องแยกกัน ==");
   var h = html();
-  t("เรียก /api/thai-dr จริง", fetchCalls.length === 1 && fetchCalls[0].indexOf("/api/thai-dr") === 0,
+  t("เรียก /api/thai-dr จริง", fetchCalls.length === 2 && fetchCalls[0].indexOf("/api/thai-dr") === 0,
     fetchCalls);
+  t("boot แล้วอ่านหุ้นจาก AI Portfolio Manager ทันที (ไม่รอกดแท็บ)",
+    fetchCalls.length === 2 && fetchCalls[1] === "/api/portfolio-holdings", fetchCalls);
   t("มีป้าย “DR ที่จดทะเบียน”", h.indexOf("DR ที่จดทะเบียน") >= 0);
   t("มีป้าย “สินทรัพย์อ้างอิง”", h.indexOf("สินทรัพย์อ้างอิง") >= 0);
   var st = win.ThaiDrPage._state.view.summary;
@@ -895,9 +1098,14 @@ win.ThaiDrPage.load(false).then(function () {
   t("แสดงดาวว่าง", countOf(/☆/g) > 0);
 
   // ติ๊กสองตัว
-  var pickA = win.ThaiDrPage._visible()[1].canonicalKey;
-  var pickAName = win.ThaiDrPage._visible()[1].canonicalName;
-  var pickB = win.ThaiDrPage._visible()[3].canonicalKey;
+  // เลือกตัวที่ไม่อยู่ในพอร์ต (PM) — เส้นซ้ายของพอร์ตชนะเส้นทองของ Top pick ตามดีไซน์
+  // ถ้าสุ่มได้ AAPL (อยู่ใน PM ตั้งแต่ boot) เทสต์ "เส้นทอง" จะแดงทั้งที่ของไม่พัง
+  var notInPort = win.ThaiDrPage._visible().filter(function (a) {
+    return !win.ThaiDrPage._state.port[a.canonicalKey];
+  });
+  var pickA = notInPort[1].canonicalKey;
+  var pickAName = notInPort[1].canonicalName;
+  var pickB = notInPort[3].canonicalKey;
   t("ติ๊ก Top pick ได้ผ่าน handler จริง", setCheck("data-dr-pick", pickA, true) === true);
   setCheck("data-dr-pick", pickB, true);
   var hp1 = html();
@@ -922,51 +1130,82 @@ win.ThaiDrPage.load(false).then(function () {
     return ok;
   })());
 
-  // ---------------- คอลัมน์ "ใน Port" + แท็บ 3 หน้า ----------------
-  // ต่างจาก Top pick ตรงความหมาย: Top pick = กำลังสนใจ · Port = ถืออยู่จริง
-  // จึงต้องเก็บแยกคนละ key และติ๊กพร้อมกันได้ทั้งสองอัน
-  console.log("== Port: ติ๊กว่าถืออยู่ แล้วแยกเป็นแท็บ ==");
+  // ---------------- แท็บ Port = กระจกของ AI Portfolio Manager ----------------
+  // ผู้ใช้ (2026-11-05): "ยึด PM เป็นหลัก เพิ่ม/ลดที่ PM แล้วให้ตรงกันตลอด"
+  // → ไม่มีช่องติ๊ก Port ที่หน้านี้อีก · port[] คำนวณจาก /api/portfolio-holdings ทุกครั้ง
+  console.log("== Port: หุ้นจาก AI Portfolio Manager ==");
   win.ThaiDrPage._state.filters.q = "";
   win.ThaiDrPage._state.tab = "all";
   win.ThaiDrPage.render();
   var hb = html();
-  t("มีคอลัมน์ Port ในหัวตาราง", /<th[^>]*>\s*Port\s*<\/th>/.test(hb),
-    (/<th[^>]*dr-port-col[^>]*>[^<]{0,20}/.exec(hb) || [])[0]);
-  t("ทุกแถวมี checkbox Port",
-    countOf(/data-dr-port="/g) === win.ThaiDrPage._visible().length,
-    [countOf(/data-dr-port="/g), win.ThaiDrPage._visible().length]);
-
-  // ติ๊ก Port 2 ตัว โดยตัวแรกเป็นตัวเดียวกับที่ติ๊ก Top pick ไว้แล้ว
-  var portA = pickA;                                   // ซ้ำกับ Top pick โดยตั้งใจ
-  var portB = win.ThaiDrPage._visible()[5].canonicalKey;
-  t("ติ๊ก Port ได้ผ่าน handler จริง", setCheck("data-dr-port", portA, true) === true);
-  setCheck("data-dr-port", portB, true);
-  t("ติ๊ก Port แล้ว Top pick ของตัวเดียวกันไม่หาย (คนละความหมาย)",
-    win.ThaiDrPage._state.picked[portA] === true && win.ThaiDrPage._state.port[portA] === true,
-    [win.ThaiDrPage._state.picked[portA], win.ThaiDrPage._state.port[portA]]);
+  var PM = win.ThaiDrPage._state.pm;
+  function keyOfSym(sym) {
+    var k = null;
+    (win.ThaiDrPage._state.view.assets || []).forEach(function (a) {
+      if (a.underlyingSymbol === sym) k = a.canonicalKey;
+    });
+    return k;
+  }
+  var aaplKey = keyOfSym("AAPL");
+  t("ไม่มีคอลัมน์/ช่องติ๊ก Port และปุ่มล้าง Port ให้ทำเองแล้ว",
+    !/<th[^>]*>\s*Port\s*<\/th>/.test(hb) && countOf(/data-dr-port="/g) === 0 &&
+    hb.indexOf("data-dr-clearport") < 0,
+    [countOf(/data-dr-port="/g), hb.indexOf("data-dr-clearport")]);
+  t("อ่านหุ้นจาก PM สำเร็จตั้งแต่ boot (ไม่ต้องกดแท็บก่อน)", PM.state === "ok", [PM.state, PM.error]);
+  t("กรองแบบ buildInputs ของ PM: ธงแดง + sleeve หุ้นต่างประเทศ · GOOGL→GOOG · ตัด watchlist/.BK/RMF/BTC",
+    PM.holdings.map(function (h) { return h.ticker; }).join(",") === "AAPL,GOOG,NVDA",
+    PM.holdings.map(function (h) { return h.ticker; }));
+  t("จับคู่ DR จาก ticker หุ้นแม่ตาม URL ทางการของ SET — AAPL เจอ",
+    !!aaplKey && win.ThaiDrPage._state.port[aaplKey] === true, Object.keys(win.ThaiDrPage._state.port));
+  t("จับคู่ได้ตัวเดียว (GOOG/NVDA ไม่มี DR ใน fixture)",
+    Object.keys(win.ThaiDrPage._state.port).length === 1, Object.keys(win.ThaiDrPage._state.port));
+  t("หุ้นที่ไม่มี DR ไทยถูกจดไว้ใน unmatched ตามลำดับใน PM",
+    PM.unmatched.join(",") === "GOOG,NVDA", PM.unmatched);
+  t("แถว AAPL ในแท็บ DR ทั้งหมด ได้ป้าย “ในพอร์ต” + เส้นซ้าย (ตัวเดียว)", (function () {
+    if (countOf(/dr-pm-badge/g) !== 1) return "badge=" + countOf(/dr-pm-badge/g);
+    var i = hb.indexOf('data-dr-row="' + aaplKey + '"');
+    if (i < 0) return "ไม่เจอแถว AAPL";
+    var tr = hb.slice(hb.lastIndexOf("<tr", i), i);
+    return tr.indexOf("dr-row--port") >= 0;
+  })() === true, (function () {
+    var i = hb.indexOf('data-dr-row="' + aaplKey + '"');
+    return i < 0 ? "ไม่เจอแถว AAPL" : hb.slice(hb.lastIndexOf("<tr", i), i);
+  })());
+  t("Top pick กับ Port เป็นคนละเรื่อง: ติ๊กดาว AAPL ไม่เปลี่ยน port", (function () {
+    var was = win.ThaiDrPage._state.picked[aaplKey] === true;
+    if (setCheck("data-dr-pick", aaplKey, true) !== true) return "ติ๊กดาวไม่ได้";
+    var ok = win.ThaiDrPage._state.picked[aaplKey] === true &&
+      Object.keys(win.ThaiDrPage._state.port).length === 1;
+    setCheck("data-dr-pick", aaplKey, was);
+    return ok;
+  })() === true);
 
   // ---- แท็บ ----
   var ht = html();
   t("มีแท็บครบ 3 อัน", countOf(/data-dr-tab="/g) === 3, countOf(/data-dr-tab="/g));
-  t("แท็บมีชื่อ Port", /data-dr-tab="port"/.test(ht));
-  t("แท็บมีชื่อ Top pick", /data-dr-tab="pick"/.test(ht));
-  t("แท็บมีชื่อ DR ทั้งหมด", /data-dr-tab="all"/.test(ht));
-  t("แท็บบอกจำนวนในแต่ละหน้า", /data-dr-tab="port"[\s\S]{0,160}>2</.test(ht),
+  t("แท็บมีชื่อ Port / Top pick / DR ทั้งหมด",
+    /data-dr-tab="port"/.test(ht) && /data-dr-tab="pick"/.test(ht) && /data-dr-tab="all"/.test(ht));
+  t("ตัวเลขบนแท็บ Port = จำนวนที่จับคู่ได้ (1)", /data-dr-tab="port"[\s\S]{0,160}>1</.test(ht),
     (/data-dr-tab="port"[\s\S]{0,160}/.exec(ht) || [])[0]);
-
-  // สลับไปแท็บ Port: ต้องเห็นเฉพาะ 2 ตัวที่ติ๊ก
   t("กดแท็บ Port ได้", (function () {
     if (!clickAttr("data-dr-tab", "port")) return false;
     return win.ThaiDrPage._state.tab === "port";
   })(), win.ThaiDrPage._state.tab);
   var hPort = html();
-  t("แท็บ Port แสดงเฉพาะตัวที่ถืออยู่", (function () {
-    var n = (hPort.match(/data-dr-row="/g) || []).length;
-    return n === 2;
-  })(), (hPort.match(/data-dr-row="/g) || []).length);
+  t("แท็บ Port แสดงเฉพาะ DR ของหุ้นใน PM (1 แถว = AAPL)",
+    countOf(/data-dr-row="/g) === 1 && hPort.indexOf('data-dr-row="' + aaplKey + '"') >= 0,
+    countOf(/data-dr-row="/g));
+  t("หัวแท็บบอกที่มา: จาก AI Portfolio Manager · 3 หุ้น · มี DR ไทย 1 หุ้น (ไม่ต้องบอกแถวเมื่อเท่ากัน)",
+    /จาก AI Portfolio Manager · <b class="dr-num">3<\/b> หุ้น · มี DR ไทย <b class="dr-num">1<\/b> หุ้น <span/.test(hPort),
+    (/จาก AI Portfolio Manager[^<]*<b[^>]*>[^<]*<\/b>[^<]*<b[^>]*>[^<]*<\/b>[^<]*/.exec(hPort) || [])[0]);
+  t("บอกเวลาที่อ่านจาก PM", /อ่านเมื่อ \d\d:\d\d น\./.test(hPort), (/อ่านเมื่อ[^<]*/.exec(hPort) || [])[0]);
+  t("บอกหุ้นใน PM ที่ไม่มี DR ไทย: GOOG · NVDA",
+    /ไม่มี DR ไทยอ้างอิง <b>2<\/b> ตัว: GOOG · NVDA/.test(hPort),
+    (/ไม่มี DR ไทยอ้างอิง[^<]*<b>[^<]*<\/b>[^<]*/.exec(hPort) || [])[0]);
+  t("มีปุ่มอ่านจาก PM ใหม่", hPort.indexOf("data-dr-pmretry") >= 0);
+  t("ไม่มีปุ่มล้างทั้งหมดในแท็บ Port (ไม่ได้ติ๊กที่นี่)", hPort.indexOf("ล้างทั้งหมด") < 0);
   t("แท็บ Port ไม่แสดงตาราง DR ทั้งหมดซ้อนอยู่ด้วย",
-    (hPort.match(/dr-tablewrap/g) || []).length === 1,
-    (hPort.match(/dr-tablewrap/g) || []).length);
+    (hPort.match(/dr-tablewrap/g) || []).length === 1, (hPort.match(/dr-tablewrap/g) || []).length);
 
   // สลับไปแท็บ Top pick
   clickAttr("data-dr-tab", "pick");
@@ -980,37 +1219,6 @@ win.ThaiDrPage.load(false).then(function () {
     (html().match(/data-dr-row="/g) || []).length === win.ThaiDrPage._visible().length,
     [(html().match(/data-dr-row="/g) || []).length, win.ThaiDrPage._visible().length]);
 
-  // แท็บว่างต้องบอกวิธีใช้ ไม่ใช่เงียบ
-  (function () {
-    var saved = {}, k;
-    for (k in win.ThaiDrPage._state.port) {
-      if (Object.prototype.hasOwnProperty.call(win.ThaiDrPage._state.port, k)) saved[k] = 1;
-    }
-    for (k in saved) delete win.ThaiDrPage._state.port[k];
-    // ต้องสั่ง render เอง: clickAttr จะ return ทันทีถ้าแท็บนั้นเปิดอยู่แล้ว
-    // ถ้าพึ่ง clickAttr อย่างเดียว hEmpty จะเป็น HTML เก่าค้าง แล้วเทสต์ผ่านทั้งที่ของพัง
-    win.ThaiDrPage._state.tab = "port";
-    win.ThaiDrPage.render();
-    var hEmpty = html();
-    // ต้องตรวจว่า "เรนเดอร์ออกมาจริง" ไม่ใช่แค่มีข้อความอยู่ในไฟล์
-    // (ข้อความที่อยู่ใน <!-- comment --> ก็ match regex ได้ แต่ผู้ใช้ไม่เห็น)
-    t("แท็บ Port ว่าง → บอกวิธีเพิ่ม ไม่ใช่หน้าเปล่า",
-      /<section class="dr-card dr-empty-tab">[\s\S]{0,400}ยังไม่ได้[\s\S]{0,200}Port/.test(hEmpty),
-      (/dr-empty-tab[\s\S]{0,80}/.exec(hEmpty) || [])[0] || "(ไม่มีบล็อกว่างเลย)");
-    t("แท็บ Port ว่าง → ไม่แสดงตารางเปล่า", hEmpty.indexOf("dr-tablewrap") < 0,
-      (hEmpty.match(/dr-tablewrap/g) || []).length);
-    for (k in saved) win.ThaiDrPage._state.port[k] = true;
-    clickAttr("data-dr-tab", "all");
-  })();
-
-  // Port ต้องรอดข้ามการโหลดใหม่ เหมือน Top pick
-  t("Port ถูกบันทึกลง storage", (function () {
-    var raw = win.localStorage.getItem("thai_dr_port_v1");
-    if (!raw) return false;
-    var j = JSON.parse(raw);
-    return j[portA] === true && j[portB] === true;
-  })(), win.localStorage.getItem("thai_dr_port_v1"));
-
   // ---- ปุ่มโหลดราคาต้องมีในทุกแท็บ ----
   // ของจริงที่เจอ: เปิดแท็บ Top pick แล้วราคาเป็น "—" ทั้งสามช่อง
   // แต่ไม่มีปุ่มให้กดโหลด เพราะปุ่มอยู่ใน resultsBlock() ซึ่งเรียกเฉพาะแท็บ all
@@ -1021,9 +1229,9 @@ win.ThaiDrPage.load(false).then(function () {
 
     win.ThaiDrPage._state.tab = "pick";
     win.ThaiDrPage.render();
-    var hPick = html();
-    t("แท็บ Top pick มีปุ่มโหลดราคา", hPick.indexOf("data-dr-loadstats") >= 0,
-      (/โหลดราคา[^<]{0,20}/.exec(hPick) || [])[0] || "(ไม่มีปุ่มเลย)");
+    var hPick2 = html();
+    t("แท็บ Top pick มีปุ่มโหลดราคา", hPick2.indexOf("data-dr-loadstats") >= 0,
+      (/โหลดราคา[^<]{0,20}/.exec(hPick2) || [])[0] || "(ไม่มีปุ่มเลย)");
 
     win.ThaiDrPage._state.tab = "port";
     win.ThaiDrPage.render();
@@ -1031,32 +1239,40 @@ win.ThaiDrPage.load(false).then(function () {
     t("แท็บ Port มีปุ่มโหลดราคา", hPort2.indexOf("data-dr-loadstats") >= 0,
       (/โหลดราคา[^<]{0,20}/.exec(hPort2) || [])[0] || "(ไม่มีปุ่มเลย)");
 
-    // จำนวนบนปุ่มต้องเป็นของแท็บนั้น ไม่ใช่ทั้ง 361 ตัว
-    var nPort = win.ThaiDrPage._state.port
-      ? Object.keys(win.ThaiDrPage._state.port).length : 0;
+    // จำนวนบนปุ่มต้องเป็นของพอร์ต (1) ไม่ใช่ทั้งตาราง
+    var nPort = Object.keys(win.ThaiDrPage._state.port).length;
     t("ปุ่มในแท็บ Port บอกจำนวนเฉพาะตัวในพอร์ต ไม่ใช่ทั้งตาราง",
-      hPort2.indexOf("โหลดราคา " + nPort + " ตัว") >= 0,
+      nPort === 1 && hPort2.indexOf("โหลดราคา " + nPort + " ตัว") >= 0,
       [(/โหลดราคา [0-9]+ ตัว/.exec(hPort2) || [])[0], "ควรเป็น " + nPort]);
 
-    // กดปุ่มในแท็บ Port ต้องยิงเฉพาะตัวในพอร์ต
-    t("กดโหลดในแท็บ Port แล้วคิวมีเท่าจำนวนในพอร์ต", (function () {
-      if (!clickAttr("data-dr-loadstats", "1")) return "กดไม่ได้";
-      var run = win.ThaiDrPage._state.statsRun;
-      return !!run && run.total === nPort;
-    })() === true, (function () {
-      var r = win.ThaiDrPage._state.statsRun;
-      return r ? [r.total, "ควรเป็น " + nPort] : "ไม่มี statsRun";
-    })());
-
-    win.ThaiDrPage._state.statsRun = null;
+    // การกดปุ่มจริง (ยิง fetch) ทดสอบใน pmMirrorTests ซึ่งรอผลได้ — ที่นี่ห้ามกดแล้วทิ้ง statsRun
+    // ไม่งั้น callback ของ fetch ที่ค้างอยู่จะชน statsRun = null แล้วเทสต์ล้มทั้งไฟล์
     win.ThaiDrPage._state.stats = savedStats;
     win.ThaiDrPage._state.tab = "all";
     win.ThaiDrPage.render();
   })();
-  t("export ไฟล์สำรองมี port ไปด้วย", (function () {
+
+  // ของที่ไม่ใช่ของผู้ใช้ติ๊กเอง ต้องไม่ไปอยู่ในไฟล์สำรอง / storage
+  t("export ไฟล์สำรองไม่มี port (มาจาก PM ไม่ใช่ของที่ติ๊กเอง) แต่ยังมี picked/ignored", (function () {
     var snap = win.ThaiDrPage._exportPayload ? win.ThaiDrPage._exportPayload() : null;
     if (!snap) return "ไม่มี _exportPayload";
-    return !!(snap.port && snap.port[portA]);
+    return snap.port === undefined && !!snap.picked && !!snap.ignored;
+  })() === true);
+  t("ไม่เขียน thai_dr_port_v1 ลง storage อีก", win.localStorage.getItem("thai_dr_port_v1") === null,
+    win.localStorage.getItem("thai_dr_port_v1"));
+  t("คีย์เก่า thai_dr_port_v1 ที่ค้างในเครื่องถูกเมิน (ไม่อ่านกลับมาเป็น port)", (function () {
+    win.localStorage.setItem("thai_dr_port_v1", JSON.stringify({ "GHOST@The Nasdaq Stock Market": true }));
+    win.ThaiDrPage._hydrateTab();
+    var ok = !win.ThaiDrPage._state.port["GHOST@The Nasdaq Stock Market"] &&
+      Object.keys(win.ThaiDrPage._state.port).length === 1;
+    win.localStorage.removeItem("thai_dr_port_v1");
+    return ok;
+  })() === true, Object.keys(win.ThaiDrPage._state.port));
+  t("โค้ดหน้าเว็บไม่อ่าน thai_dr_port_v1 และไม่แตะมูลค่าเงินจาก PM (marketValue/costValue/averageCost)", (function () {
+    var src = fs.readFileSync(path.join(__dirname, "..", "public", "thai-dr-page.js"), "utf8")
+      .replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+    return src.indexOf("thai_dr_port_v1") < 0 && src.indexOf("PORT_KEY") < 0 &&
+      !/marketValue|costValue|averageCost|latestPrice/.test(src);
   })() === true);
 
   // ไม่ขึ้นกับตัวกรอง — นี่คือจุดสำคัญของฟีเจอร์
@@ -1389,11 +1605,14 @@ win.ThaiDrPage.load(false).then(function () {
 
   // แหล่งล่ม → ต้องเก็บของเดิมไว้ ไม่ใช่กลายเป็นหน้าว่าง
   var before = win.ThaiDrPage._state.view.assets.length;
-  nextResponse = { ok: false, status: 503, body: {
-    ok: false, rows: [], total: 0, degraded: true, complete: false,
-    reason: "ดึงทะเบียน DR จาก SET ไม่สำเร็จ (timeout) และไม่มี cache"
-  } };
-  return win.ThaiDrPage.load(true).then(function () {
+  // เทสต์กระจก PM (รอ fetch) ก่อน — จบแล้วต้องคืนสภาพให้ assets เท่า before
+  return pmMirrorTests().then(function () {
+    nextResponse = { ok: false, status: 503, body: {
+      ok: false, rows: [], total: 0, degraded: true, complete: false,
+      reason: "ดึงทะเบียน DR จาก SET ไม่สำเร็จ (timeout) และไม่มี cache"
+    } };
+    return win.ThaiDrPage.load(true);
+  }).then(function () {
     var he = html();
     t("แหล่งล่ม → ยังแสดงรายการเดิมไว้",
       win.ThaiDrPage._state.view.assets.length === before,

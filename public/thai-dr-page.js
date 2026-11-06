@@ -41,19 +41,26 @@
     showIgnored: true,     // false = ซ่อนไปเลย ไม่ใช่แค่ดันลงล่าง
     // สินทรัพย์ที่ติ๊ก "Top pick" → ยกขึ้นเป็นตารางแยกด้านบน
     picked: {},            // canonicalKey → true
-    // สินทรัพย์ที่ "ถืออยู่ในพอร์ตจริง" — คนละความหมายกับ Top pick
-    //   Top pick = กำลังสนใจ ยังไม่ได้ซื้อก็ได้
-    //   Port     = ถืออยู่จริง ต้องตามดูทุกวัน
-    // ติ๊กพร้อมกันทั้งสองอันได้ จึงแยก key ไม่ยุบรวม
-    port: {},              // canonicalKey → true
+    // แท็บ Port = กระจกของ AI Portfolio Manager (ผู้ใช้ 2026-11-05: "ยึด PM เป็นหลัก เพิ่ม/ลดที่ PM แล้วให้ตรงกันตลอด")
+    //   ไม่มีการติ๊กเองที่หน้านี้อีก — port[] คำนวณใหม่ทุกครั้งจากหุ้นธงแดงใน sleeve หุ้นต่างประเทศของ PM
+    //   (กติกาเดียวกับ buildInputs ของ portfolio-manager-page) จับคู่กับ DR ที่ providerTickerOf ให้ ticker หุ้นแม่ตรงกัน
+    port: {},              // canonicalKey → true (คำนวณจาก pm.holdings ไม่ได้เก็บลงเครื่อง)
+    pm: {
+      state: "idle",       // idle | loading | ok | error
+      holdings: [],        // [{ ticker, name }] หุ้นใน PM หลังกรอง sleeve
+      unmatched: [],       // ticker ใน PM ที่ไม่มี DR ไทยอ้างอิง
+      error: null,         // เหตุผลที่โหลดไม่สำเร็จ (ข้อความไทย)
+      at: null             // ISO เวลาโหลดสำเร็จล่าสุด
+    },
     // แท็บที่เปิดอยู่: "port" | "pick" | "all"
     tab: "all"
   };
 
   var IGNORE_KEY = "thai_dr_ignored_v1";
   var PICK_KEY = "thai_dr_toppick_v1";
-  var PORT_KEY = "thai_dr_port_v1";
+  // thai_dr_port_v1 (ติ๊กเองแบบเดิม) เลิกใช้แล้ว — ไม่อ่าน ไม่ลบ
   var TAB_KEY = "thai_dr_tab_v1";
+  var HOLDINGS_URL = "/api/portfolio-holdings";
 
   var STATS_KEY = "thai_dr_price_stats_v1";
   var STATS_TTL_MS = 12 * 60 * 60 * 1000;  // ราคาปิดรายวัน — วันละ 2 ครั้งพอ
@@ -184,6 +191,8 @@
     state.view = E().decorate(inv, state.sync || { drs: {} }, state.overrides, {
       today: todayYmd(), newWindowDays: NEW_WINDOW_DAYS
     });
+    // สินทรัพย์เปลี่ยน → จับคู่พอร์ตใหม่ (holdings ว่าง = port ว่าง)
+    recomputePort();
   }
 
   // ---------------- อัตราแลกเปลี่ยน ----------------
@@ -1082,13 +1091,9 @@
         (a.hasMissing ? ' <span class="dr-miss">มีตัวหาย</span>' : "") +
         (a.reviewStatus !== "needs-review" && !a.hasMissing
           ? '<span class="dr-badge dr-badge--accent">ปกติ</span>' : "") +
+        // ป้าย "ในพอร์ต" มาจาก AI Portfolio Manager — ไม่มีช่องติ๊กที่หน้านี้แล้ว
+        (inPort ? ' <span class="dr-badge dr-badge--positive dr-pm-badge" title="หุ้นนี้อยู่ใน AI Portfolio Manager">ในพอร์ต</span>' : "") +
         "</td>" +
-        // ติ๊ก "ถืออยู่ในพอร์ต" — แยกจาก Top pick เพราะคนละความหมาย
-        '<td class="dr-port-col"><label class="dr-port' + (inPort ? " is-on" : "") +
-        '" title="ติ๊กว่าถือตัวนี้อยู่ในพอร์ต">' +
-        '<input type="checkbox" data-dr-port="' + esc(a.canonicalKey) + '"' +
-        (inPort ? " checked" : "") + " />" +
-        '<span class="dr-portmark" aria-hidden="true">' + (inPort ? "●" : "○") + "</span></label></td>" +
         // ดาว Top pick — ติ๊กแล้วยกขึ้นตารางด้านบน
         '<td class="dr-pick-col"><label class="dr-pick' + (pick ? " is-on" : "") +
         '" title="ยกขึ้นตาราง Top pick">' +
@@ -1115,6 +1120,109 @@
       esc(label) + '<span class="dr-arrow">' + arrow + "</span></th>";
   }
 
+  // ---------------- Port = หุ้นใน AI Portfolio Manager ----------------
+  // อ่าน /api/portfolio-holdings เอง (หน้านี้ไม่โหลด data-snapshot/portfolio-core) แล้วกรองแบบเดียวกับ
+  // buildInputs ของ portfolio-manager-page: ธงแดง (isHolding) + sleeve foreign-stock เท่านั้น
+  //   ไม่มี bucket → .BK = thai-stock · BTC = bitcoin · RMF/SSF/กองทุน = thai-fund · ที่เหลือ foreign-stock
+  //   GOOGL → GOOG ตามที่ PM ใช้
+  function pmCanonical(t) {
+    return String(t || "").replace(/^\s+|\s+$/g, "").toUpperCase();
+  }
+  function pmBucketOf(h, raw) {
+    if (h.portfolioBucket) return h.portfolioBucket;
+    if (/\.BK$/.test(raw)) return "thai-stock";
+    if (raw.indexOf("BTC") >= 0) return "bitcoin";
+    var isThaiFund = /RMF|SSF/i.test(raw) || /THAI_MUTUAL_FUND|MUTUAL/i.test(String(h.assetType || ""));
+    return isThaiFund ? "thai-fund" : "foreign-stock";
+  }
+  // rows ดิบจาก API → [{ ticker, name }] เรียงตามลำดับเดิม ไม่ซ้ำ
+  function pmHoldingsOf(rows) {
+    var out = [], seen = {};
+    for (var i = 0; i < (rows || []).length; i++) {
+      var h = rows[i];
+      if (!h || !h.isHolding) continue;
+      var raw = pmCanonical(h.canonicalSymbol || h.ticker);
+      if (!raw) continue;
+      if (pmBucketOf(h, raw) !== "foreign-stock") continue;
+      var key = raw === "GOOGL" ? "GOOG" : raw;
+      if (seen[key]) continue;
+      seen[key] = 1;
+      out.push({ ticker: key, name: h.assetName || key });
+    }
+    return out;
+  }
+  // ticker หุ้นแม่ของสินทรัพย์ DR — จาก providerTickerOf (URL ทางการของ SET / CONFIRMED_TICKERS) เท่านั้น
+  // GOOGL ที่ SET ลิงก์ไป → GOOG ให้ตรงกับคีย์ของ PM
+  function assetParentTicker(asset) {
+    var row = null;
+    for (var i = 0; i < (state.rows || []).length; i++) {
+      if (state.rows[i].underlying === asset.underlyingSymbol &&
+          state.rows[i].underlyingExchange === asset.underlyingMarket) { row = state.rows[i]; break; }
+    }
+    var tk = row ? E().providerTickerOf(row) : null;
+    if (!tk || !tk.ticker) return null;
+    var t = pmCanonical(tk.ticker);
+    return t === "GOOGL" ? "GOOG" : t;
+  }
+  // คำนวณ state.port + state.pm.unmatched ใหม่จาก holdings ปัจจุบันกับสินทรัพย์ที่มี
+  function recomputePort() {
+    var port = {}, hit = {};
+    var want = {};
+    // holdings มักมาก่อนทะเบียน DR (เล็กกว่ามาก) → ตอนนั้น state.view ยัง null ห้ามล้ม
+    // (เจอจริงใน Chrome: TypeError ตรงนี้ทำให้แท็บ Port ขึ้น error ทั้งที่ PM ตอบปกติ)
+    var assets = (state.view && state.view.assets) || [];
+    for (var i = 0; i < state.pm.holdings.length; i++) want[state.pm.holdings[i].ticker] = 1;
+    for (var j = 0; j < assets.length; j++) {
+      var a = assets[j];
+      var t = assetParentTicker(a);
+      if (t && want[t]) { port[a.canonicalKey] = true; hit[t] = 1; }
+    }
+    var un = [];
+    for (var k = 0; k < state.pm.holdings.length; k++) {
+      if (!hit[state.pm.holdings[k].ticker]) un.push(state.pm.holdings[k].ticker);
+    }
+    state.port = port;
+    state.pm.unmatched = un;
+  }
+  function failText(r, e) {
+    if (e) return /Failed to fetch|NetworkError|network/i.test(String((e && e.message) || e)) ? "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้" : String((e && e.message) || e || "ไม่ทราบสาเหตุ");
+    if (r && r.status === 401) return "ต้องใส่รหัสผ่านก่อน (HTTP 401)";
+    return "HTTP " + (r ? r.status : "?");
+  }
+  var pmSeq = 0;
+  // โหลดรายการหุ้นจาก PM · ล้มเหลว = บอกตรง ๆ ไม่เงียบ ไม่ใช้ค่าเก่าแบบไม่บอก
+  function loadPm() {
+    var seq = ++pmSeq;
+    state.pm.state = "loading";
+    state.pm.error = null;
+    render();
+    var p;
+    try { p = fetch(HOLDINGS_URL, { cache: "no-store" }); } catch (e) { p = Promise.reject(e); }
+    // .then → .then → .catch ต่อกัน: ข้อผิดพลาดในขั้นแปลงคำตอบต้องตกมาที่ catch ด้วย
+    // (ถ้าใช้ .then(ok, err) ข้อยกเว้นใน ok จะหลุดเป็น unhandled rejection แล้วแท็บค้างที่ "กำลังอ่าน…")
+    return p.then(function (r) {
+      if (!r || !r.ok) throw { res: r || null };
+      return r.json();
+    }).then(function (body) {
+      if (seq !== pmSeq) return;
+      var rows = body && Array.isArray(body.data) ? body.data : (Array.isArray(body) ? body : null);
+      if (!rows) throw { res: { status: "รูปแบบคำตอบไม่ถูกต้อง" } };
+      state.pm.holdings = pmHoldingsOf(rows);
+      state.pm.state = "ok";
+      state.pm.at = new Date().toISOString();
+      recomputePort();
+      render();
+    })["catch"](function (err) {
+      if (seq !== pmSeq) return;
+      var hasRes = !!err && Object.prototype.hasOwnProperty.call(err, "res");
+      state.pm.state = "error";
+      state.pm.error = hasRes ? failText(err.res, null) : failText(null, err);
+      state.pm.holdings = [];
+      recomputePort();
+      render();
+    });
+  }
+
   // รายการที่ติ๊กไว้ ไม่ว่าจะเป็น Port หรือ Top pick
   // ตั้งใจให้ "ไม่ขึ้นกับตัวกรอง": กรองยังไงรายการที่ติ๊กไว้ก็ยังอยู่ครบ
   // เพราะจุดประสงค์คือ "โฟกัสรายการที่เลือกไว้" ไม่ใช่ผลการค้นหา
@@ -1130,7 +1238,7 @@
   // แท็บ 3 หน้า — Port / Top pick / DR ทั้งหมด
   // ตัวเลขบนแท็บมาจากของที่ติ๊กไว้จริง ไม่ใช่ผลการกรอง จึงไม่กระพริบตามการค้นหา
   var TABS = [
-    { id: "port", label: "Port", hint: "ถืออยู่จริง" },
+    { id: "port", label: "Port", hint: "หุ้นใน AI Portfolio Manager" },
     { id: "pick", label: "Top pick", hint: "กำลังสนใจ" },
     { id: "all", label: "DR ทั้งหมด", hint: "" }
   ];
@@ -1153,9 +1261,67 @@
 
   // เนื้อหาของแท็บที่เปิดอยู่
   function tabBody(list) {
-    if (state.tab === "port") return markedBody(state.port, "Port", "ถือ");
+    if (state.tab === "port") return portBody();
     if (state.tab === "pick") return markedBody(state.picked, "Top pick", "ติ๊กดาว");
     return resultsBlock(list) + tableBlock(list);
+  }
+
+  // แท็บ Port — กระจกของ AI Portfolio Manager
+  // ทุกสถานะต้องบอกตรง ๆ ว่ากำลังรออะไร/พังเพราะอะไร ห้ามเป็นตารางเปล่าเงียบ ๆ
+  function portBody() {
+    var pm = state.pm;
+    var rows = markedAssets(state.port);
+    var retry = '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm" data-dr-pmretry="1">' +
+      ico(ICON.refresh) + "อ่านจาก AI Portfolio Manager ใหม่</button>";
+    var pmLink = '<a class="dr-pm-link" href="/portfolio-manager">เปิด AI Portfolio Manager</a>';
+    if (pm.state === "error") {
+      return '<section class="dr-card dr-empty-tab dr-pm-error">' +
+        "<h3>อ่านหุ้นจาก AI Portfolio Manager ไม่สำเร็จ</h3>" +
+        "<p>" + esc(pm.error || "ไม่ทราบสาเหตุ") + " — แท็บนี้จึงยังไม่รู้ว่าพอร์ตมีหุ้นอะไร</p>" +
+        '<p class="dr-pm-actions">' + retry + "</p></section>";
+    }
+    if (pm.state !== "ok") {
+      return '<section class="dr-card dr-empty-tab">' +
+        "<h3>กำลังอ่านหุ้นจาก AI Portfolio Manager…</h3>" +
+        "<p>แท็บนี้แสดง DR ของหุ้นที่ติดธงแดงในกลุ่มหุ้นต่างประเทศของ AI Portfolio Manager</p></section>";
+    }
+    if (!pm.holdings.length) {
+      return '<section class="dr-card dr-empty-tab">' +
+        "<h3>ยังไม่มีหุ้นธงแดงในกลุ่มหุ้นต่างประเทศใน AI Portfolio Manager</h3>" +
+        "<p>เพิ่มหรือติดธงแดงหุ้นที่ AI Portfolio Manager แล้วกลับมาโหลดใหม่ แท็บนี้จะตามให้เอง</p>" +
+        '<p class="dr-pm-actions">' + pmLink + " " + retry + "</p></section>";
+    }
+    if (state.loading && !(state.view.assets || []).length) {
+      return '<section class="dr-card dr-empty-tab">' +
+        "<h3>กำลังโหลดทะเบียน DR…</h3>" +
+        "<p>ได้หุ้นจาก AI Portfolio Manager แล้ว " + pm.holdings.length + " ตัว รอทะเบียน DR เพื่อจับคู่</p></section>";
+    }
+    var un = pm.unmatched || [];
+    var unLine = un.length
+      ? '<p class="dr-pm-unmatched">ไม่มี DR ไทยอ้างอิง <b>' + un.length + "</b> ตัว: " + esc(un.join(" · ")) + "</p>"
+      : "";
+    if (!rows.length) {
+      return '<section class="dr-card dr-empty-tab">' +
+        "<h3>หุ้นใน AI Portfolio Manager " + pm.holdings.length + " ตัว ยังไม่มี DR ไทยอ้างอิงเลย</h3>" +
+        unLine +
+        '<p class="dr-pm-actions">' + pmLink + " " + retry + "</p></section>";
+    }
+    // นับ "หุ้นที่มี DR" แยกจาก "แถว" — หุ้นเดียวมีได้หลายสินทรัพย์อ้างอิง (GOOG กับ GOOGL ของ SET ต่างคลาสกัน
+    // แต่ PM นับเป็น GOOG ตัวเดียว) ถ้าบอกแค่จำนวนแถว ผู้ใช้จะอ่านว่า "5 หุ้นมี DR" ทั้งที่มี 4
+    var hitStocks = pm.holdings.length - un.length;
+    return '<div class="dr-results dr-results--pm"><span>จาก AI Portfolio Manager · <b class="dr-num">' +
+      pm.holdings.length + "</b> หุ้น · มี DR ไทย <b class=\"dr-num\">" + hitStocks + "</b> หุ้น" +
+      (rows.length !== hitStocks ? " (" + rows.length + " แถว)" : "") +
+      (pm.at ? ' <span class="dr-pm-at">อ่านเมื่อ ' + esc(thTime(pm.at)) + "</span>" : "") + "</span>" +
+      // ปุ่มโหลดราคาต้องมีที่นี่ด้วย ไม่งั้นแท็บนี้เห็นราคาเป็น "—" แล้วกดอะไรไม่ได้
+      priceButton(rows) + retry + "</div>" +
+      unLine + tableBlock(rows, true);
+  }
+  function thTime(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    var h = d.getHours(), m = d.getMinutes();
+    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m + " น.";
   }
 
   // รายการที่ "แท็บที่เปิดอยู่" แสดงจริง — ใช้เป็นฐานเดียวกันทั้งการวาดปุ่ม
@@ -1180,9 +1346,7 @@
       rows.length + "</b> รายการ · ไม่ขึ้นกับตัวกรอง</span>" +
       // ปุ่มโหลดราคาต้องมีที่นี่ด้วย ไม่งั้นแท็บนี้เห็นราคาเป็น "—" แล้วกดอะไรไม่ได้
       priceButton(rows) +
-      (map === state.picked
-        ? '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clearpicks="1">ล้างทั้งหมด</button>'
-        : '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clearport="1">ล้างทั้งหมด</button>') +
+      '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clearpicks="1">ล้างทั้งหมด</button>' +
       "</div>" + tableBlock(rows, true);
   }
 
@@ -1250,7 +1414,6 @@
         "เพราะ ATH ของมันคือสูงสุดเท่าที่มีข้อมูล เทียบกับตัวอื่นไม่ได้") +
       th("ลงจาก ATH 1 ปี", "fromAth1y", "dr-num-cell") +
       th("จดทะเบียนล่าสุด", "newest") + th("สถานะ", "status") +
-      '<th class="dr-port-col" title="ติ๊กว่าถือตัวนี้อยู่จริง แล้วดูรวมกันในแท็บ Port">Port</th>' +
       '<th class="dr-pick-col" title="ติ๊กเพื่อยกขึ้นตาราง Top pick ด้านบน">Top pick</th>' +
       '<th class="dr-ign-col" title="ติ๊กเพื่อดันไปท้ายตาราง">ไม่สนใจ</th>' +
       "</tr></thead><tbody>";
@@ -1405,7 +1568,8 @@
   function wire(root) {
     var i;
     var rl = root.querySelectorAll("[data-dr-reload]");
-    for (i = 0; i < rl.length; i++) rl[i].addEventListener("click", function () { load(true); });
+    // "โหลดใหม่" ต้องอ่านพอร์ตจาก PM ใหม่ด้วย — ผู้ใช้เพิ่ม/ลดหุ้นที่ PM แล้วกดปุ่มนี้คาดว่าแท็บ Port จะตาม
+    for (i = 0; i < rl.length; i++) rl[i].addEventListener("click", function () { load(true); loadPm(); });
 
     var ex = root.querySelectorAll("[data-dr-export]");
     for (i = 0; i < ex.length; i++) ex[i].addEventListener("click", exportAll);
@@ -1469,29 +1633,9 @@
       });
     }
 
-    // ติ๊ก "ถืออยู่ในพอร์ต" — กลไกเดียวกับ Top pick แต่คนละ key
-    var pt = root.querySelectorAll("[data-dr-port]");
-    for (i = 0; i < pt.length; i++) {
-      (function (el) {
-        var k = el.getAttribute("data-dr-port");
-        el.addEventListener("click", function (ev) { ev.stopPropagation(); });
-        el.addEventListener("change", function (ev) {
-          ev.stopPropagation();
-          if (el.checked) state.port[k] = true;
-          else delete state.port[k];
-          writeJson(PORT_KEY, state.port);
-          render();
-        });
-      })(pt[i]);
-    }
-    var cpo = root.querySelectorAll("[data-dr-clearport]");
-    for (i = 0; i < cpo.length; i++) {
-      cpo[i].addEventListener("click", function () {
-        state.port = {};
-        writeJson(PORT_KEY, state.port);
-        render();
-      });
-    }
+    // อ่านหุ้นจาก AI Portfolio Manager ใหม่ (แท็บ Port)
+    var pr = root.querySelectorAll("[data-dr-pmretry]");
+    for (i = 0; i < pr.length; i++) pr[i].addEventListener("click", function () { loadPm(); });
 
     // สลับแท็บ — จำไว้ข้ามการโหลดหน้า เพราะคนที่ถือพอร์ตอยู่มักเปิดมาดูแท็บเดิมทุกวัน
     var tb = root.querySelectorAll("[data-dr-tab]");
@@ -1672,8 +1816,8 @@
       sync: state.sync || null,
       overrides: state.overrides || {},
       ignored: state.ignored || {},
-      picked: state.picked || {},
-      port: state.port || {}
+      picked: state.picked || {}
+      // port ไม่ส่งออก — คำนวณจาก AI Portfolio Manager ทุกครั้ง ไม่ใช่ของที่ผู้ใช้ติ๊กที่หน้านี้
     };
   }
 
@@ -1713,16 +1857,7 @@
             }
             writeJson(PICK_KEY, state.picked);
           }
-          // รายการในพอร์ต รวมกับของเดิม ไม่ทับทิ้ง
-          if (j && j.port && typeof j.port === "object") {
-            var po2;
-            for (po2 in j.port) {
-              if (Object.prototype.hasOwnProperty.call(j.port, po2) && j.port[po2]) {
-                state.port[po2] = true;
-              }
-            }
-            writeJson(PORT_KEY, state.port);
-          }
+          // j.port จากไฟล์สำรองรุ่นเก่า (ติ๊กเอง) ไม่นำเข้า — พอร์ตมาจาก AI Portfolio Manager แล้ว
           // รายการ "ไม่สนใจ" รวมกับของเดิม ไม่ทับทิ้ง
           if (j && j.ignored && typeof j.ignored === "object") {
             var ik;
@@ -1774,9 +1909,7 @@
     var pk = readJson(PICK_KEY);
     if (pk && typeof pk === "object") state.picked = pk;
   }
-  function hydratePort() {
-    var po = readJson(PORT_KEY);
-    if (po && typeof po === "object") state.port = po;
+  function hydrateTab() {
     // แท็บที่เปิดค้างไว้ครั้งก่อน — ค่าที่ไม่รู้จักให้ตกกลับเป็น "all"
     var tb = null;
     try { tb = localStorage.getItem(TAB_KEY); } catch (e) { tb = null; }
@@ -1786,10 +1919,11 @@
   function boot() {
     hydrateStats();   // ราคาที่เคยโหลดไว้ (อายุไม่เกิน 12 ชม.) ใช้ต่อได้เลย
     hydrateIgnored();
-    hydratePort();
+    hydrateTab();
     hydratePicked();
     render();
     load(false);
+    loadPm();         // พอร์ตจาก AI Portfolio Manager — ยิงคู่กับทะเบียน DR ใครมาก่อนรออีกฝั่งใน buildView/recomputePort
   }
 
   window.ThaiDrPage = {
@@ -1798,7 +1932,9 @@
     _loadQuote: loadQuote, _loadFx: loadFx, _visible: visibleAssets,
     _loadStats: loadAllStats, _loadStatsFor: loadStatsFor, _hydrateStats: hydrateStats,
     _hydrateIgnored: hydrateIgnored, _hydratePicked: hydratePicked,
-    _hydratePort: hydratePort, _exportPayload: exportPayload
+    _hydrateTab: hydrateTab, _exportPayload: exportPayload,
+    _loadPm: loadPm, _pmHoldingsOf: pmHoldingsOf, _recomputePort: recomputePort,
+    _assetParentTicker: assetParentTicker
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();

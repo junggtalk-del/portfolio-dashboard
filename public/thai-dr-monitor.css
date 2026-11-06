@@ -572,23 +572,23 @@ html[data-theme="light"] .dr-page {
 .dr-empty-tab h3 { margin: 0; font: 600 15px/22px var(--font-sans); color: var(--text); }
 .dr-empty-tab p { margin: var(--space-2) 0 0; font-size: 13px; line-height: 20px; color: var(--text-muted); }
 
-/* ---- คอลัมน์ Port ---- */
-/* ใช้ --accent (เขียวน้ำทะเล) ส่วน Top pick ใช้ --highlight (ทอง)
-   คนละสีเพราะติ๊กพร้อมกันได้ ต้องแยกออกจากกันด้วยตาในแถวเดียว */
-.dr-port-col { width: 60px; text-align: center; }
-.dr-table thead th.dr-port-col { text-align: center; }
-.dr-port {
-  display: inline-grid; place-items: center; width: 28px; height: 28px;
-  border-radius: var(--radius-sm); cursor: pointer; position: relative;
-}
-.dr-port:hover { background: var(--surface-2); }
-.dr-port input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; }
-.dr-portmark { font-size: 15px; line-height: 1; color: var(--text-subtle); }
-.dr-port.is-on .dr-portmark { color: var(--accent); }
-.dr-port:hover .dr-portmark { color: var(--accent); }
-.dr-port input:focus-visible + .dr-portmark { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* แถวที่ถือในพอร์ต — เส้นเขียวน้ำทะเล ชนะเส้นทองของ Top pick เพราะถือจริงสำคัญกว่า */
+/* ---- Port = หุ้นใน AI Portfolio Manager ---- */
+/* ไม่มีช่องติ๊กแล้ว — แถวที่อยู่ในพอร์ตได้ป้าย "ในพอร์ต" + เส้นเขียวน้ำทะเลซ้ายแถว
+   (ชนะเส้นทองของ Top pick เพราะถือจริงสำคัญกว่า) */
+.dr-pm-badge { margin-left: 4px; }
 .dr-table tbody tr.dr-row--port td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.dr-results--pm { flex-wrap: wrap; }
+.dr-pm-at { color: var(--text-subtle); font-size: 12px; }
+.dr-pm-unmatched {
+  margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  font-size: 13px; line-height: 20px; color: var(--text-muted);
+}
+.dr-empty-tab .dr-pm-unmatched { display: inline-block; margin: var(--space-3) auto 0; text-align: left; }
+.dr-pm-unmatched b { color: var(--text); font-weight: 600; }
+.dr-pm-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; align-items: center; }
+.dr-pm-link { color: var(--accent); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.dr-pm-error h3 { color: var(--negative); }
 
 /* ---- คอลัมน์ Top pick + ตารางแยก ---- */
 .dr-pick-col { width: 76px; text-align: center; }
