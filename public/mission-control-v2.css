@@ -325,51 +325,130 @@
 .mcx-reload-foot { font-size: 10.5px; color: var(--mc-muted); margin-top: 8px; line-height: 1.5; }
 .mcx-reload-foot code { font-family: ui-monospace, monospace; font-size: 10px; background: rgba(148, 163, 184, 0.15); border-radius: 4px; padding: 1px 5px; }
 
-/* ---------------- home: กฎ 3 ข้อบอกอะไรวันนี้ (home-rules-page.js) ----------------
-   โทนเดียวกับการ์ดอื่นบน home · สีมีความหมาย: ฝั่งซื้อ = เขียว · ฝั่งขาย = แดง · ไม่มีกฎบอก = เทา */
-.hr-card { border: 1px solid var(--mc-border); border-radius: 22px; background: var(--mc-card); padding: 22px 26px; margin-bottom: 20px; box-shadow: var(--mc-shadow); }
-.hr-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
-.hr-title { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
-.hr-sub-t { margin: 4px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--mc-text-2); max-width: 72ch; }
-.hr-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.hr-when { font-size: 12px; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
-.hr-btn { min-height: 36px; }
-.hr-rows { display: grid; gap: 8px; }
-.hr-row { display: grid; grid-template-columns: 150px 150px repeat(3, minmax(0, 1fr)) 170px; align-items: start; gap: 12px; padding: 11px 14px; border-radius: 14px; background: var(--mc-elevated); border: 1px solid var(--mc-border); }
-.hr-row.is-err, .hr-row.is-loading { grid-template-columns: 150px 1fr; }
-.hr-sym { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.hr-sym-link { font-size: 16px; font-weight: 800; color: var(--mc-text); text-decoration: none; }
-.hr-sym-link:hover { text-decoration: underline; }
-.hr-src { font-size: 11px; color: var(--mc-muted); }
-.hr-price { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-variant-numeric: tabular-nums; }
-.hr-price b { font-size: 15px; font-weight: 800; }
-.hr-price small { font-size: 11px; color: var(--mc-muted); }
-.hr-warn { color: var(--mc-amber); font-weight: 700; }
-.hr-rule { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.hr-k { font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mc-muted); }
-.hr-chip { display: inline-flex; align-items: center; align-self: flex-start; font-size: 12px; font-weight: 800; line-height: 1.4; border-radius: 999px; padding: 3px 10px; border: 1px solid var(--mc-border); color: var(--mc-text-2); background: color-mix(in srgb, currentColor 8%, transparent); }
-.hr-chip.is-buy { color: var(--mc-emerald); border-color: color-mix(in srgb, var(--mc-emerald) 45%, transparent); }
-.hr-chip.is-sell { color: var(--mc-red); border-color: color-mix(in srgb, var(--mc-red) 45%, transparent); }
-.hr-sub { font-size: 11px; line-height: 1.5; color: var(--mc-muted); overflow-wrap: anywhere; }
-.hr-na { font-size: 12px; color: var(--mc-muted); }
-.hr-sum { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
-.hr-side { display: inline-flex; font-size: 12px; font-weight: 800; border-radius: 9px; padding: 4px 10px; }
-.hr-side.is-buy { color: var(--mc-emerald); background: color-mix(in srgb, var(--mc-card), var(--mc-emerald) 18%); }
-.hr-side.is-sell { color: var(--mc-red); background: color-mix(in srgb, var(--mc-card), var(--mc-red) 18%); }
-.hr-side.is-none { color: var(--mc-muted); background: color-mix(in srgb, var(--mc-card), var(--mc-muted) 14%); }
-.hr-msg { font-size: 12.5px; color: var(--mc-text-2); align-self: center; }
-.hr-row.is-err .hr-msg { color: var(--mc-red); }
-.hr-empty, .hr-note { font-size: 12.5px; color: var(--mc-muted); padding: 8px 2px; line-height: 1.6; }
-.hr-foot { margin: 12px 0 0; font-size: 11px; line-height: 1.6; color: var(--mc-muted); }
-.hr-foot a { color: var(--mc-cyan); }
-@media (max-width: 1100px) {
-  .hr-row { grid-template-columns: 1fr 1fr; }
-  .hr-row.is-err, .hr-row.is-loading { grid-template-columns: 1fr; }
-  .hr-sum { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
+/* ---------------- home: กล่อง Action "ต้องทำอะไรวันนี้" (home-action-page.js) ----------------
+   การ์ดต่อหุ้น เฉพาะตัวที่กฎเพิ่งพูดใน 3 วันหลังสุด · หัวการ์ด + บรรทัดกฎ 3 บรรทัด (ป้ายกฎ · ซื้อ/ขาย · ข้อความ · ปุ่ม)
+   สีมีความหมาย: ซื้อ = เขียว · ขาย = แดง · ไม่มีสัญญาณใหม่ = เทา · ติ๊กแล้ว = จาง · ดึงราคาไม่ได้ = แดงอ่อน */
+.ha-box { border: 1px solid var(--mc-border); border-radius: 22px; background: var(--mc-card); padding: 22px 26px; margin-bottom: 20px; box-shadow: var(--mc-shadow); }
+.ha-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.ha-head-main { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; min-width: 0; }
+.ha-title { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
+.ha-count { font-size: 12.5px; font-weight: 700; color: var(--mc-text-2); }
+.ha-count b { color: var(--mc-text); font-variant-numeric: tabular-nums; }
+.ha-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ha-when { font-size: 12px; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
+.ha-btn { min-height: 36px; }
+.ha-sub { margin: 6px 0 14px; font-size: 12.5px; line-height: 1.6; color: var(--mc-text-2); max-width: 80ch; }
+.ha-docerr { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; font-size: 12.5px; line-height: 1.5; color: var(--mc-amber); border: 1px solid var(--mc-border-warning); background: color-mix(in srgb, var(--mc-card), var(--mc-amber) 8%); }
+.ha-cards { display: grid; gap: 10px; }
+.ha-card { display: grid; border: 1px solid var(--mc-border); border-radius: 16px; background: var(--mc-elevated); padding: 2px 16px 4px; }
+.ha-card-head { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; padding: 10px 0 8px; }
+.ha-sym { font-size: 16px; font-weight: 800; color: var(--mc-text); text-decoration: none; }
+.ha-sym:hover { text-decoration: underline; }
+.ha-src { font-size: 11px; color: var(--mc-muted); }
+.ha-px { font-size: 12px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.ha-px b { color: var(--mc-text); font-weight: 800; }
+.ha-due { font-size: 11px; font-weight: 800; color: var(--mc-amber); border: 1px solid var(--mc-border-warning); border-radius: 999px; padding: 2px 9px; }
+.ha-warn { font-size: 11px; font-weight: 700; color: var(--mc-amber); }
+.ha-rule { display: grid; grid-template-columns: 64px 84px 1fr auto; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--mc-border); }
+.ha-k { display: flex; flex-direction: column; font-size: 12px; font-weight: 800; line-height: 1.3; color: var(--mc-text-2); }
+.ha-k small { font-size: 10.5px; font-weight: 700; color: var(--mc-muted); }
+.ha-act { display: inline-flex; align-items: center; justify-content: center; justify-self: start; min-width: 56px; font-size: 13px; font-weight: 800; line-height: 1.3; border-radius: 9px; padding: 5px 12px; }
+.ha-act.is-buy { color: var(--mc-emerald); background: color-mix(in srgb, var(--mc-card), var(--mc-emerald) 18%); }
+.ha-act.is-sell { color: var(--mc-red); background: color-mix(in srgb, var(--mc-card), var(--mc-red) 18%); }
+.ha-act.is-none { color: var(--mc-faint); font-weight: 600; }
+.ha-what { min-width: 0; font-size: 13px; line-height: 1.5; color: var(--mc-text); overflow-wrap: anywhere; }
+.ha-rule.is-quiet .ha-what { font-size: 12.5px; color: var(--mc-muted); }
+.ha-rule.is-answered { opacity: 0.6; }
+.ha-rule.is-editing { opacity: 1; }
+.ha-ans { font-weight: 800; }
+/* ฟอร์ม inline ใต้บรรทัดกฎ (ทำแล้ว / แก้): กางเต็มบรรทัด · ช่องราคา · เงินที่ซื้อ (ฝั่งซื้อ) · บันทึก/ยกเลิก */
+.ha-form { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; margin-top: 2px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--mc-border); background: var(--mc-card); }
+.ha-form-row { flex-basis: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; font-size: 12.5px; color: var(--mc-text-2); }
+.ha-form-row b { color: var(--mc-text); }
+.ha-form-note { font-size: 12.5px; line-height: 1.5; color: var(--mc-text-2); align-self: center; }
+.ha-field { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 700; color: var(--mc-text-2); }
+.ha-in { width: 150px; min-height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--mc-border); background: var(--mc-elevated); color: var(--mc-text); font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; }
+.ha-field.is-wide .ha-in { width: 240px; }
+.ha-in:focus-visible { outline: 2px solid var(--mc-cyan); outline-offset: 1px; }
+.ha-form-err { flex-basis: 100%; font-size: 12px; font-weight: 700; color: var(--mc-red); }
+.ha-form .ha-btns { margin-left: auto; }
+.ha-sync { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; color: var(--mc-amber); overflow-wrap: anywhere; }
+.ha-sync.is-err { color: var(--mc-red); }
+.ha-btns { display: flex; gap: 6px; justify-content: flex-end; }
+.ha-b { min-height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--mc-border); background: var(--mc-card); color: var(--mc-text); font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+.ha-b:hover:not(:disabled) { border-color: var(--mc-border-active); }
+.ha-b:focus-visible { outline: 2px solid var(--mc-cyan); outline-offset: 2px; }
+.ha-b.is-done { color: var(--mc-emerald); border-color: color-mix(in srgb, var(--mc-emerald) 45%, transparent); }
+.ha-b:disabled { opacity: 0.45; cursor: not-allowed; }
+.ha-empty { font-size: 13px; line-height: 1.6; color: var(--mc-text-2); padding: 14px 16px; border-radius: 14px; border: 1px dashed var(--mc-border); }
+.ha-quiet, .ha-note { margin: 10px 2px 0; font-size: 12px; line-height: 1.6; color: var(--mc-muted); }
+.ha-err { margin-top: 8px; padding: 8px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.5; color: var(--mc-red); background: color-mix(in srgb, var(--mc-card), var(--mc-red) 9%); overflow-wrap: anywhere; }
+.ha-foot { margin: 14px 0 0; font-size: 11px; line-height: 1.6; color: var(--mc-muted); }
+.ha-foot a { color: var(--mc-cyan); }
+/* สรุปผล + ประวัติ (พับได้ ใต้การ์ด): หัว <summary> · ปุ่มช่วงวัดผล 7/30 · 4 ช่อง · ตารางประวัติ (เลื่อนแนวนอนได้)
+   เงินเป็นข้อความ ฿… สีกลาง ๆ — ป้ายไทย (ได้/เสีย/พลาด/เลี่ยงได้) บอกทิศ ไม่ใช้สีแทนความหมาย */
+.ha-summary { margin-top: 16px; border: 1px solid var(--mc-border); border-radius: 16px; background: var(--mc-elevated); }
+.ha-sum-head { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; padding: 12px 16px; cursor: pointer; list-style: none; border-radius: 16px; }
+.ha-sum-head::-webkit-details-marker { display: none; }
+.ha-sum-head::before { content: "▸"; color: var(--mc-muted); transition: transform 0.15s; }
+.ha-summary[open] > .ha-sum-head::before { transform: rotate(90deg); }
+.ha-sum-head:focus-visible { outline: 2px solid var(--mc-cyan); outline-offset: 2px; }
+.ha-sum-title { font-size: 14px; font-weight: 800; color: var(--mc-text); }
+.ha-sum-count { font-size: 12px; font-weight: 700; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
+.ha-sum-body { padding: 0 16px 14px; }
+.ha-sum-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12.5px; color: var(--mc-text-2); }
+.ha-hz { display: inline-flex; border: 1px solid var(--mc-border); border-radius: 10px; overflow: hidden; }
+.ha-hz-b { min-height: 32px; padding: 0 14px; border: 0; background: transparent; color: var(--mc-text-2); font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+.ha-hz-b + .ha-hz-b { border-left: 1px solid var(--mc-border); }
+.ha-hz-b[aria-pressed="true"] { background: var(--mc-card); color: var(--mc-text); }
+.ha-hz-b:focus-visible { outline: 2px solid var(--mc-cyan); outline-offset: -2px; }
+.ha-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ha-kpi { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--mc-border); background: var(--mc-card); font-size: 12px; line-height: 1.45; color: var(--mc-text-2); }
+.ha-kpi-k { font-size: 11.5px; font-weight: 800; color: var(--mc-muted); }
+.ha-kpi-n { font-size: 18px; font-weight: 800; color: var(--mc-text); font-variant-numeric: tabular-nums; }
+.ha-kpi-v { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ha-kpi-v.is-dim { color: var(--mc-muted); }
+.ha-kpi-m { font-size: 13px; font-weight: 800; color: var(--mc-text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ha-kpi-rule { font-variant-numeric: tabular-nums; }
+.ha-kpi-rule b { color: var(--mc-text); }
+.ha-kpi-rule small { color: var(--mc-muted); }
+.ha-sum-note { margin: 10px 2px 12px; font-size: 11.5px; line-height: 1.6; color: var(--mc-muted); }
+.ha-histwrap { overflow-x: auto; }
+.ha-hist { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.ha-hist th { text-align: left; font-size: 11px; font-weight: 800; color: var(--mc-muted); padding: 6px 8px; border-bottom: 1px solid var(--mc-border); white-space: nowrap; }
+.ha-hist td { padding: 8px; border-bottom: 1px solid var(--mc-border); vertical-align: middle; color: var(--mc-text); }
+.ha-hist .is-num { text-align: right; white-space: nowrap; }
+.ha-hist .is-date, .ha-hist .is-sym { white-space: nowrap; }
+.ha-hist .is-sym { font-weight: 800; }
+.ha-hist small { display: block; font-size: 10.5px; line-height: 1.4; color: var(--mc-muted); }
+.ha-hist .ha-act { min-width: 0; font-size: 12px; padding: 2px 9px; }
+.ha-hist .is-impact { white-space: nowrap; }
+.ha-hist-imp { display: inline-block; vertical-align: middle; }
+.ha-hist-m { font-weight: 800; }
+.ha-hist .is-impact .ha-b { min-height: 30px; padding: 0 10px; margin-left: 10px; vertical-align: middle; }
+.ha-hist-form td { padding: 4px 0 10px; }
+@media (max-width: 600px) {
+  .ha-sum-head { padding: 12px; }
+  .ha-sum-body { padding: 0 12px 12px; }
+  .ha-hz-b { min-height: 40px; }
+  .ha-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ha-histwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ha-hist { min-width: 680px; }
+  .ha-hist .is-impact .ha-b { min-height: 40px; }
+  /* ฟอร์มแก้ในตารางที่เลื่อนแนวนอน: ติดขอบซ้ายและกว้างไม่เกินจอ — ไม่ต้องเลื่อนตารางหาช่องกรอก */
+  /*   ขอบรวมสองข้าง ≈ mc-content 24 + ha-box 14 + ha-sum-body 12 + เส้นขอบ → 112px เผื่อไว้ */
+  .ha-hist-form .ha-form { position: sticky; left: 0; max-width: calc(100vw - 112px); box-sizing: border-box; }
 }
 @media (max-width: 600px) {
-  .hr-card { padding: 16px 14px; border-radius: 18px; }
-  .hr-row { grid-template-columns: 1fr; gap: 10px; padding: 12px; }
-  .hr-tools { width: 100%; }
-  .hr-btn { min-height: 44px; flex: 1 1 auto; }
+  .ha-box { padding: 16px 14px; border-radius: 18px; }
+  .ha-tools { width: 100%; }
+  .ha-btn { min-height: 44px; flex: 1 1 auto; }
+  .ha-card { padding: 2px 12px 4px; }
+  .ha-rule { grid-template-columns: 1fr; gap: 6px; padding: 12px 0; }
+  .ha-k { flex-direction: row; align-items: baseline; gap: 6px; }
+  .ha-rule.is-quiet .ha-act, .ha-btns:empty { display: none; }
+  .ha-b { min-height: 44px; flex: 1 1 0; }
+  .ha-form { padding: 12px; }
+  .ha-field, .ha-form .ha-btns { flex: 1 1 100%; margin-left: 0; }
+  .ha-in, .ha-field.is-wide .ha-in { width: 100%; min-height: 44px; font-size: 16px; }
 }

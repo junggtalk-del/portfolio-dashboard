@@ -231,6 +231,24 @@
       Array.isArray(d.entries) && Array.isArray(d.trades);
   }
 
+  // haLaunchedAt = วันเริ่มใช้กล่อง Action บนหน้าแรก (ymd) เป็นคีย์ระดับเอกสารที่กล่องเขียน
+  //   mergeDocs ของเอนจินทิ้งคีย์ที่ไม่รู้จัก → ทุกครั้งที่หน้านี้รวมเอกสารต้องก๊อปกลับเอง ไม่งั้นบันทึกจากหน้านี้ลบวันเริ่มทิ้ง
+  //   launchOf(a, b, …) = ค่า ymd ตัวแรกตามลำดับที่ส่งมา · ไม่มีเลย = null (ไม่ใส่คีย์ ไม่ส่ง null)
+  function launchOf() {
+    var D = E();
+    for (var i = 0; i < arguments.length; i++) {
+      var d = arguments[i];
+      if (d && typeof d === "object" && D.isYmd(d.haLaunchedAt)) return d.haLaunchedAt;
+    }
+    return null;
+  }
+  function withLaunch(doc, ymd) {
+    if (doc && typeof doc === "object" && ymd) doc.haLaunchedAt = ymd;
+    return doc;
+  }
+  // mergeDocs + คง haLaunchedAt (ค่าของ a ก่อน b — ผู้เรียกวางสำเนาเซิร์ฟเวอร์ไว้เป็น a)
+  function mergeKeep(a, b) { return withLaunch(E().mergeDocs(a, b), launchOf(a, b)); }
+
   // ---------------- โหลดข้อมูล ----------------
   function applyDoc(r) {
     if (!r.ok) {
@@ -291,7 +309,7 @@
     var d = readDraft();
     state.draft = d;
     var pending = d ? d.doc : null;
-    if (state.pendingDoc) pending = pending ? D.mergeDocs(pending, state.pendingDoc) : state.pendingDoc;
+    if (state.pendingDoc) pending = pending ? mergeKeep(pending, state.pendingDoc) : state.pendingDoc;
     return pending;
   }
 
@@ -312,7 +330,7 @@
       var ok = applyDoc(res[0]);
       // ร่างที่ค้าง (สเปก §6): merge กลับเข้าหน้าแล้วลองส่งอีกครั้ง — ส่งเฉพาะเมื่อโหลดสำเนาเซิร์ฟเวอร์ได้
       var pending = pendingUnion();
-      if (pending && state.doc) state.doc = E().mergeDocs(state.doc, pending);
+      if (pending && state.doc) state.doc = mergeKeep(state.doc, pending);
       state.symbols = buildSymbols();
       state.loading = false;
       state.inflight = null;
@@ -396,7 +414,7 @@
     // ร่างที่ค้าง (localStorage + หน่วยความจำ) ไปด้วยทุกครั้ง — ไม่งั้นถ้าเปิดหน้าตอนโหลดไม่ได้แล้วบันทึกรายการใหม่
     // doc ที่ส่ง/ร่างที่เขียนทับจะไม่มีรายการค้างนั้น แล้วร่างถูกลบทั้งที่ยังไม่ถึงเซิร์ฟเวอร์ (สเปก §6: ห้ามข้อมูลหาย)
     var pend = pendingUnion();
-    var full = pend ? D.mergeDocs(pend, doc) : doc;
+    var full = pend ? mergeKeep(pend, doc) : doc;
     var merged = null;
 
     function fail(reason) {
@@ -405,10 +423,10 @@
       //   (กติกาเดียวกับ succeed() ที่อ่านร่างซ้ำก่อนลบ) ไม่งั้นรายการของแท็บนั้นหายเมื่อปิดแท็บนั้นไป
       var cur = readDraft();
       if (cur) {
-        try { keep = D.mergeDocs(cur.doc, keep); } catch (e) { /* รวมไม่ได้ — อย่างน้อยเก็บของแท็บนี้ไว้ */ }
+        try { keep = mergeKeep(cur.doc, keep); } catch (e) { /* รวมไม่ได้ — อย่างน้อยเก็บของแท็บนี้ไว้ */ }
       }
       state.pendingDoc = keep;
-      state.doc = D.mergeDocs(state.doc || D.emptyDoc(), keep);
+      state.doc = mergeKeep(state.doc || D.emptyDoc(), keep);
       state.saving = false;
       state.syncReason = reason;
       if (writeDraft(keep)) {
@@ -457,7 +475,8 @@
       else return fail("ข้อมูลบนเซิร์ฟเวอร์ผิดรูป จึงไม่ส่งทับ");
       var bytes;
       try {
-        merged = D.mergeDocs(server, full);
+        // haLaunchedAt: สำเนาเซิร์ฟเวอร์ก่อน → ของที่จะส่ง → ที่หน้านี้โหลดไว้ (ไม่มีเลย = ไม่ใส่คีย์)
+        merged = withLaunch(D.mergeDocs(server, full), launchOf(server, full, state.doc));
         bytes = D.docBytes(merged);
       } catch (e) {
         merged = null;
@@ -855,7 +874,7 @@
     });
     if (problems.length) return refuse("ข้อมูลไม่ครบตามที่เซิร์ฟเวอร์รับ (" + problems.join(" · ") + ") — ยังไม่ได้ส่ง");
 
-    var local = D.mergeDocs(state.doc || D.emptyDoc(), { v: D.VERSION, updatedAt: stamp, entries: [entry], trades: trades });
+    var local = mergeKeep(state.doc || D.emptyDoc(), { v: D.VERSION, updatedAt: stamp, entries: [entry], trades: trades });
     var bytes = D.docBytes(local);
     if (bytes > D.MAX_DOC_BYTES) {
       return refuse("พื้นที่บันทึกเต็ม (" + fmtNum(bytes / D.MAX_DOC_BYTES * 100, 0) + "% ของที่เซิร์ฟเวอร์รับ) — ยังไม่ได้ส่ง");
@@ -894,7 +913,7 @@
       safeRender("ลบไม่สำเร็จ");
       return Promise.resolve(false);
     }
-    var local = D.mergeDocs(state.doc, { v: D.VERSION, updatedAt: stamp, entries: [tomb], trades: [] });
+    var local = mergeKeep(state.doc, { v: D.VERSION, updatedAt: stamp, entries: [tomb], trades: [] });
     state.doc = local;
     state.lastReview = null;
     state.lastTrade = null;
@@ -983,7 +1002,7 @@
       each(problems, function (code) { th.push(PROBLEM_TH[code] || code); });
       return no("บันทึกไม่ได้ — ข้อมูลรายการนี้ไม่ครบตามที่เซิร์ฟเวอร์รับ (" + th.join(" · ") + ") ยังไม่ได้ส่ง");
     }
-    var local = D.mergeDocs(state.doc, { v: D.VERSION, updatedAt: stamp, entries: [copy], trades: [] });
+    var local = mergeKeep(state.doc, { v: D.VERSION, updatedAt: stamp, entries: [copy], trades: [] });
     var bytes = D.docBytes(local);
     if (bytes > D.MAX_DOC_BYTES) {
       return no("พื้นที่บันทึกเต็ม (" + fmtNum(bytes / D.MAX_DOC_BYTES * 100, 0) + "% ของที่เซิร์ฟเวอร์รับ) — ยังไม่ได้ส่ง");
@@ -1210,10 +1229,17 @@
     if (!state.doc) return null;
     try { return D.fifo(D.liveTrades(state.doc), lastCloses()); } catch (e) { logError("คิดไม้จริง", e); return null; }
   }
+  // สถิติ (ตามกฎ · คาดถูก · ตารางสถิติ) นับเฉพาะบันทึกที่เขียนเองบนหน้านี้ — entry จากกล่อง Action (source "home-action")
+  //   ไม่มี view/verdict ไม่ใช่คำทำนายของผู้ใช้ จึงไม่เข้าสถิติ · แต่ยังขึ้นในบันทึกทั้งหมดและนับในกล่อง "บันทึกทั้งหมด"
+  function manualEntries() {
+    var out = [];
+    if (state.doc) each(E().liveEntries(state.doc), function (e) { if (!isHomeAction(e)) out.push(e); });
+    return out;
+  }
   function statsNow() {
     var D = E();
     if (!state.doc) return null;
-    try { return D.stats(D.liveEntries(state.doc), state.outcomesById); } catch (e) { logError("คิดสถิติ", e); return null; }
+    try { return D.stats(manualEntries(), state.outcomesById); } catch (e) { logError("คิดสถิติ", e); return null; }
   }
   // สีของกล่อง = ป้ายจำหมวด · สีกำไร/ขาดทุนอยู่ที่ตัวเลข (ล็อกอยู่ = XXX ไม่ลงสี)
   function moneyTile(amount, currency, label, sub) {
@@ -1237,7 +1263,7 @@
     function realized(label, sub) { return tileHtml({ n: "—", label: label, sub: sub, hue: "sky", ico: "barChart" }); }
     if (!known) return rule("—") + pred("—") + opened("—") + realized(realizedLabel);
     var per = 0, judgedC = 0;
-    each(D.liveEntries(state.doc), function (e) {
+    each(manualEntries(), function (e) {
       var c = obj(e.verdict).compliance;
       if (c === "per-rule") { per++; judgedC++; } else if (c === "against") judgedC++;
     });
@@ -1578,6 +1604,31 @@
       (plan ? '<p class="dj-entry-plan"><span class="dj-entry-k">แผน:</span> ' + esc(plan) + "</p>" : "");
   }
 
+  // ---- entry จากกล่อง Action บนหน้าแรก (source "home-action") ----
+  // ไม่มี view/verdict (ไม่ใช่คำทำนายของผู้ใช้) → แถวแสดงชิปที่มา + คำตอบ แทนป้ายตามกฎ/แหกกฎ · รายละเอียดมีแค่ผลจริง + ปุ่มลบ
+  //   ข้อความเหตุการณ์อ่านจาก context.event ที่กล่องเขียนเป็นภาษาไทยไว้แล้ว (หน้านี้ไม่โหลดเอนจินของกล่อง)
+  var HA_SOURCE = "home-action";
+  var HA_RESPONSE_VIEW = {
+    done: { hue: "green", text: "ทำแล้ว" },
+    skipped: { hue: "amber", text: "ไม่ทำ" },
+    unanswered: { hue: "slate", text: "ไม่ได้ตอบ" }
+  };
+  function isHomeAction(e) { return !!e && typeof e === "object" && e.source === HA_SOURCE; }
+  function haChipHtml(e) {
+    var ha = obj(e.ha);
+    var rv = Object.prototype.hasOwnProperty.call(HA_RESPONSE_VIEW, ha.response) ? HA_RESPONSE_VIEW[ha.response] : null;
+    var text = "จากกล่อง Action · กฎ " + (isNum(ha.rule) ? ha.rule : "?") + (rv ? " · " + rv.text : "");
+    return '<span class="dj-ha-chip" data-hue="' + (rv ? rv.hue : "slate") + '">' + esc(text) + "</span>";
+  }
+  // บรรทัดย่อย: เหตุการณ์ · ราคาปิดวันสัญญาณ (rules.close) · ราคาที่ทำจริง (ha.execPrice) — ราคาตลาดต่อหน่วย ไม่ใช่ยอดเงิน
+  function haRowSubHtml(e) {
+    var ha = obj(e.ha), rules = obj(e.rules), ctx = obj(e.context);
+    var ev = typeof ctx.event === "string" ? trimStr(ctx.event) : "";
+    var text = (ev ? ev + " · " : "") + "ราคาสัญญาณ " + (isNum(rules.close) ? fmtNum(rules.close, 2) : "—") +
+      " · ทำจริงที่ " + (isNum(ha.execPrice) ? fmtNum(ha.execPrice, 2) : "—");
+    return '<span class="dj-row-sub"><span>' + esc(text) + "</span></span>";
+  }
+
   // ---- แถวย่อของบันทึก (รายการใน "บันทึกทั้งหมด") ----
   // ผู้ใช้ 2026-10-29: การ์ดเต็มทุกใบดูยาก → เป็นรายการ แตะแถวแล้วค่อยกางรายละเอียด
   // แถวบอกแค่: วันที่ · สัญลักษณ์ · ทำอะไร · อารมณ์ (ไอคอน) · ตามกฎ/แหกกฎ  และ  คาดว่าอะไร → ผลที่ช่วงที่คาด
@@ -1618,7 +1669,9 @@
     });
     var dir = (view.direction === "up" || view.direction === "down") ? "คาด" + thaiOf(D.DIRECTIONS, view.direction) : "ไม่แน่ใจทิศทาง";
     var hz = isNum(view.horizonDays) ? horizonLabel(view.horizonDays) : "—";
+    var fromBox = isHomeAction(e);
     // ซ้าย (วันที่ · สัญลักษณ์ · ทำอะไร · อารมณ์) ตัดบรรทัดภายในตัวเอง · ขวา (ตามกฎ/แหกกฎ + ลูกศร) ค้างมุมบนขวาเสมอ
+    // entry จากกล่อง Action: ขวาเป็นชิปที่มา + คำตอบ · บรรทัดล่างเป็นเหตุการณ์ + ราคา (ไม่มีคาดว่า → ไม่มีผลที่ช่วงที่คาด)
     return '<span class="dj-row-top"><span class="dj-row-id">' +
       '<span class="dj-entry-date">' + esc(e.date) + "</span>" +
       '<strong class="dj-entry-sym">' + esc(sym) + "</strong>" +
@@ -1626,10 +1679,12 @@
       (feel ? '<span class="dj-row-feels">' + feel + "</span>" : "") +
       (rv.reviewedAt ? '<span class="dj-row-rv">ทบทวนแล้ว</span>' : "") +
       "</span>" +
-      '<span class="dj-row-end">' + pill(vv.cls, vv.text) + '<span class="dj-row-chev" aria-hidden="true">' + icon("chevron") + "</span></span>" +
+      '<span class="dj-row-end">' + (fromBox ? haChipHtml(e) : pill(vv.cls, vv.text)) +
+      '<span class="dj-row-chev" aria-hidden="true">' + icon("chevron") + "</span></span>" +
       "</span>" +
-      '<span class="dj-row-sub"><span>' + esc(dir + " · " + hz) + '</span><span class="dj-row-arrow" aria-hidden="true">→</span>' +
-      rowResultHtml(e) + "</span>";
+      (fromBox ? haRowSubHtml(e)
+        : '<span class="dj-row-sub"><span>' + esc(dir + " · " + hz) + '</span><span class="dj-row-arrow" aria-hidden="true">→</span>' +
+          rowResultHtml(e) + "</span>");
   }
 
   // การ์ดบันทึก = แถวย่อ (summary) + รายละเอียดเต็มเมื่อกาง · รายละเอียดอยู่ใน DOM เสมอ (แค่พับไว้)
@@ -1639,15 +1694,14 @@
     var ctx = obj(e.context), view = obj(e.view), act = obj(e.action), rules = obj(e.rules), verdict = obj(e.verdict);
     var sym = D.canonicalSymbol(e.symbol) || String(e.symbol || "");
     var open = !!state.openEntries[e.id] || state.confirmDelId === e.id;
+    // entry จากกล่อง Action: ไม่มี r1/r2/r3 · ไม่มีคาดว่า/อารมณ์/แผน · ไม่ทบทวน → บอกที่มา + ผลจริง + ปุ่มลบ
+    var body = isHomeAction(e)
+      ? '<p class="dj-ha-note">บันทึกจากกล่อง Action บนหน้าแรก · ไม่นับในสถิติและไม่เข้าคิวทบทวน</p>' + outcomeBlock(e)
+      : rulesSayHtml(rules, verdict) + thoughtHtml(ctx, view, act) + outcomeBlock(e) + buyBackLine(e, trades) + lessonBlock(obj(e.review));
     return '<article class="dj-card dj-entry" data-dj-entry="' + esc(e.id) + '">' +
       '<details class="dj-entry-det" data-dj-open="' + esc(e.id) + '"' + (open ? " open" : "") + ">" +
       '<summary class="dj-entry-sum" id="' + esc("djRow-" + e.id) + '">' + entryRowHtml(e) + "</summary>" +
-      '<div class="dj-entry-body">' +
-      rulesSayHtml(rules, verdict) +
-      thoughtHtml(ctx, view, act) +
-      outcomeBlock(e) +
-      buyBackLine(e, trades) +
-      lessonBlock(obj(e.review)) +
+      '<div class="dj-entry-body">' + body +
       '<div class="dj-entry-foot">' + deleteControls(e, sym) + "</div>" +
       "</div></details></article>";
   }
@@ -2002,7 +2056,7 @@
       });
     });
     if (problems.length) return tradeRefuse("ข้อมูลไม่ครบตามที่เซิร์ฟเวอร์รับ (" + problems.join(" · ") + ") — ยังไม่ได้ส่ง");
-    var local = D.mergeDocs(state.doc || D.emptyDoc(), { v: D.VERSION, updatedAt: stamp, entries: entries, trades: trades });
+    var local = mergeKeep(state.doc || D.emptyDoc(), { v: D.VERSION, updatedAt: stamp, entries: entries, trades: trades });
     var bytes = D.docBytes(local);
     if (bytes > D.MAX_DOC_BYTES) {
       return tradeRefuse("พื้นที่บันทึกเต็ม (" + fmtNum(bytes / D.MAX_DOC_BYTES * 100, 0) + "% ของที่เซิร์ฟเวอร์รับ) — ยังไม่ได้ส่ง");
@@ -2416,8 +2470,14 @@
       var why = state.loading ? "กำลังโหลดบันทึก…" : "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ด้านบนของหน้า";
       return block("djStats", title, "", '<p class="dj-placeholder">' + esc(why) + "</p>", look);
     }
-    if (!D.liveEntries(state.doc).length) {
+    var liveN = D.liveEntries(state.doc).length;
+    var manualN = manualEntries().length;
+    var haN = liveN - manualN;
+    if (!liveN) {
       return block("djStats", title, "", '<p class="dj-placeholder">ยังไม่มีบันทึก — สถิติจะขึ้นเมื่อบันทึกครบกำหนดตามช่วงที่คาดไว้</p>', look);
+    }
+    if (!manualN) {
+      return block("djStats", title, "", '<p class="dj-placeholder">ยังไม่มีบันทึกที่เขียนเอง — รายการจากกล่อง Action ไม่นับในสถิติ · สถิติจะขึ้นเมื่อบันทึกครบกำหนดตามช่วงที่คาดไว้</p>', look);
     }
     var st = statsNow();
     if (!st) return block("djStats", title, "", '<div class="dj-out-msg is-bad"><span><strong>คิดสถิติไม่สำเร็จ</strong> — ลองรีเฟรชหน้า</span></div>', look);
@@ -2425,6 +2485,9 @@
     var body = '<p class="dj-stats-note">กลุ่มที่ครบกำหนดน้อยกว่า ' + esc(D.MIN_STAT_N) + " รายการ แสดงแค่จำนวน พร้อมคำว่า “" + THIN_TEXT + "”" +
       " · ผลดี = ซื้อแล้วราคาขึ้น หรือขายแล้วราคาลง เกิน ±" + esc(pctText(D.FLAT_BAND_PCT)) +
       " · เฉลี่ยในทิศที่ทำ: ขายแล้วราคาลงนับเป็นบวก</p>";
+    if (haN > 0) {
+      body += '<p class="dj-stats-note">ไม่นับรายการจากกล่อง Action บนหน้าแรก (' + esc(haN) + " รายการ) — รายการเหล่านั้นไม่ได้คาดทิศทางไว้</p>";
+    }
     if (state.outcomesLoading) body += '<p class="dj-stats-note" role="status">กำลังดึงราคา… ตัวเลขอาจยังไม่ครบ</p>';
 
     var bc = st.byCompliance, pr = bc["per-rule"], ag = bc.against;
@@ -2974,7 +3037,7 @@
       return Promise.resolve(true);
     }
     // ไฟล์ไว้ก่อน doc ของหน้า → ตราประทับเท่ากันใช้ของในหน้า (mergeDocs ให้ชุดหลังชนะเมื่อเท่ากัน)
-    var local = D.mergeDocs({ v: D.VERSION, updatedAt: null, entries: entries, trades: trades }, state.doc || D.emptyDoc());
+    var local = mergeKeep({ v: D.VERSION, updatedAt: null, entries: entries, trades: trades }, state.doc || D.emptyDoc());
     var bytes = D.docBytes(local);
     if (bytes > D.MAX_DOC_BYTES) {
       return no("รวมไฟล์นี้แล้วเกินพื้นที่ที่เซิร์ฟเวอร์รับ (" + fmtNum(bytes / D.MAX_DOC_BYTES * 100, 0) + "%) — ไม่ได้นำเข้า");

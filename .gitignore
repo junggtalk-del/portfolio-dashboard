@@ -17,3 +17,6 @@ public/config.js
 /.claude/skills/qwenchance
 /.claude/skills/scrutinize
 .cache/
+
+# brainstorming visual companion sessions
+.superpowers/

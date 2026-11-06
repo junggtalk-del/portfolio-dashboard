@@ -627,7 +627,8 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
   // dj-2 (2026-10-26): CSS แก้หน้ากว้างเกินจอมือถือ + ป้ายนำเข้าไฟล์ — bump เพื่อไม่ให้เบราว์เซอร์ใช้ไฟล์เก่าในแคช
   // dj-3 (2026-10-26): ปรับสีและเลย์เอาต์ตามภาพที่ผู้ใช้ส่งมา
   // dj-4 (2026-10-29): บันทึกทั้งหมดเป็นรายการแถวย่อ แตะแล้วกางรายละเอียด
-  var want = headRefs(dr).map(function (r) { return r.indexOf("/thai-dr-monitor.css") === 0 ? "/decision-journal.css?v=20261029-dj-4" : r; });
+  // dj-6 (2026-11-06): รู้จัก entry จากกล่อง Action บนหน้าแรก (ชิปที่มา · ไม่นับในสถิติ · คง haLaunchedAt)
+  var want = headRefs(dr).map(function (r) { return r.indexOf("/thai-dr-monitor.css") === 0 ? "/decision-journal.css?v=20261106-dj-6" : r; });
   t("head = thai-dr-monitor head with the page CSS swapped", headRefs(dj).join("|") === want.join("|"), headRefs(dj));
   t("title", /<title>Decision Journal · AI Investment Mission Control<\/title>/.test(dj));
   t("nothing after privacy.js in head", /privacy\.js\?v=[^"]+"><\/script>\s*<\/head>/.test(dj));
@@ -637,7 +638,7 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     var re = /<script src="([^"]+)"/g, m, out = [];
     while ((m = re.exec(body)) !== null) out.push(m[1]);
     return out.join("|") === ["/technical-indicators.js?v=20260617-action-priority", "/decision-journal-engine.js?v=20261030-dj-5",
-      "/decision-journal-page.js?v=20261029-dj-4", "/app-navigation.js?v=20261026-nav-27"].join("|");
+      "/decision-journal-page.js?v=20261106-dj-6", "/app-navigation.js?v=20261026-nav-27"].join("|");
   })());
   t("lang th + viewport", /<html lang="th">/.test(dj) && /name="viewport"[^>]*width=device-width/.test(dj));
 
@@ -3168,6 +3169,173 @@ section("log as a list: compact rows · tap to expand (dj-4)", function () {
       /\.dj-entry-sum::-webkit-details-marker\s*\{[^}]*display:\s*none/.test(css) && /\.dj-entry-sum\s*\{[^}]*list-style:\s*none/.test(css) &&
       /\.dj-entry-det\[open\] > \.dj-entry-sum\s*\{/.test(css) && /\.dj-entry-det\[open\] \.dj-row-chev\s*\{[^}]*rotate/.test(css));
   });
+});
+
+// ============================================================
+// dj-6 (2026-11-06) — entry จาก "กล่อง Action ประจำวัน" บนหน้าแรก (source "home-action")
+//   ไม่มี view / verdict → แถวแสดงชิป "จากกล่อง Action · กฎ N · ทำแล้ว|ไม่ทำ|ไม่ได้ตอบ" แทนป้ายตามกฎ/แหกกฎ
+//   · ไม่นับในสถิติ (D.stats ได้เฉพาะบันทึกที่เขียนเอง) · ไม่เข้าคิวทบทวน · ลบได้เหมือนบันทึกอื่น
+//   · haLaunchedAt ระดับเอกสาร (กล่อง Action เขียน) ต้องรอดการบันทึกจากหน้านี้ (mergeDocs ทิ้งคีย์ที่ไม่รู้จัก)
+// ============================================================
+var HA = require("../public/home-action-engine.js");
+var HA_ID = "ha_NVDA_2_sell_2026-10-28";
+function haEntryOf(response, execPrice) {
+  var ev = { symbol: "NVDA", rule: 2, side: "sell", date: "2026-10-28", close: 90, kind: "break", detail: { crossDate: "2026-10-27" } };
+  return HA.makeEntry(ev, { response: response, nowIso: "2026-10-28T03:00:00.000Z", respondedAt: response === "unanswered" ? null : "2026-10-28T03:00:00.000Z",
+    execPrice: execPrice, positionValue: 50000, positionCurrency: "THB", amount: null, D: E });
+}
+// บันทึกที่เขียนเอง 1 ตัว (e_fix1 · แหกกฎ · ครบ +7 แล้ว → อยู่ในคิวทบทวน) + entry จากกล่อง Action 1 ตัว
+function haJournal(response, execPrice) {
+  var j = freshJournal();
+  j.entries = [j.entries[0], haEntryOf(response || "done", execPrice === undefined ? 91 : execPrice)];
+  j.haLaunchedAt = "2026-10-29";
+  return j;
+}
+function es5ok(f) { return es5Problems(stripComments(readPub(f))).length === 0; }
+function haRow() { return rowOfEntry(HA_ID); }
+
+section("home-action entries on the journal (dj-6)", function () {
+  var D = win.DecisionJournal;
+  var S = P._state;
+  var origStats = D.stats;
+  var statsSeen = { n: null, calls: 0 };
+  D.stats = function (entries) {
+    statsSeen.n = Array.isArray(entries) ? entries.length : null;
+    statsSeen.calls++;
+    return origStats.apply(this, arguments);
+  };
+  function restore() { D.stats = origStats; }
+  var thrown = null;
+  S.openEntries = {};
+  JOURNAL = haJournal("done", 91);
+  t("fixture: makeEntry built the home-action entry (no view / verdict)", !!JOURNAL.entries[1] && JOURNAL.entries[1].id === HA_ID &&
+    JOURNAL.entries[1].source === "home-action" && JOURNAL.entries[1].view === undefined && JOURNAL.entries[1].verdict === undefined);
+  return freshLogPage().then(function () { return P._loadOutcomes(); }).then(function () {
+    S.openEntries[HA_ID] = true;
+    try { P.render(); } catch (e) { thrown = e; }
+    t("journal renders a home-action entry without throwing, with the source chip", !thrown && /dj-ha-chip[^>]*>จากกล่อง Action · กฎ 2 · ทำแล้ว</.test(html()), thrown && String(thrown));
+    t("home-action entries are excluded from stats (byCompliance counts only the manual entry)", statsSeen.n === 1, statsSeen);
+    t("home-action entries never enter the review queue", !/data-dj-review="ha_/.test(html()));
+    t("…while the manual entry that is due is in the queue (the queue really rendered)", reviewIds().join() === "e_fix1", reviewIds());
+    t("delete control exists for the home-action entry", /data-dj-delete="ha_NVDA_2_sell_2026-10-28"/.test(html()) || /data-dj-del[^=]*="ha_NVDA_2_sell_2026-10-28"/.test(html()));
+    t("decision-journal.html bumped and page is ES5", /decision-journal-page\.js\?v=20261106-dj-6/.test(DJ_HTML) && es5ok("decision-journal-page.js"));
+
+    // แถว: วันที่ · สัญลักษณ์ · ฝั่งที่กฎบอก · ชิปสีตามคำตอบ (แทนป้ายตามกฎ/แหกกฎ) · บรรทัดย่อยจาก context.event + ราคา
+    var r = haRow();
+    t("row keeps date · symbol · action pill", /2026-10-28/.test(r) && /NVDA/.test(r) && /class="dj-act" data-hue="violet">ขาย</.test(r));
+    t("row chip: done → green hue · no compliance pill on the row",
+      /<span class="dj-ha-chip" data-hue="green">จากกล่อง Action · กฎ 2 · ทำแล้ว<\/span>/.test(r) && !/class="dj-pill/.test(r), r);
+    t("row sub-line = context.event · ราคาสัญญาณ · ทำจริงที่",
+      textOf(r).indexOf("กล่อง Action · กฎ 2 · หลุด SMA200 ยืนยัน · ราคาสัญญาณ 90.00 · ทำจริงที่ 91.00") >= 0, textOf(r));
+    t("row has no expectation text and no dangling result arrow (no view)", !/คาด|ไม่แน่ใจทิศทาง|dj-row-arrow/.test(r), textOf(r));
+
+    // รายละเอียด: ไม่มี "กฎบอกว่า" (ไม่มี r1/r2/r3) · ไม่มี "คาดว่า" · ไม่มีบทเรียน · มีผลจริงและปุ่มลบ
+    var c = cardOf(HA_ID);
+    t("details skip rules-say, thoughts and lesson", c.length > 0 && !/กฎบอกว่า|dj-entry-rules|dj-entry-view|dj-lesson/.test(c), textOf(c));
+    t("details keep the outcome block and the delete button",
+      /class="dj-out"/.test(c) && /data-dj-del="ha_NVDA_2_sell_2026-10-28"/.test(c) && /ราคาตั้งต้น 90\.00 \(2026-10-28\)/.test(c), textOf(c));
+    t("details say where the entry came from and that stats skip it", /บันทึกจากกล่อง Action บนหน้าแรก/.test(c) && /ไม่นับในสถิติ/.test(c), textOf(c));
+    // ตัวเลขรวม: กล่องบันทึกทั้งหมด = ทุกแถวในบันทึก · ตามกฎ/คาดถูก/สถิติ = เฉพาะที่เขียนเอง
+    t("summary tile counts every log row (2) · ตามกฎ counts only the manual entry (0 / 1)",
+      entriesN() === "2" && tileValue("ตามกฎ") === "0 / 1" && logCount() === 2, [entriesN(), tileValue("ตามกฎ"), logCount()]);
+    t("stats: per-rule 0 · against 1 (the home-action sell is not counted) + a note that says so",
+      /data-dj-stat="comp:against"><th[^>]*>[\s\S]*?<\/th><td class="dj-num" data-col="n">1</.test(sec("djStats")) &&
+      /data-dj-stat="comp:per-rule"><th[^>]*>[\s\S]*?<\/th><td class="dj-num" data-col="n">0</.test(sec("djStats")) &&
+      /ไม่นับรายการจากกล่อง Action/.test(sec("djStats")));
+    t("no NaN/undefined, advisory words or money in titles with a home-action entry",
+      !LEAK.test(html()) && !ADVISORY_TH.test(html()) && !ADVISORY_EN.test(html()) && !/(title|aria-label)="[^"]*[฿$]\s?[\d,]/.test(html()),
+      (LEAK.exec(html()) || ADVISORY_TH.exec(html()) || ADVISORY_EN.exec(html()) || [])[0]);
+    t("the home-action box's haLaunchedAt survives the load into the page's doc", S.doc.haLaunchedAt === "2026-10-29", S.doc.haLaunchedAt);
+
+    // ชิปอีกสองคำตอบ: ไม่ทำ = เหลือง · ไม่ได้ตอบ = เทา · ไม่มีราคาที่ทำจริง = —
+    JOURNAL = haJournal("skipped", null);
+    return freshLogPage();
+  }).then(function () {
+    var r = haRow();
+    t("skipped → amber chip · ทำจริงที่ —", /<span class="dj-ha-chip" data-hue="amber">จากกล่อง Action · กฎ 2 · ไม่ทำ<\/span>/.test(r) &&
+      /ทำจริงที่ —/.test(textOf(r)), textOf(r));
+    JOURNAL = haJournal("unanswered", null);
+    return freshLogPage();
+  }).then(function () {
+    var r = haRow();
+    t("unanswered → slate chip", /<span class="dj-ha-chip" data-hue="slate">จากกล่อง Action · กฎ 2 · ไม่ได้ตอบ<\/span>/.test(r), textOf(r));
+    var css = readPub("decision-journal.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    t("CSS: .dj-ha-chip styled from the hue tokens and decision-journal.css bumped",
+      /\.dj-ha-chip\s*\{[^}]*var\(--dj-i\)/.test(css) && /decision-journal\.css\?v=20261106-dj-6/.test(DJ_HTML));
+
+    // บันทึกปกติจากหน้านี้ (GET สด → merge → PUT): haLaunchedAt + entry ของกล่อง Action ต้องไปครบ
+    JOURNAL = haJournal("done", 91);
+    return freshLogPage();
+  }).then(function () {
+    var before = puts.length;
+    fillForm({ symbol: "nvda", date: "2026-10-24", event: "ทดสอบ haLaunchedAt", direction: "up", horizon: "7", action: "hold" });
+    return P._previewRules().then(function () { return P._save(); }).then(function (ok) {
+      var b = lastPut();
+      t("a normal journal save still carries haLaunchedAt in the PUT body",
+        ok === true && puts.length === before + 1 && !!b && b.haLaunchedAt === "2026-10-29", [ok, b && b.haLaunchedAt]);
+      var ha = entryIn(b, HA_ID);
+      t("…and the home-action entry goes back untouched (source · ha block · no view/verdict)",
+        !!ha && ha.source === "home-action" && ha.ha.response === "done" && ha.ha.execPrice === 91 && ha.view === undefined && ha.verdict === undefined,
+        ha);
+      t("…the page's doc keeps haLaunchedAt after the save", S.doc.haLaunchedAt === "2026-10-29", S.doc.haLaunchedAt);
+      // สำเนาบนเซิร์ฟเวอร์ไม่มีคีย์นี้ (เช่น เขียนทับจากที่อื่น) → ใช้ค่าที่หน้านี้โหลดไว้
+      JOURNAL = b;
+      delete JOURNAL.haLaunchedAt;
+      fillForm({ symbol: "nvda", date: "2026-10-23", event: "ทดสอบรอบสอง", direction: "down", horizon: "7", action: "hold" });
+      return P._previewRules().then(function () { return P._save(); });
+    }).then(function (ok) {
+      t("server copy lost haLaunchedAt → the page's loaded value is written back", ok === true && lastPut().haLaunchedAt === "2026-10-29",
+        lastPut() && lastPut().haLaunchedAt);
+      // ไม่มีค่าที่ไหนเลย → ไม่ใส่คีย์ (ไม่ส่ง null / undefined)
+      JOURNAL = freshJournal();
+      return freshLogPage();
+    }).then(function () {
+      fillForm({ symbol: "nvda", date: "2026-10-22", event: "ไม่มีวันเริ่มกล่อง", direction: "up", horizon: "7", action: "hold" });
+      return P._previewRules().then(function () { return P._save(); });
+    }).then(function (ok) {
+      t("no haLaunchedAt anywhere → the PUT body has no such key", ok === true && !Object.prototype.hasOwnProperty.call(lastPut(), "haLaunchedAt"),
+        Object.keys(lastPut() || {}));
+      // ลบ entry ของกล่อง Action ได้ (ยืนยันก่อน) → tombstone ไปเซิร์ฟเวอร์ (กล่องจับคู่ id เดิม ไม่บันทึกซ้ำ)
+      JOURNAL = haJournal("done", 91);
+      return freshLogPage();
+    }).then(function () {
+      delete JOURNAL.haLaunchedAt;   // สำเนาเซิร์ฟเวอร์ตอน GET ก่อน PUT ไม่มีคีย์ → ต้องมาจากเอกสารของหน้า (ผ่านการ merge ตอนลบ)
+      clickAttr("data-dj-del", HA_ID);
+      var confirmed = clickAttr("data-dj-del-confirm", HA_ID);
+      return flush().then(function () {
+        var tomb = entryIn(lastPut(), HA_ID);
+        t("deleting a home-action entry sends a tombstone with the same id (and keeps haLaunchedAt)",
+          confirmed && !!tomb && typeof tomb.deletedAt === "string" && lastPut().haLaunchedAt === "2026-10-29" && logIds().join() === "e_fix1",
+          [confirmed, tomb, logIds()]);
+      });
+    });
+  }).then(function () {
+    // ตอนโหลด: ร่างในเครื่อง (ไม่มี haLaunchedAt) ถูก merge เข้าเอกสารที่โหลด → คีย์ของเซิร์ฟเวอร์ต้องไม่หาย
+    //   GET รอบสอง (ก่อนส่งร่าง) ล้ม → หน้าเหลือเอกสารจากขั้น merge ตอนโหลดให้ตรวจได้ตรง ๆ
+    JOURNAL = haJournal("done", 91);
+    var gets = 0;
+    win.fetch = function (url, init) {
+      var u = String(url), method = String((init && init.method) || "GET").toUpperCase();
+      if (/^\/api\/portfolio\?doc=journal(&|$)/.test(u) && method === "GET" && ++gets === 2) {
+        fetchCalls.push({ url: u, method: method, body: undefined });
+        return resp(500, { error: "fixture HTTP 500" });
+      }
+      return BASE_FETCH(url, init);
+    };
+    var p = freshLogPage();
+    store.decision_journal_draft_v1 = JSON.stringify({ doc: { v: 1, updatedAt: "2026-10-25T05:00:00.000Z", entries: [freshJournal().entries[1]], trades: [] },
+      savedAt: "2026-10-25T05:00:00.000Z" });
+    return p.then(function () { return flush(); }).then(function () {
+      restoreFetch();
+      t("load merges a local draft without losing the server's haLaunchedAt", gets === 2 && S.doc.haLaunchedAt === "2026-10-29" &&
+        logIds().indexOf("e_fix2") >= 0 && S.syncState === "draft", [gets, S.doc.haLaunchedAt, logIds(), S.syncState]);
+    }, function (e) { restoreFetch(); throw e; });
+  }).then(function () {
+    restore();
+    S.openEntries = {};
+    JOURNAL = freshJournal();
+    return freshLogPage();
+  }, function (e) { restore(); JOURNAL = freshJournal(); throw e; });
 });
 
 // ==== งานถัดไปต่อ section ใหม่เหนือบรรทัดนี้ ====
