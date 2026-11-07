@@ -100,6 +100,29 @@ run({ local: LOCAL, get: function () { return Promise.resolve(resp(200, { data: 
 }).then(function (r) {
   var put = r.calls.filter(function (c) { return c.method === "PUT"; })[0];
   t("server ไม่มี allocation → คง allocation ในหน้า", !!put && JSON.stringify(put.body.data.allocation) === JSON.stringify(OLD_ALLOC));
+
+  // กรอบเงินสดของการ์ด Asset allocation (/portfolio) เก็บที่ allocationPlan ระดับบนของเอกสารเดียวกัน
+  //   harness: run() ตั้ง state.data = สำเนาของ opts.local (= เอกสารที่ editor โหลดไว้ตอนเปิดหน้า) แล้วรัน
+  //   adoptServerAllocation + persistRemoteData ตัวจริงจาก app.js กับ fetch ปลอม · อ่าน body ของ PUT จาก fetch ปลอม
+  console.log("== allocationPlan (กรอบเงินสด) ==");
+  var LOCAL_P = JSON.parse(JSON.stringify(LOCAL));
+  LOCAL_P.allocationPlan = { cashBand: { min: 1000000, max: 3000000 }, updatedAt: "2026-11-01T00:00:00.000Z" };
+  return run({ local: LOCAL_P, get: function () { return Promise.resolve(resp(500, { error: "boom" })); } });
+}).then(function (r) {
+  var put = r.calls.filter(function (c) { return c.method === "PUT"; })[0];
+  t("เอกสารที่โหลดมามี allocationPlan → PUT ของ editor ยังมี allocationPlan เดิม (อ่าน server ไม่ได้ก็ไม่ทิ้ง)",
+    !!put && JSON.stringify(put.body.data.allocationPlan) === JSON.stringify({ cashBand: { min: 1000000, max: 3000000 }, updatedAt: "2026-11-01T00:00:00.000Z" }),
+    put && JSON.stringify(put.body.data.allocationPlan));
+  // แท็บ editor เปิดค้าง (ไม่มี allocationPlan) → ไปตั้งกรอบเงินสดใน /portfolio → กลับมาบันทึกไตรมาสในแท็บเก่า
+  var NEW_PLAN = { cashBand: { min: 500000, max: 2000000 }, updatedAt: "2026-11-07T08:00:00.000Z" };
+  var S3 = JSON.parse(JSON.stringify(SERVER)); S3.allocationPlan = NEW_PLAN;
+  return run({ local: LOCAL, get: function () { return Promise.resolve(resp(200, { data: S3 })); } }).then(function (r2) {
+    var put2 = r2.calls.filter(function (c) { return c.method === "PUT"; })[0];
+    t("server มี allocationPlan ที่หน้านี้ไม่เคยมี → PUT ใช้ allocationPlan ของ server (กรอบที่ตั้งใน /portfolio ไม่หาย) · ไตรมาสยังเป็นของ editor",
+      !!put2 && JSON.stringify(put2.body.data.allocationPlan) === JSON.stringify(NEW_PLAN) && JSON.stringify(put2.body.data.quarters) === JSON.stringify(LOCAL.quarters),
+      put2 && JSON.stringify(put2.body.data.allocationPlan));
+  });
+}).then(function () {
   return run({ local: LOCAL, saving: true, get: function () { return Promise.resolve(resp(200, { data: SERVER })); } });
 }).then(function (r) {
   t("กำลังบันทึกอยู่ → ไม่ยิงซ้ำ (ไม่ GET/PUT)", r.calls.length === 0, r.calls.length);

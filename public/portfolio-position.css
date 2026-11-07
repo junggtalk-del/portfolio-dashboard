@@ -162,3 +162,206 @@
   .pp-card-pct { display: none; }
   .pp-sig-track { flex-basis: 90px; }
 }
+
+/* ============================================================
+   Asset allocation card (.ac-*) — allocation-card-page.js วาดใน #acRoot
+   #acRoot เป็นพี่น้องของ #ppRoot (ไม่ใช่ลูก) จึงไม่ได้สี/box-sizing จาก .pp-page — ตั้งเองที่นี่
+   ใช้ token ของ mission-control (--mc-*) + --pp-* ของไฟล์นี้ · สีแท่งเป็น --ac-* แยกธีม
+   ============================================================ */
+:root {
+  --ac-held-bg: linear-gradient(180deg, #1f5f4c, #17493b);
+  --ac-held-bd: #2a7a62;
+  --ac-held-tx: #ffffff;
+  --ac-held-sub: #bfe8d9;
+  --ac-wait-bd: #4a5a80;
+  --ac-wait-stripe: rgba(148, 163, 184, 0.14);
+  --ac-band-ok: rgba(52, 211, 153, 0.16);
+  --ac-pill-shadow: 0 2px 8px rgba(2, 6, 23, 0.28);
+}
+[data-theme="light"] {
+  --ac-held-bg: linear-gradient(180deg, #c9eee0, #b3e3d1);
+  --ac-held-bd: #5fb79a;
+  --ac-held-tx: #0b3b2e;
+  --ac-held-sub: #2f6b58;
+  --ac-wait-bd: #94a3b8;
+  --ac-wait-stripe: rgba(100, 116, 139, 0.14);
+  --ac-band-ok: rgba(16, 185, 129, 0.14);
+  --ac-pill-shadow: 0 1px 4px rgba(15, 23, 42, 0.10);
+}
+
+/* min-width: 0 — .mc-content เป็น flex column ไม่งั้นการ์ดดันหน้ากว้างบนจอแคบ (แบบ .aa-embedded) */
+.ac-embedded { min-width: 0; margin: 0; padding: 0; color: var(--mc-text); }
+.ac-embedded * { box-sizing: border-box; }
+
+.ac-card { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card-glow), var(--mc-card); padding: 18px 22px 16px; color: var(--mc-text); }
+.ac-empty { margin: 0; padding: 6px 0; text-align: center; font-size: 13px; color: var(--mc-text-2); }
+
+/* หัว */
+.ac-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
+.ac-head-t { display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; min-width: 0; }
+.ac-title { margin: 0; font-size: 16.5px; font-weight: 800; letter-spacing: -0.01em; }
+.ac-head-sum { font-size: 13px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.ac-settings { border: 1px solid var(--mc-border); background: var(--pp-chip-bg); color: var(--mc-text-2); font-family: inherit; font-size: 12px; font-weight: 700; border-radius: 8px; padding: 5px 11px; cursor: pointer; white-space: nowrap; }
+.ac-settings:hover { color: var(--mc-text); border-color: var(--mc-border-active); }
+.ac-sub { margin: 4px 0 0; font-size: 12px; color: var(--mc-muted); line-height: 1.55; }
+
+/* ช่องภาพรวม 2 ช่อง — ยอดเงินล้วน ไม่มีแถบสี */
+.ac-kpis { display: grid; grid-template-columns: 1fr 1.7fr; gap: 10px; margin-top: 14px; }
+.ac-kpi { min-width: 0; border: 1px solid var(--mc-border); border-radius: 12px; background: var(--pp-chip-bg); padding: 10px 13px; }
+.ac-kpi-l { font-size: 11.5px; font-weight: 600; color: var(--mc-muted); }
+.ac-kpi-v { margin-top: 2px; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ac-kpi-p { font-size: 12px; font-weight: 600; color: var(--mc-text-2); }
+.ac-kpi-d { margin-top: 3px; font-size: 12px; color: var(--mc-text-2); line-height: 1.5; font-variant-numeric: tabular-nums; }
+
+/* กราฟแท่ง: เส้นแกน absolute · แท่ง flex สูงเป็น % ของ axis.max (style inline)
+   height 260px − ขอบล่าง 1px = 259 = CHART_PX.d ใน allocation-card-page.js (แก้ที่นี่ต้องแก้ที่นั่น)
+   ขอบบนเผื่อป้ายแกนขีดบนสุด · ขอบล่างเผื่อป้ายใต้แท่ง (ป้ายเป็น absolute) · ซ้ายเผื่อป้ายแกน
+   has-float-top-d = กองป้ายลอยของแท่งสูง ๆ พ้นยอดกราฟ → เพิ่มที่ด้านบน --ac-room-d px (JS คิดให้) ไม่ให้ทับช่องภาพรวม */
+.ac-chart { position: relative; height: 260px; margin: 16px 0 56px 66px; border-left: 1px solid var(--pp-track); border-bottom: 1px solid var(--pp-track); display: flex; align-items: flex-end; justify-content: space-around; }
+.ac-chart.has-float-top-d { margin-top: calc(16px + var(--ac-room-d, 0px)); }
+.ac-grid { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--mc-border); z-index: 0; }
+.ac-grid span { position: absolute; right: calc(100% + 8px); top: -8px; font-size: 11px; line-height: 16px; color: var(--mc-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ac-bar { position: relative; z-index: 1; width: 16%; max-width: 150px; display: flex; flex-direction: column; justify-content: flex-end; }
+.ac-seg { flex: 0 0 auto; min-height: 0; overflow: visible; text-align: center; font-variant-numeric: tabular-nums; }
+/* ป้ายตัวเลข — ในส่วน (.ac-in) หรือป้ายลอยเหนือแท่ง (.ac-pill) · ยอด .ac-seg-amt บรรทัดบน · % ของก้อน .ac-seg-pct บรรทัดล่าง
+   แต่ละส่วนมีป้ายที่เห็นตัวเดียวต่อจอ: show-d = จอกว้าง · show-m = จอ ≤600px · ตัวที่ไม่ใช่ของจอนั้น display:none
+   line-height เป็น px ทุกบรรทัด — NEED_PX / PILL_PX ใน allocation-card-page.js คิดความสูงป้ายจากตัวเลขชุดนี้ (แก้ที่นี่ต้องแก้ที่นั่น) */
+.ac-in, .ac-pill { display: none; }
+.ac-in.show-d, .ac-pill.show-d { display: block; }
+.ac-seg-amt { display: block; font-size: 13px; line-height: 16px; font-weight: 600; }
+.ac-seg-pct { display: block; font-size: 11.5px; line-height: 14px; font-weight: 500; }
+.ac-seg.ac-held .ac-seg-amt, .ac-pill.is-held .ac-seg-amt { font-size: 14px; line-height: 17px; font-weight: 700; }
+/* รอซื้อ = ส่วนที่ยังไม่ลงทุน: เส้นประ + ลาย · ป้ายในส่วน: ขอบบน 2 + padding-top 5 → ยอด 16 + % 14 (+ เผื่อล่าง 3 = 40)
+   จอ 601–1239px "รอซื้อ" ขึ้นบรรทัดเอง +16 = 56 → NEED_PX.wait.d ใช้ 56 (พอทั้งสองแบบ) */
+.ac-seg.ac-wait { border: 2px dashed var(--ac-wait-bd); border-bottom: 0; border-radius: 6px 6px 0 0; padding-top: 5px; background: repeating-linear-gradient(135deg, transparent 0 6px, var(--ac-wait-stripe) 6px 8px); color: var(--mc-text); }
+.ac-seg.ac-wait .ac-seg-pct { color: var(--mc-text-2); }
+/* ลงทุนแล้ว: ทึบ · ป้ายในส่วน: ขอบบน 1 + padding-top 6 → ยอด 17 + % 14 (+ เผื่อล่าง 3 = NEED_PX.held.d 41) */
+.ac-seg.ac-held { border: 1px solid var(--ac-held-bd); border-radius: 4px 4px 0 0; padding-top: 6px; background: var(--ac-held-bg); color: var(--ac-held-tx); }
+.ac-seg.ac-held .ac-seg-pct { color: var(--ac-held-sub); }
+/* กองป้ายลอยเหนือยอดแท่ง (ส่วนที่เตี้ยเกินใส่ป้าย) — อยู่ในคอลัมน์ของแท่งตัวเอง (แท่ง 16% ในคอลัมน์ 20% → ยื่นข้างละ ≤12%)
+   ป้ายรอซื้ออยู่เหนือป้ายลงทุนตามลำดับในแท่ง · ห่างยอดแท่ง 5 (FLOAT_OFF.d) · ห่างกัน 4 (FLOAT_GAP.d)
+   หน้าตาเหมือนส่วนของตัวเอง: รอซื้อ = กรอบประ พื้นการ์ด (ทึบ ไม่เห็นเส้นกริด) · ลงทุนแล้ว = เขียวทึบ */
+.ac-float { position: absolute; left: -12%; right: -12%; bottom: calc(100% + 5px); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+/* ความสูง: รอซื้อ ขอบ 2×2 + padding 3×2 + 16 + 14 = 40 (จอ 601–1239px +16 = 56 = PILL_PX.wait.d) · ลงทุน ขอบ 1×2 + padding 4×2 + 17 + 14 = 41 */
+.ac-pill { padding: 3px 9px; border-radius: 8px; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; box-shadow: var(--ac-pill-shadow); }
+.ac-pill.is-wait { border: 2px dashed var(--ac-wait-bd); background: linear-gradient(var(--mc-card), var(--mc-card)), var(--mc-bg); color: var(--mc-text); }
+.ac-pill.is-wait .ac-seg-pct { color: var(--mc-text-2); }
+.ac-pill.is-held { border: 1px solid var(--ac-held-bd); padding: 4px 10px; background: var(--ac-held-bg); color: var(--ac-held-tx); }
+.ac-pill.is-held .ac-seg-pct { color: var(--ac-held-sub); }
+/* ป้ายใต้แท่ง: ชื่อก้อน + % ของทั้งแท่ง (ลงทุนแล้ว + รอซื้อ) เทียบความมั่งคั่งรวม */
+.ac-lbl { position: absolute; top: calc(100% + 7px); left: -10%; right: -10%; text-align: center; font-size: 11.5px; line-height: 1.3; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.ac-lbl b { display: block; font-size: 12.5px; color: var(--mc-text); }
+/* ก้อนว่าง: ไม่มีแท่ง แสดง — */
+.ac-bar.is-empty { height: 24px; align-items: center; justify-content: center; border-bottom: 2px dashed var(--mc-border); color: var(--mc-muted); font-size: 14px; }
+/* จอ ≤1239px: กราฟแคบ — เมนูข้าง 260px โผล่ที่จอ ≥861px (กราฟ = จอ − 435) · จอ 601–860px ไม่มีเมนู (กราฟ = จอ − 175) → กราฟ 426–804px
+   ป้ายแบบจอกว้างต้องการกราฟ ≥ ~805px: "10% ของ หุ้นต่างประเทศ" กว้าง 119px (วัดใน Chrome) ต้องพอดีแท่ง 16% และป้ายลอยต้องพอดีคอลัมน์
+   → ซ่อนคำต่อท้าย " ของ <ก้อน>" (ชื่อก้อนอยู่ใต้แท่ง) · "รอซื้อ" ขึ้นบรรทัดของตัวเอง (ป้ายรอซื้อ 3 บรรทัด = 56px ตาม NEED_PX/PILL_PX.wait.d)
+   แท่ง 19% (คอลัมน์ 20%) · กองป้ายลอยและป้ายใต้แท่งยื่นข้างละ 2% (อยู่ในคอลัมน์) · ป้ายลอย padding ข้าง 4px
+   กราฟแคบสุด 426px: แท่ง 81px · "฿XXX ล้าน" (ตอนล็อก) 13px 60px / 14px หนา ~66px → พอดีแท่งและคอลัมน์ 85px · จอ ≤600px ทับต่ออีกชั้นข้างล่าง */
+@media (max-width: 1239px) {
+  .ac-bar { width: 19%; }
+  .ac-seg-w { display: block; }
+  .ac-seg-of { display: none; }
+  .ac-float { left: -2%; right: -2%; }
+  .ac-pill, .ac-pill.is-held { padding-left: 4px; padding-right: 4px; }
+  .ac-lbl { left: -2%; right: -2%; }
+}
+
+/* แถบเงินสด: เงินสดใน Editor เทียบกรอบ ต่ำ–สูง ของผู้ใช้ */
+.ac-cash { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--pp-chip-bg); padding: 12px 14px; }
+.ac-cash-head { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 14px; flex-wrap: wrap; font-size: 12.5px; }
+.ac-cash-now { font-weight: 700; color: var(--mc-text); font-variant-numeric: tabular-nums; }
+.ac-cash-range { color: var(--mc-muted); }
+.ac-band { position: relative; height: 22px; margin: 26px 0 28px; border-radius: 6px; background: var(--pp-track); }
+.ac-band-ok { position: absolute; top: 0; bottom: 0; background: var(--ac-band-ok); border-left: 2px solid var(--pp-bull); border-right: 2px solid var(--pp-bull); }
+.ac-band [data-ac-now] { position: absolute; top: -6px; width: 2px; height: 34px; margin-left: -1px; background: var(--mc-amber); font-style: normal; }
+.ac-band [data-ac-now] span { position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 700; color: var(--mc-amber); white-space: nowrap; }
+/* จุดใกล้ขอบ: ป้ายชิดด้านใน ไม่ล้นการ์ด */
+.ac-band .ac-now.is-left span { left: -1px; transform: none; }
+.ac-band .ac-now.is-right span { left: auto; right: -1px; transform: none; }
+.ac-band-t { position: absolute; top: calc(100% + 6px); transform: translateX(-50%); font-size: 11px; color: var(--mc-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ac-band-t.is-zero { transform: none; }
+/* กล่องกติกา 2 ช่อง — ทวนกติกาของผู้ใช้ สีที่ขอบซ้าย (bear แดง · bull เขียว) */
+.ac-rules { display: flex; gap: 10px; }
+.ac-rule { flex: 1; min-width: 0; margin: 0; padding: 8px 10px; border: 1px solid var(--mc-border); border-left: 3px solid var(--mc-border); border-radius: 8px; font-size: 12px; line-height: 1.5; color: var(--mc-text-2); }
+.ac-rule.is-bear { border-left-color: var(--pp-bear); }
+.ac-rule.is-bull { border-left-color: var(--pp-bull); }
+
+.ac-foot { margin: 10px 0 0; font-size: 11px; line-height: 1.6; color: var(--mc-muted); }
+
+/* ฟอร์มตั้งกรอบเงินสด (ปุ่ม ตั้งกรอบเงินสด) — อยู่เหนือแถบเงินสด ให้เห็นตัวอย่างขณะพิมพ์ */
+.ac-form { margin: 0 0 10px; padding: 12px 14px; border: 1px solid var(--mc-border-active); border-radius: 12px; background: var(--pp-chip-bg); }
+.ac-form-t { font-size: 12.5px; font-weight: 700; color: var(--mc-text); }
+.ac-form-row { display: flex; align-items: flex-end; gap: 8px 10px; flex-wrap: wrap; margin-top: 8px; }
+.ac-form-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 11.5px; font-weight: 600; color: var(--mc-muted); }
+.ac-form-f input { width: 170px; max-width: 100%; padding: 7px 9px; border: 1px solid var(--mc-border); border-radius: 8px; background: var(--mc-card); color: var(--mc-text); font-family: inherit; font-size: 14px; font-variant-numeric: tabular-nums; }
+.ac-form-f input:focus { outline: 2px solid var(--mc-border-active); outline-offset: 1px; }
+.ac-form-f input::placeholder { color: var(--mc-muted); font-size: 12px; }
+.ac-form-dash { padding-bottom: 8px; color: var(--mc-muted); }
+.ac-form-btns { display: flex; gap: 8px; margin-left: auto; }
+.ac-btn { border: 1px solid var(--mc-border); background: var(--pp-chip-bg); color: var(--mc-text); font-family: inherit; font-size: 12.5px; font-weight: 700; border-radius: 8px; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
+.ac-btn:hover { border-color: var(--mc-border-active); }
+.ac-btn.is-primary { background: var(--pp-bull); border-color: var(--pp-bull); color: #052e16; }
+.ac-btn:disabled { opacity: .6; cursor: wait; }
+.ac-form-hint { margin: 8px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--mc-muted); }
+.ac-form-err { margin: 6px 0 0; font-size: 12px; font-weight: 600; color: var(--pp-bear); }
+/* สถานะการบันทึก · ร่างที่ยังไม่ได้บันทึก + ปุ่มลองใหม่ */
+.ac-status { display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap; margin: 0 0 10px; font-size: 12px; line-height: 1.5; color: var(--mc-text-2); }
+.ac-status.is-error { color: var(--pp-bear); font-weight: 600; }
+.ac-status.is-ok { color: var(--pp-bull); }
+.ac-status-draft { color: var(--mc-amber); font-weight: 600; }
+.ac-status .ac-btn { padding: 4px 11px; font-size: 12px; }
+
+/* มือถือ: ช่องภาพรวมเรียงบน-ล่าง · 5 แท่งยังแถวเดียว (แคบลง ข้อความในแท่งสองบรรทัดสั้น) · ไม่เลื่อนแนวนอน */
+@media (max-width: 600px) {
+  .ac-card { padding: 14px 14px 12px; border-radius: 15px; }
+  .ac-kpis { grid-template-columns: 1fr; }
+  .ac-kpi-v { font-size: 18px; }
+  /* กราฟ 200px − ขอบล่าง 1px = 199 = CHART_PX.m · has-float-top-m = กองป้ายลอยพ้นยอดกราฟที่จอนี้ (--ac-room-m) · ของจอกว้างไม่ใช้ที่นี่ */
+  .ac-chart { height: 200px; margin: 14px 0 70px 50px; }
+  .ac-chart.has-float-top-d { margin-top: 14px; }
+  .ac-chart.has-float-top-m { margin-top: calc(14px + var(--ac-room-m, 0px)); }
+  .ac-grid span { right: calc(100% + 5px); font-size: 10px; }
+  /* แท่ง 19% · ซ่อน " ของ <ก้อน>" · "รอซื้อ" บรรทัดของตัวเอง · ป้ายลอย/ป้ายใต้แท่งยื่นข้างละ 2% — มาจากชั้น ≤1239px ข้างบน */
+  .ac-in.show-d, .ac-pill.show-d { display: none; }
+  .ac-in.show-m, .ac-pill.show-m { display: block; }
+  /* ตัวเลข: "รอซื้อ" (.ac-seg-w) บรรทัดของตัวเอง · ยอดเงินสองบรรทัด "฿2.2" / "ล้าน" · % สั้น "78%"
+     ยอดเงินตัดที่ช่องว่างเสมอ (width: min-content — ยังเป็นโหนดข้อความเดียว privacy.js ซ่อนได้): วัดใน Chrome ที่จอ 360px แท่งกว้าง 43.9px
+       คอลัมน์ 46.2px แต่ "฿XXX ล้าน" (ตอนล็อก) บรรทัดเดียวกว้าง 51–61px ที่ 11–13px — ตัดสองบรรทัดแล้ว "฿XXX" 13px หนา 36.4px
+       "฿10.0" 34.3px "ล้าน" 21.8px "รอซื้อ" 11px 24.9px "100%" 11px 30.2px → พอดีแท่งและคอลัมน์ทั้งตัวเลขจริงและ ฿XXX
+     ความสูงป้ายต้องตรง NEED_PX / PILL_PX (line-height เป็น px):
+       ในส่วน รอซื้อ ขอบ 2 + padding-top 3 + 13 + 15 + 15 + 13 (+ เผื่อล่าง 2 = 63) · ลงทุน ขอบ 1 + padding-top 3 + 15 + 15 + 13 (+ 2 = 49)
+       ป้ายลอย รอซื้อ ขอบ 2×2 + padding 2×2 + 13 + 15 + 15 + 13 = 64 · ลงทุน ขอบ 1×2 + padding 2×2 + 15 + 15 + 13 = 49 */
+  .ac-seg, .ac-pill { white-space: nowrap; }
+  .ac-seg.ac-wait, .ac-seg.ac-held { padding-top: 3px; }
+  .ac-seg-amt { width: min-content; margin: 0 auto; white-space: normal; font-size: 13px; line-height: 15px; }
+  .ac-seg-w { white-space: nowrap; font-size: 11px; line-height: 13px; font-weight: 600; }
+  .ac-seg.ac-held .ac-seg-amt, .ac-pill.is-held .ac-seg-amt { font-size: 13px; line-height: 15px; }
+  .ac-seg-pct { font-size: 11px; line-height: 13px; }
+  /* ป้ายลอย: กองป้ายกว้างเท่าแท่ง (ยื่นข้างละ 2% ยังอยู่ในคอลัมน์) · FLOAT_OFF.m 4 · FLOAT_GAP.m 3 */
+  .ac-float { bottom: calc(100% + 4px); gap: 3px; }
+  .ac-pill, .ac-pill.is-held { padding: 2px 2px; border-radius: 6px; }
+  /* ป้ายใต้แท่งอยู่ในคอลัมน์ (ยื่นข้างละ 2% จากชั้น ≤1239px) — กว้างพอ ๆ กับเดิม (แท่ง 17% −6% ข้างละ) */
+  .ac-lbl { font-size: 10.5px; }
+  .ac-lbl b { font-size: 11px; }
+  .ac-band-t, .ac-band [data-ac-now] span { font-size: 10.5px; }
+  .ac-rules { flex-direction: column; gap: 8px; }
+  /* ฟอร์ม: ช่องต่ำ/สูงคู่กันครึ่งต่อครึ่ง · ปุ่มเต็มแถวด้านล่าง */
+  .ac-form { padding: 10px 12px; }
+  .ac-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ac-form-dash { display: none; }
+  .ac-form-f input { width: 100%; }
+  /* placeholder ตอนล็อก "ล็อกอยู่ — ใส่ค่าใหม่ได้" (ข้อความตามสเปก) ต้องพอดีช่องครึ่งแถว ~101px ที่จอ 390px */
+  .ac-form-f input::placeholder { font-size: 11px; }
+  .ac-form-f input::-webkit-input-placeholder { font-size: 11px; }
+  .ac-form-btns { grid-column: 1 / -1; margin-left: 0; }
+  .ac-form-btns .ac-btn { flex: 1; padding: 9px 12px; }
+}
+/* จอ 360px: ช่องเหลือที่ข้อความ ~86px — placeholder 11px ยาว ~96px ยังล้น → 10px (~88px) + padding ข้าง 7px (ที่ข้อความ ~90px)
+   ป้ายใต้แท่งกว้าง ~44px ตัดเป็น 5 บรรทัด (สูง ~69px + ห่างแท่ง 7) → เผื่อที่ใต้กราฟ 84px (70px ทับกล่องเงินสด 5px — วัดใน Chrome) */
+@media (max-width: 380px) {
+  .ac-chart { margin-bottom: 84px; }
+  .ac-form-f input { padding-left: 7px; padding-right: 7px; }
+  .ac-form-f input::placeholder { font-size: 10px; }
+  .ac-form-f input::-webkit-input-placeholder { font-size: 10px; }
+}

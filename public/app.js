@@ -163,6 +163,8 @@ async function adoptServerAllocation() {
     const payload = await readJsonResponse(response);
     const latest = payload && payload.data;
     if (latest && Object.prototype.hasOwnProperty.call(latest, "allocation")) state.data.allocation = latest.allocation;
+    // กรอบเงินสดของการ์ด Asset allocation (/portfolio) — หน้านี้ไม่ได้แก้เช่นกัน ใช้ฉบับบน server
+    if (latest && Object.prototype.hasOwnProperty.call(latest, "allocationPlan")) state.data.allocationPlan = latest.allocationPlan;
   } catch (error) {
     // อ่านไม่ได้ — บันทึกต่อด้วยข้อมูลที่มี
   }

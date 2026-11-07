@@ -37,7 +37,10 @@ var FIXTURE = { currentQuarter: qKey(0), quarters: {}, allocation: {
   monthlyExpense: 50000,
   retirement: { inflationPct: 3, workYears: 20, retireYears: 25, annualContribution: 240000, currentAge: 42 },
   updatedAt: "2026-09-01T00:00:00.000Z"
-} };
+},
+  // กรอบเงินสดของการ์ด Asset allocation (allocation-card-page.js) — ส่วนนี้ต้องไม่แตะ: PUT ของส่วนนี้ต้องคงไว้ทุก byte
+  allocationPlan: { cashBand: { min: 1000000, max: 3000000 }, updatedAt: "2026-11-01T00:00:00.000Z" } };
+var ALLOCATION_PLAN_JSON = JSON.stringify(FIXTURE.allocationPlan);
 FIXTURE.quarters[qKey(3)] = { key: qKey(3), assets: [row("cash", "เงินสด", 300000), row("rmf-jang", "RMF-จัง", 100000)] };
 FIXTURE.quarters[qKey(2)] = { key: qKey(2), assets: [row("cash", "เงินสด", 300000), row("rmf-jang", "RMF-จัง", 100000)] };
 FIXTURE.quarters[qKey(1)] = { key: qKey(1), assets: [row("cash", "เงินสด", 240000, -60000), row("rmf-jang", "RMF-จัง", 100000), row("thai-stock", "หุ้นไทย", 200000)] };
@@ -482,6 +485,8 @@ function flush(ms) { return new Promise(function (r) { setTimeout(r, ms == null 
         body.data.allocation.ports.short.expectedReturnPct === 3 && body.data.allocation.monthlyExpense === 50000);
       t("ประทับเวลา updatedAt ใหม่กว่าของเดิม", String(body.data.allocation.updatedAt) > "2026-09-01T00:00:00.000Z", body.data.allocation.updatedAt);
       t("quarters เหมือนเดิมทุก byte", JSON.stringify(body.data.quarters) === QUARTERS_JSON);
+      t("allocationPlan (กรอบเงินสดของการ์ด Asset allocation) ติดไปกับ PUT เหมือนเดิมทุก byte",
+        !!body.data.allocationPlan && JSON.stringify(body.data.allocationPlan) === ALLOCATION_PLAN_JSON, JSON.stringify(body.data.allocationPlan));
       t("currentQuarter ไม่ถูกแตะ", body.data.currentQuarter === FIXTURE.currentQuarter);
       t("ทุก PUT ที่ยิงออกไปมี quarters ครบ (validation ฝั่ง server จะไม่ปฏิเสธ)",
         A.puts.every(function (b) { return b.data && b.data.quarters && Object.keys(b.data.quarters).length === 4; }));

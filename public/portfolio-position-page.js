@@ -158,6 +158,7 @@
     if (!R.available) {
       if (R.reason === "no-quarterly" || R.reason === "no-snapshot") { ensurePortfolioFetched(); ensureHoldingsFetched(); }
       root.innerHTML = emptyState(R);
+      publishRendered(R, snap);
       return;
     }
 
@@ -168,6 +169,20 @@
     html += summaryStrip(R);
     html += allocationBar(R);
     root.innerHTML = html;
+    publishRendered(R, snap);
+  }
+
+  // การ์ด Asset allocation (allocation-card-page.js · #acRoot) วาดจาก R ชุดเดียวกับส่วนหัวนี้
+  // ไม่คำนวณเอง — ส่ง R + เอกสารพอร์ตชุดที่ใช้วาดให้ทาง event และ PortfolioPositionPage.last
+  // (การ์ดที่โหลดทีหลังอ่าน .last ได้เลย) · data: psCache ก่อน ไม่มีก็ใช้สำเนาใน snapshot
+  // (หลัง Load Latest Data หน้านี้ทิ้ง psCache — ไม่งั้นการ์ดจะเสีย allocationPlan)
+  var last = null;
+  function publishRendered(R, snap) {
+    var ps = psCache || (snap && snap.portfolioStatus) || null;
+    last = { R: R, data: (ps && (ps.data || (ps.quarters ? ps : null))) || null };
+    if (window.PortfolioPositionPage) window.PortfolioPositionPage.last = last;
+    if (typeof CustomEvent !== "function") return;
+    try { window.dispatchEvent(new CustomEvent("portfolio-position-rendered", { detail: last })); } catch (e) {}
   }
 
   function emptyState(R) {
@@ -237,7 +252,7 @@
     document.addEventListener("visibilitychange", refreshQuarterlyOnFocus);
     // ไม่มีตัวดัก Escape แล้ว — modal ที่มันเคยปิดถูกถอดออกไปพร้อมกัน
   }
+  // export ก่อน init — render แรก (ตอน readyState ไม่ใช่ loading) ต้องเขียน .last ลงได้
+  window.PortfolioPositionPage = { render: render, last: null };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-
-  window.PortfolioPositionPage = { render: render };
 })();
