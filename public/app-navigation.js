@@ -502,6 +502,13 @@
       { p: "/portfolio-manager", i: "💼", t: "AI Portfolio Manager" },
       { p: "/thesis", i: "🧾", t: "Investment Thesis" }
     ] },
+    // ผู้ใช้สั่ง 2026-11-09: กลุ่ม Portfolio ต่อท้ายกลุ่ม AI Portfolio Manager ทันที
+    { label: "Portfolio", items: [
+      // Asset Allocation ถูกรวมเข้าไปอยู่ท้ายหน้า /portfolio แล้ว จึงไม่มีเมนูของตัวเอง
+      { p: "/decision-journal", i: "📓", t: "Decision Journal" },
+      { p: "/portfolio", i: "📊", t: "Portfolio Position" },
+      { p: "/", i: "🗓️", t: "Quarterly Editor" }
+    ] },
     { label: "Thai Market", items: [
       { p: "/catalyst-hunter", i: "🇹🇭", t: "Thai Catalyst Hunter" },
       { p: "/thai-dr-monitor", i: "🌏", t: "Thai DR Monitor" }
@@ -510,12 +517,6 @@
       { p: "/ai-cycle", i: "🧭", t: "AI Cycle Intelligence" },
       { p: "/adaptive-position", i: "🎛️", t: "Adaptive Position" },
       { p: "/accumulation-center", i: "🧺", t: "Accumulation Center" }
-    ] },
-    { label: "Portfolio", items: [
-      // Asset Allocation ถูกรวมเข้าไปอยู่ท้ายหน้า /portfolio แล้ว จึงไม่มีเมนูของตัวเอง
-      { p: "/decision-journal", i: "📓", t: "Decision Journal" },
-      { p: "/portfolio", i: "📊", t: "Portfolio Position" },
-      { p: "/", i: "🗓️", t: "Quarterly Editor" }
     ] },
     { label: "Signals", items: [
       { p: "/action-center", i: "🎯", t: "Action Center" },
