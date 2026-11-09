@@ -7,7 +7,8 @@
   // ลงทุนจริงเท่าไร รอซื้อเท่าไร · เงินสดใน Editor อยู่ตรงไหนของกรอบที่ผู้ใช้ตั้งเอง
   //
   // แหล่งตัวเลข: R ชุดเดียวกับส่วนหัวของหน้า position — รับทาง event "portfolio-position-rendered"
-  //   (detail { R, data }) หรือ PortfolioPositionPage.last ถ้าหน้า position วาดไปก่อนไฟล์นี้โหลด
+  //   (detail { R, data, foreignFromPM }) หรือ PortfolioPositionPage.last ถ้าหน้า position วาดไปก่อนไฟล์นี้โหลด
+  //   data = เอกสารดิบของ server เสมอ · R อาจมีหุ้นต่างประเทศจาก AI Portfolio Manager (foreignFromPM = true)
   //   ไม่คำนวณเอง: AllocationCard.compute(R, plan) (allocation-card-engine.js) แล้วไฟล์นี้ปัด/จัดรูปเท่านั้น
   //   กรอบเงินสดอ่านจาก data.allocationPlan (เอกสาร /api/portfolio) ผ่าน normalizePlan
   //
@@ -59,6 +60,12 @@
   var STATUS_TH = { below: "ต่ำกว่ากรอบ", within: "ในกรอบ", above: "สูงกว่ากรอบ" };
   var SUB = "ตัวเลขทั้งหมดจาก Quarterly Editor (รอซื้อ = ส่วนที่ยังไม่ลงทุนของแต่ละรายการ) · ระบบไม่แนะนำให้โยก";
   var FOOT = "รอซื้อ = ส่วนที่ยังไม่ลงทุนของรายการใน Quarterly Editor (แก้ที่ช่อง ลงทุนแล้วกี่ %) · ภายในแท่ง % = ของก้อนนั้นเอง · ใต้แท่ง % = ทั้งแท่ง (ลงทุนแล้ว + รอซื้อ) เทียบความมั่งคั่งรวม";
+  // หุ้นต่างประเทศยึดหน้า AI Portfolio Manager (spec pm-foreign-sleeve §5): หน้า position บอกผ่าน last.foreignFromPM
+  //   (ธงของ R ชุดเดียวกับส่วนหัว — การ์ดไม่ตัดสินโหมดเอง) · โหมด pm: บรรทัดใต้หัวไม่อ้างว่า "ทั้งหมด" มาจาก Editor
+  //   และบรรทัดท้ายบอกที่มาของแท่งหุ้นต่างประเทศ
+  var SRC_PM_TH = "หุ้นต่างประเทศจาก AI Portfolio Manager";
+  var SUB_PM = "ตัวเลขจาก Quarterly Editor ยกเว้นหุ้นต่างประเทศที่มาจาก AI Portfolio Manager (รอซื้อ = ส่วนที่ยังไม่ลงทุนของแต่ละรายการ) · ระบบไม่แนะนำให้โยก";
+  var FOOT_PM = " · " + SRC_PM_TH + " (ลงทุนแล้ว = มูลค่าหุ้นที่ถือ · รอซื้อ = เงินสดที่กรอกในหน้านั้น)";
   var NO_DATA_TH = "ยังไม่มีข้อมูลใน Quarterly Editor";
   // หน้า position คำนวณไม่ได้ด้วยเหตุอื่นที่ไม่ใช่ "ไม่มีข้อมูล" (เช่น reason "error") — ข้อความเดียวกับส่วนหัวของหน้า
   var LOAD_FAIL_TH = "โหลดข้อมูลไม่สำเร็จ — ลองกด Load Latest Data";
@@ -126,6 +133,8 @@
     catch (e) { return false; }
   }
   function normalize(raw) { var A = AC(); return A ? A.normalizePlan(raw) : null; }
+  // หุ้นต่างประเทศใน R มาจาก AI Portfolio Manager ไหม (ธงที่หน้า position ส่งมากับ R)
+  function fromPM() { return !!(state.last && state.last.foreignFromPM === true); }
 
   // ---------------------------------------------------------------- draft (localStorage)
   // ร่าง = { plan: { cashBand: { min, max } (บาท), updatedAt }, savedAt } — เขียนเมื่อบันทึกล้มเหลว
@@ -322,7 +331,7 @@
     return '<div class="ac-head"><div class="ac-head-t"><h2 class="ac-title">Asset allocation</h2>' +
       '<span class="ac-head-sum">' + esc(sum) + "</span></div>" +
       '<button type="button" class="ac-settings" data-ac-settings="1" aria-expanded="' + (state.form ? "true" : "false") + '">ตั้งกรอบเงินสด</button></div>' +
-      '<p class="ac-sub">' + esc(SUB) + "</p>";
+      '<p class="ac-sub">' + esc(fromPM() ? SUB_PM : SUB) + "</p>";
   }
 
   // ช่องภาพรวม 2 ช่อง — ยอดเงินล้วน ไม่มีแถบสี
@@ -537,7 +546,7 @@
       headHtml(M) + kpisHtml(M) + chartHtml(M) +
       (state.form ? formHtml() : "") + statusHtml() +
       '<div class="ac-cash-wrap" data-ac-cash-wrap="1">' + cashHtml(M) + "</div>" +
-      '<p class="ac-foot">' + esc(FOOT) + "</p>" +
+      '<p class="ac-foot">' + esc(FOOT + (fromPM() ? FOOT_PM : "")) + "</p>" +
       "</section>";
   }
 

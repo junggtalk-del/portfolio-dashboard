@@ -137,6 +137,9 @@ function flush(ms) { return new Promise(function (r) { setTimeout(r, ms == null 
     t("เรนเดอร์ได้และมีเนื้อหา", h.length > 3000, h.length);
     t("หัวเรื่องเป็น ASSET ALLOCATION", h.indexOf("ASSET ALLOCATION") >= 0);
     t("มีคำโปรยตามสเปก", h.indexOf("แบ่งพอร์ตเป็น 3 ระยะ และติดตามผลตอบแทนจริงเทียบกับเป้าหมาย") >= 0);
+    // pm-foreign-sleeve final fix wave: ส่วนนี้อ่านเอกสาร Editor เสมอ (หุ้นต่างประเทศจาก PM ใช้แค่ส่วนหัว) → บอกที่มาตายตัว
+    t("ตัวเลขมูลค่าพอร์ตรวมบอกที่มา: มูลค่าพอร์ตรวม (ตาม Quarterly Editor)",
+      h.indexOf('<div class="aa-stat-l">มูลค่าพอร์ตรวม (ตาม Quarterly Editor)</div>') >= 0, (/<div class="aa-stat-l">มูลค่าพอร์ตรวม[^<]*/.exec(h) || [""])[0]);
     // ใช้ id="aaAssign" ไม่ใช่ "aaAssign" เฉย ๆ เพราะบน hero มีลิงก์ href="#aaAssign" อยู่ด้วย
     var order = ["aa-headline", "aa-cards", 'id="aaRetire"', "aa-fromhere", 'id="aaAssign"', "aa-settings", "aa-quality", "วิธีคำนวณ"];
     var pos = order.map(function (k) { return h.indexOf(k); });

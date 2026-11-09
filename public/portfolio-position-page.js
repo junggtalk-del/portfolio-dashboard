@@ -22,10 +22,12 @@
   // allocation ใช้ชุดเดียวกับส่วน Asset Allocation บนหน้านี้ — รวมค่าที่เพิ่งพิมพ์แต่ยังบันทึกไม่สำเร็จ
   // ไม่งั้นหัวหน้ากับตารางจะคนละตัวเลขตอนบันทึกล้มเหลว
   // คืน null = ไม่มี engine/ข้อมูล · {available:false, reason} = มี engine แต่ไตรมาสนี้เทียบไม่ได้
+  // อ่านเอกสารดิบเสมอ (rawSnapshot) — ผลตอบแทน/เป้าเกษียณยังคิดจาก Quarterly Editor แม้หุ้นต่างประเทศ
+  // ในส่วนหัวจะมาจาก AI Portfolio Manager (spec pm-foreign-sleeve §4)
   function realGrowth(R) {
     var AA = window.AssetAllocation;
     if (!AA || typeof AA.compute !== "function") return null;
-    var snap = effectiveSnapshot();
+    var snap = rawSnapshot();
     var src = psCache || (snap && snap.portfolioStatus) || null;
     if (!src) return null;
     var alloc = null;
@@ -112,7 +114,8 @@
   // TRUTH for bucket money — snapshot.portfolioStatus is only a copy captured at
   // the last Load Latest Data. A fresh fetch must therefore OVERRIDE the snapshot
   // copy, otherwise edits in the Quarterly Editor never show up on this page.
-  function effectiveSnapshot() {
+  // rawSnapshot = เอกสารดิบตามที่ server เก็บ (ใช้กับผลตอบแทน และส่งให้การ์ดผ่าน last.data)
+  function rawSnapshot() {
     var snap = readSnapshot();
     if (psCache) {
       var pseudo = Object.assign({}, snap || {});
@@ -123,6 +126,25 @@
       return pseudo;
     }
     return snap;
+  }
+
+  // หุ้นต่างประเทศยึดหน้า AI Portfolio Manager (foreign-sleeve.js · spec pm-foreign-sleeve):
+  //   โหมด pm (กรอกเงินสดในหน้า PM แล้ว + มี holdings) → สำเนา snapshot ที่แถว foreign-stock ไตรมาสปัจจุบัน
+  //   ถูกแทนด้วยแถวเดียว = มูลค่าหุ้นที่ถือ (ลงทุนแล้ว) + เงินสดที่กรอก (รอซื้อ) · โหมด editor / ไม่มีโมดูล → snapshot เดิม
+  //   holdings = getHoldingsArray() (snapshot ก่อน ไม่มีก็ cache ในเครื่อง — ชุดเดียวกับที่หน้านี้ใช้ทั้งหน้า)
+  //   สำเนานี้ใช้วาดตัวเลขปัจจุบันเท่านั้น — ห้ามส่งไป PUT (การ์ดได้เอกสารดิบผ่าน last.data)
+  // คืน { snap, pm, editorCount } · editorCount = จำนวนรายการจริงใน Editor (โหมด pm แถวหุ้นต่างประเทศหลายแถวถูกรวมเป็นแถวเดียว)
+  function sleeveView(raw) {
+    var out = { snap: raw, pm: false, editorCount: null };
+    var FS = window.ForeignSleeve;
+    if (!raw || !FS || typeof FS.applyToSnapshot !== "function") return out;
+    try {
+      var snap = FS.applyToSnapshot(raw, getHoldingsArray());
+      if (snap === raw) return out;   // โหมด editor → ตัวเดิม (reference เดียวกัน)
+      var PP = window.PortfolioPosition;
+      var q = PP && typeof PP.deriveQuarterly === "function" ? PP.deriveQuarterly(raw.portfolioStatus) : null;
+      return { snap: snap, pm: true, editorCount: q ? q.count : null };
+    } catch (e) { return out; }
   }
 
   var psFetchedAt = 0;
@@ -152,13 +174,14 @@
   function render() {
     var root = document.getElementById(ROOT_ID);
     if (!root) return;
-    var snap = effectiveSnapshot();
-    var R = (window.PortfolioPosition && window.PortfolioPosition.compute(snap, { bucketItems: readBucketItems() })) || { available: false, reason: "no-engine" };
+    var raw = rawSnapshot();
+    var view = sleeveView(raw);
+    var R = (window.PortfolioPosition && window.PortfolioPosition.compute(view.snap, { bucketItems: readBucketItems() })) || { available: false, reason: "no-engine" };
 
     if (!R.available) {
       if (R.reason === "no-quarterly" || R.reason === "no-snapshot") { ensurePortfolioFetched(); ensureHoldingsFetched(); }
       root.innerHTML = emptyState(R);
-      publishRendered(R, snap);
+      publishRendered(R, raw, false);
       return;
     }
 
@@ -166,20 +189,22 @@
     // ส่วนที่เหลือ (bucket board / trays / modal จัดการรายการ) ถูกปิดการแสดงผลไว้
     // เนื้อหาถัดจากนี้บนหน้าเดียวกันคือ Asset Allocation ซึ่งเรนเดอร์เองที่ #aaRoot
     var html = "";
-    html += summaryStrip(R);
-    html += allocationBar(R);
+    html += summaryStrip(R, view);
+    html += allocationBar(R, view.pm);
     root.innerHTML = html;
-    publishRendered(R, snap);
+    publishRendered(R, raw, view.pm);
   }
 
   // การ์ด Asset allocation (allocation-card-page.js · #acRoot) วาดจาก R ชุดเดียวกับส่วนหัวนี้
   // ไม่คำนวณเอง — ส่ง R + เอกสารพอร์ตชุดที่ใช้วาดให้ทาง event และ PortfolioPositionPage.last
   // (การ์ดที่โหลดทีหลังอ่าน .last ได้เลย) · data: psCache ก่อน ไม่มีก็ใช้สำเนาใน snapshot
   // (หลัง Load Latest Data หน้านี้ทิ้ง psCache — ไม่งั้นการ์ดจะเสีย allocationPlan)
+  // data = เอกสารดิบเสมอ (raw ไม่ใช่สำเนาที่แทนหุ้นต่างประเทศ) · R = จากสำเนา (ตัวเลขชุดเดียวกับส่วนหัว)
+  // foreignFromPM = หุ้นต่างประเทศใน R มาจาก AI Portfolio Manager — การ์ดใช้บอกที่มา ไม่ตัดสินโหมดเอง
   var last = null;
-  function publishRendered(R, snap) {
-    var ps = psCache || (snap && snap.portfolioStatus) || null;
-    last = { R: R, data: (ps && (ps.data || (ps.quarters ? ps : null))) || null };
+  function publishRendered(R, raw, foreignFromPM) {
+    var ps = psCache || (raw && raw.portfolioStatus) || null;
+    last = { R: R, data: (ps && (ps.data || (ps.quarters ? ps : null))) || null, foreignFromPM: foreignFromPM === true };
     if (window.PortfolioPositionPage) window.PortfolioPositionPage.last = last;
     if (typeof CustomEvent !== "function") return;
     try { window.dispatchEvent(new CustomEvent("portfolio-position-rendered", { detail: last })); } catch (e) {}
@@ -196,19 +221,29 @@
       '<p class="pp-empty-msg">' + msg + "</p></div></section>";
   }
 
+  // ป้ายที่มา (โหมด pm) — ข้อความคงที่ ผ่าน esc · ไม่มีเงิน
+  var SRC_PM_TH = "หุ้นต่างประเทศจาก AI Portfolio Manager";
+  function srcTag() { return '<span class="pp-src" data-pp-src="pm">' + esc(SRC_PM_TH) + "</span>"; }
+  // โหมด pm: ความมั่งคั่งรวมใช้หุ้นต่างประเทศจาก PM แต่บรรทัดผลตอบแทนยังคิดจากเอกสารดิบของ Editor (realGrowth)
+  // → บอกใต้บรรทัดผลตอบแทน ไม่งั้นมูลค่าเพิ่มดูไม่ตรงกับความมั่งคั่งรวม · โหมด editor ไม่แสดง
+  var GROW_SRC_TH = "ผลตอบแทนคิดจาก Quarterly Editor (หุ้นต่างประเทศใน Editor เป็นค่าที่กรอกเอง)";
+
   // -------------------------------------------------- 1 · summary strip
-  function summaryStrip(R) {
+  function summaryStrip(R, view) {
     var T = R.totals;
+    var pm = !!(view && view.pm);
+    var count = pm && typeof view.editorCount === "number" ? view.editorCount : T.assetCount;
     var qoq = T.qoq ? ((T.qoq.thb >= 0 ? "+" : "") + thb(T.qoq.thb).replace("฿", "฿") + (T.qoq.pct != null ? " (" + (T.qoq.pct >= 0 ? "+" : "") + T.qoq.pct + "%)" : "")) : null;
     var ago = timeAgo(R.generatedAt);
     var RG = realGrowth(R);
     var qoqLine = qoq ? '<div class="pp-stat-s ' + (T.qoq.thb >= 0 ? "pp-up" : "pp-down") + '">QoQ ' + esc(qoq) + "</div>" : '<div class="pp-stat-s">ยังไม่มีไตรมาสก่อนหน้า</div>';
     // มี record ทั้งพอร์ต → 3 บรรทัดคู่กัน · ไม่มี engine/เทียบไม่ได้ → QoQ เดิม (+ เหตุผลถ้ามี)
-    var growthLine = RG && RG.available ? growthBlock(RG)
+    var growthLine = RG && RG.available
+      ? growthBlock(RG) + (pm ? '<div class="pp-stat-s pp-dim" data-pp-grow-src="editor">' + esc(GROW_SRC_TH) + "</div>" : "")
       : qoqLine + (RG && RG.reason ? '<div class="pp-stat-s pp-dim">ไม่รวมเงินเติม: ' + esc(RG.reason) + "</div>" : "");
     return '<section class="pp-hero"><div class="pp-hero-inner">' +
       '<div class="pp-hero-head"><div><h1 class="pp-title">📊 Portfolio Position</h1>' +
-      '<p class="pp-sub">ไตรมาส <b>' + esc(R.quarterKey) + '</b> · ' + T.assetCount + " รายการใน Quarterly Editor" + (ago ? " · อัปเดต " + esc(ago) : "") + '</p></div></div>' +
+      '<p class="pp-sub">ไตรมาส <b>' + esc(R.quarterKey) + '</b> · ' + esc(count) + " รายการใน Quarterly Editor" + (pm ? " · " + srcTag() : "") + (ago ? " · อัปเดต " + esc(ago) : "") + '</p></div></div>' +
       '<div class="pp-stats">' +
         '<div class="pp-stat"><div class="pp-stat-n">' + thb(T.total) + '</div><div class="pp-stat-l">ความมั่งคั่งรวม</div>' + growthLine + '</div>' +
         '<div class="pp-stat"><div class="pp-stat-n">' + pct(T.investedPct) + '</div><div class="pp-stat-l">ลงทุนจริง</div><div class="pp-stat-s">' + thb(T.investedSum) + '</div></div>' +
@@ -220,14 +255,14 @@
   }
 
   // -------------------------------------------------- 2 · allocation bar
-  function allocationBar(R) {
+  function allocationBar(R, pm) {
     var segs = "", legend = "";
     R.buckets.forEach(function (b) {
       if (!(b.pct > 0)) return;
       segs += '<i style="width:' + b.pct + '%;background:' + b.color + '" title="' + esc(b.label) + " " + pct(b.pct) + '"></i>';
       legend += '<span class="pp-leg"><i style="background:' + b.color + '"></i>' + esc(b.label) + " <b>" + pct(b.pct) + "</b></span>";
     });
-    return '<section class="pp-block"><div class="pp-block-head"><h2>สัดส่วนพอร์ตตอนนี้</h2><span class="pp-block-sub">ตามมูลค่าจริงจาก Quarterly Editor</span></div>' +
+    return '<section class="pp-block"><div class="pp-block-head"><h2>สัดส่วนพอร์ตตอนนี้</h2><span class="pp-block-sub">ตามมูลค่าจริงจาก Quarterly Editor' + (pm ? " · " + srcTag() : "") + "</span></div>" +
       '<div class="pp-alloc">' + segs + '</div><div class="pp-legend">' + legend + "</div></section>";
   }
 

@@ -153,7 +153,7 @@ async function persistRemoteData() {
   }
 }
 
-// หน้านี้ไม่ได้แก้ allocation (แบ่งพอร์ต / แผนเกษียณ / เงินเติมไตรมาสละ ที่ตั้งในหน้า /portfolio)
+// หน้านี้ไม่ได้แก้ allocation (แบ่งพอร์ต / แผนเกษียณ / เงินเติมไตรมาสละ ที่ตั้งในหน้า /portfolio) · allocationPlan · foreignSleeve
 // จึงต้องใช้ฉบับล่าสุดบน server ทุกครั้งก่อนบันทึก ไม่งั้นแท็บนี้ที่เปิดค้างไว้จะเขียนทับค่าที่เพิ่งตั้งด้วยของเก่า
 // อ่านไม่ได้ (เช่นเน็ตหลุด) ก็บันทึกไตรมาสต่อด้วยข้อมูลที่มี — ไม่ขวางการบันทึก
 async function adoptServerAllocation() {
@@ -165,6 +165,8 @@ async function adoptServerAllocation() {
     if (latest && Object.prototype.hasOwnProperty.call(latest, "allocation")) state.data.allocation = latest.allocation;
     // กรอบเงินสดของการ์ด Asset allocation (/portfolio) — หน้านี้ไม่ได้แก้เช่นกัน ใช้ฉบับบน server
     if (latest && Object.prototype.hasOwnProperty.call(latest, "allocationPlan")) state.data.allocationPlan = latest.allocationPlan;
+    // เงินสดรอซื้อหุ้นต่างประเทศ (ช่อง cash หน้า AI Portfolio Manager) — หน้านี้ไม่ได้แก้เช่นกัน ใช้ฉบับบน server
+    if (latest && Object.prototype.hasOwnProperty.call(latest, "foreignSleeve")) state.data.foreignSleeve = latest.foreignSleeve;
   } catch (error) {
     // อ่านไม่ได้ — บันทึกต่อด้วยข้อมูลที่มี
   }

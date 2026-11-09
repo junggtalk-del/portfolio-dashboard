@@ -171,6 +171,22 @@
 .pm-dep-next-wait { border-color: var(--mc-border); background: rgba(148,163,184,.07); }
 .pm-row-cash td { background: rgba(148,163,184,.05); border-top: 1px dashed var(--mc-border); }
 
+/* ช่องเงินสดรอซื้อหุ้นต่างประเทศ (ในการ์ด "ลงทุนแล้ว · เงินสดพร้อมวาง") */
+.pm-cashbox { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--mc-border, #1f2a3d); }
+.pm-cash-lbl { font-size: 11.5px; font-weight: 700; color: var(--mc-text, #e2e8f0); }
+.pm-cash-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pm-cash-inp { flex: 1 1 120px; min-width: 0; max-width: 170px; background: rgba(15,23,42,.6); border: 1px solid var(--mc-border); border-radius: 8px; color: var(--mc-text); font: inherit; font-size: 12.5px; padding: 5px 8px; font-variant-numeric: tabular-nums; text-align: right; }
+.pm-cash-inp:focus { border-color: #38bdf8; outline: none; }
+.pm-cash-inp:disabled { opacity: .6; }
+.pm-cash-btn { background: rgba(56,189,248,.15); border: 1px solid rgba(56,189,248,.5); color: #38bdf8; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 700; padding: 5px 12px; cursor: pointer; }
+.pm-cash-btn:hover { background: rgba(56,189,248,.28); }
+.pm-cash-btn:disabled { opacity: .55; cursor: default; }
+.pm-stat .pm-cash-src { font-size: 11px; color: var(--mc-dim, #94a3b8); line-height: 1.5; }
+.pm-cash-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 11px; line-height: 1.5; }
+.pm-stat .pm-cash-status.is-error span { color: #fda4af; }
+.pm-stat .pm-cash-status.is-ok span { color: #6ee7b7; }
+.pm-stat .pm-cash-status .pm-cash-draft { color: #fbbf24; }
+
 /* จัดการหุ้นในพอร์ต (ย้ายจาก Action Center) */
 .pm-mv-inp { width: 110px; background: rgba(15,23,42,.6); border: 1px solid var(--mc-border); border-radius: 8px; color: var(--mc-text); font-size: 12px; padding: 4px 8px; font-variant-numeric: tabular-nums; text-align: right; }
 .pm-mv-inp:focus { border-color: #38bdf8; outline: none; }

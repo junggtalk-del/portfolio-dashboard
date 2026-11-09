@@ -41,6 +41,8 @@
 .pp-grow-st.is-on { color: var(--mc-text); }
 .pp-grow-st.is-behind { color: var(--pp-mid); }
 .pp-dim { color: var(--mc-muted); font-weight: 500; }
+/* ป้ายที่มา "หุ้นต่างประเทศจาก AI Portfolio Manager" (โหมด pm) — สีจางแบบเดียวกับ .ac-foot */
+.pp-src { color: var(--mc-muted); }
 /* คำเตือนใต้ตัวเลข: ไตรมาสไม่มี/มีบางส่วนของข้อมูลเงินเติม — อำพัน ไม่ใช่แดง เพราะไม่ใช่ความผิดพลาด แต่เป็นข้อมูลที่ขาด */
 .pp-warn { color: var(--mc-amber, #fbbf24); }
 .pp-invbar { height: 12px; border-radius: 7px; background: var(--pp-track); overflow: hidden; margin-top: 16px; }

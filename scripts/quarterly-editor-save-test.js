@@ -123,6 +123,26 @@ run({ local: LOCAL, get: function () { return Promise.resolve(resp(200, { data: 
       put2 && JSON.stringify(put2.body.data.allocationPlan));
   });
 }).then(function () {
+  // เงินสดรอซื้อหุ้นต่างประเทศ (ช่อง cash หน้า AI Portfolio Manager) เก็บที่ foreignSleeve ระดับบนของเอกสารเดียวกัน
+  //   หน้า editor ไม่ได้แก้ค่านี้ → ต้องคงไว้ / ใช้ฉบับบน server แบบเดียวกับ allocation / allocationPlan
+  console.log("== foreignSleeve (เงินสดรอซื้อหุ้นต่างประเทศจากหน้า AI Portfolio Manager) ==");
+  var FS_OLD = { cash: 600000, updatedAt: "2026-11-09T01:00:00.000Z" };
+  var LOCAL_F = JSON.parse(JSON.stringify(LOCAL)); LOCAL_F.foreignSleeve = FS_OLD;
+  return run({ local: LOCAL_F, get: function () { return Promise.resolve(resp(500, { error: "boom" })); } }).then(function (r) {
+    var put = r.calls.filter(function (c) { return c.method === "PUT"; })[0];
+    t("เอกสารที่โหลดมามี foreignSleeve → PUT ของ editor ยังมี foreignSleeve เดิม (อ่าน server ไม่ได้ก็ไม่ทิ้ง)",
+      !!put && JSON.stringify(put.body.data.foreignSleeve) === JSON.stringify(FS_OLD), put && JSON.stringify(put.body.data.foreignSleeve));
+    // แท็บ editor เปิดค้าง (ไม่มี foreignSleeve) → ไปกรอกเงินสดในหน้า AI Portfolio Manager → กลับมาบันทึกไตรมาสในแท็บเก่า
+    var FS_NEW = { cash: 750000, updatedAt: "2026-11-09T08:00:00.000Z" };
+    var S4 = JSON.parse(JSON.stringify(SERVER)); S4.foreignSleeve = FS_NEW;
+    return run({ local: LOCAL, get: function () { return Promise.resolve(resp(200, { data: S4 })); } }).then(function (r2) {
+      var put2 = r2.calls.filter(function (c) { return c.method === "PUT"; })[0];
+      t("server มี foreignSleeve ที่หน้า editor ไม่เคยมี → PUT ใช้ foreignSleeve ของ server (เงินสดที่กรอกในหน้า PM ไม่หาย) · ไตรมาสยังเป็นของ editor",
+        !!put2 && JSON.stringify(put2.body.data.foreignSleeve) === JSON.stringify(FS_NEW) && JSON.stringify(put2.body.data.quarters) === JSON.stringify(LOCAL.quarters),
+        put2 && JSON.stringify(put2.body.data.foreignSleeve));
+    });
+  });
+}).then(function () {
   return run({ local: LOCAL, saving: true, get: function () { return Promise.resolve(resp(200, { data: SERVER })); } });
 }).then(function (r) {
   t("กำลังบันทึกอยู่ → ไม่ยิงซ้ำ (ไม่ GET/PUT)", r.calls.length === 0, r.calls.length);

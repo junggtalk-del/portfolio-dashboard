@@ -76,8 +76,9 @@ console.log("== portfolio-position-page.js เรนเดอร์เฉพา�
 var PPJS = fs.readFileSync(path.join(PUB, "portfolio-position-page.js"), "utf8");
 var renderBody = (/function render\(\)[\s\S]*?\n  \}/.exec(PPJS) || [""])[0];
 t("ดึงตัว render() ออกมาอ่านได้", renderBody.length > 0);
-t("ยังเรนเดอร์สรุปมูลค่า (summaryStrip)", renderBody.indexOf("summaryStrip(R)") >= 0);
-t("ยังเรนเดอร์แถบสัดส่วน (allocationBar)", renderBody.indexOf("allocationBar(R)") >= 0);
+// pm-foreign-sleeve Task 3: สองส่วนนี้รับอาร์กิวเมนต์ที่สอง (โหมดหุ้นต่างประเทศจาก AI Portfolio Manager) — ยังเป็นการเรียกตัวเดิม
+t("ยังเรนเดอร์สรุปมูลค่า (summaryStrip)", /summaryStrip\(R[,)]/.test(renderBody));
+t("ยังเรนเดอร์แถบสัดส่วน (allocationBar)", /allocationBar\(R[,)]/.test(renderBody));
 ["bucketBoard", "traysSection", "methodologyNote", "modalHtml"].forEach(function (fn) {
   t("ไม่เรนเดอร์ " + fn + " แล้ว", renderBody.indexOf(fn + "(") < 0);
 });

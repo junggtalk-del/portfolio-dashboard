@@ -50,8 +50,18 @@
   }
   // Current-quarter holdings from the Quarterly Editor (grouped by type + per-asset).
   // Fresh fetch (qpCache) wins over the snapshot's possibly-stale copy.
+  // หุ้นต่างประเทศยึดหน้า AI Portfolio Manager (foreign-sleeve.js · spec pm-foreign-sleeve): โหมด pm
+  // (กรอกเงินสดในหน้า PM แล้ว + มี holdings ใน snapshot ของหน้านี้) → แถว foreign-stock ไตรมาสปัจจุบัน
+  // ถูกแทนด้วยยอด PM (ลงทุนแล้ว = หุ้นที่ถือ · รอซื้อ = เงินสดที่กรอก) ในสำเนา · โหมด editor = เอกสารเดิม
+  // holdings ชุดเดียวกับ PMEngine.quarterlyBuckets บนหน้านี้ (snapshot.portfolioHoldings.data)
   function quarterlyPortfolio() {
-    const snap = snapshot(), ps = qpCache || (snap && snap.portfolioStatus);
+    const snap = snapshot(), rawPs = qpCache || (snap && snap.portfolioStatus);
+    const ph = snap && snap.portfolioHoldings;
+    const holdings = (ph && Array.isArray(ph.data) && ph.data) || (Array.isArray(ph) ? ph : []);
+    const FS = window.ForeignSleeve;
+    let ps = rawPs;
+    if (rawPs && FS && typeof FS.applyToDoc === "function") { try { ps = FS.applyToDoc(rawPs, holdings); } catch (e) { ps = rawPs; } }
+    const foreignFromPM = ps !== rawPs;
     const data = ps && (ps.data || (ps.quarters ? ps : null));
     if (!data || !data.quarters || typeof data.quarters !== "object") return null;
     const keys = Object.keys(data.quarters);
@@ -59,14 +69,24 @@
     const key = (data.currentQuarter && data.quarters[data.currentQuarter]) ? data.currentQuarter : keys.slice().sort().reverse()[0];
     const quarter = data.quarters[key];
     const assets = (quarter && Array.isArray(quarter.assets)) ? quarter.assets : [];
+    // manual-first — ให้ตรงกับ PMEngine.quarterlyBuckets และ Portfolio Position (แหล่งความจริงเดียวกัน)
+    const grossOf = (a) => (fin(a.manualValue) != null ? fin(a.manualValue) : (fin(a.snapshotValue) || 0));
     const rows = assets.map((a) => {
-      // manual-first — ให้ตรงกับ PMEngine.quarterlyBuckets และ Portfolio Position (แหล่งความจริงเดียวกัน)
-      const gross = fin(a.manualValue) != null ? fin(a.manualValue) : (fin(a.snapshotValue) || 0);
+      const gross = grossOf(a);
       const t = Q_TYPES[a.type] || { label: a.type || "อื่นๆ", color: "#64748b" };
       const inv = a.type === "cash" ? 0 : Math.max(0, Math.min(100, fin(a.investedPercent) || 0));
-      return { name: a.name || t.label, type: a.type, typeLabel: t.label, color: t.color, gross: gross || 0, invested: inv };
+      return { name: a.name || t.label, type: a.type, typeLabel: t.label, color: t.color, gross: gross || 0, invested: inv, fromPM: a.fromPM === true };
     }).filter((r) => r.gross > 0);
     if (!rows.length) return null;
+    // "สินทรัพย์ N รายการ" = จำนวนรายการของ Editor เอง (แบบ editorCount ของ /portfolio): โหมด pm แถวหุ้นต่างประเทศ
+    // หลายแถวถูกรวมเป็นแถวเดียว → นับจากเอกสารดิบ ไตรมาสเดียวกัน · นับไม่ได้ (ไม่มีแถวที่มีมูลค่า) = จำนวนแถวที่วาด
+    let count = rows.length;
+    if (foreignFromPM) {
+      const rawData = rawPs && (rawPs.data || (rawPs.quarters ? rawPs : null));
+      const rq = rawData && rawData.quarters ? rawData.quarters[key] : null;
+      const n = (rq && Array.isArray(rq.assets)) ? rq.assets.filter((a) => a && grossOf(a) > 0).length : 0;
+      if (n > 0) count = n;
+    }
     const total = rows.reduce((s, r) => s + r.gross, 0) || 1;
     rows.forEach((r) => { r.pct = r.gross / total * 100; });
     rows.sort((a, b) => b.gross - a.gross);
@@ -83,7 +103,7 @@
     })).sort((a, b) => b.gross - a.gross);
     let cashSum = 0, investedSum = 0;
     rows.forEach((r) => { if (r.type === "cash") cashSum += r.gross; else { investedSum += r.gross * r.invested / 100; cashSum += r.gross * (1 - r.invested / 100); } });
-    return { key, rows, byType, total, count: rows.length, cashSum, investedSum };
+    return { key, rows, byType, total, count, cashSum, investedSum, foreignFromPM };
   }
   function categorize(h) {
     // portfolioBucket (ผู้ใช้ตั้งเอง) ชนะ regex เสมอ — นิยามเดียวกับหน้าอื่นทั้งแอป
@@ -422,12 +442,14 @@
       <div class="mc-empty"><strong>ยังไม่มีข้อมูลพอร์ต</strong>กด Load Latest Data — หรือเพิ่มสินทรัพย์ที่หน้า Quarterly Editor ก่อน</div></section>`;
     const money = (v) => "฿" + Math.round(v).toLocaleString();
     const investedPct = P.total > 0 ? P.investedSum / P.total * 100 : 0, cashPct = 100 - investedPct;
-    const top = P.rows[0], topWarn = top && top.pct > 40;
+    // ⚠ กระจุกตัว ดูเฉพาะรายการของ Editor — แถวหุ้นต่างประเทศที่รวมจาก AI Portfolio Manager (fromPM) คือหุ้นหลายตัวรวมกัน
+    const top = P.rows.find((r) => !r.fromPM), topWarn = !!top && top.pct > 40;
     // bar = invested (solid type color) + cash-in-type (dimmed gray); length still = share of portfolio
+    // title = % เท่านั้น (ห้ามมีเงินใน title — privacy.js ซ่อนได้แค่ ฿ ที่เป็น text node)
     const typeBars = P.byType.map((g) => `<div class="mcx-pf-row">
       <span class="mcx-pf-dot" style="background:${g.color}"></span>
       <span class="mcx-pf-name">${esc(g.label)}</span>
-      <div class="mcx-pf-bar" title="ลงทุน ${money(g.invested)} · เงินสด ${money(g.cash)}">
+      <div class="mcx-pf-bar" title="ลงทุน ${g.investedPct.toFixed(0)}% · เงินสด ${(100 - g.investedPct).toFixed(0)}%">
         <i style="width:${(g.pct * g.investedPct / 100).toFixed(1)}%;background:${g.color}"></i><i class="mcx-pf-cashseg" style="width:${(g.pct * (100 - g.investedPct) / 100).toFixed(1)}%"></i>
       </div>
       <span class="mcx-pf-inv">${g.type === "cash" ? "สด 100%" : `ลงทุน ${g.investedPct.toFixed(0)}%`}</span>
@@ -435,7 +457,7 @@
       <span class="mcx-pf-val">${money(g.gross)}</span>
     </div>`).join("");
     return `<section class="mc-card mc-panel mc-fade mcx-pf">
-      <div class="mc-panel-head"><div><h2>💼 2 · พอร์ตเป็นไง</h2><span class="mc-sub">สินทรัพย์จริง · ไตรมาส ${esc(P.key)} · แก้ไขได้ที่ Quarterly Editor</span></div>
+      <div class="mc-panel-head"><div><h2>💼 2 · พอร์ตเป็นไง</h2><span class="mc-sub">สินทรัพย์จริง · ไตรมาส ${esc(P.key)} · แก้ไขได้ที่ Quarterly Editor${P.foreignFromPM ? " · " + esc("หุ้นต่างประเทศจาก AI Portfolio Manager") : ""}</span></div>
         ${topWarn ? `<span class="mcx-pf-warn">⚠ กระจุกตัว: ${esc(top.name)} ${top.pct.toFixed(0)}%</span>` : ""}</div>
       <div class="mcx-pf-hero">
         <div><small>มูลค่ารวม</small><strong>${money(P.total)}</strong></div>
@@ -471,7 +493,8 @@
       { key: "cash", label: "เงินสด", color: "#64748b", v: B.cash }
     ].filter((x) => x.v > 0.5);
     if (!items.length) return "";
-    const segs = items.map((x) => `<i style="width:${(x.v / total * 100).toFixed(1)}%;background:${x.color}" title="${esc(x.label)} ${money(x.v)}"></i>`).join("");
+    // title = ชื่อ + % เท่านั้น (ไม่มีเงิน) · ยอดเงินอยู่ใน chip เป็น text node ให้ privacy.js ซ่อน
+    const segs = items.map((x) => `<i style="width:${(x.v / total * 100).toFixed(1)}%;background:${x.color}" title="${esc(x.label)} ${(x.v / total * 100).toFixed(1)}%"></i>`).join("");
     const chips = items.map((x) => `<span class="mcx-pf4-chip"><i style="background:${x.color}"></i>${esc(x.label)} <b>${(x.v / total * 100).toFixed(1)}%</b> <em>${money(x.v)}</em></span>`).join("");
     return `<div class="mcx-pf-subhead">ถือเป็นสินทรัพย์อะไรบ้าง (มุมมอง 4 ก้อน)</div>
       <div class="mcx-pf4-bar">${segs}</div>

@@ -405,7 +405,8 @@
       '<div class="aa-headline is-' + h.tone + '">' + esc(h.text) + "</div>" +
       '<div class="aa-stats">' +
         '<div class="aa-stat"><div class="aa-stat-n">' + thb(R.totals.latest) + '</div>' +
-          '<div class="aa-stat-l">มูลค่าพอร์ตรวม</div>' +
+          // ส่วนนี้อ่านเอกสาร Quarterly Editor เสมอ (หุ้นต่างประเทศจาก PM ใช้แค่ส่วนหัว/การ์ดด้านบน) — บอกที่มาตายตัว
+          '<div class="aa-stat-l">มูลค่าพอร์ตรวม (ตาม Quarterly Editor)</div>' +
           '<div class="aa-stat-s">ไตรมาสล่าสุด ' + esc(R.latestKey) + "</div></div>" +
         '<div class="aa-stat"><div class="aa-stat-n">' + (R.totals.assignedPct === null ? "—" : pctOf(R.totals.assignedPct, 0)) + '</div>' +
           '<div class="aa-stat-l">จัดเข้าพอร์ตแล้ว</div>' +

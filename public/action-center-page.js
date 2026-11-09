@@ -1640,10 +1640,15 @@
   // Bucket GROSS from the Quarterly Editor (snapshot.portfolioStatus) — the same
   // source Portfolio Position uses. Gross per type INCLUDES the cash parked in
   // that sleeve (user spec: เงินสดที่ถือในหุ้นต่างประเทศเป็นตัวหารด้วย).
+  // หุ้นต่างประเทศยึดหน้า AI Portfolio Manager (foreign-sleeve.js · spec pm-foreign-sleeve): โหมด pm
+  // (กรอกเงินสดในหน้า PM แล้ว + มี holdings) → gross ของ foreign-stock = มูลค่าหุ้นที่ถือ + เงินสดที่กรอก
+  // (ฐาน % เดียวกับหน้า PM) จากสำเนาของเอกสาร · holdings = holdingsFromSnapshot ชุดเดียวกับทั้งหน้า · โหมด editor = เอกสารเดิม
   function computeQuarterlyBuckets() {
     const totals = {};
     try {
-      const ps = state.snapshot?.portfolioStatus;
+      let ps = state.snapshot?.portfolioStatus;
+      const FS = window.ForeignSleeve;
+      if (ps && FS && typeof FS.applyToDoc === "function") ps = FS.applyToDoc(ps, holdingsFromSnapshot(state.snapshot));
       const data = ps && (ps.data || (ps.quarters ? ps : null));
       if (!data || !data.quarters || typeof data.quarters !== "object") return totals;
       const keys = Object.keys(data.quarters).sort();

@@ -205,6 +205,11 @@
   function quarterlyBuckets(snapshot) {
     var totals = {};
     try {
+      // หุ้นต่างประเทศยึดหน้า AI Portfolio Manager (โหมด pm) — แทนแถว foreign-stock ไตรมาสปัจจุบันด้วยสำเนา
+      // Node ไม่มี window → พฤติกรรมเดิม · โหมด editor → ForeignSleeve คืน snapshot ตัวเดิม
+      if (typeof window !== "undefined" && window.ForeignSleeve && window.ForeignSleeve.applyToSnapshot) {
+        snapshot = window.ForeignSleeve.applyToSnapshot(snapshot);
+      }
       var ps = snapshot && snapshot.portfolioStatus;
       var data = ps && (ps.data || (ps.quarters ? ps : null));
       if (!data || !data.quarters) return totals;

@@ -6,8 +6,14 @@
   // "Where should my next dollar go?" — ไม่ใช่หน้าเทรด ไม่ใช่หน้า execution
   //
   // หน้านี้เป็นแค่ adapter + renderer:
-  //  - น้ำหนัก/เงินสด: Quarterly Editor bucket "หุ้นต่างประเทศ" (gross รวมเงินสด
-  //    ใน sleeve — ฐานเดียวกับ Action Center / Accumulation Center)
+  //  - น้ำหนัก/เงินสด: sleeve หุ้นต่างประเทศจาก window.ForeignSleeve.sleeveOf
+  //    · โหมด pm (กรอกช่อง "เงินสดรอซื้อหุ้นต่างประเทศ" แล้ว + มี holdings): ฐาน % = Σ หุ้นที่ถือ + เงินสดที่กรอก
+  //    · โหมด editor (ยังไม่กรอก / holdings ยังไม่มา): สูตรเดิม — Quarterly Editor bucket "หุ้นต่างประเทศ"
+  //      (gross รวมเงินสดใน sleeve) · เงินสด = gross − Σ หุ้น
+  //  - เอกสารพอร์ต: GET /api/portfolio สดตอนเปิดหน้า (psCache) ใช้แทน snapshot.portfolioStatus ที่อาจค้าง
+  //  - ช่องเงินสด: บันทึก = GET สด → เอกสารว่าง = ไม่ PUT → สำเนาทุกคีย์ + foreignSleeve { cash, updatedAt } → PUT
+  //    (โครงเดียวกับ allocation-card-page.js persistPlan · ไม่เคย PUT เอกสารที่แปลงแล้ว)
+  //    ล้มเหลว = ร่าง localStorage "pm_foreign_cash_draft_v1" + ปุ่มลองใหม่ · ร่างล้างหลัง PUT สำเร็จเท่านั้น
   //  - ตำแหน่ง: snapshot.portfolioHoldings (ต้นทุนเฉลี่ยจาก averageCost ถ้ามี)
   //  - ทุกการตัดสินใจ: window.PMEngine (ThesisEngine เป็นแกน — deterministic)
   //  - Tier ต่อหุ้น + Entry ที่ deploy แล้ว: localStorage (ผู้ใช้กำหนดเอง)
@@ -22,6 +28,36 @@
   var CVIEW_STORE = "pmCurrentView_v1";   // "all"|"stocks" — มุมมองตาราง Current Portfolio
   var state = { out: null, cashPct: null, gross: null, invested: null };
   var intelMap = null; // {TICKER: {intel, gate}} จาก IntelligenceEngine — null เมื่อ engine ไม่ได้โหลด
+
+  // ---- ช่องเงินสดรอซื้อหุ้นต่างประเทศ (→ เอกสารพอร์ต foreignSleeve) ----
+  var CASH_DRAFT_KEY = "pm_foreign_cash_draft_v1";   // { cash, savedAt } — เขียนเมื่อบันทึกล้มเหลว
+  var CASH_LABEL_TH = "เงินสดรอซื้อหุ้นต่างประเทศ";
+  var CASH_PM_TH = "หุ้นที่ถือ + เงินสดที่กรอกในหน้านี้";
+  var CASH_EDITOR_TH = "ยังไม่ได้กรอกเงินสด — ตอนนี้ใช้ยอดหุ้นต่างประเทศจาก Quarterly Editor";
+  var CASH_NOHOLD_TH = "กรอกเงินสดแล้ว แต่รายการหุ้นยังไม่โหลด — ตอนนี้ใช้ยอดหุ้นต่างประเทศจาก Quarterly Editor";
+  var CASH_INVALID_TH = "เงินสดต้องเป็นตัวเลข ≥ 0";
+  var CASH_EMPTY_SERVER_TH = "ข้อมูลพอร์ตบน server ว่าง — ยกเลิกการบันทึกเพื่อกันข้อมูลหาย";
+  var CASH_DRAFT_TH = "ใช้ค่าที่ยังไม่ได้บันทึก";
+  var CASH_LOCKED_PH = "ล็อกอยู่ — ใส่ค่าใหม่ได้";
+  var CASH_KEPT_TH = "ช่องว่าง = ใช้ค่าเดิม (ไม่ได้บันทึกใหม่)";
+  var CASH_SUPERSEDED_TH = "มีค่าที่ใหม่กว่าจากเครื่องอื่น — ใช้ค่านั้นแทนร่างที่ค้าง";
+  var CASH_BAD_INPUT = "?";   // type=number ที่เบราว์เซอร์อ่านไม่ออก (value "" + badInput) ≠ เว้นว่าง
+  var psCache = null;    // คำตอบ GET /api/portfolio สด ({ data: doc }) — ใช้แทน snapshot.portfolioStatus
+  var psFetchedAt = 0;   // เวลาที่ตั้ง psCache (ms) — Load Latest Data ที่ใหม่กว่านี้ = ใช้สำเนาใน snapshot แทน
+  var psSeq = 0;         // นับการเปลี่ยน psCache — GET ที่ออกไปก่อนการเปลี่ยนครั้งล่าสุดห้ามทับ
+  var psInflight = false;    // GET สดกำลังรอคำตอบ — กลับมาที่แท็บ (focus + visibilitychange) ไม่ยิงซ้ำ
+  var renderPending = false; // GET สดได้เอกสารใหม่ขณะผู้ใช้พิมพ์อยู่ในช่องของหน้า → รอ focusout ค่อยวาด
+  var repatching = false;    // กำลัง patch snapshot ซ้ำ (onSnapshotWritten) — event ของตัวเองไม่ต้องจัดการ
+  var cashUi = {
+    saveState: "idle",   // "idle" | "saving" | "saved" | "error" | "kept" | "superseded"
+    error: null,         // เหตุที่บันทึกไม่สำเร็จ (ข้อความไทย)
+    inputError: null,    // ค่าในช่องไม่ผ่าน (ไม่ GET ไม่ PUT)
+    typed: null,         // ข้อความที่พิมพ์ค้างในช่อง (วาดใหม่ระหว่างพิมพ์ไม่หาย) · null = ใช้ค่าที่เก็บไว้
+    draft: null,         // ร่างที่ยังไม่ได้บันทึก { cash, savedAt }
+    draftNotice: null
+  };
+  var cashEl = null;     // ช่องกรอกของการวาดรอบล่าสุด — ปุ่มบันทึกอ่านค่าจากตัวนี้
+  var ownSaved = null;   // เอกสารที่หน้านี้เพิ่ง PUT — event portfolio-allocation-saved ของตัวเองไม่ต้องรับซ้ำ
 
   // ถ้อยคำที่อ้าง "เป้า" — ตัดออกเฉพาะหน้านี้ (engine ยังพูดคำเดิมให้หน้าอื่น)
   // เรียงจากรูปเฉพาะ → รูปกว้าง · anchored ทั้งหมด ถ้า engine เปลี่ยนข้อความ กฎจะไม่ match เฉย ๆ
@@ -52,6 +88,69 @@
   function canonical(t) { return window.PortfolioCore && window.PortfolioCore.canonicalSymbolFromTicker ? window.PortfolioCore.canonicalSymbolFromTicker(t) : String(t || "").toUpperCase(); }
   function readJson(key, fallback) { try { var v = JSON.parse(localStorage.getItem(key) || "null"); return v == null ? fallback : v; } catch (e) { return fallback; } }
   function writeJson(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* full */ } }
+  function copyOf(o) {
+    var out = {};
+    for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) out[k] = o[k];
+    return out;
+  }
+  // Privacy Lock (privacy.js) ซ่อน ฿ ในข้อความ แต่ไม่แตะค่าใน <input> → ตอนล็อกช่องเงินสดต้องวาดว่างเอง
+  function privacyLocked() {
+    try { return !!(window.PortfolioPrivacy && typeof window.PortfolioPrivacy.isLocked === "function" && window.PortfolioPrivacy.isLocked()); }
+    catch (e) { return false; }
+  }
+
+  // ---------------- เอกสารพอร์ต: GET สด (psCache) > สำเนาใน snapshot · ร่างเงินสดซ้อนทับเพื่อแสดงเท่านั้น ----------------
+  // รับได้ทั้ง { data: doc } (คำตอบ /api/portfolio) และ doc ตรง
+  function docOfPs(ps) { return ps && typeof ps === "object" ? (ps.data || (ps.quarters ? ps : null)) : null; }
+  function isCashNum(v) { return typeof v === "number" && isFinite(v) && v >= 0; }
+  // JSON ที่เรียงคีย์ — เทียบเอกสารสองชุดโดยไม่สนลำดับคีย์ (jsonb บน server ไม่รักษาลำดับ)
+  function stableJson(v) {
+    if (v === null || typeof v !== "object") return JSON.stringify(v);
+    if (Array.isArray(v)) return "[" + v.map(function (x) { return x === undefined ? "null" : stableJson(x); }).join(",") + "]";
+    var keys = Object.keys(v).sort(), parts = [];
+    for (var i = 0; i < keys.length; i++) {
+      if (v[keys[i]] !== undefined) parts.push(JSON.stringify(keys[i]) + ":" + stableJson(v[keys[i]]));
+    }
+    return "{" + parts.join(",") + "}";
+  }
+  // เวลาบันทึกเงินสดของเอกสาร (ms) · ไม่มี / อ่านไม่ออก = null
+  function sleeveTime(doc) {
+    var f = doc && doc.foreignSleeve;
+    var t = f && typeof f.updatedAt === "string" ? Date.parse(f.updatedAt) : NaN;
+    return isFinite(t) ? t : null;
+  }
+  // สำเนาเอกสารที่ foreignSleeve = เงินสดในร่าง — ใช้วาดหน้าเท่านั้น (ห้ามนำไป PUT · persistCash GET สดเสมอ)
+  function withCash(ps, cash) {
+    var doc = docOfPs(ps);
+    if (!doc) return ps;
+    var nd = copyOf(doc);
+    nd.foreignSleeve = { cash: cash, updatedAt: null };
+    return { data: nd };
+  }
+  // snapshot ที่หน้านี้ใช้คำนวณ: portfolioStatus = psCache (ถ้ามี) + ร่างเงินสด (ถ้ามี) · ฟิลด์อื่นคงเดิม
+  function effectiveSnapshot(snap) {
+    if (!snap) return snap;
+    var ps = psCache || snap.portfolioStatus;
+    if (cashUi.draft) ps = withCash(ps, cashUi.draft.cash);
+    if (ps === snap.portfolioStatus) return snap;
+    var out = copyOf(snap);
+    out.portfolioStatus = ps;
+    return out;
+  }
+  // ร่าง = { cash (บาท ≥ 0), savedAt } · ผิดรูป = ไม่ใช้
+  function readCashDraft() {
+    try {
+      var d = JSON.parse(localStorage.getItem(CASH_DRAFT_KEY) || "null");
+      return d && typeof d === "object" && isCashNum(d.cash) ? d : null;
+    } catch (e) { return null; }
+  }
+  // คืนร่างเสมอ (เก็บในหน่วยความจำได้แม้ localStorage ใช้ไม่ได้ — ปุ่มลองใหม่ยังส่งได้)
+  function writeCashDraft(cash) {
+    var d = { cash: cash, savedAt: new Date().toISOString() };
+    try { localStorage.setItem(CASH_DRAFT_KEY, JSON.stringify(d)); } catch (e) { /* full */ }
+    return d;
+  }
+  function clearCashDraft() { try { localStorage.removeItem(CASH_DRAFT_KEY); } catch (e) { /* ignore */ } }
 
   // ---------------- stores (ผู้ใช้กำหนด — deterministic) ----------------
   function tierConfig() {
@@ -111,11 +210,16 @@
 
   // ---------------- positions (sleeve หุ้นต่างประเทศ = "AI portfolio") ----------------
   function buildInputs(snapshot) {
-    var PM = window.PMEngine, core = window.PortfolioCore;
+    var PM = window.PMEngine, core = window.PortfolioCore, FS = window.ForeignSleeve;
     var rows = (snapshot && snapshot.portfolioHoldings && snapshot.portfolioHoldings.data) || [];
     var holdings = core && core.dedupeHoldings ? core.dedupeHoldings(rows) : rows;
-    var buckets = PM.quarterlyBuckets(snapshot);
-    var gross = buckets["foreign-stock"] || 0;
+    // sleeve หุ้นต่างประเทศ: โหมด pm (กรอกเงินสดแล้ว + มี holdings) = Σ หุ้นที่ถือ + เงินสดที่กรอก
+    // โหมด editor = สูตรเดิม (gross จากแถว foreign-stock ของ Quarterly Editor)
+    var ps = snapshot && snapshot.portfolioStatus;
+    var sleeve = FS && FS.sleeveOf ? FS.sleeveOf(ps, holdings) : { source: "editor", reason: "no-cash" };
+    var cashEntered = FS && FS.cashOf ? FS.cashOf(ps) : null;
+    var pmMode = sleeve.source === "pm";
+    var gross = pmMode ? sleeve.gross : (PM.quarterlyBuckets(snapshot)["foreign-stock"] || 0);
     var progress = entryProgress();
     var idxKey = canonical(indexTicker());
 
@@ -141,9 +245,10 @@
         flagged.push({ key: key, name: h.assetName || key, mv: mv, avgCost: fin(h.averageCost) });
       }
     });
-    // ฐาน % = Portfolio Value หุ้นต่างประเทศทั้งก้อน (Quarterly Editor รวมเงินสดใน sleeve)
+    // ฐาน % = Portfolio Value หุ้นต่างประเทศทั้งก้อน (โหมด pm: หุ้นที่ถือ + เงินสดที่กรอก ·
+    // โหมด editor: Quarterly Editor รวมเงินสดใน sleeve)
     // — ฐาน = Portfolio Value ทั้งก้อน (เดิมใช้ผลรวมหุ้นธงแดง → QQQM 2M/5M โชว์ 56.6% แทน 40%)
-    // ไม่มี gross (ยังไม่ตั้ง Quarterly) → fallback ฐานผลรวมธงแดงแบบเดิม
+    // ไม่มี gross (ยังไม่ตั้ง Quarterly และยังไม่กรอกเงินสด) → fallback ฐานผลรวมธงแดงแบบเดิม
     var wBase = gross > 0 ? Math.max(gross, flagSum) : flagSum;
     var positions = flagged.map(function (f) {
       return {
@@ -172,12 +277,20 @@
           tierKey: tierKeyFor(key), entryDone: progress[key] || {} });
       });
     }
-    var cashPct = gross > 0 ? Math.max(0, ((gross - flagSum) / gross) * 100) : null;
-    var cashBaht = gross > 0 ? Math.max(0, gross - flagSum) : null; // เงินสดพร้อมวางใน sleeve (฿)
+    var cashPct, cashBaht; // เงินสดพร้อมวางใน sleeve (% / ฿)
+    if (pmMode) {
+      // โหมด pm: เงินสด = ค่าที่กรอกในหน้านี้ตรง ๆ (0 = กรอกแล้วว่าเป็นศูนย์) — ไม่เอา Editor มาลบ
+      cashBaht = sleeve.cash;
+      cashPct = gross > 0 ? (sleeve.cash / gross) * 100 : null;
+    } else {
+      cashPct = gross > 0 ? Math.max(0, ((gross - flagSum) / gross) * 100) : null;
+      cashBaht = gross > 0 ? Math.max(0, gross - flagSum) : null;
+    }
     var investedPct = cashPct != null ? Math.max(0, 100 - cashPct) : null;
     return { positions: positions, candidates: candidates, cashPct: cashPct,
       cashBaht: cashBaht, investedPct: investedPct,
-      flagSum: flagSum > 0 ? flagSum : null, flagCount: flagged.length, gross: gross > 0 ? gross : null };
+      flagSum: flagSum > 0 ? flagSum : null, flagCount: flagged.length, gross: gross > 0 ? gross : null,
+      cashSource: pmMode ? "pm" : "editor", cashReason: sleeve.reason || null, cashEntered: cashEntered };
   }
 
   // ---------------- จัดการหุ้นในพอร์ต (ย้ายมาจาก Action Center — path เขียนเดิม: PortfolioCore.saveHoldings) ----------------
@@ -280,18 +393,64 @@
       '<div class="pm-hero-rec ' + toneClass(ov.recommendation.tone) + '"><small>Overall Recommendation</small><b>' + esc(ov.recommendation.label) + "</b><span>" + esc(ov.recommendationWhy) + "</span></div>" +
       "</div>" +
       '<div class="pm-hero-grid">' +
-      stat("Portfolio Value (หุ้นต่างประเทศ)", inp.gross != null ? baht(inp.gross) : (inp.flagSum != null ? baht(inp.flagSum) : "ยังไม่ตั้งค่า"), inp.gross != null ? "จาก Portfolio Position → หุ้นต่างประเทศ (Quarterly Editor)" : "ตั้งค่าที่ Portfolio Position → หุ้นต่างประเทศ (ตอนนี้ใช้ผลรวมหุ้นธงแดงชั่วคราว)") +
-      stat("ลงทุนแล้ว · เงินสดพร้อมวาง",
-        inp.investedPct != null ? pct(inp.investedPct, 1) + " · " + pct(inp.cashPct, 1) : "—",
-        inp.cashBaht != null
-          ? "ลงทุน " + baht(inp.flagSum || 0) + " · เงินสดใน sleeve " + baht(inp.cashBaht) + " (ฐาน = หุ้นตปท.ทั้งก้อน)"
-          : "ตั้งมูลค่า sleeve ที่ Portfolio Position ก่อน จึงจะคำนวณส่วนเงินสดได้") +
+      (inp.cashSource === "pm"
+        ? stat("Portfolio Value (หุ้นต่างประเทศ)", baht(inp.gross != null ? inp.gross : 0), esc(CASH_PM_TH))
+        : stat("Portfolio Value (หุ้นต่างประเทศ)", inp.gross != null ? baht(inp.gross) : (inp.flagSum != null ? baht(inp.flagSum) : "ยังไม่ตั้งค่า"), inp.gross != null ? "จาก Portfolio Position → หุ้นต่างประเทศ (Quarterly Editor)" : "ตั้งค่าที่ Portfolio Position → หุ้นต่างประเทศ หรือกรอกเงินสดในการ์ดถัดไป (ตอนนี้ใช้ผลรวมหุ้นธงแดงชั่วคราว)")) +
+      cashStat(inp) +
       stat("Portfolio Thesis Score", ov.score == null ? "—" : ov.score + "/100", "ค่าเฉลี่ย Investment Thesis ถ่วงน้ำหนักตามสัดส่วนถือจริง (คนละตัวกับ Accumulation Score)") +
       stat("Portfolio Health", esc(ov.health.label), esc(ov.health.why)) +
       "</div></div></section>";
   }
-  function stat(t, v, sub) {
-    return '<div class="pm-stat"><small>' + t + "</small><b>" + v + "</b><span>" + sub + "</span></div>";
+  function stat(t, v, sub, extra, attr) {
+    return '<div class="pm-stat"' + (attr || "") + "><small>" + t + "</small><b>" + v + "</b><span>" + sub + "</span>" + (extra || "") + "</div>";
+  }
+  // การ์ด "ลงทุนแล้ว · เงินสดพร้อมวาง" + ช่องเงินสดรอซื้อหุ้นต่างประเทศ (บันทึกเมื่อ Enter / ปุ่มบันทึก)
+  function cashStat(inp) {
+    var pmMode = inp.cashSource === "pm";
+    var sub;
+    if (pmMode) sub = "ลงทุน " + baht(inp.flagSum || 0) + " · เงินสดพร้อมวาง " + baht(inp.cashBaht) + " (ฐาน = หุ้นที่ถือ + เงินสดที่กรอก)";
+    else if (inp.cashBaht != null) sub = "ลงทุน " + baht(inp.flagSum || 0) + " · เงินสดใน sleeve " + baht(inp.cashBaht) + " (ฐาน = หุ้นตปท.ทั้งก้อน)";
+    else sub = "กรอกเงินสดด้านล่าง หรือตั้งมูลค่า sleeve ที่ Portfolio Position ก่อน จึงจะคำนวณส่วนเงินสดได้";
+    return stat("ลงทุนแล้ว · เงินสดพร้อมวาง",
+      inp.investedPct != null ? pct(inp.investedPct, 1) + " · " + pct(inp.cashPct, 1) : "—",
+      sub, cashBoxHtml(inp), ' data-pm-cash-card="1"');
+  }
+  // ช่องกรอก: ล็อกอยู่ = วาดว่าง + placeholder (เว้นว่างตอนบันทึก = ใช้ค่าเดิม) · พิมพ์ค้าง = คงข้อความที่พิมพ์
+  // เงินที่แสดงเป็น ฿ ในข้อความ (privacy.js ซ่อนได้) · ไม่มีเงินใน title / aria-label
+  function cashBoxHtml(inp) {
+    var locked = privacyLocked();
+    var saving = cashUi.saveState === "saving";
+    if (cashUi.typed === CASH_BAD_INPUT) cashUi.typed = ""; // ช่องใหม่ว่างเสมอ → ค่าในหน่วยความจำต้องว่างด้วย
+    var stored = cashUi.draft ? cashUi.draft.cash : inp.cashEntered;
+    var val = cashUi.typed != null ? cashUi.typed : (locked || stored == null ? "" : String(stored));
+    var src = inp.cashSource === "pm" ? "ที่มา: " + CASH_PM_TH
+      : (inp.cashReason === "no-holdings" ? CASH_NOHOLD_TH : CASH_EDITOR_TH);
+    var dis = saving ? " disabled" : "";
+    return '<div class="pm-cashbox" data-pm-cashbox="1">' +
+      '<label class="pm-cash-lbl" for="pmCashInp">' + esc(CASH_LABEL_TH) + " (บาท)</label>" +
+      '<div class="pm-cash-row">' +
+      '<input id="pmCashInp" class="pm-cash-inp" type="number" min="0" step="any" inputmode="decimal" value="' + esc(val) + '" data-pm-cash="1"' +
+        (locked ? ' placeholder="' + esc(CASH_LOCKED_PH) + '"' : "") + dis + ">" +
+      '<button type="button" class="pm-cash-btn" data-pm-cash-save="1"' + dis + ">บันทึก</button>" +
+      "</div>" +
+      '<small class="pm-cash-src">' + esc(src) + "</small>" +
+      cashStatusHtml() + "</div>";
+  }
+  // สถานะการบันทึก + ร่าง (ไม่มีตัวเลขเงิน)
+  function cashStatusHtml() {
+    var s = cashUi.saveState, cls = "pm-cash-status", parts = [];
+    if (cashUi.inputError) { cls += " is-error"; parts.push("<span>" + esc(cashUi.inputError) + "</span>"); }
+    if (s === "saving") parts.push("<span>กำลังบันทึกเงินสด…</span>");
+    else if (s === "error") { cls += " is-error"; parts.push("<span>" + esc("บันทึกไม่สำเร็จ: " + (cashUi.error || "ติดต่อ server ไม่สำเร็จ")) + "</span>"); }
+    else if (s === "saved") { cls += " is-ok"; parts.push("<span>บันทึกเงินสดแล้ว</span>"); }
+    else if (s === "kept") parts.push("<span>" + esc(CASH_KEPT_TH) + "</span>");
+    else if (s === "superseded") parts.push("<span>" + esc(CASH_SUPERSEDED_TH) + "</span>");
+    if (cashUi.draft && cashUi.draftNotice) {
+      parts.push('<span class="pm-cash-draft">' + esc(cashUi.draftNotice + (s === "error" ? " (เก็บไว้ในเครื่องนี้)" : "")) + "</span>");
+      if (s === "error") parts.push('<button type="button" class="pm-cash-btn" data-pm-cash-retry="1">ลองบันทึกอีกครั้ง</button>');
+    }
+    if (!parts.length) return "";
+    return '<div class="' + cls + '" data-pm-cash-status="' + esc(s) + '" role="status">' + parts.join("") + "</div>";
   }
 
   // ---------------- pie: องค์ประกอบพอร์ต (SVG donut — ES5, ไม่มี lib) ----------------
@@ -399,7 +558,7 @@
       var p = posByTicker[r.ticker];
       if (!r.held || !p) return '<td class="pm-num"><button type="button" class="pm-addquick" data-pm-addquick="' + esc(r.ticker) + '" title="เพิ่ม ' + esc(r.ticker) + ' เข้าพอร์ต">➕ เพิ่ม</button></td>';
       if (p.dual) return '<td class="pm-num" title="ถือสองคลาส (GOOG+GOOGL) — มูลค่ารวม แก้แยกคลาสที่หน้า Portfolio">' + baht(p.marketValue) + ' <span class="pm-dim">🔒</span></td>';
-      return '<td class="pm-num" data-pv-skip="1"><input class="pm-mv-inp" type="number" min="0" step="any" inputmode="decimal" value="' + (p.marketValue || 0) + '" data-pm-mv="' + esc(r.ticker) + '" title="แก้มูลค่า (฿) แล้ว Enter/คลิกออก เพื่อบันทึก">' +
+      return '<td class="pm-num" data-pv-skip="1"><input class="pm-mv-inp" type="number" min="0" step="any" inputmode="decimal" value="' + (p.marketValue || 0) + '" data-pm-mv="' + esc(r.ticker) + '" title="แก้มูลค่า (บาท) แล้ว Enter/คลิกออก เพื่อบันทึก">' +
         '<button type="button" class="pm-rm-btn" data-pm-remove="' + esc(r.ticker) + '" title="เอาออกจากพอร์ต (เก็บเป็น watchlist)">✕</button></td>';
     };
     // ---- 2 มุม: ทั้งพอร์ต vs เฉพาะหุ้นรายตัว ----
@@ -426,7 +585,7 @@
       return x.ticker < y.ticker ? -1 : x.ticker > y.ticker ? 1 : 0;   // เสมอ = เรียงชื่อ ให้ลำดับนิ่ง
     });
     var tr = visRows.map(function (r) {
-      var wcell = r.weightPct == null ? '<span class="pm-dim" title="ใส่มูลค่า (฿) เพื่อคิดสัดส่วน">—</span>' : pct(r.weightPct);
+      var wcell = r.weightPct == null ? '<span class="pm-dim" title="ใส่มูลค่า (บาท) เพื่อคิดสัดส่วน">—</span>' : pct(r.weightPct);
       return "<tr" + (r.isIndex ? ' class="pm-row-index"' : "") + ">" +
         "<td>" + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">core</span>' : "") + '<small class="pm-dim"> ' + esc(r.name) + (r.held ? "" : " · ยังไม่ถือ") + "</small></td>" +
         "<td>" + tierSel(r) + "</td>" +
@@ -435,11 +594,12 @@
         "<td>" + (r.covered ? (function () { var gz = gatedZone(r); return zoneChip(gz.zone) + (gz.gated ? ' <span class="pm-ii-gate" title="' + esc(gz.why) + '">⛔ gated</span>' : "") + healthChip(r.ticker); })() : '<span class="pm-dim">ไม่มี thesis</span>') + "</td>" +
         "<td>" + (r.covered ? actionChip((function () { var gz2 = gatedZone(r); return gz2.gated && gz2.zone.key === "E" && window.PMEngine ? window.PMEngine.ACTIONS.review : r.action; })(), r) : '<a class="pm-dim" href="/thesis">/thesis-update ' + esc(r.ticker) + "</a>") + "</td></tr>";
     }).join("");
-    // แถวเงินสด = Portfolio Value (หุ้นต่างประเทศ) − ผลรวมมูลค่าหุ้นที่ลงทุน — ให้ครบ 100%
+    // แถวเงินสด — ให้ครบ 100%: โหมด pm = เงินสดรอซื้อที่กรอกในหน้านี้ · โหมด editor = Portfolio Value − ผลรวมมูลค่าหุ้นที่ลงทุน
     if (!stocksOnly && inp && inp.cashBaht != null && inp.gross != null) {
       var cashW = inp.gross > 0 ? (inp.cashBaht / Math.max(inp.gross, inp.flagSum || 0)) * 100 : null;
+      var cashWhy = inp.cashSource === "pm" ? "เงินสดรอซื้อหุ้นต่างประเทศที่กรอกในหน้านี้" : "Portfolio Value − หุ้นที่ลงทุน";
       tr += '<tr class="pm-row-cash">' +
-        '<td>💵 <b>เงินสดใน sleeve</b><small class="pm-dim"> Portfolio Value − หุ้นที่ลงทุน</small></td>' +
+        '<td>💵 <b>เงินสดใน sleeve</b><small class="pm-dim"> ' + cashWhy + "</small></td>" +
         "<td><span class='pm-idxtag'>Cash</span></td>" +
         '<td class="pm-num">' + baht(inp.cashBaht) + "</td>" +
         '<td class="pm-num"><b>' + (cashW == null ? "—" : pct(cashW)) + "</b></td>" +
@@ -544,7 +704,7 @@
   // ---------------- S5: Cash Deployment Plan ----------------
   function sectionDeployment(out, inp) {
     var d = out.deployment;
-    // ฿ ต่อรายการ = สัดส่วนของเงินสดจริงใน sleeve (คำนวณได้เมื่อตั้ง Quarterly Editor แล้ว)
+    // ฿ ต่อรายการ = สัดส่วนของเงินสดจริงใน sleeve (คำนวณได้เมื่อกรอกเงินสดในหน้านี้ หรือตั้ง Quarterly Editor แล้ว)
     var bahtOf = function (pctCash) { return inp.cashBaht != null ? baht(inp.cashBaht * pctCash / 100) : null; };
     var items = d.items.map(function (i) {
       var amt = bahtOf(i.pctOfCash);
@@ -574,7 +734,7 @@
     return '<section class="pm-sec"><h2>💵 Cash Deployment Plan <small>(เงินสดที่พร้อมวาง = 100%)</small></h2>' +
       headline +
       (inp.cashPct != null ? "<p>เงินสดจริงใน sleeve ตอนนี้ " + pct(inp.cashPct, 1) + " (" + baht(inp.cashBaht) + ") ของ sleeve — แผนด้านล่างคิดเป็นสัดส่วนของเงินสดก้อนนี้</p>"
-        : "<p>ยังไม่มีข้อมูลเงินสดจาก Quarterly Editor — แผนแสดงเป็นสัดส่วนสมมติของเงินก้อนที่จะวาง</p>") +
+        : "<p>ยังไม่มีข้อมูลเงินสด (กรอกเงินสดรอซื้อด้านบน หรือตั้ง Quarterly Editor) — แผนแสดงเป็นสัดส่วนสมมติของเงินก้อนที่จะวาง</p>") +
       (items || '<div class="mc-empty">วันนี้ยังไม่มี entry ที่ trigger ในตำแหน่งที่ถือ — เงินสดคงเป็น reserve 100%</div>') +
       '<div class="pm-dep-row pm-dep-reserve"><div class="pm-dep-head">🛡️ Cash Reserve<b>' + d.cashReserveFinal.toFixed(1) + "%</b></div>" +
       '<div class="pm-depbar pm-depbar-res"><i style="width:' + Math.min(100, d.cashReserveFinal) + '%"></i></div>' +
@@ -637,10 +797,255 @@
     return '<footer class="pm-foot">🧠 <b>วิธีคิดทั้งหมดเปิดเผย:</b> Zone/คะแนน/แผนเงิน มาจาก Investment Thesis Engine + Market Regime + Rate Monitor + เทคนิคจาก snapshot · มุมมอง AI Megatrend <b>คุณตัดสินใจเอง</b> (สวิตช์ Bullish/Bearish ด้านบน — เป็นเกต Rule 1 ไม่ใช่คะแนนคำนวณ) — สูตร Accumulation Score ชุดเดียวกับ Accumulation Center (engine กลางตัวเดียวกัน) · deterministic ไม่มี AI-generated opinion · กดดู "ทำไม" ได้ทุกการ์ด · ไม่ใช่คำแนะนำการลงทุน</footer>';
   }
 
+  // ---------------- เงินสดรอซื้อหุ้นต่างประเทศ: บันทึกลงเอกสารพอร์ต (โครงเดียวกับ allocation-card-page.js persistPlan) ----------------
+  function thError(msg) { var e = new Error(msg); e.pmTh = true; return e; }
+
+  // GET สด → เอกสารไม่มีไตรมาส = ไม่ PUT → สำเนาทุกคีย์ของเอกสารบน server → ตั้ง foreignSleeve → PUT { data }
+  // body = เอกสารดิบจาก server เสมอ (ไม่ใช่ psCache / snapshot ที่หน้าใช้วาด) → แถว foreign-stock ใน Editor ไม่ถูกแตะ
+  // bootDraft (เฉพาะร่างที่ส่งเองตอนเปิดหน้า): server มีเงินสดที่บันทึกหลังร่างนี้ (เช่นจากเครื่องอื่น) → ไม่ PUT
+  //   ทิ้งร่าง ใช้ค่าบน server · บันทึกที่ผู้ใช้กด / ปุ่มลองใหม่ ไม่ผ่านเงื่อนไขนี้
+  function persistCash(cash, bootDraft) {
+    if (cashUi.saveState === "saving") return;
+    cashUi.inputError = null;
+    // ตรวจที่ขอบการเขียน — ค่าไม่ผ่าน = ไม่ GET ไม่ PUT ไม่เขียนร่าง
+    if (!isCashNum(cash)) { cashUi.inputError = CASH_INVALID_TH; render(); return; }
+    var mine = { cash: cash, updatedAt: new Date().toISOString() };
+    cashUi.saveState = "saving";
+    cashUi.error = null;
+    render();
+    var p;
+    try { p = window.fetch("/api/portfolio", { cache: "no-store" }); }
+    catch (e) { p = Promise.reject(e); }
+    p.then(function (r) {
+      if (!r || !r.ok) throw thError("อ่านข้อมูลพอร์ตก่อนบันทึกไม่ได้ (HTTP " + (r ? r.status : "?") + ")");
+      return r.json();
+    }).then(function (j) {
+      var data = j && (j.data || (j.quarters ? j : null));
+      // กันเคสร้ายแรง: server ตอบเอกสารที่ไม่มีไตรมาส → PUT ทับจะลบพอร์ตทั้งก้อน
+      if (!data || !data.quarters || !Object.keys(data.quarters).length) throw thError(CASH_EMPTY_SERVER_TH);
+      if (bootDraft) {
+        var serverAt = sleeveTime(data), draftAt = Date.parse(bootDraft.savedAt);
+        if (serverAt != null && isFinite(draftAt) && serverAt > draftAt) {
+          var sup = new Error("superseded");
+          sup.pmSuperseded = data;
+          throw sup;
+        }
+      }
+      var next = {};
+      Object.keys(data).forEach(function (k) { next[k] = data[k]; });   // quarters / allocation / allocationPlan คงเดิมทุก byte
+      next.foreignSleeve = mine;
+      return window.fetch("/api/portfolio", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ data: next })
+      }).then(function (r2) {
+        if (!r2 || !r2.ok) throw thError("server ตอบ HTTP " + (r2 ? r2.status : "?"));
+        return next;
+      });
+    }).then(onCashPersisted, function (e) {
+      if (e && e.pmSuperseded) onDraftSuperseded(e.pmSuperseded);
+      else onCashFailed(mine, e);
+    });
+  }
+
+  // ร่างตอนเปิดหน้าเก่ากว่าเงินสดบน server → ไม่ PUT · ทิ้งร่าง · ใช้เอกสารบน server · บอกผู้ใช้สั้น ๆ
+  function onDraftSuperseded(doc) {
+    psCache = { data: doc };
+    psFetchedAt = Date.now();
+    psSeq++;
+    clearCashDraft();
+    cashUi.draft = null;
+    cashUi.draftNotice = null;
+    cashUi.typed = null;
+    cashUi.inputError = null;
+    cashUi.saveState = "superseded";
+    cashUi.error = null;
+    render();
+  }
+
+  function onCashPersisted(next) {
+    psCache = { data: next };   // เอกสารชุดที่เพิ่ง PUT = ฉบับล่าสุด
+    psFetchedAt = Date.now();
+    psSeq++;
+    ownSaved = next;
+    clearCashDraft();
+    cashUi.draft = null;
+    cashUi.draftNotice = null;
+    cashUi.typed = null;
+    cashUi.inputError = null;
+    cashUi.saveState = "saved";
+    cashUi.error = null;
+    patchSnapshot(next);
+    // event บน window อยู่แค่ในหน้านี้ (ไม่ข้ามแท็บ/หน้า) — หน้าอื่นได้เงินสดใหม่จาก snapshot ใน localStorage
+    // ที่ patch ข้างบน และจาก GET /api/portfolio สดของหน้านั้นเอง · ยิงไว้ให้ส่วนอื่นที่อาจวางบนหน้านี้ในอนาคต
+    try {
+      if (typeof window.CustomEvent === "function" && typeof window.dispatchEvent === "function") {
+        window.dispatchEvent(new window.CustomEvent("portfolio-allocation-saved", { detail: { data: next } }));
+      }
+    } catch (e) { /* ignore */ }
+    render();
+  }
+
+  // ล้มเหลวทุกแบบ (GET/PUT ไม่ ok · เอกสารบน server ว่าง · เน็ตหลุด) → เก็บร่าง แสดงร่าง + ปุ่มลองใหม่
+  function onCashFailed(mine, e) {
+    cashUi.draft = writeCashDraft(mine.cash);
+    cashUi.draftNotice = CASH_DRAFT_TH;
+    cashUi.typed = null;
+    cashUi.saveState = "error";
+    cashUi.error = (e && e.pmTh && e.message) || "ติดต่อ server ไม่สำเร็จ";
+    render();
+  }
+
+  // สำเนาเอกสารใน Data Snapshot ของ browser นี้ → foreignSleeve ใหม่ (หน้าอื่นใน browser เดียวกันเห็นทันที ไม่ต้องรอ Load)
+  // คงทุกฟิลด์ของ snapshot และของ wrapper portfolioStatus · แทนเฉพาะ data ด้วยเอกสารดิบชุดที่เพิ่ง PUT
+  function patchSnapshot(next) {
+    try {
+      var P = window.PortfolioDataSnapshot;
+      if (!P || typeof P.read !== "function" || typeof P.write !== "function") return;
+      var snap = P.read();
+      if (!snap || typeof snap !== "object") return;
+      var out = copyOf(snap);
+      var old = snap.portfolioStatus;
+      var ps = old && typeof old === "object" && Object.prototype.hasOwnProperty.call(old, "data") ? copyOf(old) : {};
+      ps.data = next;
+      out.portfolioStatus = ps;
+      P.write(out);
+    } catch (e) { /* snapshot เป็นแค่สำเนา — เขียนไม่ได้ก็ไม่กระทบเอกสารบน server */ }
+  }
+
+  // type=number: ข้อความที่เบราว์เซอร์อ่านไม่ออกได้ value "" — ไม่ใช่ "เว้นว่าง = ใช้ค่าเดิม"
+  function readCashInput(el) {
+    var v = el.value;
+    if (v === "" && el.validity && el.validity.badInput) return CASH_BAD_INPUT;
+    return v == null ? "" : String(v);
+  }
+  // Enter / ปุ่มบันทึก
+  function onCashSave() {
+    if (cashUi.saveState === "saving") return;
+    var raw = cashEl ? readCashInput(cashEl) : (cashUi.typed == null ? "" : cashUi.typed);
+    cashUi.typed = raw;
+    var s = String(raw).replace(/^\s+|\s+$/g, "");
+    if (s === "" && privacyLocked()) {
+      // ล็อกอยู่ ช่องวาดว่าง: เว้นว่าง = ใช้ค่าเดิม → ไม่ GET ไม่ PUT (มีร่างค้าง = ส่งร่างนั้นอีกครั้ง)
+      cashUi.typed = null;
+      cashUi.inputError = null;
+      if (cashUi.draft) { persistCash(cashUi.draft.cash); return; }
+      cashUi.saveState = "kept";
+      render();
+      return;
+    }
+    var n = s === "" ? NaN : Number(s);
+    if (!isCashNum(n)) { cashUi.inputError = CASH_INVALID_TH; render(); return; }
+    persistCash(n);
+  }
+  function onCashRetry() {
+    if (cashUi.draft && cashUi.saveState !== "saving") persistCash(cashUi.draft.cash);
+  }
+
+  // GET /api/portfolio สด (ตอนเปิดหน้า / กลับมาที่แท็บ) → psCache
+  //   · GET ค้างอยู่ = ไม่ยิงซ้ำ (focus + visibilitychange มาคู่กันตอนกลับมาที่แท็บ)
+  //   · คำตอบถูกทิ้งเมื่อ psSeq เปลี่ยนระหว่างรอ (บันทึกเงินสด / GET อื่นที่รับไปแล้ว / Load ที่ทิ้ง psCache)
+  //   · เอกสารเหมือนชุดที่ใช้วาดอยู่ = ไม่วาดใหม่ · ต่างกันแต่ผู้ใช้พิมพ์อยู่ในช่องของหน้า = รอ focusout
+  function ensurePortfolioFetched() {
+    if (psInflight) return;
+    psInflight = true;
+    var seq = psSeq;
+    try {
+      window.fetch("/api/portfolio", { cache: "no-store" })
+        .then(function (r) { return r && r.ok ? r.json() : null; })
+        .then(function (j) {
+          psInflight = false;
+          var d = docOfPs(j);
+          if (!d || !d.quarters || !Object.keys(d.quarters).length) return;
+          if (seq !== psSeq) return;
+          var changed = stableJson(d) !== stableJson(currentDoc());
+          psCache = j.data ? j : { data: d };
+          psFetchedAt = Date.now();
+          psSeq++;
+          if (changed) renderWhenIdle();
+        }, function () { psInflight = false; /* ใช้สำเนาใน snapshot ต่อ */ });
+    } catch (e) { psInflight = false; }
+  }
+  // เอกสารพอร์ตที่หน้าใช้วาดอยู่ (ไม่รวมร่างที่ซ้อนทับ)
+  function currentDoc() {
+    if (psCache) return docOfPs(psCache);
+    var s = readSnapshot();
+    return s ? docOfPs(s.portfolioStatus) : null;
+  }
+  // มีตัวควบคุมในหน้านี้ถูกโฟกัสอยู่ไหม (ช่องมูลค่าหุ้น / เพิ่มหุ้น / เงินสด หรือปุ่ม) — วาดใหม่ตอนนี้ = ข้อความที่พิมพ์ค้างหาย
+  //   ปุ่มนับด้วย: กดปุ่มบันทึก = โฟกัสย้ายมาที่ปุ่มตอน mousedown · วาดใหม่ก่อน mouseup = innerHTML ถูกแทน → คลิกหาย
+  function inRoot(el) {
+    var root = document.getElementById(ROOT_ID);
+    return !!(root && el && typeof root.contains === "function" && root.contains(el));
+  }
+  function inputFocused() {
+    try {
+      var ae = document.activeElement;
+      return inRoot(ae) && /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(String(ae.tagName || ""));
+    } catch (e) { return false; }
+  }
+  function renderWhenIdle() {
+    if (inputFocused()) { renderPending = true; return; }
+    render();
+  }
+  // ออกจากช่อง → ถ้ามีการวาดที่เลื่อนไว้ → วาด เมื่อโฟกัสออกจากตัวควบคุมของหน้าแล้วเท่านั้น
+  //   โฟกัสย้ายไปตัวอื่นใน #pmRoot (relatedTarget อยู่ใน root เช่นปุ่มบันทึก) = ยังใช้งานหน้าอยู่ → คง pending ไว้
+  //   รอ focusout ของตัวนั้น (render อื่นที่เกิดก่อน เช่นหลังกดบันทึก ล้าง pending ให้แล้ว)
+  function onFocusOut(ev) {
+    if (!renderPending) return;
+    var next = ev ? ev.relatedTarget : null;
+    try { if (next && inRoot(next)) return; } catch (e) { /* ignore */ }
+    setTimeout(function () {
+      if (!renderPending || inputFocused()) return;
+      render();
+    }, 0);
+  }
+  function refreshOnFocus() {
+    if (document.hidden) return;
+    if (Date.now() - psFetchedAt > 30000) ensurePortfolioFetched();
+  }
+  // snapshot เขียนใหม่:
+  //   · Load Latest Data (loadedAt ใหม่กว่า psCache) → ใช้สำเนาใน snapshot ที่สดกว่า
+  //   · ไม่งั้นคง psCache (holdings เปลี่ยน / หน้านี้ patch หลังบันทึก) — และถ้า snapshot เพิ่งถูกเขียนด้วย foreignSleeve
+  //     ที่เก่ากว่าของ psCache (เช่น Load ที่อ่าน /api/portfolio ก่อน PUT เงินสด) → patch snapshot ด้วย psCache อีกครั้ง
+  //     ให้หน้าอื่นที่อ่านแต่ snapshot ได้เงินสดล่าสุด · หลัง patch เวลาเท่ากัน → รอบถัดไปไม่ patch ซ้ำ (ไม่วน)
+  function onSnapshotWritten() {
+    if (repatching) return;   // event จาก patch ด้านล่าง — วาดครั้งเดียวที่ท้ายฟังก์ชันนี้
+    if (psCache) {
+      var s = readSnapshot();
+      var at = s && s.loadedAt ? Date.parse(s.loadedAt) : NaN;
+      var sd = s ? docOfPs(s.portfolioStatus) : null;
+      var pd = docOfPs(psCache);
+      if (isFinite(at) && at > psFetchedAt && sd && sd.quarters) { psCache = null; psSeq++; }
+      else if (sd && sd.quarters && pd && sleeveTime(pd) != null && (sleeveTime(sd) == null || sleeveTime(sd) < sleeveTime(pd))) {
+        repatching = true;
+        try { patchSnapshot(pd); } finally { repatching = false; }
+      }
+    }
+    render();
+  }
+  // โค้ดกันไว้ก่อน: ตอนนี้ไม่มีส่วนอื่นบนหน้านี้ที่บันทึกเอกสารพอร์ต (event บน window ไม่ข้ามหน้า)
+  // ถ้าวันหน้ามี → ใช้เอกสารชุดนั้น · event ของตัวเองรับไปแล้วใน onCashPersisted
+  function onAllocationSaved(ev) {
+    var d = ev && ev.detail && ev.detail.data;
+    if (!d || typeof d !== "object" || d === ownSaved) return;
+    if (d.quarters) { psCache = { data: d }; psFetchedAt = Date.now(); psSeq++; }
+    render();
+  }
+  // ล็อก/ปลดล็อก Privacy → วาดช่องใหม่ (ล็อก = ว่าง · ปลดล็อก = ค่าที่เก็บไว้) · ทิ้งข้อความที่พิมพ์ค้าง
+  function onPrivacyChanged() {
+    cashUi.typed = null;
+    render();
+  }
+
   // ---------------- render ----------------
   function render() {
     var root = document.getElementById(ROOT_ID);
     if (!root) return;
+    renderPending = false;   // วาดรอบนี้ครอบการวาดที่เลื่อนไว้แล้ว
+    var refocus = false;
+    try { refocus = !!(cashEl && document.activeElement === cashEl); } catch (e) { refocus = false; }
+    cashEl = null;   // ช่องของรอบก่อนหายไปพร้อม innerHTML — bind() ตั้งใหม่
     var PM = window.PMEngine, TE = window.ThesisEngine, TD = window.ThesisData;
     if (!PM || !TE || !TD) { root.innerHTML = '<div class="mc-empty"><strong>Engine ไม่พร้อม</strong> — refresh หน้านี้</div>'; return; }
     var snapshot = readSnapshot();
@@ -648,6 +1053,7 @@
       root.innerHTML = headerHtml() + '<div class="mc-empty"><strong>ยังไม่มี Data Snapshot</strong><br>กด Load Latest Data ก่อน — น้ำหนักพอร์ต/เทคนิค/Mega Trend ต้องใช้ข้อมูลจริง</div>';
       return;
     }
+    snapshot = effectiveSnapshot(snapshot);
     var inp = buildInputs(snapshot);
     var ap = allocPolicy();
     var out = PM.compute(snapshot, {
@@ -669,6 +1075,8 @@
       sectionRisk(out) +
       sectionMethod();
     bind(root);
+    // วาดใหม่ระหว่างพิมพ์ในช่องเงินสด (เช่น holdings อัปเดต) → โฟกัสคืน
+    if (refocus && cashEl && typeof cashEl.focus === "function") { try { cashEl.focus(); } catch (e) { /* ignore */ } }
   }
   function headerHtml() {
     return '<header class="pm-header"><h1>💼 AI Portfolio Manager</h1>' +
@@ -722,11 +1130,42 @@
       var ev = el.tagName === "SELECT" ? "change" : "change";
       el.addEventListener(ev, function () { setAllocField(el.getAttribute("data-pm-alloc"), el.value); });
     });
+    // ช่องเงินสดรอซื้อหุ้นต่างประเทศ: พิมพ์ = จำข้อความไว้ (ยังไม่บันทึก) · Enter / ปุ่มบันทึก = บันทึก (คลิกออกไม่บันทึก)
+    var cashInputs = root.querySelectorAll("[data-pm-cash]");
+    cashEl = cashInputs.length ? cashInputs[0] : null;
+    if (cashEl) {
+      var ci = cashEl;
+      ci.addEventListener("input", function () { cashUi.typed = readCashInput(ci); });
+      ci.addEventListener("keydown", function (ev) {
+        if (ev && ev.key === "Enter") { if (ev.preventDefault) ev.preventDefault(); onCashSave(); }
+      });
+    }
+    root.querySelectorAll("[data-pm-cash-save]").forEach(function (el) {
+      el.addEventListener("click", function (ev) { if (ev && ev.preventDefault) ev.preventDefault(); onCashSave(); });
+    });
+    root.querySelectorAll("[data-pm-cash-retry]").forEach(function (el) {
+      el.addEventListener("click", onCashRetry);
+    });
   }
 
   // ธงแดง/มูลค่าเปลี่ยนจาก Action Center → snapshot ยิง event นี้ (ไม่ใช่ data-snapshot)
-  window.addEventListener("portfolio-data-snapshot", render);
+  window.addEventListener("portfolio-data-snapshot", onSnapshotWritten);
   window.addEventListener("portfolio-holdings-updated", render);
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", render); else render();
-  window.PortfolioManagerPage = { render: render };
+  window.addEventListener("portfolio-allocation-saved", onAllocationSaved);
+  window.addEventListener("focus", refreshOnFocus);
+  // privacy.js ยิง "portfolio-privacy-changed" บน document
+  document.addEventListener("portfolio-privacy-changed", onPrivacyChanged);
+  document.addEventListener("visibilitychange", refreshOnFocus);
+  document.addEventListener("focusout", onFocusOut);
+  // ร่างจากรอบก่อน (บันทึกล้ม) → แสดงร่างก่อน แล้วลองส่งเองหนึ่งครั้ง · ล้มอีก = คงร่าง + ปุ่มลองใหม่
+  //   server มีเงินสดที่บันทึกหลังร่าง (เครื่องอื่น) → ไม่ส่ง ทิ้งร่าง ใช้ค่าบน server
+  var bootDraft = readCashDraft();
+  if (bootDraft) { cashUi.draft = bootDraft; cashUi.draftNotice = CASH_DRAFT_TH; }
+  function boot() {
+    render();
+    ensurePortfolioFetched();   // เอกสารพอร์ตสด — snapshot.portfolioStatus เป็นแค่สำเนาตอน Load Latest Data
+    if (bootDraft) persistCash(bootDraft.cash, bootDraft);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+  window.PortfolioManagerPage = { render: render, persistCash: persistCash };
 })();

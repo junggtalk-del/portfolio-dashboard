@@ -287,6 +287,12 @@
       var currentInvestedPct = null, quarterly = null;
       var PP = opts.PP || (typeof window !== "undefined" ? window.PortfolioPosition : null);
       var ps = opts.portfolioStatus || snapshot.portfolioStatus;
+      // หุ้นต่างประเทศยึดหน้า AI Portfolio Manager (โหมด pm) — สำเนาเอกสารที่แทนแถว foreign-stock ไตรมาสปัจจุบัน
+      // Node ไม่มี window → พฤติกรรมเดิม · โหมด editor → คืนเอกสารตัวเดิม
+      var FSL = typeof window !== "undefined" ? window.ForeignSleeve : null;
+      if (FSL && FSL.applyToDoc && ps) {
+        try { ps = FSL.applyToDoc(ps, (snapshot.portfolioHoldings && snapshot.portfolioHoldings.data) || []); } catch (e) {}
+      }
       if (PP && PP.deriveQuarterly && ps) {
         try { quarterly = PP.deriveQuarterly(ps); } catch (e) {}
         if (quarterly && quarterly.total > 0) currentInvestedPct = round(quarterly.investedSum / quarterly.total * 100, 1);

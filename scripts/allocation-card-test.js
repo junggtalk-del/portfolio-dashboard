@@ -61,7 +61,9 @@ var FIX = { currentQuarter: "2026-Q3", quarters: { "2026-Q3": { key: "2026-Q3", 
 // ---------- สคริปต์ชุดเดียวกับ portfolio.html (อ่านลำดับจาก HTML) ----------
 var HTML = read("portfolio.html");
 var css = read("portfolio-position.css");
-var WANT = ["portfolio-core.js", "portfolio-position-engine.js", "portfolio-position-page.js", "allocation-card-engine.js", "allocation-card-page.js"];
+// foreign-sleeve.js (pm-foreign-sleeve Task 3): หน้า position แทนแถวหุ้นต่างประเทศด้วยยอดจาก AI Portfolio Manager
+//   เอกสารที่ไม่มี foreignSleeve.cash = โหมด editor → เทสต์เดิมทุกข้อได้ตัวเลข Editor เหมือนก่อนโหลดไฟล์นี้
+var WANT = ["portfolio-core.js", "foreign-sleeve.js", "portfolio-position-engine.js", "portfolio-position-page.js", "allocation-card-engine.js", "allocation-card-page.js"];
 var SCRIPTS = (function () {
   var out = [], re = /<script src="\/([A-Za-z0-9._-]+\.js)\?v=[^"]*"/g, m;
   while ((m = re.exec(HTML)) !== null) if (WANT.indexOf(m[1]) >= 0) out.push(m[1]);
@@ -244,7 +246,9 @@ function boot(opts) {
   // stub ของ privacy.js (window.PortfolioPrivacy.isLocked) — ไม่มี = ไม่ได้ล็อก
   if (o.privacy) win.PortfolioPrivacy = o.privacy;
   var ctx = vm.createContext(win);
-  SCRIPTS.forEach(function (f) {
+  // o.extra: สคริปต์ที่ portfolio.html โหลดหลังการ์ด (เช่น asset-allocation-engine.js ให้บรรทัดการเติบโตในส่วนหัว)
+  //   โหลดเฉพาะ instance ที่ขอ — instance อื่นคงเส้นทาง "ไม่มี AssetAllocation" แบบเดิม
+  SCRIPTS.concat(o.extra || []).forEach(function (f) {
     try { vm.runInContext(read(f), ctx, { filename: f }); }
     catch (e) { console.error("   โหลด " + f + " ไม่ได้: " + e.message); }
   });
@@ -317,7 +321,9 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
 
 (async function main() {
   // ---------- เทสต์ตามแผน (คำต่อคำ) ----------
-  t("portfolio.html: acRoot sits between ppRoot and aaRoot · scripts engine→page after position-page · pp-13 and ac-1 versions", HTML.indexOf('id="acRoot"') > HTML.indexOf('id="ppRoot"') && HTML.indexOf('id="acRoot"') < HTML.indexOf('id="aaRoot"') && /allocation-card-engine\.js\?v=20261107-ac-1"[\s\S]*allocation-card-page\.js\?v=20261107-ac-1"/.test(HTML) && HTML.indexOf("portfolio-position-page.js") < HTML.indexOf("allocation-card-engine.js") && /portfolio-position\.css\?v=20261107-pp-13/.test(HTML) && /portfolio-position-page\.js\?v=20261107-pp-13/.test(HTML));
+  // pm-foreign-sleeve Task 3: bump หน้า position (pp-14) + หน้าการ์ด (ac-2) · เอนจินการ์ด ไม่ได้แก้ คงเดิม
+  //   final fix wave: หน้า position pp-15 (บรรทัดที่มาของผลตอบแทน) · CSS pp-14 (.pp-src)
+  t("portfolio.html: acRoot sits between ppRoot and aaRoot · scripts engine→page after position-page · page pp-15 / card page ac-2 (engine ac-1) · css pp-14", HTML.indexOf('id="acRoot"') > HTML.indexOf('id="ppRoot"') && HTML.indexOf('id="acRoot"') < HTML.indexOf('id="aaRoot"') && /allocation-card-engine\.js\?v=20261107-ac-1"[\s\S]*allocation-card-page\.js\?v=20261109-ac-2"/.test(HTML) && HTML.indexOf("portfolio-position-page.js") < HTML.indexOf("allocation-card-engine.js") && /portfolio-position\.css\?v=20261109-pp-14"/.test(HTML) && /portfolio-position-page\.js\?v=20261109-pp-15"/.test(HTML));
   await flush(80);
   t("position page exposes last {R,data} and dispatched portfolio-position-rendered", !!W.PortfolioPositionPage.last && W.PortfolioPositionPage.last.R.available === true && dispatched.some(function (e) { return e.type === "portfolio-position-rendered"; }));
   t("card rendered from the same R: title + wealth equals the hero's ความมั่งคั่งรวม", /<h2 class="ac-title">Asset allocation<\/h2>/.test(html()) && /ความมั่งคั่งรวม ฿25\.0 ล้าน · 2026-Q3/.test(html()) && ppHtml().indexOf("25,000,000") >= 0);
@@ -606,6 +612,152 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
   ER.win.dispatchEvent(new CustomEvent("portfolio-position-rendered", { detail: { R: { available: false, reason: "error" }, data: null } }));
   t("R.available false with reason 'error' → โหลดข้อมูลไม่สำเร็จ — ลองกด Load Latest Data (not the no-data text) · no bars",
     /โหลดข้อมูลไม่สำเร็จ — ลองกด Load Latest Data/.test(ER.html()) && !/ยังไม่มีข้อมูลใน Quarterly Editor/.test(ER.html()) && !/data-ac-bar/.test(ER.html()), ER.html().slice(0, 160));
+
+  // ---------- pm-foreign-sleeve Task 3: หุ้นต่างประเทศยึดหน้า AI Portfolio Manager ----------
+  //   FIX แต่แถว US 4.0 ล้าน @90 แยกเป็นสองแถว (2.5 + 1.5 ล้าน · @90 ทั้งคู่ — ตัวเลข Editor เท่าเดิม) + foreignSleeve.cash 600,000
+  //   + holdings ใน snapshot: หุ้นต่างประเทศ NVDA 2.0 + QQQM 2.2 = 4.2 ล้าน · BTCUSD / PTT.BK / AMD (ไม่ได้ถือ) ต้องไม่ถูกนับ
+  //   โหมด pm → แถว foreign-stock ไตรมาสปัจจุบันทั้งสองแถวถูกแทนด้วยแถวเดียว 4.8 ล้าน (ลงทุน 4.2 · รอซื้อ 0.6 · 87.5%)
+  //   ส่วนหัว: 25,000,000 − 4,000,000 + 4,800,000 = 25,800,000
+  //   ไตรมาสก่อน 2026-Q2 (Editor · เหมือน Q3 ยกเว้น Bitcoin 9 ล้าน) ให้บรรทัดการเติบโตมีแถวเทียบ — ต้องคิดจากเอกสารดิบ
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+  var SRC_TH = "หุ้นต่างประเทศจาก AI Portfolio Manager";
+  // ข้อความท้ายการ์ดโหมด editor (คำต่อคำ เดียวกับข้อ "footer explains % bases" ด้านบน)
+  var FOOT_EDITOR = "รอซื้อ = ส่วนที่ยังไม่ลงทุนของรายการใน Quarterly Editor (แก้ที่ช่อง ลงทุนแล้วกี่ %) · ภายในแท่ง % = ของก้อนนั้นเอง · ใต้แท่ง % = ทั้งแท่ง (ลงทุนแล้ว + รอซื้อ) เทียบความมั่งคั่งรวม";
+  var FIX_PM = clone(FIX);
+  FIX_PM.quarters["2026-Q3"].assets.splice(1, 1, A("foreign-stock", "US", 2500000, 90), A("foreign-stock", "US-ETF", 1500000, 90));
+  FIX_PM.foreignSleeve = { cash: 600000, updatedAt: "2026-11-09T01:00:00.000Z" };
+  FIX_PM.quarters["2026-Q2"] = { key: "2026-Q2", assets: clone(FIX_PM.quarters["2026-Q3"].assets).map(function (a) {
+    if (a.type === "bitcoin") { a.manualValue = 9000000; a.snapshotValue = 9000000; }
+    return a;
+  }) };
+  var PM_HOLD = [
+    { canonicalSymbol: "NVDA", isHolding: true, marketValue: 2000000, portfolioBucket: "" },
+    { canonicalSymbol: "QQQM", isHolding: true, marketValue: 2200000, portfolioBucket: "" },
+    { canonicalSymbol: "BTCUSD", isHolding: true, marketValue: 7800000, portfolioBucket: "" },
+    { canonicalSymbol: "PTT.BK", isHolding: true, marketValue: 3960000, portfolioBucket: "" },
+    { canonicalSymbol: "AMD", isHolding: false, marketValue: 900000, portfolioBucket: "" }
+  ];
+  function snapOf(doc, hold) { return { portfolioStatus: { data: clone(doc) }, portfolioHoldings: { data: clone(hold) } }; }
+  var PM_SNAP = snapOf(FIX_PM, PM_HOLD), PM_SNAP_JSON = JSON.stringify(PM_SNAP);
+  var PMI = boot({ fixture: FIX_PM, snapshot: PM_SNAP, extra: ["asset-allocation-engine.js"] }); await flush(80);
+  function ppOf(I) { return I.els.ppRoot ? I.els.ppRoot.innerHTML : ""; }
+  function heroTotal(I) { var m = /<div class="pp-stat-n">(฿[0-9,]+)<\/div><div class="pp-stat-l">ความมั่งคั่งรวม/.exec(ppOf(I)); return m ? m[1] : null; }
+  function srcLabels(I) { return (ppOf(I).match(/data-pp-src="pm"/g) || []).length; }
+  function footOf(I) { return (/<p class="ac-foot">([^<]*)<\/p>/.exec(I.html()) || ["", ""])[1]; }
+  function subOf(I) { return (/<p class="ac-sub">([^<]*)<\/p>/.exec(I.html()) || ["", ""])[1]; }
+  function barIn(I, key) { return sliceFrom(I.html(), 'data-ac-bar="' + key + '"', ['data-ac-bar="', "data-ac-cash"]); }
+  function shownLbl(c) { return c.inside || c.float || {}; }
+  // คู่ % ของแท่งตามสูตรจริงของหน้า (pairPct): ลงทุน 4.2 / 4.8 = 87.5% → Math.round = 88 · รอซื้อ = 100 − 88 = 12
+  var PM_HELD_PCT = Math.round(4200000 / 4800000 * 100), PM_WAIT_PCT = 100 - PM_HELD_PCT;
+
+  t("pm: hero ความมั่งคั่งรวม = 25,000,000 − 4,000,000 + 4,800,000 = ฿25,800,000 (BTCUSD / PTT.BK / AMD not counted)", heroTotal(PMI) === "฿25,800,000", heroTotal(PMI));
+  t("pm: source label หุ้นต่างประเทศจาก AI Portfolio Manager in the hero sub-line and next to the strip (2 places, escaped plain text)",
+    srcLabels(PMI) === 2 && /<p class="pp-sub">[^<]*<b>[^<]*<\/b>[^<]*<span class="pp-src" data-pp-src="pm">หุ้นต่างประเทศจาก AI Portfolio Manager<\/span>[^<]*<\/p>/.test(ppOf(PMI)) &&
+    /<span class="pp-block-sub">ตามมูลค่าจริงจาก Quarterly Editor · <span class="pp-src" data-pp-src="pm">หุ้นต่างประเทศจาก AI Portfolio Manager<\/span><\/span>/.test(ppOf(PMI)),
+    ppOf(PMI).slice(0, 700));
+  t("pm: hero still counts the Editor's own rows (9 รายการใน Quarterly Editor — the two foreign rows are not collapsed into one in the count)",
+    /9 รายการใน Quarterly Editor/.test(ppOf(PMI)) && !/8 รายการใน Quarterly Editor/.test(ppOf(PMI)), (/<p class="pp-sub">[\s\S]*?<\/p>/.exec(ppOf(PMI)) || [""])[0]);
+  t("pm: strip หุ้นต่างประเทศ = 4.8 / 25.8 = 18.6%", /หุ้นต่างประเทศ <b>18\.6%<\/b>/.test(ppOf(PMI)), (/หุ้นต่างประเทศ <b>[^<]*<\/b>/.exec(ppOf(PMI)) || [""])[0]);
+  var pmF = barIn(PMI, "foreign"), pmFw = shownLbl(lblCopies(pmF, "wait")), pmFh = shownLbl(lblCopies(pmF, "held"));
+  t("pm: card foreign bar ลงทุนแล้ว ฿4.2 ล้าน " + PM_HELD_PCT + "% · รอซื้อ ฿0.6 ล้าน " + PM_WAIT_PCT + "% (pairPct) · 19% ของความมั่งคั่ง",
+    pmFh.amt === "฿4.2 ล้าน" && pmFh.pct === PM_HELD_PCT + "% ของ หุ้นต่างประเทศ" &&
+    pmFw.amt === "รอซื้อ ฿0.6 ล้าน" && pmFw.pct === PM_WAIT_PCT + "% ของ หุ้นต่างประเทศ" && underPct(pmF) === 19,
+    [pmFh, pmFw, underPct(pmF)]);
+  t("pm: card head ความมั่งคั่งรวม ฿25.8 ล้าน · 2026-Q3 · cash tile breakdown lists หุ้นต่างประเทศ ฿0.6 ล้าน",
+    /ความมั่งคั่งรวม ฿25\.8 ล้าน · 2026-Q3/.test(PMI.html()) && /รอซื้อ Bitcoin ฿2\.2 ล้าน · หุ้นต่างประเทศ ฿0\.6 ล้าน · /.test(PMI.html()), (/<span class="ac-head-sum">[^<]*/.exec(PMI.html()) || [""])[0]);
+  t("pm: card footer says the foreign sleeve comes from AI Portfolio Manager · sub-line no longer claims ทั้งหมดจาก Quarterly Editor",
+    footOf(PMI).indexOf(FOOT_EDITOR) === 0 && footOf(PMI).indexOf(" · " + SRC_TH) > 0 && subOf(PMI).indexOf("AI Portfolio Manager") >= 0 && subOf(PMI).indexOf("ตัวเลขทั้งหมดจาก Quarterly Editor") < 0,
+    [footOf(PMI), subOf(PMI)]);
+  t("pm: no NaN/undefined · no ฿ in title/aria-label · no advisory words (hero + card)",
+    !LEAK.test(ppOf(PMI) + PMI.html()) && !/(title|aria-label)="[^"]*฿/.test(ppOf(PMI) + PMI.html()) && !ADVISORY_TH.test(ppOf(PMI) + PMI.html()) && !ADVISORY_EN.test(ppOf(PMI) + PMI.html()));
+  // card ได้เอกสารดิบ (allocationPlan / แถว Editor เดิม) + ธงที่มาจาก R ชุดเดียวกับส่วนหัว
+  var pmLast = PMI.win.PortfolioPositionPage.last;
+  function foreignRows(doc) { return doc && doc.quarters && doc.quarters["2026-Q3"] ? doc.quarters["2026-Q3"].assets.filter(function (a) { return a.type === "foreign-stock"; }) : []; }
+  function rawDocOk(doc) {
+    var f = foreignRows(doc);
+    return !!doc && f.length === 2 && f[0].name === "US" && f[0].manualValue === 2500000 && f[1].name === "US-ETF" && f[1].manualValue === 1500000 &&
+      JSON.stringify(doc).indexOf("fromPM") < 0 && !!doc.foreignSleeve && doc.foreignSleeve.cash === 600000 && !!doc.allocationPlan;
+  }
+  t("pm: PortfolioPositionPage.last = { R (transformed: total 25.8M), data (RAW doc: both Editor foreign rows, no fromPM, foreignSleeve, allocationPlan), foreignFromPM: true }",
+    !!pmLast && pmLast.R.totals.total === 25800000 && rawDocOk(pmLast.data) && pmLast.foreignFromPM === true, pmLast && [pmLast.R.totals && pmLast.R.totals.total, pmLast.foreignFromPM, foreignRows(pmLast.data)]);
+  // บรรทัดการเติบโต/ผลตอบแทนในส่วนหัว = AssetAllocation.compute บนเอกสารดิบ (ไม่ใช่สำเนาที่แทนหุ้นต่างประเทศแล้ว)
+  var AAx = PMI.win.AssetAllocation;
+  function wholeRow(doc) {
+    var out = AAx && AAx.compute({ data: doc }, null);
+    var W2 = out && out.available && out.record ? out.record.whole : null;
+    return W2 && W2.rows ? W2.rows.filter(function (r) { return r.key === "2026-Q3"; })[0] || null : null;
+  }
+  function thbT(n) { return "฿" + Math.round(n).toLocaleString("en-US"); }
+  function changeTxt(row) { return "มูลค่าเพิ่ม " + (row.change >= 0 ? "+" + thbT(row.change) : "−" + thbT(-row.change)); }
+  // สำเนาที่แทนหุ้นต่างประเทศแล้ว (ตัวเทียบ — ค่าที่ห้ามขึ้น) สร้างด้วยโมดูลฝั่ง Node ไม่ใช่ตัวใน sandbox:
+  //   asset-allocation-engine.js เช็ก `assets instanceof Array` และ array ที่สร้างใน VM ไม่ใช่ instance ของ Array ที่ harness ส่งเข้าไป
+  //   (เบราว์เซอร์มี realm เดียว — ไม่มีปัญหานี้ในหน้าจริง)
+  var FSN = require(path.join(PUB, "foreign-sleeve.js"));
+  var rawRow = wholeRow(FIX_PM), synthRow = wholeRow(FSN.applyToDoc({ data: FIX_PM }, PM_HOLD).data);
+  t("pm: hero growth lines come from the RAW document (AssetAllocation on the raw doc: " + (rawRow ? changeTxt(rawRow) : "?") + ") — not from the PM-substituted copy (" + (synthRow ? changeTxt(synthRow) : "?") + ")",
+    !!rawRow && !!synthRow && rawRow.change !== synthRow.change && ppOf(PMI).indexOf(changeTxt(rawRow)) >= 0 && ppOf(PMI).indexOf(changeTxt(synthRow)) < 0,
+    [rawRow && rawRow.change, synthRow && synthRow.change, (/<div class="pp-grow">[\s\S]*?<\/div>/.exec(ppOf(PMI)) || [""])[0].slice(0, 300)]);
+  // final fix wave [1]: โหมด pm บอกใต้บรรทัดผลตอบแทนว่าคิดจาก Quarterly Editor (ความมั่งคั่งรวมมาจาก PM แต่มูลค่าเพิ่มมาจาก Editor)
+  var GROW_SRC = '<div class="pp-stat-s pp-dim" data-pp-grow-src="editor">ผลตอบแทนคิดจาก Quarterly Editor (หุ้นต่างประเทศใน Editor เป็นค่าที่กรอกเอง)</div>';
+  function growSrcCount(I) { return (ppOf(I).match(/data-pp-grow-src="editor"/g) || []).length; }
+  t("pm: one muted line right under the growth lines — ผลตอบแทนคิดจาก Quarterly Editor (หุ้นต่างประเทศใน Editor เป็นค่าที่กรอกเอง) · inside the ความมั่งคั่งรวม stat",
+    growSrcCount(PMI) === 1 && /<div class="pp-grow">[\s\S]*?<\/div><div class="pp-stat-s pp-dim" data-pp-grow-src="editor">/.test(ppOf(PMI)) && ppOf(PMI).indexOf(GROW_SRC) > ppOf(PMI).indexOf("ความมั่งคั่งรวม") &&
+    ppOf(PMI).indexOf(GROW_SRC) < ppOf(PMI).indexOf("ลงทุนจริง</div>"),
+    (/data-pp-grow-src="editor">[^<]*/.exec(ppOf(PMI)) || [""])[0]);
+  // บันทึกกรอบเงินสดจากการ์ด → GET สด → PUT เอกสารของ server (แถว Editor เดิม · ไม่มีแถวสังเคราะห์) + คง foreignSleeve
+  PMI.click("data-ac-settings", "1"); PMI.setValue("min", "1"); PMI.setValue("max", "3"); PMI.click("data-ac-save", "1"); await flush(60);
+  var pmPut = PMI.puts[0] && PMI.puts[0].data;
+  t("pm: card cash-band save PUTs the server's own rows (US 2.5M + US-ETF 1.5M @90 · no fromPM) · foreignSleeve kept byte-identical · quarters untouched",
+    PMI.puts.length === 1 && rawDocOk(pmPut) && foreignRows(pmPut)[0].investedPercent === 90 &&
+    JSON.stringify(pmPut.foreignSleeve) === JSON.stringify(FIX_PM.foreignSleeve) && JSON.stringify(pmPut.quarters) === JSON.stringify(FIX_PM.quarters),
+    pmPut && [foreignRows(pmPut), pmPut.foreignSleeve]);
+  t("pm: after the save the position page adopts the saved (raw) doc and still shows the PM sleeve (฿25,800,000 + label · card ฿25.8 ล้าน)",
+    heroTotal(PMI) === "฿25,800,000" && srcLabels(PMI) === 2 && /ความมั่งคั่งรวม ฿25\.8 ล้าน/.test(PMI.html()) && rawDocOk(PMI.win.PortfolioPositionPage.last.data), heroTotal(PMI));
+  // Load Latest Data → psCache ถูกทิ้ง → วาดจาก snapshot: R จากสำเนาที่แปลง · last.data / การเติบโต จากเอกสารดิบใน snapshot · snapshot ไม่ถูกแก้
+  PMI.win.dispatchEvent(new CustomEvent("portfolio-data-snapshot", {})); await flush(20);
+  t("pm via snapshot (psCache dropped): hero ฿25,800,000 + label · last.data = the snapshot's RAW doc · growth still from the raw doc · snapshot object not mutated",
+    heroTotal(PMI) === "฿25,800,000" && srcLabels(PMI) === 2 && rawDocOk(PMI.win.PortfolioPositionPage.last.data) &&
+    PMI.win.PortfolioPositionPage.last.data === PM_SNAP.portfolioStatus.data && !!rawRow && ppOf(PMI).indexOf(changeTxt(rawRow)) >= 0 &&
+    JSON.stringify(PM_SNAP) === PM_SNAP_JSON && /ความมั่งคั่งรวม ฿25\.8 ล้าน/.test(PMI.html()) && footOf(PMI).indexOf(SRC_TH) > 0,
+    [heroTotal(PMI), srcLabels(PMI), JSON.stringify(PM_SNAP) === PM_SNAP_JSON]);
+  // โหมด editor: holdings ว่าง (snapshot ว่าง + ไม่มี cache ในเครื่อง) → ตัวเลข Editor เดิม ไม่มีป้ายที่มา
+  var NEH = boot({ fixture: FIX_PM, snapshot: snapOf(FIX_PM, []) }); await flush(80);
+  var nehF = barIn(NEH, "foreign"), nehFw = shownLbl(lblCopies(nehF, "wait")), nehFh = shownLbl(lblCopies(nehF, "held"));
+  t("editor fallback — cash entered but holdings empty: hero ฿25,000,000 · card ฿25.0 ล้าน · foreign bar ฿3.6 / รอซื้อ ฿0.4 ล้าน · no source label anywhere",
+    heroTotal(NEH) === "฿25,000,000" && srcLabels(NEH) === 0 && /ความมั่งคั่งรวม ฿25\.0 ล้าน/.test(NEH.html()) &&
+    nehFh.amt === "฿3.6 ล้าน" && nehFw.amt === "รอซื้อ ฿0.4 ล้าน" && footOf(NEH) === FOOT_EDITOR &&
+    (ppOf(NEH) + NEH.html()).indexOf("AI Portfolio Manager") < 0 && NEH.win.PortfolioPositionPage.last.foreignFromPM === false,
+    [heroTotal(NEH), srcLabels(NEH), footOf(NEH)]);
+  // โหมด editor: มี holdings แต่ยังไม่กรอกเงินสดในหน้า PM (เอกสารไม่มี foreignSleeve) → ห้ามแสดงหุ้นต่างประเทศจาก PM
+  var NCI = boot({ snapshot: snapOf(FIX, PM_HOLD) }); await flush(80);
+  t("editor fallback — holdings loaded but no foreignSleeve.cash: hero ฿25,000,000 · no label · footer unchanged",
+    heroTotal(NCI) === "฿25,000,000" && srcLabels(NCI) === 0 && footOf(NCI) === FOOT_EDITOR && /ความมั่งคั่งรวม ฿25\.0 ล้าน/.test(NCI.html()), [heroTotal(NCI), footOf(NCI)]);
+  // ก่อน Load Latest Data (ไม่มี snapshot): holdings จาก cache ในเครื่อง (getHoldingsArray → readLocalHoldings) → โหมด pm
+  var LHI = boot({ fixture: FIX_PM, store: { portfolioHoldingsDraft: JSON.stringify(PM_HOLD) } }); await flush(80);
+  t("pre-Load path (no snapshot) uses the local holdings cache → pm: hero ฿25,800,000 + label · card ฿25.8 ล้าน",
+    heroTotal(LHI) === "฿25,800,000" && srcLabels(LHI) === 2 && /ความมั่งคั่งรวม ฿25\.8 ล้าน/.test(LHI.html()) && footOf(LHI).indexOf(SRC_TH) > 0, [heroTotal(LHI), srcLabels(LHI)]);
+  // E10 (final fix wave · mutation survivor): หน้า position ส่ง getHoldingsArray() ให้ applyToSnapshot (ไม่ใช่ holdings ใน snapshot)
+  //   snapshot มี portfolioHoldings แต่ว่าง ([]) — getHoldingsArray ถอยไปใช้ cache ในเครื่อง → ยังเป็นโหมด pm
+  //   (ถ้าหน้าใช้ snapshot.portfolioHoldings.data แทน จะได้ [] → โหมด editor ฿25,000,000)
+  var E10A = boot({ fixture: FIX_PM, snapshot: snapOf(FIX_PM, []), store: { portfolioHoldingsDraft: JSON.stringify(PM_HOLD) } }); await flush(80);
+  t("E10: snapshot.portfolioHoldings.data = [] + local holdings cache → hero still pm ฿25,800,000 + label · card ฿25.8 ล้าน · last.foreignFromPM",
+    heroTotal(E10A) === "฿25,800,000" && srcLabels(E10A) === 2 && /ความมั่งคั่งรวม ฿25\.8 ล้าน/.test(E10A.html()) && E10A.win.PortfolioPositionPage.last.foreignFromPM === true,
+    [heroTotal(E10A), srcLabels(E10A)]);
+  //   snapshot ไม่มีคีย์ portfolioHoldings และ GET ล้ม (ไม่มี psCache → วาดจาก snapshot ตรง ๆ) → cache ในเครื่อง → pm
+  var E10B = boot({ snapshot: { portfolioStatus: { data: clone(FIX_PM) } }, store: { portfolioHoldingsDraft: JSON.stringify(PM_HOLD) }, flags: function () { return { failGet: true }; } }); await flush(80);
+  t("E10: snapshot without portfolioHoldings + GET failed + local holdings cache → hero pm ฿25,800,000 + label",
+    heroTotal(E10B) === "฿25,800,000" && srcLabels(E10B) === 2 && E10B.win.PortfolioPositionPage.last.foreignFromPM === true, [heroTotal(E10B), srcLabels(E10B)]);
+  // final fix wave [1] (ฝั่ง editor): เอกสารเดียวกันแต่ไม่มี foreignSleeve → บรรทัดผลตอบแทนยังขึ้น แต่ไม่มีบรรทัดที่มา
+  var FIX_NOCASH = clone(FIX_PM); delete FIX_NOCASH.foreignSleeve;
+  var EGI = boot({ fixture: FIX_NOCASH, snapshot: snapOf(FIX_NOCASH, PM_HOLD), extra: ["asset-allocation-engine.js"] }); await flush(80);
+  t("editor mode: growth lines shown (pp-grow) but no Editor-source line · no pm label",
+    /<div class="pp-grow">/.test(ppOf(EGI)) && growSrcCount(EGI) === 0 && ppOf(EGI).indexOf("ผลตอบแทนคิดจาก Quarterly Editor") < 0 && srcLabels(EGI) === 0 && heroTotal(EGI) === "฿25,000,000",
+    [heroTotal(EGI), growSrcCount(EGI), /<div class="pp-grow">/.test(ppOf(EGI))]);
+  t("CSS: .pp-src muted like .ac-foot (var(--mc-muted))", /\.pp-src \{[^}]*color: var\(--mc-muted\)/.test(css) && /\.ac-foot \{[^}]*color: var\(--mc-muted\)/.test(css));
+  // ซอร์ส: ES5 · ไม่มีคำแนะนำซื้อขาย (รวมคอมเมนต์) · หน้า position ยังอ่านเอกสารดิบใน realGrowth
+  var ppSrc = read("portfolio-position-page.js"), acSrc = read("allocation-card-page.js");
+  t("sources: portfolio-position-page.js + allocation-card-page.js strict ES5 · no advisory words incl. comments · use ForeignSleeve.applyToSnapshot",
+    es5ok("portfolio-position-page.js") && es5ok("allocation-card-page.js") && !ADVISORY_TH.test(ppSrc + acSrc) && !ADVISORY_EN.test(ppSrc + acSrc) && /ForeignSleeve/.test(ppSrc) && /applyToSnapshot/.test(ppSrc));
 
   finish();
 })().catch(function (e) {
