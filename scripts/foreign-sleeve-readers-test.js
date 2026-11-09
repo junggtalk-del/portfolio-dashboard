@@ -60,7 +60,14 @@ function sandbox(extra) {
   vm.createContext(ctx);
   return ctx;
 }
-function load(ctx, file) { vm.runInContext(read(file), ctx, { filename: file }); }
+// fixture ปักไตรมาสปัจจุบัน 2026-Q3 · โมดูลตัดสิน quarter-ended ด้วย "วันนี้" (Addendum ข้อ 5) → หลังโหลด foreign-sleeve.js
+//   แทน window.ForeignSleeve ด้วยตัวที่ล็อกนาฬิกาไว้กลาง 2026-Q3 (scripts/sleeve-clock.js) — ผลเดิมทุกวันที่รัน
+//   (หน้าอ่าน window.ForeignSleeve ตอนเรียก จึงได้ตัวที่ล็อกนาฬิกา)
+var clock = require("./sleeve-clock");
+function load(ctx, file) {
+  vm.runInContext(read(file), ctx, { filename: file });
+  if (file === "foreign-sleeve.js") ctx.ForeignSleeve = clock.withClock(ctx.ForeignSleeve, clock.Q3_2026);
+}
 
 // ---------- fixture (ชุดเดียวกับ allocation-card-test โหมด pm) ----------
 function A(type, name, value, inv) { return { type: type, name: name, manualValue: value, snapshotValue: value, investedPercent: inv }; }

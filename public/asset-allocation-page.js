@@ -14,6 +14,8 @@
   // แหล่งความจริงของ "เงิน" คือ GET /api/portfolio สด ๆ ไม่ใช่ snapshot
   // (snapshot.portfolioStatus เป็นสำเนาจากตอนกด Load Latest Data ครั้งล่าสุด
   //  ถ้าอ่านจากตรงนั้น การแก้ใน Quarterly Editor จะไม่ขึ้นที่หน้านี้)
+  // หุ้นต่างประเทศของไตรมาสล่าสุดยึดหน้า AI Portfolio Manager (window.ForeignSleeve · spec pm-foreign-sleeve
+  // Addendum ข้อ 2) — คำนวณบนสำเนาที่แปลงแล้ว ส่วนการบันทึกยัง GET สดแล้ว PUT เอกสารของ server เสมอ
   // ============================================================
 
   var ROOT_ID = "aaRoot";
@@ -133,6 +135,73 @@
           render();
         });
     } catch (e) { loadError = String(e && e.message); }
+  }
+
+  // ---------------------------------------------------------------- หุ้นต่างประเทศจาก AI Portfolio Manager
+  // ส่วนนี้คิดบนเอกสารชุดเดียวกับส่วนหัวของหน้า (portfolio-position-page.js sleeveView):
+  //   โหมด pm (กรอกเงินสดในหน้า PM แล้ว + มี holdings + ไตรมาสปัจจุบันของเอกสาร = ไตรมาสล่าสุด) → แถวหุ้นต่างประเทศ
+  //   ของไตรมาสล่าสุดเป็นค่า PM โดยคงชื่อ/เงินเติมของแถวเดิม (ตัวคิดผลตอบแทนจับคู่ข้ามไตรมาสได้ต่อเนื่อง)
+  //   โหมด editor / ไม่มีโมดูล / แปลงไม่สำเร็จ → psCache ตัวเดิม
+  // holdings = กติกาเดียวกับ getHoldingsArray ของหน้า position (snapshot ก่อน ว่างหรือไม่มีก็ cache ในเครื่อง)
+  // สำเนานี้ใช้คำนวณ/แสดงเท่านั้น — persist() ไม่เคยแตะ: GET สด → คัดลอกเอกสารของ server → PUT
+  function readSnapshot() {
+    try { return (window.PortfolioDataSnapshot && window.PortfolioDataSnapshot.read && window.PortfolioDataSnapshot.read()) || null; } catch (e) { return null; }
+  }
+  function holdingsArray() {
+    var core = window.PortfolioCore;
+    var snap = readSnapshot();
+    var ph = snap && snap.portfolioHoldings;
+    if (ph && Array.isArray(ph.data) && ph.data.length) {
+      return core && typeof core.dedupeHoldings === "function" ? core.dedupeHoldings(ph.data) : ph.data;
+    }
+    return core && typeof core.readLocalHoldings === "function" ? core.readLocalHoldings() : [];
+  }
+  function sleeveView(ps) {
+    var out = { ps: ps, pm: false };
+    var FS = window.ForeignSleeve;
+    if (!ps || !FS || typeof FS.applyToDoc !== "function") return out;
+    try {
+      var v = FS.applyToDoc(ps, holdingsArray());
+      return v === ps ? out : { ps: v, pm: true };   // โหมด editor → ตัวเดิม (reference เดียวกัน)
+    } catch (e) { return out; }
+  }
+  // ป้ายที่มา (โหมด pm) — ข้อความคงที่ ผ่าน esc · ไม่มีเงิน
+  var SRC_PM_TH = "หุ้นต่างประเทศจาก AI Portfolio Manager";
+
+  // holdings เปลี่ยน (โหลดเสร็จทีหลัง / แก้ราคา) → หุ้นต่างประเทศจาก PM เปลี่ยน → วาดใหม่ให้ตรงกับส่วนหัวของหน้า
+  // แต่ render() เขียน innerHTML ทั้งส่วนใหม่ (รวมช่องแผนเกษียณที่ผูกแค่ "change") — ห้ามแย่งช่องที่ผู้ใช้กำลังพิมพ์:
+  //   · dirty / saving → ข้าม (กติกาเดียวกับ adoptAllocation / refreshOnFocus) — การบันทึกที่ค้างอยู่วาดใหม่เองตอนจบ
+  //   · มีตัวควบคุมใน #aaRoot ถูกโฟกัสอยู่ → เลื่อนไว้ แล้ววาดครั้งเดียวเมื่อโฟกัสออกจาก #aaRoot
+  //     (แบบ renderWhenIdle ของ portfolio-manager-page.js) · render ครั้งไหนก็ได้ล้างของที่เลื่อนไว้
+  var holdingsRenderPending = false;
+  function inAaRoot(el) {
+    if (!el || typeof document === "undefined") return false;
+    try {
+      var root = document.getElementById(ROOT_ID);
+      return !!(root && typeof root.contains === "function" && root.contains(el));
+    } catch (e) { return false; }
+  }
+  // ปุ่มนับด้วย: กดปุ่ม = โฟกัสย้ายมาที่ปุ่มตอน mousedown · วาดใหม่ก่อน mouseup = คลิกหาย
+  function aaControlFocused() {
+    try {
+      var ae = typeof document !== "undefined" ? document.activeElement : null;
+      return inAaRoot(ae) && /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(String(ae.tagName || ""));
+    } catch (e) { return false; }
+  }
+  function onHoldingsUpdated() {
+    if (dirty || saving) return;
+    if (aaControlFocused()) { holdingsRenderPending = true; return; }
+    render();
+  }
+  // โฟกัสย้ายไปตัวอื่นใน #aaRoot (relatedTarget อยู่ใน root) = ยังใช้งานส่วนนี้อยู่ → คงไว้ รอ focusout ของตัวนั้น
+  function onAaFocusOut(ev) {
+    if (!holdingsRenderPending) return;
+    var next = ev ? ev.relatedTarget : null;
+    if (next && inAaRoot(next)) return;
+    window.setTimeout(function () {
+      if (!holdingsRenderPending || dirty || saving || aaControlFocused()) return;
+      render();
+    }, 0);
   }
 
   // รับค่า allocation จาก server — แต่ถ้าผู้ใช้กำลังแก้อยู่ (dirty/saving) ห้ามทับ
@@ -395,7 +464,7 @@
   }
   function targetSpan(TV) { return TV.full ? "ทั้งปี" : "YTD " + TV.n + " ไตรมาส"; }
 
-  function heroSection(R) {
+  function heroSection(R, pm) {
     var TV = targetVerdict(R);
     var h = headline(R);
     var fresh = psFetchedAt ? "ข้อมูลพอร์ตดึงเมื่อ " + esc(timeAgo(psFetchedAt)) : "";
@@ -405,9 +474,10 @@
       '<div class="aa-headline is-' + h.tone + '">' + esc(h.text) + "</div>" +
       '<div class="aa-stats">' +
         '<div class="aa-stat"><div class="aa-stat-n">' + thb(R.totals.latest) + '</div>' +
-          // ส่วนนี้อ่านเอกสาร Quarterly Editor เสมอ (หุ้นต่างประเทศจาก PM ใช้แค่ส่วนหัว/การ์ดด้านบน) — บอกที่มาตายตัว
-          '<div class="aa-stat-l">มูลค่าพอร์ตรวม (ตาม Quarterly Editor)</div>' +
-          '<div class="aa-stat-s">ไตรมาสล่าสุด ' + esc(R.latestKey) + "</div></div>" +
+          // ชุดเดียวกับส่วนหัวของหน้า · โหมด pm บอกที่มาของหุ้นต่างประเทศเป็นบรรทัดจางใต้ไตรมาสล่าสุด
+          '<div class="aa-stat-l">มูลค่าพอร์ตรวม</div>' +
+          '<div class="aa-stat-s">ไตรมาสล่าสุด ' + esc(R.latestKey) + "</div>" +
+          (pm ? '<div class="aa-stat-s"><span class="aa-muted" data-aa-src="pm">' + esc(SRC_PM_TH) + "</span></div>" : "") + "</div>" +
         '<div class="aa-stat"><div class="aa-stat-n">' + (R.totals.assignedPct === null ? "—" : pctOf(R.totals.assignedPct, 0)) + '</div>' +
           '<div class="aa-stat-l">จัดเข้าพอร์ตแล้ว</div>' +
           '<div class="aa-stat-s">' + thb(R.totals.assigned) + "</div></div>" +
@@ -918,17 +988,18 @@
       (amount > 0 ? "เกิน " : "ขาด ") + thb(Math.abs(amount)) + "</span>";
   }
   // ช่องเงินเติม: บอกที่มาของยอดเสมอ — ตั้งไว้ไตรมาสละ / กรอกในรายการ / ระบบประมาณ / ยังไม่มี
+  // title ห้ามมีเงิน (฿ / ยอดดิบ): Privacy Lock ซ่อนได้เฉพาะ text node — ยอดเงินอยู่ในช่องเป็นข้อความอยู่แล้ว
   function recFlowCell(row, W) {
-    var src = row.flowSource, q = W.quarterly.amount, title, tag = "";
+    var src = row.flowSource, title, tag = "";
     if (src === "setting") {
-      title = "ตามที่ตั้ง “เติมเงินเข้าพอร์ตไตรมาสละ” " + thb(q) + (row.span > 1 ? " × " + row.span + " ไตรมาส (เทียบกับ " + row.prevKey + ")" : "");
+      title = "ตามที่ตั้ง “เติมเงินเข้าพอร์ตไตรมาสละ”" + (row.span > 1 ? " × " + row.span + " ไตรมาส (เทียบกับ " + row.prevKey + ")" : "");
       if (row.span > 1) tag = '<span class="aa-rec-src">×' + row.span + "</span>";
     } else if (src === "recorded") {
-      title = "ยอดที่กรอก netFlow ในรายการ" + (row.settingOverridden ? " — ใช้แทนยอดไตรมาสละ " + thb(row.settingAmount) : "");
+      title = "ยอดที่กรอก netFlow ในรายการ" + (row.settingOverridden ? " — ใช้แทนยอดไตรมาสละที่ตั้งไว้" : "");
       tag = '<span class="aa-rec-src">กรอก</span>';
     } else if (src === "partial") {
-      title = "กรอก netFlow ไว้บางรายการ" + (row.imputedFlow ? " · ระบบประมาณจากรายการที่เพิ่งเข้าพอร์ต " + thb(row.imputedFlow) : "") +
-        (row.settingOverridden ? " — ใช้แทนยอดไตรมาสละ " + thb(row.settingAmount) : "");
+      title = "กรอก netFlow ไว้บางรายการ" + (row.imputedFlow ? " · ส่วนที่เหลือระบบประมาณจากรายการที่เพิ่งเข้าพอร์ต" : "") +
+        (row.settingOverridden ? " — ใช้แทนยอดไตรมาสละที่ตั้งไว้" : "");
       tag = '<span class="aa-rec-flag">*</span>';
     } else if (src === "imputed") {
       title = "ไม่ได้กรอก — ระบบประมาณจากรายการที่เพิ่งเข้าพอร์ต (ข้อมูลก่อนมี netFlow)";
@@ -1017,7 +1088,7 @@
     var rest = total === null ? 0 : total - given;
     if (rest > 0.5) parts.push("ยังไม่จัดพอร์ต " + thb(rest));
     return '<div class="aa-q-line">ตัวเลขรายพอร์ตหักเงินเติมไตรมาสละแล้ว โดยแบ่งตามสัดส่วนมูลค่าต้นงวดของแต่ละพอร์ต — เช่น ' + esc(last.key) + ": " + parts.join(" · ") +
-      " · ไม่รู้ว่าเงินเข้าพอร์ตไหนจริง จึงเป็นสมมติฐาน ถ้ากรอก netFlow ในรายการ ไตรมาสนั้นจะใช้ยอดที่กรอกแทน (ชี้ที่ตัวเลขเพื่อดูยอดที่หัก)</div>";
+      " · ไม่รู้ว่าเงินเข้าพอร์ตไหนจริง จึงเป็นสมมติฐาน ถ้ากรอก netFlow ในรายการ ไตรมาสนั้นจะใช้ยอดที่กรอกแทน (ชี้ที่ตัวเลขเพื่อดูสัดส่วนที่ใช้แบ่ง)</div>";
   }
   // ตารางเดิม (รายพอร์ต) — พับไว้ · ไม่มีคอลัมน์ทั้งพอร์ต
   function portBreakdown(R, R2) {
@@ -1029,10 +1100,13 @@
       var cls = x > 0.0005 ? "is-up" : (x < -0.0005 ? "is-down" : "");
       var mark = status === "missing" ? '<span class="aa-rec-flag" title="ไตรมาสนี้ไม่มีข้อมูลเงินเติม/ถอน — คิดเป็น 0">*</span>'
         : (status === "partial" ? '<span class="aa-rec-flag" title="มีข้อมูลเงินเติม/ถอนบางรายการ">*</span>' : "");
-      // ยอดที่แบ่งจากเงินเติมไตรมาสละ: บอกทั้งยอดเต็ม สัดส่วน และยอดที่หักจากพอร์ตนี้
+      // ยอดที่แบ่งจากเงินเติมไตรมาสละ: บอกสัดส่วนที่ใช้แบ่ง · title ห้ามมีเงิน (Privacy Lock ไม่ซ่อน title)
+      //   ยอดเงินที่หักของไตรมาสล่าสุดอยู่ในบรรทัดอธิบายใต้ตาราง (ข้อความ — privacy.js ซ่อนได้)
       var title = status === "setting" && alloc
-        ? "หักเงินเติม " + thb(flow || 0) + " = ไตรมาสละ " + thb(alloc.total) + " × " + num(alloc.share * 100, 1) + "% (สัดส่วนมูลค่าต้นงวดของพอร์ตนี้)"
-        : "เงินเติม/ถอน " + thbSigned(flow || 0);
+        ? "หักเงินเติมไตรมาสละ × " + num(alloc.share * 100, 1) + "% (สัดส่วนมูลค่าต้นงวดของพอร์ตนี้)"
+        : (status === "recorded" ? "หักเงินเติม/ถอนตามที่กรอกในรายการแล้ว"
+          : (status === "partial" ? "หักเงินเติม/ถอนเท่าที่กรอกไว้ (บางรายการ)"
+            : (status === "missing" ? "ไม่มีข้อมูลเงินเติม/ถอน — คิดเป็น 0" : "หักเงินเติม/ถอนของไตรมาสนี้แล้ว")));
       return '<td class="' + cls + '" title="' + esc(title) + '">~' + pctSigned(x) + mark + "</td>";
     }
     var body = R2.rows.map(function (row) {
@@ -1145,6 +1219,7 @@
   function render() {
     var root = typeof document !== "undefined" && document.getElementById(ROOT_ID);
     if (!root) return;
+    holdingsRenderPending = false;   // วาดรอบนี้ครอบการวาดที่เลื่อนไว้แล้ว (อ่าน holdings ล่าสุดตอนนี้)
     if (!AA()) { root.innerHTML = '<div class="mc-empty"><strong>ยังโหลด engine ไม่เสร็จ</strong></div>'; return; }
     if (!allocation) allocation = AA().normalizeAllocation(null);
 
@@ -1153,8 +1228,10 @@
       root.innerHTML = loadError ? emptyState(null) : '<div class="mc-empty"><strong>กำลังโหลดข้อมูลพอร์ต…</strong></div>';
       return;
     }
+    // คำนวณบนสำเนาที่แปลงหุ้นต่างประเทศแล้ว (โหมด editor = psCache ตัวเดิม) · psCache ไม่ถูกแก้ และไม่ถูกส่งไป PUT จากที่นี่
+    var view = sleeveView(psCache);
     var R;
-    try { R = AA().compute(psCache, allocation, { horizonQuarters: horizonQuarters }); }
+    try { R = AA().compute(view.ps, allocation, { horizonQuarters: horizonQuarters }); }
     catch (e) { root.innerHTML = '<div class="mc-empty"><strong>คำนวณไม่สำเร็จ:</strong> ' + esc(e && e.message) + "</div>"; return; }
 
     if (!R.available) { root.innerHTML = emptyState(R); return; }
@@ -1167,7 +1244,7 @@
       : draftNotice ? '<div class="aa-banner">' + esc(draftNotice) + "</div>" : "";
     root.innerHTML =
       banner +
-      heroSection(R) +
+      heroSection(R, view.pm) +
       cardsSection(R) +
       retirementSection(R) +
       fromHereSection(R) +
@@ -1284,8 +1361,11 @@
 
   if (typeof window !== "undefined") {
     window.addEventListener("portfolio-data-snapshot", function () { ensurePortfolioFetched(true); });
+    // holdings เปลี่ยน → วาดใหม่เมื่อไม่มีใครพิมพ์อยู่ (onHoldingsUpdated) · focusout ลงทะเบียนครั้งเดียวที่นี่ ไม่ใช่ทุก render
+    window.addEventListener("portfolio-holdings-updated", onHoldingsUpdated);
     window.addEventListener("focus", refreshOnFocus);
     if (typeof document !== "undefined") document.addEventListener("visibilitychange", refreshOnFocus);
+    if (typeof document !== "undefined") document.addEventListener("focusout", onAaFocusOut);
     if (typeof document !== "undefined" && document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", init);
     } else {

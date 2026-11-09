@@ -12,8 +12,11 @@
   //      (gross รวมเงินสดใน sleeve) · เงินสด = gross − Σ หุ้น
   //  - เอกสารพอร์ต: GET /api/portfolio สดตอนเปิดหน้า (psCache) ใช้แทน snapshot.portfolioStatus ที่อาจค้าง
   //  - ช่องเงินสด: บันทึก = GET สด → เอกสารว่าง = ไม่ PUT → สำเนาทุกคีย์ + foreignSleeve { cash, updatedAt } → PUT
-  //    (โครงเดียวกับ allocation-card-page.js persistPlan · ไม่เคย PUT เอกสารที่แปลงแล้ว)
+  //    (โครงเดียวกับ allocation-card-page.js persistPlan · ไม่เคย PUT เอกสารที่แปลงแล้ว — ไม่มี fromPM)
   //    ล้มเหลว = ร่าง localStorage "pm_foreign_cash_draft_v1" + ปุ่มลองใหม่ · ร่างล้างหลัง PUT สำเร็จเท่านั้น
+  //  - แถวหุ้นต่างประเทศของไตรมาสล่าสุดที่ยังไม่จบ (โหมด pm เท่านั้น): PUT เดียวกันเขียนแถวนั้นเป็นค่า PM
+  //    (ForeignSleeve.applyToDoc mark:false) · หลังแก้มูลค่าหุ้นรายตัวสำเร็จ = GET สด → แถวเดียวกัน → PUT (หน่วง ~1.5 วิ)
+  //    → ไตรมาสที่เก็บไว้ = ค่า PM ล่าสุดตอนสิ้นไตรมาส (วันแรกของไตรมาสใหม่ผู้อ่านใช้ค่าที่เก็บ — ผลตอบแทนไม่กระโดดข้ามคืน)
   //  - ตำแหน่ง: snapshot.portfolioHoldings (ต้นทุนเฉลี่ยจาก averageCost ถ้ามี)
   //  - ทุกการตัดสินใจ: window.PMEngine (ThesisEngine เป็นแกน — deterministic)
   //  - Tier ต่อหุ้น + Entry ที่ deploy แล้ว: localStorage (ผู้ใช้กำหนดเอง)
@@ -35,6 +38,10 @@
   var CASH_PM_TH = "หุ้นที่ถือ + เงินสดที่กรอกในหน้านี้";
   var CASH_EDITOR_TH = "ยังไม่ได้กรอกเงินสด — ตอนนี้ใช้ยอดหุ้นต่างประเทศจาก Quarterly Editor";
   var CASH_NOHOLD_TH = "กรอกเงินสดแล้ว แต่รายการหุ้นยังไม่โหลด — ตอนนี้ใช้ยอดหุ้นต่างประเทศจาก Quarterly Editor";
+  // ForeignSleeve.sleeveOf reason "past-quarter": กรอกเงินสดแล้ว แต่ Editor เปิดไตรมาสที่เก่ากว่าไตรมาสล่าสุด → ใช้ค่า Editor ของไตรมาสนั้น
+  var CASH_PAST_TH = "Quarterly Editor กำลังเปิดไตรมาสเก่า — ใช้ยอดจาก Editor จนกว่าจะกลับไปไตรมาสล่าสุด";
+  // reason "quarter-ended" (spec Addendum ข้อ 5): ไตรมาสล่าสุดใน Editor จบแล้วตามปฏิทิน → ใช้ค่าที่เก็บใน Editor จนกว่าจะสร้างไตรมาสใหม่
+  var CASH_ENDED_TH = "ไตรมาสใน Quarterly Editor จบแล้ว — สร้างไตรมาสใหม่ใน Editor เพื่อให้หุ้นต่างประเทศตาม AI Portfolio Manager";
   var CASH_INVALID_TH = "เงินสดต้องเป็นตัวเลข ≥ 0";
   var CASH_EMPTY_SERVER_TH = "ข้อมูลพอร์ตบน server ว่าง — ยกเลิกการบันทึกเพื่อกันข้อมูลหาย";
   var CASH_DRAFT_TH = "ใช้ค่าที่ยังไม่ได้บันทึก";
@@ -58,6 +65,15 @@
   };
   var cashEl = null;     // ช่องกรอกของการวาดรอบล่าสุด — ปุ่มบันทึกอ่านค่าจากตัวนี้
   var ownSaved = null;   // เอกสารที่หน้านี้เพิ่ง PUT — event portfolio-allocation-saved ของตัวเองไม่ต้องรับซ้ำ
+  // ---- เขียนแถวหุ้นต่างประเทศลงไตรมาสล่าสุดหลังแก้มูลค่าหุ้นรายตัว (หน่วง · ทีละรอบ · ล้มเหลว = บอกสั้น ๆ ไม่มีร่าง) ----
+  var ROW_SYNC_DELAY_MS = 1500;
+  var ROW_SYNC_FAIL_TH = "ยังเขียนหุ้นต่างประเทศลงไตรมาสใน Quarterly Editor ไม่สำเร็จ — จะลองอีกครั้งเมื่อบันทึกเงินสดหรือมูลค่าหุ้นครั้งถัดไป";
+  var rowSync = {
+    timer: null,     // รอบที่ตั้งเวลาไว้ (หน่วงหลังบันทึกมูลค่าหุ้นครั้งล่าสุด)
+    promise: null,   // รอบที่กำลัง GET/PUT — มีได้ทีละรอบ · บันทึกเงินสดรอรอบนี้ก่อน GET ของตัวเอง
+    again: false,    // มีคำขอเข้ามาระหว่างรอบที่ค้าง → ตั้งเวลาใหม่เมื่อรอบนั้นจบ
+    failed: false    // รอบล่าสุดล้มเหลว → ข้อความสั้นในกล่องเงินสด (ล้างเมื่อเขียนสำเร็จครั้งถัดไป)
+  };
 
   // ถ้อยคำที่อ้าง "เป้า" — ตัดออกเฉพาะหน้านี้ (engine ยังพูดคำเดิมให้หน้าอื่น)
   // เรียงจากรูปเฉพาะ → รูปกว้าง · anchored ทั้งหมด ถ้า engine เปลี่ยนข้อความ กฎจะไม่ match เฉย ๆ
@@ -209,10 +225,16 @@
   }
 
   // ---------------- positions (sleeve หุ้นต่างประเทศ = "AI portfolio") ----------------
-  function buildInputs(snapshot) {
-    var PM = window.PMEngine, core = window.PortfolioCore, FS = window.ForeignSleeve;
+  // รายการหุ้นที่หน้านี้ใช้คิด sleeve (snapshot.portfolioHoldings ผ่าน dedupe) — ชุดเดียวกันทั้งตอนวาดและตอนเขียนแถวลงเอกสาร
+  //   → แถวที่เขียนลงไตรมาส = ตัวเลขที่หน้านี้แสดงพอดี (saveHoldings เขียน snapshot ก่อน resolve)
+  function holdingsOf(snapshot) {
+    var core = window.PortfolioCore;
     var rows = (snapshot && snapshot.portfolioHoldings && snapshot.portfolioHoldings.data) || [];
-    var holdings = core && core.dedupeHoldings ? core.dedupeHoldings(rows) : rows;
+    return core && core.dedupeHoldings ? core.dedupeHoldings(rows) : rows;
+  }
+  function buildInputs(snapshot) {
+    var PM = window.PMEngine, FS = window.ForeignSleeve;
+    var holdings = holdingsOf(snapshot);
     // sleeve หุ้นต่างประเทศ: โหมด pm (กรอกเงินสดแล้ว + มี holdings) = Σ หุ้นที่ถือ + เงินสดที่กรอก
     // โหมด editor = สูตรเดิม (gross จากแถว foreign-stock ของ Quarterly Editor)
     var ps = snapshot && snapshot.portfolioStatus;
@@ -319,8 +341,11 @@
       updatedAt: new Date().toISOString()
     });
     if (idx >= 0) holdings[idx] = next; else holdings.push(next);
-    try { core.saveHoldings(holdings); } catch (e) { /* local เขียนแล้ว sync server ทีหลัง — core จัดการเอง */ }
+    var saved = null;
+    try { saved = core.saveHoldings(holdings); } catch (e) { /* local เขียนแล้ว sync server ทีหลัง — core จัดการเอง */ }
     // core ยิง "portfolio-holdings-updated" → หน้า re-render อัตโนมัติ
+    // บันทึกรายการหุ้นสำเร็จ → ตั้งเวลาเขียนแถวหุ้นต่างประเทศของไตรมาสล่าสุดเป็นค่า PM (หน่วง รวมการแก้ติด ๆ กันเป็นรอบเดียว)
+    if (saved && typeof saved.then === "function") saved.then(scheduleRowSync, function () { /* บันทึกรายการหุ้นไม่สำเร็จ — ไม่เขียนแถว */ });
   }
   function kbTickersNotHeld(heldRows) {
     var held = {};
@@ -424,7 +449,9 @@
     var stored = cashUi.draft ? cashUi.draft.cash : inp.cashEntered;
     var val = cashUi.typed != null ? cashUi.typed : (locked || stored == null ? "" : String(stored));
     var src = inp.cashSource === "pm" ? "ที่มา: " + CASH_PM_TH
-      : (inp.cashReason === "no-holdings" ? CASH_NOHOLD_TH : CASH_EDITOR_TH);
+      : (inp.cashReason === "no-holdings" ? CASH_NOHOLD_TH
+        : (inp.cashReason === "past-quarter" ? CASH_PAST_TH
+          : (inp.cashReason === "quarter-ended" ? CASH_ENDED_TH : CASH_EDITOR_TH)));
     var dis = saving ? " disabled" : "";
     return '<div class="pm-cashbox" data-pm-cashbox="1">' +
       '<label class="pm-cash-lbl" for="pmCashInp">' + esc(CASH_LABEL_TH) + " (บาท)</label>" +
@@ -449,6 +476,8 @@
       parts.push('<span class="pm-cash-draft">' + esc(cashUi.draftNotice + (s === "error" ? " (เก็บไว้ในเครื่องนี้)" : "")) + "</span>");
       if (s === "error") parts.push('<button type="button" class="pm-cash-btn" data-pm-cash-retry="1">ลองบันทึกอีกครั้ง</button>');
     }
+    // เขียนแถวหุ้นต่างประเทศหลังแก้มูลค่าหุ้นไม่สำเร็จ — แจ้งสั้น ๆ (ไม่มีร่าง: บันทึกครั้งถัดไปเขียนแถวนี้ใหม่เอง)
+    if (rowSync.failed) parts.push('<span class="pm-cash-rownote" data-pm-rowsync="failed">' + esc(ROW_SYNC_FAIL_TH) + "</span>");
     if (!parts.length) return "";
     return '<div class="' + cls + '" data-pm-cash-status="' + esc(s) + '" role="status">' + parts.join("") + "</div>";
   }
@@ -800,10 +829,43 @@
   // ---------------- เงินสดรอซื้อหุ้นต่างประเทศ: บันทึกลงเอกสารพอร์ต (โครงเดียวกับ allocation-card-page.js persistPlan) ----------------
   function thError(msg) { var e = new Error(msg); e.pmTh = true; return e; }
 
+  // id ของแถวหุ้นต่างประเทศที่หน้านี้เขียน (แถวใหม่ / ข้อมูลเก่าไม่มี id) — ปุ่มแก้ไข/ลบของ Quarterly Editor อ้างแถวด้วย id
+  function newRowId() {
+    try { if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID(); } catch (e) { /* ใช้ตัวสำรอง */ }
+    return "fs-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+  }
+  // เอกสารดิบที่จะ PUT (สำเนาทุกคีย์ของ server) → แถวหุ้นต่างประเทศของไตรมาสล่าสุดเป็นค่า PM
+  //   เฉพาะเมื่อ ForeignSleeve.sleeveOf(doc, รายการหุ้นที่หน้านี้แสดง) = pm (กรอกเงินสดแล้ว + มีหุ้น + ไตรมาสปัจจุบัน = ล่าสุด
+  //   + ยังไม่จบตามปฏิทิน) · ไม่งั้นคืน doc ตัวเดิม (ไตรมาสไม่ถูกแตะ)
+  //   แถวที่แทน = applyToDoc mark:false: คงชื่อ/id/ทุกฟิลด์ของแถวแรก · เงินเติม/ถอนรวมทุกแถว · ไม่มี fromPM · แถวอื่นและไตรมาสอื่น reference เดิม
+  //   แถวไม่มี id → ให้ id (แถวใหม่ได้ createdAt / updatedAt แบบที่ Quarterly Editor ตั้ง)
+  function withForeignRow(doc) {
+    var FS = window.ForeignSleeve;
+    if (!FS || typeof FS.applyToDoc !== "function") return doc;
+    var out = FS.applyToDoc(doc, holdingsOf(readSnapshot()), { mark: false });
+    if (out === doc || !out || !out.quarters) return doc;
+    var key = FS.latestKeyOf ? FS.latestKeyOf(out) : null;
+    var q = key ? out.quarters[key] : null;
+    var before = key && doc.quarters[key] && Array.isArray(doc.quarters[key].assets) ? doc.quarters[key].assets : [];
+    var wasNew = !before.some(function (a) { return a && a.type === "foreign-stock"; });
+    var rows = q && Array.isArray(q.assets) ? q.assets : [];
+    for (var i = 0; i < rows.length; i++) {
+      var a = rows[i];
+      if (!a || a.type !== "foreign-stock") continue;
+      // แถวที่ applyToDoc คืนเป็นสำเนาใหม่เสมอ → ตั้งค่าบนตัวนี้ได้โดยไม่แตะเอกสารของ server
+      if (!a.id) a.id = newRowId();
+      if (wasNew && !a.createdAt) { a.createdAt = new Date().toISOString(); a.updatedAt = null; }
+      break;
+    }
+    return out;
+  }
+
   // GET สด → เอกสารไม่มีไตรมาส = ไม่ PUT → สำเนาทุกคีย์ของเอกสารบน server → ตั้ง foreignSleeve → PUT { data }
-  // body = เอกสารดิบจาก server เสมอ (ไม่ใช่ psCache / snapshot ที่หน้าใช้วาด) → แถว foreign-stock ใน Editor ไม่ถูกแตะ
+  // body = เอกสารดิบจาก server เสมอ (ไม่ใช่ psCache / snapshot ที่หน้าใช้วาด) · แถว foreign-stock ของไตรมาสล่าสุดที่ยังไม่จบ
+  //   = ค่า PM ตามเงินสดใหม่ (withForeignRow · โหมด pm เท่านั้น) · ไตรมาสอื่น / แถวอื่น / คีย์อื่น คงเดิมทุก byte
   // bootDraft (เฉพาะร่างที่ส่งเองตอนเปิดหน้า): server มีเงินสดที่บันทึกหลังร่างนี้ (เช่นจากเครื่องอื่น) → ไม่ PUT
   //   ทิ้งร่าง ใช้ค่าบน server · บันทึกที่ผู้ใช้กด / ปุ่มลองใหม่ ไม่ผ่านเงื่อนไขนี้
+  // รอบเขียนแถวหลังแก้มูลค่าหุ้นกำลังค้าง → รอให้จบก่อน GET (สอง GET→PUT สลับกัน = ตัวหลังทับเงินสดของตัวแรก)
   function persistCash(cash, bootDraft) {
     if (cashUi.saveState === "saving") return;
     cashUi.inputError = null;
@@ -813,9 +875,13 @@
     cashUi.saveState = "saving";
     cashUi.error = null;
     render();
+    var getDoc = function () { return window.fetch("/api/portfolio", { cache: "no-store" }); };
     var p;
-    try { p = window.fetch("/api/portfolio", { cache: "no-store" }); }
-    catch (e) { p = Promise.reject(e); }
+    if (rowSync.promise) p = rowSync.promise.then(getDoc, getDoc);
+    else {
+      try { p = getDoc(); }
+      catch (e) { p = Promise.reject(e); }
+    }
     p.then(function (r) {
       if (!r || !r.ok) throw thError("อ่านข้อมูลพอร์ตก่อนบันทึกไม่ได้ (HTTP " + (r ? r.status : "?") + ")");
       return r.json();
@@ -834,6 +900,7 @@
       var next = {};
       Object.keys(data).forEach(function (k) { next[k] = data[k]; });   // quarters / allocation / allocationPlan คงเดิมทุก byte
       next.foreignSleeve = mine;
+      next = withForeignRow(next);   // โหมด pm: แถวหุ้นต่างประเทศของไตรมาสล่าสุด = หุ้นที่ถือ + เงินสดใหม่
       return window.fetch("/api/portfolio", {
         method: "PUT",
         headers: { "content-type": "application/json" },
@@ -875,6 +942,7 @@
     cashUi.inputError = null;
     cashUi.saveState = "saved";
     cashUi.error = null;
+    rowSync.failed = false;   // PUT นี้เขียนแถวหุ้นต่างประเทศตามค่าล่าสุดแล้ว (หรือไม่ใช่โหมด pm = ไม่มีแถวต้องเขียน)
     patchSnapshot(next);
     // event บน window อยู่แค่ในหน้านี้ (ไม่ข้ามแท็บ/หน้า) — หน้าอื่นได้เงินสดใหม่จาก snapshot ใน localStorage
     // ที่ patch ข้างบน และจาก GET /api/portfolio สดของหน้านั้นเอง · ยิงไว้ให้ส่วนอื่นที่อาจวางบนหน้านี้ในอนาคต
@@ -911,6 +979,73 @@
       out.portfolioStatus = ps;
       P.write(out);
     } catch (e) { /* snapshot เป็นแค่สำเนา — เขียนไม่ได้ก็ไม่กระทบเอกสารบน server */ }
+  }
+
+  // ---------------- แถวหุ้นต่างประเทศของไตรมาสล่าสุด ← มูลค่าหุ้นที่เพิ่งบันทึก (spec Addendum ข้อ 5 · final review) ----------------
+  // บันทึกมูลค่าหุ้นรายตัวสำเร็จ → ตั้งเวลาใหม่ทุกครั้ง (แก้ติด ๆ กัน = รอบเดียว)
+  function scheduleRowSync() {
+    if (rowSync.timer) clearTimeout(rowSync.timer);
+    rowSync.timer = setTimeout(function () { rowSync.timer = null; runRowSync(); }, ROW_SYNC_DELAY_MS);
+  }
+  // GET สด → เอกสารไม่มีไตรมาส = ไม่ PUT (ล้มเหลว) → สำเนาทุกคีย์ → withForeignRow → ไม่ใช่โหมด pm / แถวเท่าเดิม = ไม่ PUT
+  //   → PUT { data } (ไม่มี fromPM) → สำเนาใน snapshot + event แบบบันทึกเงินสด
+  //   ทีละรอบ: รอบค้าง = จำไว้แล้วตั้งเวลาใหม่ตอนจบ · บันทึกเงินสดกำลังส่ง = ตั้งเวลาใหม่ (PUT นั้นเขียนแถวเดียวกันอยู่แล้ว)
+  //   ล้มเหลว = rowSync.failed (ข้อความสั้นในกล่องเงินสด) · ไม่มีร่าง — บันทึกเงินสด/มูลค่าหุ้นครั้งถัดไปเขียนแถวนี้ใหม่เอง
+  function runRowSync() {
+    if (rowSync.promise) { rowSync.again = true; return; }
+    if (cashUi.saveState === "saving") { scheduleRowSync(); return; }
+    var p;
+    try { p = window.fetch("/api/portfolio", { cache: "no-store" }); }
+    catch (e) { p = Promise.reject(e); }
+    rowSync.promise = p.then(function (r) {
+      if (!r || !r.ok) throw thError("HTTP " + (r ? r.status : "?"));
+      return r.json();
+    }).then(function (j) {
+      var data = j && (j.data || (j.quarters ? j : null));
+      // server ตอบเอกสารที่ไม่มีไตรมาส → PUT ทับจะลบพอร์ตทั้งก้อน → ไม่ส่ง
+      if (!data || !data.quarters || !Object.keys(data.quarters).length) throw thError(CASH_EMPTY_SERVER_TH);
+      var copy = {};
+      Object.keys(data).forEach(function (k) { copy[k] = data[k]; });
+      var next = withForeignRow(copy);
+      if (next === copy || stableJson(next.quarters) === stableJson(data.quarters)) return null;   // ไม่ใช่โหมด pm / ตรงอยู่แล้ว
+      return window.fetch("/api/portfolio", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ data: next })
+      }).then(function (r2) {
+        if (!r2 || !r2.ok) throw thError("HTTP " + (r2 ? r2.status : "?"));
+        return next;
+      });
+    }).then(function (next) {
+      if (next) onRowSynced(next);
+      setRowSyncFailed(false);
+    }, function () {
+      setRowSyncFailed(true);
+    }).then(function () {
+      rowSync.promise = null;
+      if (rowSync.again) { rowSync.again = false; scheduleRowSync(); }
+    });
+  }
+  // ข้อความล้มเหลวเปลี่ยน → วาดเมื่อผู้ใช้ไม่ได้พิมพ์อยู่ (ตัวเลขบนหน้าไม่เปลี่ยน — โหมด pm คิดจากหุ้นที่ถือ + เงินสด)
+  function setRowSyncFailed(v) {
+    if (rowSync.failed === v) return;
+    rowSync.failed = v;
+    renderWhenIdle();
+  }
+  // PUT สำเร็จ → เอกสารชุดนี้ = ฉบับล่าสุด (psCache) · patch สำเนาใน snapshot ให้หน้าอื่นใน browser นี้ · event แบบบันทึกเงินสด
+  //   ไม่วาดใหม่: ตัวเลขบนหน้าไม่เปลี่ยน และผู้ใช้อาจกำลังพิมพ์มูลค่าหุ้นตัวถัดไป (patch ผ่าน repatching = ไม่วาดใน onSnapshotWritten)
+  function onRowSynced(next) {
+    psCache = { data: next };
+    psFetchedAt = Date.now();
+    psSeq++;
+    ownSaved = next;
+    repatching = true;
+    try { patchSnapshot(next); } finally { repatching = false; }
+    try {
+      if (typeof window.CustomEvent === "function" && typeof window.dispatchEvent === "function") {
+        window.dispatchEvent(new window.CustomEvent("portfolio-allocation-saved", { detail: { data: next } }));
+      }
+    } catch (e) { /* ignore */ }
   }
 
   // type=number: ข้อความที่เบราว์เซอร์อ่านไม่ออกได้ value "" — ไม่ใช่ "เว้นว่าง = ใช้ค่าเดิม"

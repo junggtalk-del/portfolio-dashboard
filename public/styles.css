@@ -645,3 +645,21 @@ td:last-child {
   line-height: 1.5;
 }
 .net-flow-field small a { color: inherit; }
+
+/* หุ้นต่างประเทศของไตรมาสล่าสุดดึงจากหน้า AI Portfolio Manager — ป้ายที่มาในตาราง + ช่องที่ถูกล็อกในฟอร์ม */
+.pm-source-badge {
+  justify-self: start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--app-accent-soft);
+  color: var(--accent-dark);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.pm-source-badge:hover { text-decoration: underline; }
+.pm-lock-note { margin: 0; }
+.pm-lock-note a { color: inherit; }
+.delete-button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.asset-form input:disabled,
+.asset-form select:disabled { opacity: 0.65; cursor: not-allowed; }

@@ -55,19 +55,37 @@ function mkEl(id) {
     addEventListener: function () {}, removeEventListener: function () {},
     querySelector: function () { return null; }, querySelectorAll: function () { return []; },
     closest: function () { return null; }, focus: function () {},
+    // node ปลอมที่เทสต์สร้างเอง (เช่นช่อง input ที่กำลังโฟกัส) บอกว่าอยู่ใน element ไหนด้วย __in = id
+    contains: function (el) { return !!el && el.__in === this.id; },
     classList: { add: function () {}, remove: function () {}, contains: function () { return false; } }
   };
 }
 
+// เบราว์เซอร์มี realm เดียว แต่ sandbox มีสอง: array ที่โค้ดใน VM สร้างด้วย [] (สำเนาเอกสารที่ foreign-sleeve.js แปลง)
+//   ไม่ใช่ instanceof Array ของ host → asset-allocation-engine.js (`q.assets instanceof Array`) จะมองไม่เห็นรายการ
+//   Array ที่ส่งเข้า sandbox จึงตอบ instanceof ด้วย Array.isArray (ข้าม realm ได้) = พฤติกรรมเดียวกับหน้าเว็บจริง
+var ONE_REALM_ARRAY = new Proxy(Array, {
+  get: function (target, key, receiver) {
+    if (key === Symbol.hasInstance) return function (x) { return Array.isArray(x); };
+    return Reflect.get(target, key, receiver);
+  }
+});
+// ลำดับสคริปต์ของ portfolio.html — o.extra (portfolio-core.js / foreign-sleeve.js) โหลดก่อน engine + page เหมือนหน้าจริง
+var PAGE_ORDER = ["portfolio-core.js", "foreign-sleeve.js", "asset-allocation-engine.js", "asset-allocation-page.js"];
+
 function boot(opts) {
   var o = opts || {};
   var els = {}, puts = [], gets = 0, dispatched = [];
+  // listener ของ window / document ถูกจดไว้ (ไม่ยิงเอง) — เทสต์ยิงด้วย fireWin / fireDoc
+  //   win.dispatchEvent คงเดิม (จดลง dispatched อย่างเดียว) เพื่อไม่เปลี่ยนพฤติกรรมของเทสต์เดิม
+  var winListeners = {}, docListeners = {};
+  function rec(map) { return function (type, fn) { (map[type] = map[type] || []).push(fn); }; }
   var store = o.store || {};
   var doc = {
-    readyState: "complete", createElement: mkEl, addEventListener: function () {},
+    readyState: "complete", createElement: mkEl, addEventListener: rec(docListeners),
     getElementById: function (id) { if (!els[id]) els[id] = mkEl(id); return els[id]; },
     querySelector: function () { return mkEl(); }, querySelectorAll: function () { return []; },
-    body: mkEl("body"), documentElement: mkEl("html"), hidden: false
+    body: mkEl("body"), documentElement: mkEl("html"), hidden: false, activeElement: null
   };
   var win = {
     document: doc, location: { search: "", pathname: "/asset-allocation" },
@@ -77,7 +95,7 @@ function boot(opts) {
       setItem: function (k, v) { store[k] = String(v); },
       removeItem: function (k) { delete store[k]; }
     },
-    addEventListener: function () {}, removeEventListener: function () {},
+    addEventListener: rec(winListeners), removeEventListener: function () {},
     dispatchEvent: function (e) { dispatched.push(e); return true; },
     CustomEvent: function (type, init) { this.type = type; this.detail = init ? init.detail : undefined; },
     fetch: function (url, init) {
@@ -96,24 +114,179 @@ function boot(opts) {
       return Promise.resolve({ ok: true, status: 200, json: function () { return Promise.resolve({ data: copy }); } });
     },
     console: console, Math: Math, JSON: JSON, Date: Date, Number: Number, String: String,
-    Object: Object, Array: Array, Boolean: Boolean, isFinite: isFinite, isNaN: isNaN,
+    Object: Object, Array: ONE_REALM_ARRAY, Boolean: Boolean, isFinite: isFinite, isNaN: isNaN,
     parseInt: parseInt, parseFloat: parseFloat, Promise: Promise, RegExp: RegExp, Error: Error,
     encodeURIComponent: encodeURIComponent, decodeURIComponent: decodeURIComponent,
     setTimeout: setTimeout, clearTimeout: clearTimeout, Intl: Intl
   };
   win.window = win; win.self = win; win.globalThis = win;
+  // snapshot จาก Load Latest Data (holdings ของหน้า PM) — ไม่ส่ง = ไม่มี PortfolioDataSnapshot (เส้นทางเดิมของเทสต์นี้)
+  if (o.snapshot) win.PortfolioDataSnapshot = { read: function () { return o.snapshot; } };
   var ctx = vm.createContext(win);
-  ["asset-allocation-engine.js", "asset-allocation-page.js"].forEach(function (f) {
+  var want = ["asset-allocation-engine.js", "asset-allocation-page.js"].concat(o.extra || []);
+  PAGE_ORDER.filter(function (f) { return want.indexOf(f) >= 0; }).forEach(function (f) {
     try { vm.runInContext(fs.readFileSync(path.join(PUB, f), "utf8"), ctx, { filename: f }); }
     catch (e) { console.log("  โหลด " + f + " ไม่ได้: " + e.message); }
   });
+  function fire(map, type, ev) { (map[type] || []).slice().forEach(function (fn) { fn(ev || { type: type }); }); }
   return {
     win: win, els: els, puts: puts, store: store, dispatched: dispatched,
     getsCount: function () { return gets; },
-    html: function () { return els.aaRoot ? els.aaRoot.innerHTML : ""; }
+    html: function () { return els.aaRoot ? els.aaRoot.innerHTML : ""; },
+    // จำลองโฟกัสของเบราว์เซอร์: document.activeElement = node ปลอม (null = ไม่มีอะไรโฟกัส)
+    focus: function (el) { doc.activeElement = el || null; },
+    fireWin: function (type, ev) { fire(winListeners, type, ev); },
+    fireDoc: function (type, ev) { fire(docListeners, type, ev); },
+    listenerCount: function (where, type) { return ((where === "doc" ? docListeners : winListeners)[type] || []).length; }
   };
 }
 function flush(ms) { return new Promise(function (r) { setTimeout(r, ms == null ? 40 : ms); }); }
+
+// ============================================================
+// [11] หุ้นต่างประเทศจาก AI Portfolio Manager (editor-follows-pm Task 1 · Addendum ข้อ 2)
+//   FIXTURE + แถว "US" (ไตรมาสก่อน 280,000 · ไตรมาสนี้ 300,000 เติม 20,000) + foreignSleeve.cash 100,000
+//   holdings: NVDA 350,000 (หุ้นต่างประเทศ) · PTT.BK (หุ้นไทย) และ AMD (ไม่ได้ถือ) ไม่นับ → gross 450,000
+//   ไตรมาสนี้: ดิบ 250,000 + 100,000 + 210,000 + 50,000 + 300,000 = 910,000 → แปลง 610,000 + 450,000 = 1,060,000
+//   ส่วนนี้คิดบนเอกสารที่แปลงแล้ว (holdings แหล่งเดียวกับ getHoldingsArray ของหน้า position) แต่ PUT ยังเป็นเอกสารดิบจาก GET สด
+function clone(x) { return JSON.parse(JSON.stringify(x)); }
+var PM_FIX = clone(FIXTURE);
+PM_FIX.quarters[qKey(1)].assets.push(row("foreign-stock", "US", 280000));
+PM_FIX.quarters[qKey(0)].assets.push(row("foreign-stock", "US", 300000, 20000));
+PM_FIX.foreignSleeve = { cash: 100000, updatedAt: "2026-11-09T01:00:00.000Z" };
+var PM_FIX_QUARTERS_JSON = JSON.stringify(PM_FIX.quarters);
+var PM_HOLD = [
+  { canonicalSymbol: "NVDA", isHolding: true, marketValue: 350000, portfolioBucket: "" },
+  { canonicalSymbol: "PTT.BK", isHolding: true, marketValue: 999, portfolioBucket: "" },
+  { canonicalSymbol: "AMD", isHolding: false, marketValue: 70000, portfolioBucket: "" }
+];
+var SRC_LINE = '<div class="aa-stat-s"><span class="aa-muted" data-aa-src="pm">หุ้นต่างประเทศจาก AI Portfolio Manager</span></div>';
+function heroOf(h) { var m = /<div class="aa-stat-n">(฿[0-9,]+)<\/div><div class="aa-stat-l">มูลค่าพอร์ตรวม<\/div>/.exec(h); return m ? m[1] : null; }
+function srcCount(h) { return h.split('data-aa-src="pm"').length - 1; }
+function pmSection() {
+  console.log("\n[11] หุ้นต่างประเทศจาก AI Portfolio Manager (โหมด pm)");
+  var EXTRA = ["portfolio-core.js", "foreign-sleeve.js"];
+  function snapOf(hold) { return { portfolioHoldings: { data: clone(hold) } }; }
+  function withDoc(edit) { var f = clone(PM_FIX); edit(f); return f; }
+  var P = boot({ fixture: PM_FIX, extra: EXTRA, snapshot: snapOf(PM_HOLD) });
+  var PL = boot({ fixture: PM_FIX, extra: EXTRA, store: { portfolioHoldingsDraft: JSON.stringify(PM_HOLD) } });   // ก่อน Load Latest Data → cache ในเครื่อง
+  var PL2 = boot({ fixture: PM_FIX, extra: EXTRA, snapshot: snapOf([]), store: { portfolioHoldingsDraft: JSON.stringify(PM_HOLD) } });   // snapshot ว่าง → ถอยไป cache
+  var PE = boot({ fixture: PM_FIX, extra: EXTRA, snapshot: snapOf([]) });   // holdings ว่างทุกแหล่ง → editor
+  var PNC = boot({ fixture: withDoc(function (f) { delete f.foreignSleeve; }), extra: EXTRA, snapshot: snapOf(PM_HOLD) });   // ยังไม่กรอก cash → editor
+  var PPQ = boot({ fixture: withDoc(function (f) { f.currentQuarter = qKey(1); }), extra: EXTRA, snapshot: snapOf(PM_HOLD) });   // Editor ดูไตรมาสเก่า → editor
+  var PNF = boot({ fixture: PM_FIX, snapshot: snapOf(PM_HOLD) });   // ไม่มีโมดูล foreign-sleeve.js → editor
+  return flush(80).then(function () {
+    var hp = P.html();
+    t("pm: มูลค่าพอร์ตรวม = ไตรมาสนี้จากเอกสารที่แปลง ฿1,060,000 (หุ้นต่างประเทศ = NVDA 350,000 + เงินสดรอซื้อ 100,000)", heroOf(hp) === "฿1,060,000", heroOf(hp));
+    t("pm: ป้าย \"มูลค่าพอร์ตรวม\" + บรรทัดจาง \"หุ้นต่างประเทศจาก AI Portfolio Manager\" หนึ่งบรรทัด ต่อจากบรรทัดไตรมาสล่าสุด",
+      srcCount(hp) === 1 && hp.indexOf('<div class="aa-stat-l">มูลค่าพอร์ตรวม</div><div class="aa-stat-s">ไตรมาสล่าสุด ' + qKey(0) + "</div>" + SRC_LINE + "</div>") >= 0,
+      (/<div class="aa-stat-l">มูลค่าพอร์ตรวม[\s\S]{0,260}/.exec(hp) || [""])[0]);
+    t("pm: ไม่มี NaN/undefined/Infinity/[object · ไม่มีคำแนะนำซื้อขาย · ไม่มี ฿ ใน title/aria-label ของบรรทัดที่มา",
+      !/NaN|undefined|Infinity|\[object /.test(hp) && !/ควรซื้อ|ควรขาย|น่าซื้อ|น่าขาย|น่าเข้า|แนะนำซื้อ|จุดเข้า|ตัดขาดทุน/.test(hp) && !/\b(Buy|Sell)\b/.test(hp) && SRC_LINE.indexOf("฿") < 0);
+    t("pm ก่อน Load Latest Data: holdings จาก cache ในเครื่อง (PortfolioCore.readLocalHoldings) → ฿1,060,000 + บรรทัดที่มา",
+      heroOf(PL.html()) === "฿1,060,000" && srcCount(PL.html()) === 1, heroOf(PL.html()));
+    t("pm: snapshot มี holdings ว่าง → ถอยไปใช้ cache ในเครื่อง (กติกาเดียวกับ getHoldingsArray ของหน้า position)",
+      heroOf(PL2.html()) === "฿1,060,000" && srcCount(PL2.html()) === 1, heroOf(PL2.html()));
+    t("editor: holdings ว่างทุกแหล่ง → เอกสารดิบ ฿910,000 · ไม่มีบรรทัดที่มา", heroOf(PE.html()) === "฿910,000" && srcCount(PE.html()) === 0, heroOf(PE.html()));
+    t("editor: ยังไม่กรอก cash ในหน้า PM → ฿910,000 · ไม่มีบรรทัดที่มา", heroOf(PNC.html()) === "฿910,000" && srcCount(PNC.html()) === 0, heroOf(PNC.html()));
+    t("editor: Editor เลือกดูไตรมาสเก่า (past-quarter) → ไตรมาสล่าสุดยังเป็นค่าดิบ ฿910,000 · ไม่มีบรรทัดที่มา", heroOf(PPQ.html()) === "฿910,000" && srcCount(PPQ.html()) === 0, heroOf(PPQ.html()));
+    t("editor: หน้าไม่มีโมดูล ForeignSleeve → ฿910,000 · ไม่มีบรรทัดที่มา", heroOf(PNF.html()) === "฿910,000" && srcCount(PNF.html()) === 0, heroOf(PNF.html()));
+    // บันทึก (persist): GET สด → PUT เอกสารดิบของ server — ไม่มีแถวที่แปลง / fromPM · quarters ทุก byte เดิม · foreignSleeve คงไว้
+    P.win.AssetAllocationPage.setExpected("long", 8);
+    P.win.AssetAllocationPage.persistNow();
+    return flush(120);
+  }).then(function () {
+    var put = P.puts.length ? P.puts[P.puts.length - 1] : null;
+    var body = put ? JSON.stringify(put) : "";
+    var us = put ? put.data.quarters[qKey(0)].assets.filter(function (a) { return a.type === "foreign-stock"; }) : [];
+    t("pm: บันทึก = GET สดแล้ว PUT เอกสารดิบ: quarters เหมือนเดิมทุก byte · แถว US 300,000 เติม 20,000 ของ Editor · ไม่มี fromPM · foreignSleeve คงไว้ · เป้าใหม่ถูกบันทึก",
+      P.puts.length >= 1 && P.puts.every(function (p) { return JSON.stringify(p.data.quarters) === PM_FIX_QUARTERS_JSON && JSON.stringify(p).indexOf("fromPM") < 0; }) &&
+      us.length === 1 && us[0].manualValue === 300000 && us[0].netFlow === 20000 && body.indexOf("fromPM") < 0 &&
+      put.data.foreignSleeve.cash === 100000 && put.data.allocation.ports.long.expectedReturnPct === 8 && P.getsCount() >= 2,
+      P.puts.length + " PUT · " + JSON.stringify(us));
+    var sv = P.dispatched.filter(function (e) { return e && e.type === "portfolio-allocation-saved"; });
+    var svd = sv.length ? sv[sv.length - 1].detail.data : null;
+    t("pm: event portfolio-allocation-saved พกเอกสารดิบชุดที่ PUT (ไม่ใช่สำเนาที่แปลง)", !!svd && JSON.stringify(svd.quarters) === PM_FIX_QUARTERS_JSON && JSON.stringify(svd).indexOf("fromPM") < 0);
+    t("pm: หลังบันทึกยังคิดบนเอกสารที่แปลง (฿1,060,000 + บรรทัดที่มา)", heroOf(P.html()) === "฿1,060,000" && srcCount(P.html()) === 1, heroOf(P.html()));
+    // ซอร์ส: ES5 เคร่งครัด (ตัดคอมเมนต์) · ไม่มีคำแนะนำซื้อขายรวมคอมเมนต์ · ใช้ ForeignSleeve.applyToDoc · ป้ายเก่าหายแล้ว
+    var aaSrc = fs.readFileSync(path.join(PUB, "asset-allocation-page.js"), "utf8");
+    var aaCode = aaSrc.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    t("asset-allocation-page.js: ES5 · ไม่มีคำแนะนำซื้อขาย (รวมคอมเมนต์) · ใช้ ForeignSleeve.applyToDoc · ไม่มี \"(ตาม Quarterly Editor)\"",
+      !/=>|\bconst\s|\blet\s|`|\.\.\.|\bclass\s|\basync\b/.test(aaCode) && !/ควรซื้อ|ควรขาย|น่าซื้อ|น่าขาย|น่าเข้า|แนะนำซื้อ|จุดเข้า|ตัดขาดทุน/.test(aaSrc) && !/\b(Buy|Sell)\b/.test(aaSrc) &&
+      /ForeignSleeve/.test(aaSrc) && /applyToDoc/.test(aaSrc) && aaSrc.indexOf("(ตาม Quarterly Editor)") < 0);
+  });
+}
+
+// ============================================================
+// [11b] holdings มาทีหลัง (portfolio-holdings-updated) ขณะผู้ใช้พิมพ์ในส่วนนี้ — Task 1 fix round 1
+//   render() เขียน innerHTML ทั้งส่วนใหม่ (ช่องแผนเกษียณผูกแค่ "change") → ถ้าวาดตอนช่องถูกโฟกัส ตัวที่พิมพ์ค้างหาย
+//   กติกา: dirty / saving → ข้าม · มีตัวควบคุมใน #aaRoot ถูกโฟกัส → เลื่อนไว้ วาดครั้งเดียวเมื่อโฟกัสออกจาก #aaRoot
+//   ตัวนับ = จำนวนครั้งที่ #aaRoot.innerHTML ถูกเขียน · marker แทน DOM ที่ผู้ใช้กำลังพิมพ์อยู่ (วาดใหม่ = marker หาย)
+function countWrites(I, onWrite) {
+  var el = I.els.aaRoot, h = el.innerHTML;
+  Object.defineProperty(el, "innerHTML", { configurable: true, get: function () { return h; }, set: function (v) { h = String(v); onWrite(); } });
+  return el;
+}
+function holdingsDeferSection() {
+  console.log("\n[11b] holdings มาทีหลังขณะผู้ใช้พิมพ์ในส่วนนี้ — ห้ามวาดทับ");
+  var EXTRA = ["portfolio-core.js", "foreign-sleeve.js"];
+  var MARK = "<!--typing-marker-->";
+  // holdings ยังไม่มา (snapshot ว่าง · ไม่มี cache) → editor ฿910,000 · เทสต์เติม holdings ลง snapshot ตัวเดิมทีหลัง
+  var snapF = { portfolioHoldings: { data: [] } }, snapD = { portfolioHoldings: { data: [] } };
+  var F = boot({ fixture: PM_FIX, extra: EXTRA, snapshot: snapF });
+  var D = boot({ fixture: PM_FIX, extra: EXTRA, snapshot: snapD });
+  var writes = 0, writesD = 0, input, btn;
+  return flush(80).then(function () {
+    t("ลงทะเบียนครั้งเดียว: portfolio-holdings-updated 1 ตัว (window) · focusout 1 ตัว (document) — ไม่ผูกเพิ่มทุก render",
+      F.listenerCount("win", "portfolio-holdings-updated") === 1 && F.listenerCount("doc", "focusout") === 1,
+      F.listenerCount("win", "portfolio-holdings-updated") + " / " + F.listenerCount("doc", "focusout"));
+    t("ก่อน holdings มา: editor ฿910,000 · ไม่มีบรรทัดที่มา", heroOf(F.html()) === "฿910,000" && srcCount(F.html()) === 0, heroOf(F.html()));
+    countWrites(F, function () { writes++; });
+    F.els.aaRoot.innerHTML = F.html() + MARK; writes = 0;
+    input = { tagName: "INPUT", __in: "aaRoot", value: "45" };   // ช่องอายุใน #aaRoot กำลังถูกพิมพ์
+    btn = { tagName: "BUTTON", __in: "aaRoot" };
+    F.focus(input);
+    snapF.portfolioHoldings.data = clone(PM_HOLD);
+    F.fireWin("portfolio-holdings-updated");
+    return flush(20);
+  }).then(function () {
+    t("holdings-updated ขณะช่องใน #aaRoot ถูกโฟกัส → ไม่วาดใหม่ (marker ยังอยู่ · ยัง ฿910,000 · ค่าที่พิมพ์ 45 ไม่ถูกแตะ)",
+      writes === 0 && F.html().indexOf(MARK) >= 0 && heroOf(F.html()) === "฿910,000" && input.value === "45", writes + " writes");
+    // โฟกัสย้ายไปปุ่มอื่นใน #aaRoot (relatedTarget อยู่ใน root) = ยังใช้งานส่วนนี้อยู่
+    F.focus(btn);
+    F.fireDoc("focusout", { type: "focusout", target: input, relatedTarget: btn });
+    return flush(20);
+  }).then(function () {
+    t("focusout ไปตัวควบคุมอื่นใน #aaRoot → ยังไม่วาด", writes === 0 && F.html().indexOf(MARK) >= 0, writes + " writes");
+    // โฟกัสออกจาก #aaRoot (relatedTarget นอก root)
+    F.focus(null);
+    F.fireDoc("focusout", { type: "focusout", target: btn, relatedTarget: { tagName: "A", __in: "nav" } });
+    return flush(20);
+  }).then(function () {
+    var h = F.html();
+    t("โฟกัสออกจาก #aaRoot → วาดใหม่ครั้งเดียว ด้วยตัวเลข PM (฿1,060,000 + บรรทัดที่มา · marker หาย)",
+      writes === 1 && heroOf(h) === "฿1,060,000" && srcCount(h) === 1 && h.indexOf(MARK) < 0, writes + " writes · " + heroOf(h));
+    F.fireDoc("focusout", { type: "focusout", target: btn, relatedTarget: null });
+    return flush(20);
+  }).then(function () {
+    t("focusout ครั้งถัดไป (ไม่มีอะไรค้าง) → ไม่วาดซ้ำ", writes === 1, writes + " writes");
+    F.fireWin("portfolio-holdings-updated");
+    t("holdings-updated ตอนไม่มีใครโฟกัสและไม่ dirty → วาดทันทีหนึ่งครั้ง", writes === 2, writes + " writes");
+
+    // dirty: มีการแก้ที่ยังไม่บันทึก (รอ debounce) → ข้าม · การบันทึกวาดใหม่เองตอนจบและเห็น holdings ล่าสุด
+    countWrites(D, function () { writesD++; });
+    D.win.AssetAllocationPage.setExpected("long", 8);   // scheduleSave: dirty = true · วาดหนึ่งครั้ง (ยังไม่มี holdings)
+    writesD = 0;
+    snapD.portfolioHoldings.data = clone(PM_HOLD);
+    D.fireWin("portfolio-holdings-updated");
+    t("holdings-updated ขณะ dirty → ไม่วาดใหม่ (ยัง ฿910,000)", writesD === 0 && heroOf(D.html()) === "฿910,000", writesD + " writes · " + heroOf(D.html()));
+    return flush(800);
+  }).then(function () {
+    t("dirty: การบันทึกที่ค้างอยู่วาดใหม่เองตอนจบ → ฿1,060,000 + บรรทัดที่มา · PUT เป็นเอกสารดิบ (ไม่มี fromPM · quarters เดิม)",
+      heroOf(D.html()) === "฿1,060,000" && srcCount(D.html()) === 1 && D.puts.length >= 1 &&
+      D.puts.every(function (p) { return JSON.stringify(p.data.quarters) === PM_FIX_QUARTERS_JSON && JSON.stringify(p).indexOf("fromPM") < 0; }),
+      heroOf(D.html()) + " · " + D.puts.length + " PUT");
+  });
+}
 
 // ============================================================
 (function main() {
@@ -137,9 +310,11 @@ function flush(ms) { return new Promise(function (r) { setTimeout(r, ms == null 
     t("เรนเดอร์ได้และมีเนื้อหา", h.length > 3000, h.length);
     t("หัวเรื่องเป็น ASSET ALLOCATION", h.indexOf("ASSET ALLOCATION") >= 0);
     t("มีคำโปรยตามสเปก", h.indexOf("แบ่งพอร์ตเป็น 3 ระยะ และติดตามผลตอบแทนจริงเทียบกับเป้าหมาย") >= 0);
-    // pm-foreign-sleeve final fix wave: ส่วนนี้อ่านเอกสาร Editor เสมอ (หุ้นต่างประเทศจาก PM ใช้แค่ส่วนหัว) → บอกที่มาตายตัว
-    t("ตัวเลขมูลค่าพอร์ตรวมบอกที่มา: มูลค่าพอร์ตรวม (ตาม Quarterly Editor)",
-      h.indexOf('<div class="aa-stat-l">มูลค่าพอร์ตรวม (ตาม Quarterly Editor)</div>') >= 0, (/<div class="aa-stat-l">มูลค่าพอร์ตรวม[^<]*/.exec(h) || [""])[0]);
+    // editor-follows-pm Task 1 (Addendum): ส่วนนี้คิดบนเอกสารชุดเดียวกับส่วนหัว → ป้าย "มูลค่าพอร์ตรวม" เฉย ๆ
+    //   (เอา "(ตาม Quarterly Editor)" ออก) · บรรทัดที่มาของหุ้นต่างประเทศขึ้นเฉพาะโหมด pm (ข้อ [11]) — fixture นี้ไม่มี foreignSleeve = editor
+    t("ป้ายมูลค่าพอร์ตรวม = \"มูลค่าพอร์ตรวม\" (ไม่มี \"(ตาม Quarterly Editor)\") · โหมด editor ไม่มีบรรทัดที่มา",
+      h.indexOf('<div class="aa-stat-l">มูลค่าพอร์ตรวม</div>') >= 0 && h.indexOf("ตาม Quarterly Editor") < 0 && h.indexOf("data-aa-src") < 0 && h.indexOf("AI Portfolio Manager") < 0,
+      (/<div class="aa-stat-l">มูลค่าพอร์ตรวม[^<]*/.exec(h) || [""])[0]);
     // ใช้ id="aaAssign" ไม่ใช่ "aaAssign" เฉย ๆ เพราะบน hero มีลิงก์ href="#aaAssign" อยู่ด้วย
     var order = ["aa-headline", "aa-cards", 'id="aaRetire"', "aa-fromhere", 'id="aaAssign"', "aa-settings", "aa-quality", "วิธีคำนวณ"];
     var pos = order.map(function (k) { return h.indexOf(k); });
@@ -283,12 +458,13 @@ function flush(ms) { return new Promise(function (r) { setTimeout(r, ms == null 
     // คิดมือ: qKey(0) 540,000 → 610,000 เติม 60,000 → (610−540−60)/(540+30) = 1.75%
     t(qKey(0) + ": ต้นงวด ฿540,000 · ปลายงวด ฿610,000 (รวมรายการที่ยังไม่จัด)", !!r0 && txt(r0[0]) === "฿540,000" && txt(r0[1]) === "฿610,000", r0 && r0.slice(0, 2).map(txt).join(" | "));
     t(qKey(0) + ": รวมเงินเติม +13.0%", !!r0 && txt(r0[2]) === "+13.0%", r0 && txt(r0[2]));
-    t(qKey(0) + ": เงินเติม +฿60,000 ตามที่ตั้งไตรมาสละ", !!r0 && /^\+฿60,000/.test(txt(r0[3])) && /title="ตามที่ตั้ง “เติมเงินเข้าพอร์ตไตรมาสละ” ฿60,000"/.test(r0[3]), r0 && r0[3]);
+    // final fix wave [5]: title ไม่มีเงิน (Privacy Lock ซ่อนได้แค่ text node) — ยอดเงินอยู่ในช่องเป็นข้อความ
+    t(qKey(0) + ": เงินเติม +฿60,000 ตามที่ตั้งไตรมาสละ (title บอกที่มา ไม่มีเงิน)", !!r0 && /^\+฿60,000/.test(txt(r0[3])) && /title="ตามที่ตั้ง “เติมเงินเข้าพอร์ตไตรมาสละ”"/.test(r0[3]), r0 && r0[3]);
     t(qKey(0) + ": ไม่รวมเงินเติม +1.8% (คิดมือ 10,000 ÷ 570,000)", !!r0 && /^\+1\.8%/.test(txt(r0[4])), r0 && txt(r0[4]));
     t(qKey(2) + ": ไม่โต แต่หักเงินเติม 60,000 → −14.0%", !!r2 && txt(r2[2]) === "0.0%" && /^-14\.0%/.test(txt(r2[4])), r2 && [txt(r2[2]), txt(r2[4])].join(" | "));
     // qKey(1): กรอกเงินสด −60,000 ไว้รายการเดียว + หุ้นไทยเพิ่งเข้าพอร์ต (ไม่มี netFlow) → ใช้ยอดที่กรอก + ที่ระบบประมาณ ไม่ใช่ยอดไตรมาสละ
-    t(qKey(1) + ": ใช้ยอดที่กรอก (บางรายการ) ไม่ใช่ 60,000 และติด *", !!r1 && /^\+฿140,000\*/.test(txt(r1[3])) && /กรอก netFlow ไว้บางรายการ/.test(r1[3]) && /ใช้แทนยอดไตรมาสละ ฿60,000/.test(r1[3]),
-      r1 && r1[3]);
+    t(qKey(1) + ": ใช้ยอดที่กรอก (บางรายการ) ไม่ใช่ 60,000 และติด *", !!r1 && /^\+฿140,000\*/.test(txt(r1[3])) && /กรอก netFlow ไว้บางรายการ/.test(r1[3]) && /ใช้แทนยอดไตรมาสละที่ตั้งไว้/.test(r1[3]) &&
+      !/title="[^"]*฿/.test(r1[3]), r1 && r1[3]);
     t(qKey(1) + ": ไม่รวมเงินเติม 0.0% (540−400−140 = 0)", !!r1 && /^0\.0%/.test(txt(r1[4])), r1 && txt(r1[4]));
     t("ทุกแถวไตรมาสมีป้ายเทียบเป้าในช่องไม่รวมเงินเติม", [r0, r1, r2].every(function (r) { return !!r && /aa-rec-pill is-(ahead|on|behind)/.test(r[4]); }));
     t(qKey(0) + " +1.8% ต่ำกว่าเป้า 2.4% → ต่ำกว่าเป้า", !!r0 && /aa-rec-pill is-behind[^>]*>ต่ำกว่าเป้า/.test(r0[4]), r0 && r0[4]);
@@ -337,7 +513,13 @@ function flush(ms) { return new Promise(function (r) { setTimeout(r, ms == null 
       (/เช่น [^<]*/.exec(ports) || [""])[0].slice(0, 120));
     t("…บอกว่าเป็นสมมติฐาน และกรอก netFlow แล้วใช้ยอดที่กรอก", /จึงเป็นสมมติฐาน/.test(ports) && /ไตรมาสนั้นจะใช้ยอดที่กรอกแทน/.test(ports));
     var pRow0 = (new RegExp("<tr><td>" + qKey(0) + "<\\/td>((?:<td[^>]*>.*?<\\/td>){4})<\\/tr>").exec(ports) || [])[1] || "";
-    t("…ชี้ที่ตัวเลขพอร์ตสั้นเห็นยอดที่หัก = ไตรมาสละ × สัดส่วน", /title="หักเงินเติม ฿26,667 = ไตรมาสละ ฿60,000 × 44\.4% \(สัดส่วนมูลค่าต้นงวดของพอร์ตนี้\)"/.test(pRow0), pRow0.slice(0, 220));
+    // final fix wave [5]: title บอกสัดส่วนที่ใช้แบ่ง (ไม่มีเงิน) · ยอดที่หักอยู่ในบรรทัดอธิบาย "เช่น … ระยะสั้น ฿26,667" (ข้อความ)
+    t("…ชี้ที่ตัวเลขพอร์ตสั้นเห็นสัดส่วนที่ใช้แบ่ง (ไม่มีเงินใน title)", /title="หักเงินเติมไตรมาสละ × 44\.4% \(สัดส่วนมูลค่าต้นงวดของพอร์ตนี้\)"/.test(pRow0) && !/title="[^"]*฿/.test(pRow0), pRow0.slice(0, 220));
+    t("…บรรทัดอธิบายชี้ให้ดูสัดส่วน (ไม่ใช่ 'ยอดที่หัก' ที่ไม่มีใน title แล้ว)", /ชี้ที่ตัวเลขเพื่อดูสัดส่วนที่ใช้แบ่ง/.test(ports) && ports.indexOf("ชี้ที่ตัวเลขเพื่อดูยอดที่หัก") < 0);
+    // ทั้งส่วน Asset Allocation: ไม่มี title / aria-label ที่มี ฿ หรือยอดเงินดิบแบบมีจุลภาค (เช่น 60,000) — Privacy Lock ไม่ซ่อน attribute
+    var moneyAttrs = (h.match(/(?:title|aria-label)="[^"]*"/g) || []).filter(function (a) { return /฿|\d{1,3}(?:,\d{3})+/.test(a); });
+    t("ไม่มี title / aria-label ใดใน #aaRoot ที่มี ฿ หรือยอดเงินแบบ 1,234 (ส่วนบันทึกผลตอบแทน + รายพอร์ต + ตั้งค่า)",
+      moneyAttrs.length === 0 && (h.match(/title="/g) || []).length > 10, moneyAttrs.slice(0, 4).join(" | "));
     // สั้น: (250,000 − 240,000 − 26,666.67) ÷ (240,000 + 13,333.33) = −6.6%
     t("…พอร์ตสั้น " + qKey(0) + " = −6.6% (หักแล้ว ไม่ใช่ +4.2%)", /^<td class="is-down"[^>]*>~-6\.6%<\/td>/.test(pRow0), pRow0.slice(0, 200));
     t("…สรุป สะสม · เฉลี่ยต่อปี · เป้าที่ตั้งไว้ และตัวเลขมี ~", /สะสมทั้งช่วง/.test(ports) && /เฉลี่ยต่อปี/.test(ports) && /เป้าที่ตั้งไว้/.test(ports) && /~[+−-]?[\d.]+%/.test(ports));
@@ -590,8 +772,10 @@ function flush(ms) { return new Promise(function (r) { setTimeout(r, ms == null 
               t("กด 'เอาของฉันทับ' แล้วบันทึกได้จริง", D.puts.length === 1, D.puts.length + " PUT");
               t("และยังรักษา quarters ไว้ครบ", D.puts.length === 1 && JSON.stringify(D.puts[0].data.quarters) === QUARTERS_JSON);
 
-              console.log("\n" + (pass + fail) + " checks · " + pass + " passed · " + fail + " failed");
-              process.exit(fail ? 1 : 0);
+              return pmSection().then(holdingsDeferSection).then(function () {
+                console.log("\n" + (pass + fail) + " checks · " + pass + " passed · " + fail + " failed");
+                process.exit(fail ? 1 : 0);
+              });
             });
           });
           });

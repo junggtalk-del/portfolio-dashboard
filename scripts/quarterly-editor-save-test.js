@@ -25,7 +25,14 @@ function extract(name) {
 }
 var CODE;
 try {
-  CODE = ["portfolioHeaders", "readJsonResponse", "adoptServerAllocation", "persistRemoteData"].map(extract).join("\n");
+  // persistRemoteData เรียก syncForeignFromPM เมื่อ foreignSleeve บน server ต่างจากในหน้า (editor-follows-pm Task 2 fix round 1)
+  //   ดึงตัวจริงมาด้วย · sandbox นี้ไม่มี window.ForeignSleeve = โหมด editor → ไม่แตะไตรมาส (เทสต์เดิมยังตรวจไตรมาสเท่าเดิม)
+  CODE = ["portfolioHeaders", "readJsonResponse", "adoptServerAllocation", "persistRemoteData",
+    "currentQuarterKey", "currentQuarter", "syncForeignFromPM"].map(extract).join("\n");
+  // final fix wave [1]: persistRemoteData ปฏิเสธเมื่อยังโหลดเอกสารไม่สำเร็จ (state.loaded) — ข้อความเป็น const บรรทัดเดียว
+  var mConst = /(^|\n)(const NOT_LOADED_TH = [^\n]*;)/.exec(SRC);
+  if (!mConst) throw new Error("ไม่เจอ const NOT_LOADED_TH ใน app.js");
+  CODE = mConst[2] + "\n" + CODE;
 } catch (e) {
   console.log("  ✗ ดึงฟังก์ชันจาก app.js ไม่ได้: " + e.message);
   console.log("\n1 checks · 0 passed · 1 failed");
@@ -38,9 +45,11 @@ function resp(status, body) {
 function run(opts) {
   var calls = [];
   var ctx = {
-    state: { data: JSON.parse(JSON.stringify(opts.local)), hydrating: false, saving: !!opts.saving, storageMode: "supabase", lastUpdated: null },
+    // หน้า editor หลังโหลดเอกสารสำเร็จ (loaded true) · opts.loaded === false = โหลดครั้งแรกล้ม
+    state: { data: JSON.parse(JSON.stringify(opts.local)), hydrating: false, saving: !!opts.saving, loaded: opts.loaded !== false, storageMode: "supabase", lastUpdated: null },
     elements: { statusText: { textContent: "" } },
-    renderSummary: function () {},
+    renderSummary: function () {}, render: function () {},
+    window: {},
     sessionStorage: { getItem: function () { return "pw"; } },
     fetch: function (url, init) {
       var method = (init && init.method) || "GET";
@@ -146,6 +155,13 @@ run({ local: LOCAL, get: function () { return Promise.resolve(resp(200, { data: 
   return run({ local: LOCAL, saving: true, get: function () { return Promise.resolve(resp(200, { data: SERVER })); } });
 }).then(function (r) {
   t("กำลังบันทึกอยู่ → ไม่ยิงซ้ำ (ไม่ GET/PUT)", r.calls.length === 0, r.calls.length);
+  // final fix wave [1]: โหลดเอกสารครั้งแรกไม่สำเร็จ → state.data เป็นแค่ไตรมาสว่าง → PUT = ประวัติบน server หาย → ไม่ส่ง
+  console.log("== ยังโหลดเอกสารจาก server ไม่สำเร็จ (state.loaded false) ==");
+  var EMPTY = { currentQuarter: "2026-Q4", quarters: { "2026-Q4": { key: "2026-Q4", assets: [], savedAt: null } } };
+  return run({ local: EMPTY, loaded: false, get: function () { return Promise.resolve(resp(200, { data: SERVER })); } });
+}).then(function (r) {
+  t("loaded false → ไม่ GET ไม่ PUT (ไม่เขียนเอกสารไตรมาสเดียวทับประวัติ)", r.calls.length === 0, r.calls.map(function (c) { return c.method; }).join(","));
+  t("…บอกผู้ใช้ว่ายังไม่บันทึกเพราะโหลดไม่สำเร็จ", r.status === "ยังโหลดข้อมูลพอร์ตจาก server ไม่สำเร็จ — ยังไม่บันทึกเพื่อกันข้อมูลหาย (ลองรีเฟรชหน้าจอ)", r.status);
   console.log("\n" + (pass + fail) + " checks · " + pass + " passed · " + fail + " failed");
   process.exit(fail ? 1 : 0);
 }).catch(function (e) {

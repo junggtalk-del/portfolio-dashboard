@@ -14,6 +14,8 @@
 var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
+// นาฬิกาคงที่ให้ foreign-sleeve.js (Addendum ข้อ 5 · quarter-ended) — fixture ปักไตรมาสปัจจุบัน 2026-Q3
+var CLOCK = require("./sleeve-clock");
 
 var PUB = path.join(__dirname, "..", "public");
 var pass = 0, fail = 0;
@@ -83,6 +85,16 @@ function mkEl(id) {
   };
 }
 function CustomEvent(type, init) { this.type = type; this.detail = init && init.detail; }
+// เบราว์เซอร์มี realm เดียว แต่ sandbox มีสอง: array ที่โค้ดใน VM สร้างด้วย [] (เช่นสำเนาเอกสารที่ foreign-sleeve.js แปลง)
+//   ไม่ใช่ instanceof Array ของ host ที่ส่งเข้า context → asset-allocation-engine.js (`q.assets instanceof Array`) มองไม่เห็นรายการ
+//   Array ที่ส่งเข้า sandbox จึงตอบ instanceof ด้วย Array.isArray (ข้าม realm ได้) = พฤติกรรมเดียวกับหน้าเว็บจริง
+//   (editor-follows-pm Task 1: บรรทัดผลตอบแทนในส่วนหัวคิดจากสำเนาที่แปลงแล้ว)
+var ONE_REALM_ARRAY = new Proxy(Array, {
+  get: function (target, key, receiver) {
+    if (key === Symbol.hasInstance) return function (x) { return Array.isArray(x); };
+    return Reflect.get(target, key, receiver);
+  }
+});
 
 // ---------- DOM ปลอมของ #acRoot (Task 3) — แบบ fakeNodes ของ home-action-test ----------
 // root.querySelectorAll("[attr]") คืน element ปลอมหนึ่งตัวต่อค่า attribute ที่พบใน innerHTML ของ #acRoot
@@ -235,7 +247,7 @@ function boot(opts) {
       return respond(false, 404, {});
     },
     console: console, Math: Math, JSON: JSON, Date: Date, Number: Number, String: String,
-    Object: Object, Array: Array, Boolean: Boolean, isFinite: isFinite, isNaN: isNaN,
+    Object: Object, Array: ONE_REALM_ARRAY, Boolean: Boolean, isFinite: isFinite, isNaN: isNaN,
     parseInt: parseInt, parseFloat: parseFloat, Promise: Promise, RegExp: RegExp, Error: Error, TypeError: TypeError,
     encodeURIComponent: encodeURIComponent, decodeURIComponent: decodeURIComponent,
     setTimeout: setTimeout, clearTimeout: clearTimeout, Intl: Intl
@@ -251,6 +263,9 @@ function boot(opts) {
   SCRIPTS.concat(o.extra || []).forEach(function (f) {
     try { vm.runInContext(read(f), ctx, { filename: f }); }
     catch (e) { console.error("   โหลด " + f + " ไม่ได้: " + e.message); }
+    // fixture ปักไตรมาสปัจจุบัน 2026-Q3 · โมดูลตัดสิน quarter-ended ด้วย "วันนี้" (Addendum ข้อ 5) → ล็อกนาฬิกาไว้กลาง 2026-Q3
+    //   ก่อนสคริปต์หน้าโหลด (หน้าอ่าน window.ForeignSleeve ตอนเรียก) — ผลเดิมทุกวันที่รัน
+    if (f === "foreign-sleeve.js" && win.ForeignSleeve) win.ForeignSleeve = CLOCK.withClock(win.ForeignSleeve, CLOCK.Q3_2026);
   });
   var inst = {
     win: win, els: els, puts: puts, store: store, dispatched: dispatched, fetches: fetches,
@@ -323,7 +338,8 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
   // ---------- เทสต์ตามแผน (คำต่อคำ) ----------
   // pm-foreign-sleeve Task 3: bump หน้า position (pp-14) + หน้าการ์ด (ac-2) · เอนจินการ์ด ไม่ได้แก้ คงเดิม
   //   final fix wave: หน้า position pp-15 (บรรทัดที่มาของผลตอบแทน) · CSS pp-14 (.pp-src)
-  t("portfolio.html: acRoot sits between ppRoot and aaRoot · scripts engine→page after position-page · page pp-15 / card page ac-2 (engine ac-1) · css pp-14", HTML.indexOf('id="acRoot"') > HTML.indexOf('id="ppRoot"') && HTML.indexOf('id="acRoot"') < HTML.indexOf('id="aaRoot"') && /allocation-card-engine\.js\?v=20261107-ac-1"[\s\S]*allocation-card-page\.js\?v=20261109-ac-2"/.test(HTML) && HTML.indexOf("portfolio-position-page.js") < HTML.indexOf("allocation-card-engine.js") && /portfolio-position\.css\?v=20261109-pp-14"/.test(HTML) && /portfolio-position-page\.js\?v=20261109-pp-15"/.test(HTML));
+  //   editor-follows-pm Task 1: หน้า position pp-16 (ผลตอบแทนจากเอกสารที่แปลงแล้ว · เอาหมายเหตุที่มาออก)
+  t("portfolio.html: acRoot sits between ppRoot and aaRoot · scripts engine→page after position-page · page pp-16 / card page ac-2 (engine ac-1) · css pp-14", HTML.indexOf('id="acRoot"') > HTML.indexOf('id="ppRoot"') && HTML.indexOf('id="acRoot"') < HTML.indexOf('id="aaRoot"') && /allocation-card-engine\.js\?v=20261107-ac-1"[\s\S]*allocation-card-page\.js\?v=20261109-ac-2"/.test(HTML) && HTML.indexOf("portfolio-position-page.js") < HTML.indexOf("allocation-card-engine.js") && /portfolio-position\.css\?v=20261109-pp-14"/.test(HTML) && /portfolio-position-page\.js\?v=20261109-pp-16"/.test(HTML));
   await flush(80);
   t("position page exposes last {R,data} and dispatched portfolio-position-rendered", !!W.PortfolioPositionPage.last && W.PortfolioPositionPage.last.R.available === true && dispatched.some(function (e) { return e.type === "portfolio-position-rendered"; }));
   t("card rendered from the same R: title + wealth equals the hero's ความมั่งคั่งรวม", /<h2 class="ac-title">Asset allocation<\/h2>/.test(html()) && /ความมั่งคั่งรวม ฿25\.0 ล้าน · 2026-Q3/.test(html()) && ppHtml().indexOf("25,000,000") >= 0);
@@ -618,7 +634,7 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
   //   + holdings ใน snapshot: หุ้นต่างประเทศ NVDA 2.0 + QQQM 2.2 = 4.2 ล้าน · BTCUSD / PTT.BK / AMD (ไม่ได้ถือ) ต้องไม่ถูกนับ
   //   โหมด pm → แถว foreign-stock ไตรมาสปัจจุบันทั้งสองแถวถูกแทนด้วยแถวเดียว 4.8 ล้าน (ลงทุน 4.2 · รอซื้อ 0.6 · 87.5%)
   //   ส่วนหัว: 25,000,000 − 4,000,000 + 4,800,000 = 25,800,000
-  //   ไตรมาสก่อน 2026-Q2 (Editor · เหมือน Q3 ยกเว้น Bitcoin 9 ล้าน) ให้บรรทัดการเติบโตมีแถวเทียบ — ต้องคิดจากเอกสารดิบ
+  //   ไตรมาสก่อน 2026-Q2 (Editor · เหมือน Q3 ยกเว้น Bitcoin 9 ล้าน) ให้บรรทัดการเติบโตมีแถวเทียบ — คิดจากสำเนาที่แปลงแล้ว (Addendum)
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   var SRC_TH = "หุ้นต่างประเทศจาก AI Portfolio Manager";
   // ข้อความท้ายการ์ดโหมด editor (คำต่อคำ เดียวกับข้อ "footer explains % bases" ด้านบน)
@@ -680,7 +696,9 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
   }
   t("pm: PortfolioPositionPage.last = { R (transformed: total 25.8M), data (RAW doc: both Editor foreign rows, no fromPM, foreignSleeve, allocationPlan), foreignFromPM: true }",
     !!pmLast && pmLast.R.totals.total === 25800000 && rawDocOk(pmLast.data) && pmLast.foreignFromPM === true, pmLast && [pmLast.R.totals && pmLast.R.totals.total, pmLast.foreignFromPM, foreignRows(pmLast.data)]);
-  // บรรทัดการเติบโต/ผลตอบแทนในส่วนหัว = AssetAllocation.compute บนเอกสารดิบ (ไม่ใช่สำเนาที่แทนหุ้นต่างประเทศแล้ว)
+  // บรรทัดการเติบโต/ผลตอบแทนในส่วนหัว = AssetAllocation.compute บนเอกสารชุดเดียวกับส่วนหัว (สำเนาที่แทนหุ้นต่างประเทศแล้ว)
+  //   Addendum 2026-11-09 (editor-follows-pm Task 1) แทน §4 เดิมที่ให้คิดจากเอกสารดิบ: ความมั่งคั่งรวม 25.8 ล้าน กับมูลค่าเพิ่มมาจากชุดเดียวกัน
+  //   แถวที่แทนคงชื่อแถวแรก "US" → ต่อกับ "US" ของ 2026-Q2 ได้ (ไม่มีเงินเติมที่ประมาณเอง)
   var AAx = PMI.win.AssetAllocation;
   function wholeRow(doc) {
     var out = AAx && AAx.compute({ data: doc }, null);
@@ -689,21 +707,21 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
   }
   function thbT(n) { return "฿" + Math.round(n).toLocaleString("en-US"); }
   function changeTxt(row) { return "มูลค่าเพิ่ม " + (row.change >= 0 ? "+" + thbT(row.change) : "−" + thbT(-row.change)); }
-  // สำเนาที่แทนหุ้นต่างประเทศแล้ว (ตัวเทียบ — ค่าที่ห้ามขึ้น) สร้างด้วยโมดูลฝั่ง Node ไม่ใช่ตัวใน sandbox:
-  //   asset-allocation-engine.js เช็ก `assets instanceof Array` และ array ที่สร้างใน VM ไม่ใช่ instance ของ Array ที่ harness ส่งเข้าไป
-  //   (เบราว์เซอร์มี realm เดียว — ไม่มีปัญหานี้ในหน้าจริง)
+  function naiveTxt(row) { return (row.naive >= 0 ? "+" : "−") + Math.abs(row.naive * 100).toFixed(1) + "%"; }
+  // ตัวเทียบสร้างด้วยโมดูลฝั่ง Node (อิสระจากโค้ดของหน้า) · sandbox ใช้ ONE_REALM_ARRAY จึงคำนวณสำเนาที่แปลงใน VM ได้เหมือนเบราว์เซอร์
   var FSN = require(path.join(PUB, "foreign-sleeve.js"));
-  var rawRow = wholeRow(FIX_PM), synthRow = wholeRow(FSN.applyToDoc({ data: FIX_PM }, PM_HOLD).data);
-  t("pm: hero growth lines come from the RAW document (AssetAllocation on the raw doc: " + (rawRow ? changeTxt(rawRow) : "?") + ") — not from the PM-substituted copy (" + (synthRow ? changeTxt(synthRow) : "?") + ")",
-    !!rawRow && !!synthRow && rawRow.change !== synthRow.change && ppOf(PMI).indexOf(changeTxt(rawRow)) >= 0 && ppOf(PMI).indexOf(changeTxt(synthRow)) < 0,
-    [rawRow && rawRow.change, synthRow && synthRow.change, (/<div class="pp-grow">[\s\S]*?<\/div>/.exec(ppOf(PMI)) || [""])[0].slice(0, 300)]);
-  // final fix wave [1]: โหมด pm บอกใต้บรรทัดผลตอบแทนว่าคิดจาก Quarterly Editor (ความมั่งคั่งรวมมาจาก PM แต่มูลค่าเพิ่มมาจาก Editor)
-  var GROW_SRC = '<div class="pp-stat-s pp-dim" data-pp-grow-src="editor">ผลตอบแทนคิดจาก Quarterly Editor (หุ้นต่างประเทศใน Editor เป็นค่าที่กรอกเอง)</div>';
-  function growSrcCount(I) { return (ppOf(I).match(/data-pp-grow-src="editor"/g) || []).length; }
-  t("pm: one muted line right under the growth lines — ผลตอบแทนคิดจาก Quarterly Editor (หุ้นต่างประเทศใน Editor เป็นค่าที่กรอกเอง) · inside the ความมั่งคั่งรวม stat",
-    growSrcCount(PMI) === 1 && /<div class="pp-grow">[\s\S]*?<\/div><div class="pp-stat-s pp-dim" data-pp-grow-src="editor">/.test(ppOf(PMI)) && ppOf(PMI).indexOf(GROW_SRC) > ppOf(PMI).indexOf("ความมั่งคั่งรวม") &&
-    ppOf(PMI).indexOf(GROW_SRC) < ppOf(PMI).indexOf("ลงทุนจริง</div>"),
-    (/data-pp-grow-src="editor">[^<]*/.exec(ppOf(PMI)) || [""])[0]);
+  var rawRow = wholeRow(FIX_PM), synthRow = wholeRow(FSN.applyToDoc({ data: FIX_PM }, PM_HOLD, { now: CLOCK.Q3_2026 }).data);
+  function growBlock(I) { return (/<div class="pp-grow">[\s\S]*?<\/div>/.exec(ppOf(I)) || [""])[0]; }
+  t("pm: hero growth lines come from the PM-substituted document (" + (synthRow ? changeTxt(synthRow) + " · " + naiveTxt(synthRow) : "?") + ") — not from the raw doc (" + (rawRow ? changeTxt(rawRow) : "?") + ")",
+    !!rawRow && !!synthRow && rawRow.change === 1000000 && synthRow.change === 1800000 && synthRow.imputedFlow === 0 &&
+    growBlock(PMI).indexOf(changeTxt(synthRow)) >= 0 && growBlock(PMI).indexOf(">" + naiveTxt(synthRow) + "<") >= 0 && ppOf(PMI).indexOf(changeTxt(rawRow)) < 0 && ppOf(PMI).indexOf(naiveTxt(rawRow)) < 0,
+    [rawRow && rawRow.change, synthRow && synthRow.change, synthRow && synthRow.imputedFlow, growBlock(PMI).slice(0, 300)]);
+  // Addendum: หมายเหตุ "ผลตอบแทนคิดจาก Quarterly Editor" (final fix wave [1]) เอาออก — ผลตอบแทนตาม PM แล้ว
+  function growSrcCount(I) { return (ppOf(I).match(/data-pp-grow-src/g) || []).length; }
+  t("pm: no Editor-source note under the growth lines (ผลตอบแทนคิดจาก Quarterly Editor removed) · growth block sits right in the ความมั่งคั่งรวม stat",
+    growSrcCount(PMI) === 0 && ppOf(PMI).indexOf("ผลตอบแทนคิดจาก Quarterly Editor") < 0 && ppOf(PMI).indexOf("หุ้นต่างประเทศใน Editor เป็นค่าที่กรอกเอง") < 0 &&
+    /<div class="pp-stat-l">ความมั่งคั่งรวม<\/div><div class="pp-grow">[\s\S]*?<\/div><\/div><div class="pp-stat">/.test(ppOf(PMI)),
+    (/ความมั่งคั่งรวม<\/div>[\s\S]{0,120}/.exec(ppOf(PMI)) || [""])[0]);
   // บันทึกกรอบเงินสดจากการ์ด → GET สด → PUT เอกสารของ server (แถว Editor เดิม · ไม่มีแถวสังเคราะห์) + คง foreignSleeve
   PMI.click("data-ac-settings", "1"); PMI.setValue("min", "1"); PMI.setValue("max", "3"); PMI.click("data-ac-save", "1"); await flush(60);
   var pmPut = PMI.puts[0] && PMI.puts[0].data;
@@ -713,11 +731,11 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
     pmPut && [foreignRows(pmPut), pmPut.foreignSleeve]);
   t("pm: after the save the position page adopts the saved (raw) doc and still shows the PM sleeve (฿25,800,000 + label · card ฿25.8 ล้าน)",
     heroTotal(PMI) === "฿25,800,000" && srcLabels(PMI) === 2 && /ความมั่งคั่งรวม ฿25\.8 ล้าน/.test(PMI.html()) && rawDocOk(PMI.win.PortfolioPositionPage.last.data), heroTotal(PMI));
-  // Load Latest Data → psCache ถูกทิ้ง → วาดจาก snapshot: R จากสำเนาที่แปลง · last.data / การเติบโต จากเอกสารดิบใน snapshot · snapshot ไม่ถูกแก้
+  // Load Latest Data → psCache ถูกทิ้ง → วาดจาก snapshot: R + การเติบโต จากสำเนาที่แปลง · last.data = เอกสารดิบใน snapshot · snapshot ไม่ถูกแก้
   PMI.win.dispatchEvent(new CustomEvent("portfolio-data-snapshot", {})); await flush(20);
-  t("pm via snapshot (psCache dropped): hero ฿25,800,000 + label · last.data = the snapshot's RAW doc · growth still from the raw doc · snapshot object not mutated",
+  t("pm via snapshot (psCache dropped): hero ฿25,800,000 + label · last.data = the snapshot's RAW doc · growth from the transformed doc · snapshot object not mutated",
     heroTotal(PMI) === "฿25,800,000" && srcLabels(PMI) === 2 && rawDocOk(PMI.win.PortfolioPositionPage.last.data) &&
-    PMI.win.PortfolioPositionPage.last.data === PM_SNAP.portfolioStatus.data && !!rawRow && ppOf(PMI).indexOf(changeTxt(rawRow)) >= 0 &&
+    PMI.win.PortfolioPositionPage.last.data === PM_SNAP.portfolioStatus.data && !!synthRow && growBlock(PMI).indexOf(changeTxt(synthRow)) >= 0 && ppOf(PMI).indexOf(changeTxt(rawRow)) < 0 &&
     JSON.stringify(PM_SNAP) === PM_SNAP_JSON && /ความมั่งคั่งรวม ฿25\.8 ล้าน/.test(PMI.html()) && footOf(PMI).indexOf(SRC_TH) > 0,
     [heroTotal(PMI), srcLabels(PMI), JSON.stringify(PM_SNAP) === PM_SNAP_JSON]);
   // โหมด editor: holdings ว่าง (snapshot ว่าง + ไม่มี cache ในเครื่อง) → ตัวเลข Editor เดิม ไม่มีป้ายที่มา
@@ -750,14 +768,22 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
   // final fix wave [1] (ฝั่ง editor): เอกสารเดียวกันแต่ไม่มี foreignSleeve → บรรทัดผลตอบแทนยังขึ้น แต่ไม่มีบรรทัดที่มา
   var FIX_NOCASH = clone(FIX_PM); delete FIX_NOCASH.foreignSleeve;
   var EGI = boot({ fixture: FIX_NOCASH, snapshot: snapOf(FIX_NOCASH, PM_HOLD), extra: ["asset-allocation-engine.js"] }); await flush(80);
-  t("editor mode: growth lines shown (pp-grow) but no Editor-source line · no pm label",
-    /<div class="pp-grow">/.test(ppOf(EGI)) && growSrcCount(EGI) === 0 && ppOf(EGI).indexOf("ผลตอบแทนคิดจาก Quarterly Editor") < 0 && srcLabels(EGI) === 0 && heroTotal(EGI) === "฿25,000,000",
-    [heroTotal(EGI), growSrcCount(EGI), /<div class="pp-grow">/.test(ppOf(EGI))]);
+  t("editor mode: growth lines shown (pp-grow) from the raw doc (" + (rawRow ? changeTxt(rawRow) : "?") + ") · no Editor-source line · no pm label",
+    /<div class="pp-grow">/.test(ppOf(EGI)) && !!rawRow && growBlock(EGI).indexOf(changeTxt(rawRow)) >= 0 && growSrcCount(EGI) === 0 && ppOf(EGI).indexOf("ผลตอบแทนคิดจาก Quarterly Editor") < 0 && srcLabels(EGI) === 0 && heroTotal(EGI) === "฿25,000,000",
+    [heroTotal(EGI), growSrcCount(EGI), growBlock(EGI).slice(0, 200)]);
+  // Addendum ข้อ 4: Editor เลือกดูไตรมาสเก่า (currentQuarter 2026-Q2 ขณะที่มี 2026-Q3) → โหมด editor ทั้งหน้า แม้กรอก cash + มี holdings
+  var FIX_PQ = clone(FIX_PM); FIX_PQ.currentQuarter = "2026-Q2";
+  var PQI = boot({ fixture: FIX_PQ, snapshot: snapOf(FIX_PQ, PM_HOLD), extra: ["asset-allocation-engine.js"] }); await flush(80);
+  t("past quarter selected in the Editor (2026-Q2 < 2026-Q3) → editor mode: hero = Editor's 2026-Q2 ฿24,000,000 · no source label · card footer unchanged · last.foreignFromPM false",
+    heroTotal(PQI) === "฿24,000,000" && srcLabels(PQI) === 0 && footOf(PQI) === FOOT_EDITOR && PQI.win.PortfolioPositionPage.last.foreignFromPM === false &&
+    /ไตรมาส <b>2026-Q2<\/b>/.test(ppOf(PQI)) && (ppOf(PQI) + PQI.html()).indexOf("AI Portfolio Manager") < 0,
+    [heroTotal(PQI), srcLabels(PQI), footOf(PQI)]);
   t("CSS: .pp-src muted like .ac-foot (var(--mc-muted))", /\.pp-src \{[^}]*color: var\(--mc-muted\)/.test(css) && /\.ac-foot \{[^}]*color: var\(--mc-muted\)/.test(css));
-  // ซอร์ส: ES5 · ไม่มีคำแนะนำซื้อขาย (รวมคอมเมนต์) · หน้า position ยังอ่านเอกสารดิบใน realGrowth
+  // ซอร์ส: ES5 · ไม่มีคำแนะนำซื้อขาย (รวมคอมเมนต์) · หมายเหตุที่มาของผลตอบแทนถูกถอดออกหมด
   var ppSrc = read("portfolio-position-page.js"), acSrc = read("allocation-card-page.js");
-  t("sources: portfolio-position-page.js + allocation-card-page.js strict ES5 · no advisory words incl. comments · use ForeignSleeve.applyToSnapshot",
-    es5ok("portfolio-position-page.js") && es5ok("allocation-card-page.js") && !ADVISORY_TH.test(ppSrc + acSrc) && !ADVISORY_EN.test(ppSrc + acSrc) && /ForeignSleeve/.test(ppSrc) && /applyToSnapshot/.test(ppSrc));
+  t("sources: portfolio-position-page.js + allocation-card-page.js strict ES5 · no advisory words incl. comments · use ForeignSleeve.applyToSnapshot · no GROW_SRC_TH / data-pp-grow-src left",
+    es5ok("portfolio-position-page.js") && es5ok("allocation-card-page.js") && !ADVISORY_TH.test(ppSrc + acSrc) && !ADVISORY_EN.test(ppSrc + acSrc) && /ForeignSleeve/.test(ppSrc) && /applyToSnapshot/.test(ppSrc) &&
+    ppSrc.indexOf("GROW_SRC") < 0 && ppSrc.indexOf("data-pp-grow-src") < 0 && ppSrc.indexOf("ผลตอบแทนคิดจาก Quarterly Editor") < 0);
 
   finish();
 })().catch(function (e) {

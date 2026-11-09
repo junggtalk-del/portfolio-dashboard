@@ -15,6 +15,9 @@
 var fs = require("fs");
 var path = require("path");
 var vm = require("vm");
+// นาฬิกาคงที่ให้ foreign-sleeve.js (spec Addendum ข้อ 5 · quarter-ended): fixture ปักไตรมาสปัจจุบัน 2026-Q4
+//   → หลังโหลดโมดูลใน VM แทน window.ForeignSleeve ด้วยตัวที่ล็อกนาฬิกา (ค่าเริ่ม 9 พ.ย. 2026 · boot({ now }) เปลี่ยนได้)
+var CLOCK = require("./sleeve-clock");
 
 var PUB = path.join(__dirname, "..", "public");
 var pass = 0, fail = 0;
@@ -49,6 +52,10 @@ var EMPTY_SERVER_TH = "ข้อมูลพอร์ตบน server ว่า�
 var LOCKED_PH = "ล็อกอยู่ — ใส่ค่าใหม่ได้";
 var LABEL_TH = "เงินสดรอซื้อหุ้นต่างประเทศ";
 var NOHOLD_TH = "กรอกเงินสดแล้ว แต่รายการหุ้นยังไม่โหลด — ตอนนี้ใช้ยอดหุ้นต่างประเทศจาก Quarterly Editor";
+// editor-follows-pm Task 1 fix round 1: ForeignSleeve.sleeveOf reason "past-quarter" (Editor เปิดไตรมาสเก่า) มีข้อความของตัวเอง
+var PAST_TH = "Quarterly Editor กำลังเปิดไตรมาสเก่า — ใช้ยอดจาก Editor จนกว่าจะกลับไปไตรมาสล่าสุด";
+// editor-follows-pm Task 2 fix round 1 (Addendum ข้อ 5): reason "quarter-ended" — ไตรมาสใน Editor จบแล้วตามปฏิทิน
+var ENDED_TH = "ไตรมาสใน Quarterly Editor จบแล้ว — สร้างไตรมาสใหม่ใน Editor เพื่อให้หุ้นต่างประเทศตาม AI Portfolio Manager";
 var SUPERSEDED_TH = "มีค่าที่ใหม่กว่าจากเครื่องอื่น — ใช้ค่านั้นแทนร่างที่ค้าง";
 var DRAFT_KEY = "pm_foreign_cash_draft_v1";
 var SNAP_KEY = "portfolio_dashboard_data_snapshot";
@@ -197,14 +204,16 @@ function mkDom() {
     return true;
   }
   function key(attr, val, k) { return fire(attr, val, "keydown", { key: k }); }
+  // final fix wave [2a]: ช่องมูลค่าหุ้นรายตัว (data-pm-mv) บันทึกด้วย "change"
+  function change(attr, val) { return fire(attr, val, "change"); }
   function node(attr, val) { return reg.nodes[attr + "|" + val] || null; }
-  return { mkRoot: mkRoot, click: click, setValue: setValue, badInput: badInput, key: key, node: node,
+  return { mkRoot: mkRoot, click: click, setValue: setValue, badInput: badInput, key: key, change: change, node: node,
     renderCount: function () { return renders; } };
 }
 
 function boot(opts) {
   var o = opts || {};
-  var els = {}, puts = [], dispatched = [], listeners = {}, docListeners = {}, fetches = [], loadErrors = [], heldPuts = [];
+  var els = {}, puts = [], dispatched = [], listeners = {}, docListeners = {}, fetches = [], loadErrors = [], heldPuts = [], holdingsPuts = [];
   var store = o.store || {};
   var dom = mkDom();
   var gets = 0;
@@ -250,6 +259,12 @@ function boot(opts) {
     fetch: function (url, init) {
       var u = String(url);
       fetches.push({ url: u, method: (init && init.method) || "GET", cache: init && init.cache });
+      // final fix wave [2a]: PortfolioCore.saveHoldings → PUT /api/portfolio-holdings (GET ยังเป็น 404 ตามเดิม)
+      if (u === "/api/portfolio-holdings" && init && init.method === "PUT") {
+        holdingsPuts.push(JSON.parse(init.body));
+        if (flag("failHoldingsPut")) return respond(false, 500, { error: "boom" });
+        return respond(true, 200, { ok: true });
+      }
       if (/^\/api\/portfolio(\?|$)/.test(u)) {
         if (init && init.method === "PUT") {
           var body = JSON.parse(init.body);
@@ -312,11 +327,13 @@ function boot(opts) {
   SCRIPTS.forEach(function (f) {
     try { vm.runInContext(read(f), ctx, { filename: f }); }
     catch (e) { loadErrors.push(f + ": " + e.message); }
+    // หน้าอ่าน window.ForeignSleeve ตอนเรียก → แทนก่อน engine/page โหลด ได้ผลเดิมทุกวันที่รัน
+    if (f === "foreign-sleeve.js" && win.ForeignSleeve) win.ForeignSleeve = CLOCK.withClock(win.ForeignSleeve, o.now || CLOCK.Q4_2026);
   });
   var getsAtMark = 0, putsAtMark = 0, fetchesAtMark = 0;
   var inst = {
     win: win, els: els, puts: puts, store: store, dispatched: dispatched, fetches: fetches, loadErrors: loadErrors,
-    serverFixture: server,
+    serverFixture: server, holdingsPuts: holdingsPuts, change: dom.change,
     snap: function () { return snapState; },
     snapWrites: function () { return snapWrites; },
     renders: dom.renderCount,
@@ -367,10 +384,10 @@ function hasFromPM(body) { return JSON.stringify(body).indexOf("fromPM") >= 0; }
 function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || []).filter(function (a) { return a.type === "foreign-stock"; }); }
 
 (async function main() {
-  t("portfolio-manager.html: page pm-27 (final fix wave) · css pm-13 · foreign-sleeve.js before the PM engine/page",
-    /portfolio-manager-page\.js\?v=20261109-pm-27"/.test(HTML) && /portfolio-manager\.css\?v=20261109-pm-13"/.test(HTML) &&
+  t("portfolio-manager.html: page pm-30 (editor-follows-pm Task 2 fix round 1 · quarter-ended hint) · css pm-13 · foreign-sleeve.js before the PM engine/page",
+    /portfolio-manager-page\.js\?v=20261109-pm-30"/.test(HTML) && /portfolio-manager\.css\?v=20261109-pm-13"/.test(HTML) &&
     HTML.indexOf("foreign-sleeve.js") > 0 && HTML.indexOf("foreign-sleeve.js") < HTML.indexOf("portfolio-manager-engine.js"));
-  t("index.html loads app.js?v=20261109-app-10", /\/app\.js\?v=20261109-app-10"/.test(read("index.html")));
+  t("index.html loads app.js?v=20261109-app-13", /\/app\.js\?v=20261109-app-13"/.test(read("index.html")));
 
   // ---------- MAIN: เอกสารไม่มี foreignSleeve → สูตรเดิม (Editor) ----------
   var serverEmpty = false, failPut = false, failGet = false, throwGet = false, holdPut = false;
@@ -408,16 +425,22 @@ function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || [])
   MAIN.mark(); MAIN.setValue("data-pm-cash", "1", "600000"); MAIN.click("data-pm-cash-save", "1"); await flush(80);
   var P1 = MAIN.puts[MAIN.puts.length - 1];
   t("save: exactly one GET then one PUT, in that order", MAIN.getsSince() === 1 && MAIN.putsSince() === 1 && MAIN.portfolioCallsSince() === "GET,PUT", MAIN.portfolioCallsSince());
-  t("PUT body keeps the server's quarters (incl. the newer 5,500,000) / allocation / allocationPlan / other keys byte-identical",
-    !!P1 && JSON.stringify(P1.data.quarters) === JSON.stringify(serverBefore.quarters) && P1.data.quarters["2026-Q4"].assets[0].manualValue === 5500000 &&
+  // final fix wave [2a]: โหมด pm (เงินสดใหม่ + หุ้นที่ถือ + 2026-Q4 = ไตรมาสล่าสุดที่ยังไม่จบ) → PUT เดียวกันเขียนแถวหุ้นต่างประเทศ
+  //   ของ 2026-Q4 เป็นค่า PM (2,726,000 + 600,000) · ส่วนอื่นของเอกสาร (ไตรมาสอื่น / แถวอื่น / คีย์อื่น) คงของ server ทุก byte
+  t("PUT body keeps the server's other quarters / other rows of 2026-Q4 / allocation / allocationPlan / other keys byte-identical",
+    !!P1 && JSON.stringify(P1.data.quarters["2026-Q3"]) === JSON.stringify(serverBefore.quarters["2026-Q3"]) &&
+    JSON.stringify(P1.data.quarters["2026-Q4"].assets.slice(1)) === JSON.stringify(serverBefore.quarters["2026-Q4"].assets.slice(1)) &&
+    Object.keys(P1.data.quarters).sort().join() === "2026-Q3,2026-Q4" && P1.data.quarters["2026-Q4"].key === "2026-Q4" &&
     JSON.stringify(P1.data.allocation) === JSON.stringify(serverBefore.allocation) && JSON.stringify(P1.data.allocationPlan) === JSON.stringify(serverBefore.allocationPlan) &&
     JSON.stringify(P1.data.someOtherKey) === JSON.stringify(serverBefore.someOtherKey) && P1.data.currentQuarter === "2026-Q4" &&
     Object.keys(P1.data).sort().join() === Object.keys(serverBefore).concat(["foreignSleeve"]).sort().join(), P1 && Object.keys(P1.data));
   t("PUT foreignSleeve = { cash: 600000 (number), updatedAt: ISO }",
     !!P1 && P1.data.foreignSleeve && P1.data.foreignSleeve.cash === 600000 && typeof P1.data.foreignSleeve.cash === "number" && /^\d{4}-\d{2}-\d{2}T/.test(P1.data.foreignSleeve.updatedAt) && Object.keys(P1.data.foreignSleeve).sort().join() === "cash,updatedAt",
     P1 && P1.data.foreignSleeve);
-  t("PUT foreign-stock row = the server's own row (name US · 5,500,000 · 70%) — not the synthetic row · no fromPM anywhere in the body",
-    !!P1 && foreignRows(P1.data, "2026-Q4").length === 1 && foreignRows(P1.data, "2026-Q4")[0].name === "US" && foreignRows(P1.data, "2026-Q4")[0].investedPercent === 70 && !hasFromPM(P1));
+  var p1Row = P1 && foreignRows(P1.data, "2026-Q4")[0];
+  t("PUT foreign-stock row of 2026-Q4 = PM values (name US kept · ฿3,326,000 · 81.96%) replacing the Editor's 5,500,000 · no fromPM anywhere · gets an id (the server row had none)",
+    !!p1Row && foreignRows(P1.data, "2026-Q4").length === 1 && p1Row.name === "US" && p1Row.manualValue === 3326000 && p1Row.snapshotValue === 3326000 &&
+    Math.abs(p1Row.investedPercent - INVESTED / 3326000 * 100) < 1e-9 && typeof p1Row.id === "string" && p1Row.id.length > 0 && !hasFromPM(P1), p1Row);
   var h1 = MAIN.html();
   t("after save: เงินสดพร้อมวาง ฿600,000 · Portfolio Value = Σ stocks + cash = ฿3,326,000 · 82.0% · 18.0%",
     /เงินสดพร้อมวาง ฿600,000/.test(overview(h1)) && /฿3,326,000/.test(overview(h1)) && /82\.0% · 18\.0%/.test(overview(h1)) && overview(h1).indexOf("฿5,500,000") < 0, overview(h1).slice(0, 900));
@@ -427,13 +450,13 @@ function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || [])
     /฿600,000/.test(cashRow(h1)) && /18\.0%/.test(cashRow(h1)) && !/Portfolio Value − หุ้นที่ลงทุน/.test(cashRow(h1)) && /เงินสดรอซื้อหุ้นต่างประเทศ/.test(cashRow(h1)), cashRow(h1));
   t("after save: status says saved · no retry button · no draft in localStorage",
     /บันทึกเงินสดแล้ว/.test(cashCard(h1)) && h1.indexOf("data-pm-cash-retry") < 0 && MAIN.store[DRAFT_KEY] === undefined);
-  t("dispatched portfolio-allocation-saved with { data: next } (foreignSleeve.cash 600000, server's quarters)",
-    MAIN.dispatched.some(function (e) { return e.type === "portfolio-allocation-saved" && e.detail && e.detail.data && e.detail.data.foreignSleeve.cash === 600000 && e.detail.data.quarters["2026-Q4"].assets[0].manualValue === 5500000 && !hasFromPM(e.detail.data); }));
+  t("dispatched portfolio-allocation-saved with { data: next } (foreignSleeve.cash 600000, the PUT body's quarters incl. the PM row 3,326,000)",
+    MAIN.dispatched.some(function (e) { return e.type === "portfolio-allocation-saved" && e.detail && e.detail.data && e.detail.data.foreignSleeve.cash === 600000 && e.detail.data.quarters["2026-Q4"].assets[0].manualValue === 3326000 && JSON.stringify(e.detail.data) === JSON.stringify(P1.data) && !hasFromPM(e.detail.data); }));
   var snapLS = JSON.parse(MAIN.store[SNAP_KEY] || "null");
   t("snapshot patched via PortfolioDataSnapshot.write: portfolioStatus.data.foreignSleeve.cash 600000 · wrapper mode kept · every other snapshot field kept",
     !!snapLS && snapLS.portfolioStatus.data.foreignSleeve.cash === 600000 && snapLS.portfolioStatus.mode === "supabase" && !hasFromPM(snapLS.portfolioStatus) &&
     snapLS.marketRisk && snapLS.marketRisk.marker === "keep-me" && snapLS.loadedAt === "2026-11-08T01:00:00.000Z" && snapLS.snapshotId === "snap-test" &&
-    snapLS.portfolioHoldings.data.length === HOLDINGS.length && snapLS.portfolioStatus.data.quarters["2026-Q4"].assets[0].manualValue === 5500000,
+    snapLS.portfolioHoldings.data.length === HOLDINGS.length && snapLS.portfolioStatus.data.quarters["2026-Q4"].assets[0].manualValue === 3326000,
     snapLS && Object.keys(snapLS));
   // holdings เปลี่ยน (snapshot เขียนใหม่ด้วย loadedAt เดิม) → หน้ายังอยู่โหมด pm ไม่ถอยไปใช้ของเก่า
   var s2 = clone(MAIN.snap()); s2.portfolioHoldings.data.push(H("TSM", 274000));
@@ -536,6 +559,25 @@ function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || [])
   var N = boot({ fixture: SV, snapshot: EH }); await flush(80);
   t("cash entered but holdings empty → editor numbers (Editor gross ฿5,000,000) · says '" + NOHOLD_TH + "' (not the not-entered hint, not pm source) · input still shows 400000",
     /฿5,000,000/.test(overview(N.html())) && overview(N.html()).indexOf(PM_SOURCE) < 0 && cashCard(N.html()).indexOf(NOHOLD_TH) >= 0 && cashCard(N.html()).indexOf(EDITOR_HINT) < 0 && inputValue(N.html()) === "400000", cashCard(N.html()).slice(0, 900));
+  // cash กรอกแล้ว + มี holdings แต่ Quarterly Editor เปิดไตรมาสเก่า (currentQuarter 2026-Q3 ขณะที่มี 2026-Q4) → editor / past-quarter
+  //   ตัวเลข = Editor ของ 2026-Q3 (US 4,600,000) · ข้อความของตัวเอง ไม่ใช่ "ยังไม่ได้กรอกเงินสด" (กรอกแล้ว) และไม่ใช่ข้อความ holdings
+  var SVPQ = clone(SV); SVPQ.currentQuarter = "2026-Q3";
+  var PQ = boot({ fixture: SVPQ, snapshot: SNAP(SVPQ) }); await flush(80);
+  t("cash entered + holdings but the Editor has an older quarter open (past-quarter) → editor numbers (2026-Q3 ฿4,600,000) · says '" + PAST_TH + "' (not the not-entered hint, not the holdings hint, not pm source) · input still shows 400000",
+    /฿4,600,000/.test(overview(PQ.html())) && overview(PQ.html()).indexOf(PM_SOURCE) < 0 && cashCard(PQ.html()).indexOf(PAST_TH) >= 0 &&
+    cashCard(PQ.html()).indexOf(EDITOR_HINT) < 0 && cashCard(PQ.html()).indexOf(NOHOLD_TH) < 0 && inputValue(PQ.html()) === "400000", cashCard(PQ.html()).slice(0, 900));
+  // Addendum ข้อ 5: ไตรมาสล่าสุดของเอกสาร = 2026-Q3 (ยังไม่สร้าง 2026-Q4) แต่วันนี้ 9 พ.ย. 2026 → ไตรมาสจบแล้วตามปฏิทิน
+  //   → editor / quarter-ended · ตัวเลข = Editor ของ 2026-Q3 (US 4,600,000) · บอกให้สร้างไตรมาสใหม่ใน Editor (ไม่ใช่ข้อความเหตุผลอื่น)
+  var SVQE = clone(SV); delete SVQE.quarters["2026-Q4"]; SVQE.currentQuarter = "2026-Q3";
+  var QE = boot({ fixture: SVQE, snapshot: SNAP(SVQE), now: CLOCK.Q4_2026 }); await flush(80);
+  t("cash entered + holdings but the Editor's latest quarter (2026-Q3) has ended by the calendar (Nov 2026) → editor numbers (฿4,600,000) · says '" + ENDED_TH + "' (no other reason text, not pm source) · input still shows 400000",
+    /฿4,600,000/.test(overview(QE.html())) && overview(QE.html()).indexOf(PM_SOURCE) < 0 && cashCard(QE.html()).indexOf(ENDED_TH) >= 0 &&
+    cashCard(QE.html()).indexOf(PAST_TH) < 0 && cashCard(QE.html()).indexOf(EDITOR_HINT) < 0 && cashCard(QE.html()).indexOf(NOHOLD_TH) < 0 && inputValue(QE.html()) === "400000",
+    cashCard(QE.html()).slice(0, 900));
+  // ตัวเทียบ: เอกสารเดียวกันในวันที่ไตรมาสยังไม่จบ (15 ก.ย. 2026) → pm (ไม่ใช่ quarter-ended) — ข้อความขึ้นตามวันจริง ไม่ได้ติดกับเอกสาร
+  var QS = boot({ fixture: SVQE, snapshot: SNAP(SVQE), now: CLOCK.Q3_2026 }); await flush(80);
+  t("same document while 2026-Q3 is still running (15 Sep 2026) → pm source, no quarter-ended text",
+    overview(QS.html()).indexOf(PM_SOURCE) >= 0 && cashCard(QS.html()).indexOf(ENDED_TH) < 0, cashCard(QS.html()).slice(0, 600));
 
   // ---------- fix round 1 [5]: ร่างตอนเปิดหน้าเก่ากว่าเงินสดบน server (เครื่องอื่นบันทึกทีหลัง) ----------
   var NEWER = clone(FIX); NEWER.foreignSleeve = { cash: 520000, updatedAt: "2026-11-09T05:00:00.000Z" };
@@ -671,6 +713,118 @@ function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || [])
     pages.every(function (p) { var s = cashCard(p[1]) + cashRow(p[1]); return !ADVISORY_TH.test(s) && !ADVISORY_EN.test(s); }));
   t("the 4 overview stat cards remain (class=\"pm-stat\" × 4)", (h1.match(/class="pm-stat"/g) || []).length === 4);
 
+  // ---------- final fix wave [2a]: หน้า PM เขียนแถวหุ้นต่างประเทศลงไตรมาสล่าสุดที่ยังไม่จบ ----------
+  //   ไม่งั้นวันที่ 1 ของไตรมาสใหม่ ผู้อ่านถอยไปใช้แถวที่เก็บไว้ (ค่าเก่า) → ผลตอบแทนไตรมาสที่เพิ่งจบเปลี่ยนข้ามคืน
+  console.log("== final fix wave [2a]: แถวหุ้นต่างประเทศของไตรมาสล่าสุด = ค่า PM ==");
+  var ROW_FAIL_TH = "ยังเขียนหุ้นต่างประเทศลงไตรมาสใน Quarterly Editor ไม่สำเร็จ — จะลองอีกครั้งเมื่อบันทึกเงินสดหรือมูลค่าหุ้นครั้งถัดไป";
+  function HS() { var s = {}; s["portfolioHoldingsDraft"] = JSON.stringify(HOLDINGS); return s; }   // รายการหุ้นในเครื่อง (PortfolioCore)
+  function rowOf(body) { return foreignRows(body.data || body, "2026-Q4")[0]; }
+  // (1) แถวมี id + เงินเติม/ถอน 2 แถว → แถวเดียว คง name/id แถวแรก · netFlow รวม · แถวอื่น/ไตรมาสอื่นคงเดิมทุก byte
+  var FXN = clone(FIX);
+  FXN.quarters["2026-Q4"].assets = [
+    { id: "f4", type: "foreign-stock", name: "US", manualValue: 5000000, snapshotValue: 5000000, investedPercent: 70, netFlow: 100000, createdAt: "2026-10-01T00:00:00.000Z" },
+    { id: "b4", type: "bitcoin", name: "Bitcoin", manualValue: 3000000, snapshotValue: 3000000, investedPercent: 100, netFlow: 0 },
+    { id: "c4", type: "cash", name: "เงินสด", manualValue: 1000000, snapshotValue: 1000000, investedPercent: 0, netFlow: 0 },
+    { id: "f4b", type: "foreign-stock", name: "EU", manualValue: 300000, snapshotValue: 300000, investedPercent: 100, netFlow: 50000 }
+  ];
+  var RW = boot({ fixture: FXN, snapshot: SNAP(FXN) }); await flush(80);
+  var rwServer = clone(RW.serverFixture);
+  RW.mark(); RW.setValue("data-pm-cash", "1", "600000"); RW.click("data-pm-cash-save", "1"); await flush(80);
+  var rwPut = RW.puts[0], rwRow = rwPut && rowOf(rwPut);
+  t("cash save (pm) → GET,PUT · 2026-Q4 foreign row = Σ holdings + cash (฿3,326,000 · 81.96%) with the first row's name/id/createdAt (US · f4) · netFlow 100,000 + 50,000 = 150,000 · EU merged away · stays in the first row's position",
+    RW.portfolioCallsSince() === "GET,PUT" && !!rwRow && foreignRows(rwPut.data, "2026-Q4").length === 1 && rwRow.id === "f4" && rwRow.name === "US" &&
+    rwRow.createdAt === "2026-10-01T00:00:00.000Z" && rwRow.manualValue === 3326000 && rwRow.snapshotValue === 3326000 &&
+    Math.abs(rwRow.investedPercent - INVESTED / 3326000 * 100) < 1e-9 && rwRow.netFlow === 150000 && rwPut.data.quarters["2026-Q4"].assets[0] === rwRow,
+    [RW.portfolioCallsSince(), rwRow]);
+  t("…other rows of 2026-Q4 (Bitcoin · เงินสด) and 2026-Q3 byte-identical · order kept · no fromPM · foreignSleeve 600000",
+    !!rwPut && JSON.stringify(rwPut.data.quarters["2026-Q4"].assets.slice(1)) === JSON.stringify(rwServer.quarters["2026-Q4"].assets.slice(1, 3)) &&
+    JSON.stringify(rwPut.data.quarters["2026-Q3"]) === JSON.stringify(rwServer.quarters["2026-Q3"]) && rwPut.data.quarters["2026-Q4"].assets.length === 3 &&
+    !hasFromPM(rwPut) && rwPut.data.foreignSleeve.cash === 600000 && JSON.stringify(rwPut.data.allocation) === JSON.stringify(rwServer.allocation));
+  // (2) ไตรมาสล่าสุดจบแล้วตามปฏิทิน → เงินสดบันทึกได้ แต่ไตรมาสไม่ถูกแตะ (ค่าที่เก็บ = ประวัติ)
+  var QW = boot({ fixture: SVQE, snapshot: SNAP(SVQE), now: CLOCK.Q4_2026 }); await flush(80);
+  var qwServer = clone(QW.serverFixture);
+  QW.mark(); QW.setValue("data-pm-cash", "1", "500000"); QW.click("data-pm-cash-save", "1"); await flush(80);
+  var qwPut = QW.puts[0];
+  t("quarter-ended doc (latest 2026-Q3 in Nov) → cash still saves (GET,PUT · 500000) · quarters byte-identical to the server's (4,600,000 kept)",
+    QW.portfolioCallsSince() === "GET,PUT" && !!qwPut && qwPut.data.foreignSleeve.cash === 500000 &&
+    JSON.stringify(qwPut.data.quarters) === JSON.stringify(qwServer.quarters) && foreignRows(qwPut.data, "2026-Q3")[0].manualValue === 4600000,
+    qwPut && JSON.stringify(qwPut.data.quarters["2026-Q3"].assets[0]));
+  // (3) Editor เปิดไตรมาสเก่า (past-quarter) → ไตรมาสไม่ถูกแตะเช่นกัน
+  var PW = boot({ fixture: SVPQ, snapshot: SNAP(SVPQ) }); await flush(80);
+  var pwServer = clone(PW.serverFixture);
+  PW.setValue("data-pm-cash", "1", "500000"); PW.click("data-pm-cash-save", "1"); await flush(80);
+  t("past-quarter doc → cash saves · quarters byte-identical", PW.puts.length === 1 && JSON.stringify(PW.puts[0].data.quarters) === JSON.stringify(pwServer.quarters) && PW.puts[0].data.foreignSleeve.cash === 500000);
+
+  // (4) แก้มูลค่าหุ้นรายตัวในหน้า PM (โหมด pm) → หลังบันทึกรายการหุ้นสำเร็จ หน่วง ~1.5 วิ → GET สด → PUT แถวใหม่ (ครั้งเดียว)
+  var HW = boot({ fixture: SV, snapshot: SNAP(SV), store: HS() }); await flush(80);
+  var hwServer = clone(HW.serverFixture);
+  HW.mark();
+  HW.setValue("data-pm-mv", "NVDA", "735000"); var hwChanged = HW.change("data-pm-mv", "NVDA");
+  await flush(300);
+  var hwEarly = HW.portfolioCallsSince(), hwRenders = HW.renders(), hwDispatch0 = HW.dispatched.length;
+  await flush(1700);
+  var hwPut = HW.puts[0], hwRow = hwPut && rowOf(hwPut);
+  t("holdings save (NVDA 435,000 → 735,000) → PUT /api/portfolio-holdings · nothing to /api/portfolio before the debounce",
+    hwChanged && HW.holdingsPuts.length === 1 && hwEarly === "", [hwChanged, HW.holdingsPuts.length, hwEarly]);
+  t("…after the debounce exactly one GET then one PUT · foreign row = QQQM 2,000,000 + NVDA 735,000 + META 291,000 + cash 400,000 = ฿3,426,000 · name US · no fromPM",
+    HW.portfolioCallsSince() === "GET,PUT" && HW.puts.length === 1 && !!hwRow && hwRow.name === "US" && hwRow.manualValue === 3426000 && hwRow.snapshotValue === 3426000 &&
+    Math.abs(hwRow.investedPercent - 3026000 / 3426000 * 100) < 1e-9 && !hasFromPM(hwPut), [HW.portfolioCallsSince(), hwRow]);
+  t("…rest of the doc byte-identical (other rows · 2026-Q3 · foreignSleeve · allocation · other keys)",
+    !!hwPut && JSON.stringify(hwPut.data.quarters["2026-Q4"].assets.slice(1)) === JSON.stringify(hwServer.quarters["2026-Q4"].assets.slice(1)) &&
+    JSON.stringify(hwPut.data.quarters["2026-Q3"]) === JSON.stringify(hwServer.quarters["2026-Q3"]) && JSON.stringify(hwPut.data.foreignSleeve) === JSON.stringify(hwServer.foreignSleeve) &&
+    JSON.stringify(hwPut.data.allocation) === JSON.stringify(hwServer.allocation) && JSON.stringify(hwPut.data.someOtherKey) === JSON.stringify(hwServer.someOtherKey));
+  var hwSnap = JSON.parse(HW.store[SNAP_KEY] || "null");
+  t("…dispatched portfolio-allocation-saved { data: PUT body } · snapshot copy patched (row 3,426,000) · no re-render (user may be typing the next value)",
+    HW.dispatched.slice(hwDispatch0).some(function (e) { return e.type === "portfolio-allocation-saved" && e.detail && JSON.stringify(e.detail.data) === JSON.stringify(hwPut.data); }) &&
+    !!hwSnap && hwSnap.portfolioStatus.data.quarters["2026-Q4"].assets[0].manualValue === 3426000 && hwSnap.marketRisk.marker === "keep-me" && HW.renders() === hwRenders,
+    [HW.renders() - hwRenders]);
+  // แก้ติด ๆ กันสองตัวภายในช่วงหน่วง → GET/PUT รอบเดียวด้วยค่าล่าสุด
+  HW.mark();
+  HW.setValue("data-pm-mv", "META", "391000"); HW.change("data-pm-mv", "META"); await flush(400);
+  HW.setValue("data-pm-mv", "QQQM", "2100000"); HW.change("data-pm-mv", "QQQM"); await flush(1900);
+  var hwPut2 = HW.puts[HW.puts.length - 1];
+  t("two holdings saves within the debounce → one GET,PUT with both changes (2,100,000 + 735,000 + 391,000 + 400,000 = ฿3,626,000)",
+    HW.portfolioCallsSince() === "GET,PUT" && rowOf(hwPut2).manualValue === 3626000, [HW.portfolioCallsSince(), rowOf(hwPut2).manualValue]);
+  // (5) ไม่ใช่โหมด pm (ยังไม่กรอกเงินสด) → GET แล้วไม่ PUT
+  var NW = boot({ fixture: FIX, snapshot: SNAP(FIX), store: HS() }); await flush(80);
+  NW.mark(); NW.setValue("data-pm-mv", "NVDA", "735000"); NW.change("data-pm-mv", "NVDA"); await flush(1900);
+  t("non-pm (no cash entered) → holdings save → GET only after the debounce, no PUT · no failure note",
+    NW.holdingsPuts.length === 1 && NW.portfolioCallsSince() === "GET" && NW.puts.length === 0 && NW.html().indexOf(ROW_FAIL_TH) < 0, NW.portfolioCallsSince());
+  // quarter-ended (pm ไม่ได้) → ไม่ PUT เช่นกัน
+  var EW = boot({ fixture: SVQE, snapshot: SNAP(SVQE), store: HS(), now: CLOCK.Q4_2026 }); await flush(80);
+  EW.mark(); EW.setValue("data-pm-mv", "NVDA", "735000"); EW.change("data-pm-mv", "NVDA"); await flush(1900);
+  t("quarter-ended → holdings save → GET only, no PUT (stored 2026-Q3 untouched)", EW.portfolioCallsSince() === "GET" && EW.puts.length === 0, EW.portfolioCallsSince());
+  // บันทึกรายการหุ้นไม่สำเร็จ → ไม่เขียนแถว
+  var failHP = true;
+  var FW = boot({ fixture: SV, snapshot: SNAP(SV), store: HS(), flags: function () { return { failHoldingsPut: failHP }; } }); await flush(80);
+  FW.mark(); FW.setValue("data-pm-mv", "NVDA", "735000"); FW.change("data-pm-mv", "NVDA"); await flush(1900);
+  t("holdings PUT fails → no row write at all (no GET, no PUT)", FW.holdingsPuts.length === 1 && FW.portfolioCallsSince() === "" && FW.puts.length === 0, FW.portfolioCallsSince());
+  // (6) server ว่างตอนเขียนแถว → ไม่ PUT + ข้อความสั้น · บันทึกเงินสดสำเร็จครั้งถัดไป → ข้อความหาย
+  var zEmpty = false;
+  var ZW = boot({ fixture: SV, snapshot: SNAP(SV), store: HS(), flags: function () { return { serverEmpty: zEmpty }; } }); await flush(80);
+  zEmpty = true;
+  ZW.mark(); ZW.setValue("data-pm-mv", "NVDA", "735000"); ZW.change("data-pm-mv", "NVDA"); await flush(1900);
+  zEmpty = false;
+  t("empty server doc during the row write → GET only, refuses to PUT · small note '" + ROW_FAIL_TH + "' (no ฿, no draft, no retry button)",
+    ZW.portfolioCallsSince() === "GET" && ZW.puts.length === 0 && ZW.html().indexOf(ROW_FAIL_TH) >= 0 && ZW.store[DRAFT_KEY] === undefined && ZW.html().indexOf("data-pm-cash-retry") < 0,
+    [ZW.portfolioCallsSince(), cashCard(ZW.html()).slice(0, 600)]);
+  ZW.mark(); ZW.setValue("data-pm-cash", "1", "400000"); ZW.click("data-pm-cash-save", "1"); await flush(80);
+  t("…next cash save (GET,PUT) writes the row (3,426,000 incl. the new NVDA) and clears the note",
+    ZW.portfolioCallsSince() === "GET,PUT" && rowOf(ZW.puts[0]).manualValue === 3426000 && ZW.html().indexOf(ROW_FAIL_TH) < 0, [ZW.portfolioCallsSince()]);
+  // (7) รอบเขียนแถวค้าง (PUT ยังไม่ตอบ) → บันทึกเงินสดรอรอบนั้นก่อน GET ของตัวเอง (กัน PUT สองตัวสลับกันทับเงินสด)
+  var yHold = false;
+  var YW = boot({ fixture: SV, snapshot: SNAP(SV), store: HS(), flags: function () { return { holdPut: yHold }; } }); await flush(80);
+  yHold = true;
+  YW.mark(); YW.setValue("data-pm-mv", "NVDA", "735000"); YW.change("data-pm-mv", "NVDA"); await flush(1800);
+  var yInflight = YW.portfolioCallsSince();
+  YW.setValue("data-pm-cash", "1", "900000"); YW.click("data-pm-cash-save", "1"); await flush(80);
+  var yWaiting = YW.portfolioCallsSince();
+  yHold = false; YW.releasePuts(); await flush(120);
+  var yLast = YW.puts[YW.puts.length - 1];
+  t("row write in flight (PUT held) → a cash save waits: no new GET until that PUT answers · then GET,PUT · server ends with cash 900,000 and row 3,026,000 + 900,000 = ฿3,926,000",
+    yInflight === "GET,PUT" && yWaiting === "GET,PUT" && YW.portfolioCallsSince() === "GET,PUT,GET,PUT" && YW.serverFixture.foreignSleeve.cash === 900000 &&
+    rowOf({ data: YW.serverFixture }).manualValue === 3926000 && rowOf(yLast).manualValue === 3926000, [yInflight, yWaiting, YW.portfolioCallsSince()]);
+
   // ---------- โค้ด ----------
   var SRC = read("portfolio-manager-page.js");
   var addedComments = SRC.split("\n").filter(function (l) { return /cash|Cash|ร่าง|foreignSleeve/.test(l); }).join("\n");
@@ -679,7 +833,8 @@ function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || [])
   t("pm-view harness anchor + names still above it", SRC.indexOf("  // ธงแดง/มูลค่าเปลี่ยนจาก Action Center") > 0 &&
     ["function sectionCurrent", "function pieSvg", "function writeJson", "CVIEW_STORE"].every(function (k) { var i = SRC.indexOf(k); return i >= 0 && i < SRC.indexOf("  // ธงแดง/มูลค่าเปลี่ยนจาก Action Center"); }));
   t("CSS styles the cash box (.pm-cash-inp / .pm-cashbox)", /\.pm-cash-inp\s*\{/.test(css) && /\.pm-cashbox\s*\{/.test(css));
-  t("every PUT this suite saw carried no fromPM", [MAIN, D, D2, R, F, N, L, SB].every(function (I) { return I.puts.every(function (p) { return !hasFromPM(p); }); }));
+  t("every PUT this suite saw carried no fromPM", [MAIN, D, D2, R, F, N, L, SB, RW, QW, PW, HW, NW, EW, FW, ZW, YW].every(function (I) { return I.puts.every(function (p) { return !hasFromPM(p); }); }));
+  t("the row-sync note carries no money and no advisory words", ROW_FAIL_TH.indexOf("฿") < 0 && !/\d/.test(ROW_FAIL_TH) && !ADVISORY_TH.test(ROW_FAIL_TH) && !ADVISORY_EN.test(ROW_FAIL_TH));
 
   finish();
 })().catch(function (e) {

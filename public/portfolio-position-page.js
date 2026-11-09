@@ -22,13 +22,14 @@
   // allocation ใช้ชุดเดียวกับส่วน Asset Allocation บนหน้านี้ — รวมค่าที่เพิ่งพิมพ์แต่ยังบันทึกไม่สำเร็จ
   // ไม่งั้นหัวหน้ากับตารางจะคนละตัวเลขตอนบันทึกล้มเหลว
   // คืน null = ไม่มี engine/ข้อมูล · {available:false, reason} = มี engine แต่ไตรมาสนี้เทียบไม่ได้
-  // อ่านเอกสารดิบเสมอ (rawSnapshot) — ผลตอบแทน/เป้าเกษียณยังคิดจาก Quarterly Editor แม้หุ้นต่างประเทศ
-  // ในส่วนหัวจะมาจาก AI Portfolio Manager (spec pm-foreign-sleeve §4)
-  function realGrowth(R) {
+  // snap = ชุดเดียวกับที่ใช้วาดส่วนหัว (view.snap ของ sleeveView) — โหมด pm แถวหุ้นต่างประเทศของไตรมาสล่าสุดเป็นค่า
+  // AI Portfolio Manager โดยคงชื่อ/เงินเติมของแถวเดิม จึงต่อกับไตรมาสก่อนได้ (spec pm-foreign-sleeve Addendum ข้อ 2–3)
+  // · โหมด editor = เอกสารดิบ (rawSnapshot มี psCache ก่อนเสมอ) · ไม่ส่ง snap = คิดจาก rawSnapshot ผ่าน sleeveView เอง
+  function realGrowth(R, snap) {
     var AA = window.AssetAllocation;
     if (!AA || typeof AA.compute !== "function") return null;
-    var snap = rawSnapshot();
-    var src = psCache || (snap && snap.portfolioStatus) || null;
+    var s = snap === undefined ? sleeveView(rawSnapshot()).snap : snap;
+    var src = (s && s.portfolioStatus) || null;
     if (!src) return null;
     var alloc = null;
     try {
@@ -114,7 +115,7 @@
   // TRUTH for bucket money — snapshot.portfolioStatus is only a copy captured at
   // the last Load Latest Data. A fresh fetch must therefore OVERRIDE the snapshot
   // copy, otherwise edits in the Quarterly Editor never show up on this page.
-  // rawSnapshot = เอกสารดิบตามที่ server เก็บ (ใช้กับผลตอบแทน และส่งให้การ์ดผ่าน last.data)
+  // rawSnapshot = เอกสารดิบตามที่ server เก็บ (ตั้งต้นให้ sleeveView และส่งให้การ์ดผ่าน last.data)
   function rawSnapshot() {
     var snap = readSnapshot();
     if (psCache) {
@@ -132,7 +133,8 @@
   //   โหมด pm (กรอกเงินสดในหน้า PM แล้ว + มี holdings) → สำเนา snapshot ที่แถว foreign-stock ไตรมาสปัจจุบัน
   //   ถูกแทนด้วยแถวเดียว = มูลค่าหุ้นที่ถือ (ลงทุนแล้ว) + เงินสดที่กรอก (รอซื้อ) · โหมด editor / ไม่มีโมดูล → snapshot เดิม
   //   holdings = getHoldingsArray() (snapshot ก่อน ไม่มีก็ cache ในเครื่อง — ชุดเดียวกับที่หน้านี้ใช้ทั้งหน้า)
-  //   สำเนานี้ใช้วาดตัวเลขปัจจุบันเท่านั้น — ห้ามส่งไป PUT (การ์ดได้เอกสารดิบผ่าน last.data)
+  //   สำเนานี้ใช้วาดตัวเลข (ส่วนหัว · แถบ · ผลตอบแทน) เท่านั้น — ห้ามส่งไป PUT (การ์ดได้เอกสารดิบผ่าน last.data)
+  //   Editor เลือกดูไตรมาสเก่า → โมดูลคืนตัวเดิม (past-quarter) = โหมด editor
   // คืน { snap, pm, editorCount } · editorCount = จำนวนรายการจริงใน Editor (โหมด pm แถวหุ้นต่างประเทศหลายแถวถูกรวมเป็นแถวเดียว)
   function sleeveView(raw) {
     var out = { snap: raw, pm: false, editorCount: null };
@@ -224,9 +226,6 @@
   // ป้ายที่มา (โหมด pm) — ข้อความคงที่ ผ่าน esc · ไม่มีเงิน
   var SRC_PM_TH = "หุ้นต่างประเทศจาก AI Portfolio Manager";
   function srcTag() { return '<span class="pp-src" data-pp-src="pm">' + esc(SRC_PM_TH) + "</span>"; }
-  // โหมด pm: ความมั่งคั่งรวมใช้หุ้นต่างประเทศจาก PM แต่บรรทัดผลตอบแทนยังคิดจากเอกสารดิบของ Editor (realGrowth)
-  // → บอกใต้บรรทัดผลตอบแทน ไม่งั้นมูลค่าเพิ่มดูไม่ตรงกับความมั่งคั่งรวม · โหมด editor ไม่แสดง
-  var GROW_SRC_TH = "ผลตอบแทนคิดจาก Quarterly Editor (หุ้นต่างประเทศใน Editor เป็นค่าที่กรอกเอง)";
 
   // -------------------------------------------------- 1 · summary strip
   function summaryStrip(R, view) {
@@ -235,11 +234,12 @@
     var count = pm && typeof view.editorCount === "number" ? view.editorCount : T.assetCount;
     var qoq = T.qoq ? ((T.qoq.thb >= 0 ? "+" : "") + thb(T.qoq.thb).replace("฿", "฿") + (T.qoq.pct != null ? " (" + (T.qoq.pct >= 0 ? "+" : "") + T.qoq.pct + "%)" : "")) : null;
     var ago = timeAgo(R.generatedAt);
-    var RG = realGrowth(R);
+    // ผลตอบแทนคิดจากชุดเดียวกับความมั่งคั่งรวม (view.snap) — ตัวเลขสองบรรทัดนี้มาจากที่เดียวกันเสมอ
+    var RG = realGrowth(R, view ? view.snap : undefined);
     var qoqLine = qoq ? '<div class="pp-stat-s ' + (T.qoq.thb >= 0 ? "pp-up" : "pp-down") + '">QoQ ' + esc(qoq) + "</div>" : '<div class="pp-stat-s">ยังไม่มีไตรมาสก่อนหน้า</div>';
     // มี record ทั้งพอร์ต → 3 บรรทัดคู่กัน · ไม่มี engine/เทียบไม่ได้ → QoQ เดิม (+ เหตุผลถ้ามี)
     var growthLine = RG && RG.available
-      ? growthBlock(RG) + (pm ? '<div class="pp-stat-s pp-dim" data-pp-grow-src="editor">' + esc(GROW_SRC_TH) + "</div>" : "")
+      ? growthBlock(RG)
       : qoqLine + (RG && RG.reason ? '<div class="pp-stat-s pp-dim">ไม่รวมเงินเติม: ' + esc(RG.reason) + "</div>" : "");
     return '<section class="pp-hero"><div class="pp-hero-inner">' +
       '<div class="pp-hero-head"><div><h1 class="pp-title">📊 Portfolio Position</h1>' +
