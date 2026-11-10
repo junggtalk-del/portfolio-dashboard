@@ -3,6 +3,7 @@ const STATE_ID = "main";
 const { isPasswordValid } = require("../lib/auth");
 const { isValidPortfolioData } = require("../lib/portfolio-validation");
 const { isValidJournalDoc, JOURNAL_STATE_ID } = require("../lib/journal-validation");
+const { isValidPmSettingsDoc, PM_STATE_ID } = require("../lib/pm-settings-validation");
 const { parseJsonBody } = require("../lib/request-body");
 
 function send(res, status, payload) {
@@ -49,8 +50,10 @@ function getSupabaseUrl() {
 
 // Which app_state row a request addresses (spec §6). `?doc=journal` is the
 // Decision Journal: a separate row with its own validator, so journal writes
-// never touch the portfolio blob and vice versa. No `doc` keeps the original
-// portfolio behaviour unchanged. Any other value → null (rejected, no I/O).
+// never touch the portfolio blob and vice versa. `?doc=pm` is the AI Portfolio
+// Manager settings doc (tier / entry ladder / megatrend stance / index core),
+// likewise its own row and validator. No `doc` keeps the original portfolio
+// behaviour unchanged. Any other value → null (rejected, no I/O).
 // server.js mirrors this switch for local dev; keep both in sync.
 function resolveDocTarget(req) {
   const doc = new URL(req.url || "/", "http://localhost").searchParams.get("doc");
@@ -66,6 +69,13 @@ function resolveDocTarget(req) {
       id: JOURNAL_STATE_ID,
       isValid: isValidJournalDoc,
       rejectMessage: "Refusing to save: journal data is malformed."
+    };
+  }
+  if (doc === "pm") {
+    return {
+      id: PM_STATE_ID,
+      isValid: isValidPmSettingsDoc,
+      rejectMessage: "Refusing to save: PM settings are malformed."
     };
   }
   return null;

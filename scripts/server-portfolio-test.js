@@ -292,6 +292,74 @@ async function sectionOversize() {
   t("local-fallback oversize → 413 and nothing written", res3.status === 413 && res3.json().error === "Request body is too large." && fingerprint(TMP) === before, { status: res3.status });
 }
 
+// ---- F. ?doc=pm (AI Portfolio Manager settings) — mirrors api/portfolio.js ----
+const pmDoc = { v: 1, tierConfig: { map: { NVDA: "A" }, tiers: { A: { min: 5 } } }, entryProgress: { NVDA: { "1": true } }, megaStance: "bearish",
+  allocPolicy: { indexTicker: "QQQM" }, updatedAt: "2026-11-10T01:00:00.000Z" };
+const PM_MSG = "Refusing to save: PM settings are malformed.";
+async function sectionPm() {
+  console.log("== F. ?doc=pm ==");
+  useSupabase(true);
+  nextRows = [{ data: { v: 1, megaStance: "bullish" } }];
+  let x = await call("GET", "/api/portfolio?doc=pm");
+  t("supabase GET ?doc=pm reads row pm_settings_main", x.res.status === 200 && x.calls.length === 1 && x.calls[0].url.indexOf("id=eq.pm_settings_main&") > 0 && x.body.data.megaStance === "bullish", x.calls);
+  x = await call("PUT", "/api/portfolio?doc=pm", { data: pmDoc });
+  let row = x.calls.length === 1 ? postedRow(x.calls[0]) : null;
+  t("supabase PUT ?doc=pm posts row pm_settings_main with the same data", x.res.status === 200 && row && x.calls[0].method === "POST" && row.id === "pm_settings_main" && JSON.stringify(row.data) === JSON.stringify(pmDoc), row);
+  x = await call("PUT", "/api/portfolio?doc=pm", { data: { v: 1, megaStance: "sideways" } });
+  t("supabase PUT malformed pm → 400 '" + PM_MSG + "', no fetch", x.res.status === 400 && x.body.error === PM_MSG && x.calls.length === 0, x.body);
+  x = await call("PUT", "/api/portfolio?doc=pm", { data: portfolioBlob });
+  t("supabase PUT ?doc=pm with a portfolio blob → 400, no fetch", x.res.status === 400 && x.body.error === PM_MSG && x.calls.length === 0, x.body);
+  x = await call("PUT", "/api/portfolio?doc=pm", { data: journalDoc });
+  t("supabase PUT ?doc=pm with a journal doc → 400, no fetch", x.res.status === 400 && x.body.error === PM_MSG && x.calls.length === 0, x.body);
+  x = await call("PUT", "/api/portfolio?doc=journal", { data: pmDoc });
+  t("supabase PUT ?doc=journal with a pm doc → 400 journal message", x.res.status === 400 && x.body.error === "Refusing to save: journal data is malformed." && x.calls.length === 0, x.body);
+  x = await call("GET", "/api/portfolio?doc=pm", undefined, "wrong");
+  t("supabase ?doc=pm wrong password → 401, no fetch", x.res.status === 401 && x.calls.length === 0, x.res.status);
+  x = await call("GET", "/api/portfolio?doc=xyz");
+  t("supabase ?doc=xyz still → 400 Unknown doc.", x.res.status === 400 && x.body.error === "Unknown doc." && x.calls.length === 0, x.body);
+  x = await call("GET", "/api/portfolio");
+  t("supabase no doc still reads row main", x.calls.length === 1 && x.calls[0].url.indexOf("id=eq.main&") > 0, x.calls);
+
+  useSupabase(false);
+  const pmFile = path.join(TMP, "pm-settings.json");
+  const pFile = path.join(TMP, "portfolio.json");
+  const jFile = path.join(TMP, "decision-journal.json");
+  const pBefore = fs.existsSync(pFile) ? fs.readFileSync(pFile, "utf8") : null;
+  const jBefore = fs.existsSync(jFile) ? fs.readFileSync(jFile, "utf8") : null;
+  x = await call("GET", "/api/portfolio?doc=pm");
+  t("local GET ?doc=pm with no file → { data: null, mode: local-fallback }", x.res.status === 200 && x.body.data === null && x.body.mode === "local-fallback", x.body);
+  x = await call("PUT", "/api/portfolio?doc=pm", { data: pmDoc });
+  t("local PUT ?doc=pm → 200 · writes <LOCAL_DATA_DIR>/pm-settings.json · no fetch", x.res.status === 200 && x.body.ok === true && fs.existsSync(pmFile) && x.calls.length === 0, x.body);
+  t("local PUT ?doc=pm leaves portfolio.json and decision-journal.json untouched",
+    (fs.existsSync(pFile) ? fs.readFileSync(pFile, "utf8") : null) === pBefore && (fs.existsSync(jFile) ? fs.readFileSync(jFile, "utf8") : null) === jBefore);
+  x = await call("GET", "/api/portfolio?doc=pm");
+  t("local GET ?doc=pm returns the saved doc", JSON.stringify(x.body.data) === JSON.stringify(pmDoc), x.body);
+  x = await call("GET", "/api/portfolio");
+  t("local GET without doc does not return the pm doc", x.res.status === 200 && JSON.stringify(x.body.data) !== JSON.stringify(pmDoc), x.body);
+  x = await call("GET", "/api/portfolio?doc=journal");
+  t("local GET ?doc=journal does not return the pm doc", x.res.status === 200 && JSON.stringify(x.body.data) !== JSON.stringify(pmDoc), x.body);
+  const before = fingerprint(TMP);
+  x = await call("PUT", "/api/portfolio?doc=pm", { data: { v: 2 } });
+  t("local PUT malformed pm → 400 '" + PM_MSG + "', files untouched", x.res.status === 400 && x.body.error === PM_MSG && fingerprint(TMP) === before, x.body);
+  x = await call("PUT", "/api/portfolio?doc=xyz", { data: pmDoc });
+  t("local ?doc=xyz still → 400 Unknown doc., nothing written", x.res.status === 400 && x.body.error === "Unknown doc." && fingerprint(TMP) === before, x.body);
+  // ไฟล์ pm-settings.json มีอยู่แต่อ่าน/แปลงไม่ได้ → 500 (ไม่ใช่ data null) — หน้าจะไม่ "ย้าย" ทับไฟล์ที่เสีย
+  const good = fs.readFileSync(pmFile, "utf8");
+  for (const [label, content] of [["garbage", "{not json"], ["empty", ""], ["no data field", JSON.stringify({ updatedAt: "x" })], ["array", "[]"]]) {
+    fs.writeFileSync(pmFile, content, "utf8");
+    x = await call("GET", "/api/portfolio?doc=pm");
+    t("local GET ?doc=pm with a corrupt file (" + label + ") → 500, not { data: null }", x.res.status === 500 && x.body && typeof x.body.error === "string" && !("data" in x.body), { status: x.res.status, body: x.body });
+  }
+  fs.writeFileSync(pmFile, good, "utf8");
+  x = await call("GET", "/api/portfolio?doc=pm");
+  t("local GET ?doc=pm after the file is repaired → the doc again", x.res.status === 200 && JSON.stringify(x.body.data) === JSON.stringify(pmDoc), x.body);
+  fs.unlinkSync(pmFile);
+  x = await call("GET", "/api/portfolio?doc=pm");
+  t("local GET ?doc=pm with the file missing → { data: null } (only 'missing' means empty)", x.res.status === 200 && x.body.data === null, x.body);
+  const srv = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
+  t("server.js requires lib/pm-settings-validation", /require\("\.\/lib\/pm-settings-validation"\)/.test(srv));
+}
+
 (async () => {
   try {
     await sectionModule();
@@ -305,6 +373,7 @@ async function sectionOversize() {
       await sectionLocal();
       await sectionUtf8();
       await sectionOversize();
+      await sectionPm();
     }
   } catch (error) {
     fail++;

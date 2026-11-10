@@ -19,7 +19,9 @@
   //    → ไตรมาสที่เก็บไว้ = ค่า PM ล่าสุดตอนสิ้นไตรมาส (วันแรกของไตรมาสใหม่ผู้อ่านใช้ค่าที่เก็บ — ผลตอบแทนไม่กระโดดข้ามคืน)
   //  - ตำแหน่ง: snapshot.portfolioHoldings (ต้นทุนเฉลี่ยจาก averageCost ถ้ามี)
   //  - ทุกการตัดสินใจ: window.PMEngine (ThesisEngine เป็นแกน — deterministic)
-  //  - Tier ต่อหุ้น + Entry ที่ deploy แล้ว: localStorage (ผู้ใช้กำหนดเอง)
+  //  - ค่าตั้งที่ผู้ใช้กำหนดเอง (Tier ต่อหุ้น · Entry ที่ deploy แล้ว · มุมมอง AI Megatrend · index core):
+  //    เอกสารแยกบน server /api/portfolio?doc=pm (แถว pm_settings_main) · localStorage เป็นแค่ cache — ดู "ค่าตั้งของหน้า → server"
+  //    มุมมองตาราง Current Portfolio (pmCurrentView_v1) ยังอยู่เฉพาะเครื่อง
   // ไม่มีคำ Buy/Sell — Increase Position / Maintain / Wait / Review Thesis
   // ============================================================
 
@@ -27,9 +29,44 @@
   var TIER_STORE = "pmTierConfig_v1";     // { map:{TICKER:"A"}, tiers:{A:{max,target,min},...} }
   var PROGRESS_STORE = "pmEntryProgress_v1"; // { TICKER: {"1":true,...} }
   var STANCE_STORE = "pmMegaStance_v1";   // "bullish"|"bearish" — มุมมอง AI Megatrend ผู้ใช้ตั้งเอง
-  var ALLOC_STORE = "pmAllocPolicy_v1";   // { indexTicker, indexPct, splitMethod }
-  var CVIEW_STORE = "pmCurrentView_v1";   // "all"|"stocks" — มุมมองตาราง Current Portfolio
+  var ALLOC_STORE = "pmAllocPolicy_v1";   // { indexTicker, indexPct, splitMethod, maxSinglePct }
+  var CVIEW_STORE = "pmCurrentView_v1";   // "all"|"stocks" — มุมมองตาราง Current Portfolio (เฉพาะเครื่อง ไม่ขึ้น server)
   var state = { out: null, cashPct: null, gross: null, invested: null };
+
+  // ---- ค่าตั้ง 4 ตัวบน server (?doc=pm) — localStorage 4 คีย์ข้างบนเป็น cache ----
+  var PM_DOC_URL = "/api/portfolio?doc=pm";
+  var PM_SETTINGS = [
+    { key: "tierConfig", store: TIER_STORE },
+    { key: "entryProgress", store: PROGRESS_STORE },
+    { key: "megaStance", store: STANCE_STORE },
+    { key: "allocPolicy", store: ALLOC_STORE }
+  ];
+  // การแก้ที่ยังขึ้น server ไม่สำเร็จ = รายการ op { id, key, path, value | del, base, at } (ข้ามการปิดหน้า · ใช้ร่วมทุกแท็บ)
+  var PM_PENDING_KEY = "pmSettingsPending_v1";
+  // ค่าในเครื่องชุดเดิมก่อนรับของ server ครั้งแรกของเครื่องนี้ — เขียนครั้งเดียว ไม่ทับภายหลัง
+  var PM_BACKUP_KEY = "pmSettingsLocalBackup_v1";
+  var PM_SAVE_DELAY_MS = 800;     // แก้ติด ๆ กัน = บันทึกรอบเดียว
+  var PM_REFRESH_MS = 30000;      // กลับมาที่แท็บภายในเวลานี้หลังอ่านครั้งก่อน = ไม่อ่านซ้ำ (ค้างส่งไม่ติดเกณฑ์นี้)
+  // ต้องตรงกับ lib/pm-settings-validation.js (PM_KEY_MAX_LEN · A/B/C · min/target/max · ตัวอักษร ticker) — หน้าไม่สร้างค่าที่ server ปฏิเสธ
+  var PM_KEY_MAX_LEN = 64;
+  var PM_TIER_KEYS = ["A", "B", "C"];
+  var PM_TIER_FIELDS = ["min", "target", "max"];
+  var PM_NOT_TICKER_CHARS = /[^A-Z0-9.^-]/g;
+  var PM_SYNC_FAIL_TH = "บันทึกค่าตั้งขึ้น server ไม่สำเร็จ — จะลองใหม่เมื่อแก้ครั้งถัดไปหรือกลับมาที่หน้านี้";
+  var PM_SYNC_REJECT_TH = "server ไม่รับค่าตั้งชุดนี้ — ค่ายังอยู่ในเครื่องนี้ จะส่งอีกครั้งเมื่อแก้ค่าครั้งถัดไป";
+  var PM_SYNC_UNKNOWN_TH = "ค่าตั้งบน server อยู่ในรูปแบบที่หน้านี้อ่านไม่ออก — ไม่บันทึกทับ ใช้ค่าในเครื่องนี้ไปก่อน";
+  var PM_SYNC_OFFLINE_TH = "ยังโหลดค่าตั้งจาก server ไม่ได้ — ใช้ค่าในเครื่องนี้ชั่วคราว";
+  var PM_SYNC_SUPERSEDED_TH = "มีค่าที่ใหม่กว่าจากเครื่องอื่น — ใช้ค่านั้นแทนการแก้ที่ค้าง";
+  var pmSync = {
+    timer: null,        // รอบบันทึกที่ตั้งเวลาไว้ (หน่วงหลังแก้ครั้งล่าสุด)
+    busy: false,        // GET/PUT กำลังทำงาน — ทีละรอบ
+    again: false,       // มีคำขอบันทึกเข้ามาระหว่างรอบที่ค้าง → บันทึกต่ออีกรอบเมื่อรอบนั้นจบ
+    status: null,       // null | "failed" | "rejected" (400) | "unknown" (เอกสารบน server ไม่ใช่ v:1)
+    readOk: false,      // แท็บนี้อ่านเอกสาร pm จาก server ได้แล้วอย่างน้อยหนึ่งครั้ง
+    readFailed: false,  // ยังอ่านไม่ได้สักครั้งและครั้งล่าสุดล้ม → ข้อความเบา ๆ
+    superseded: false,  // รอบล่าสุดทิ้ง op ที่ชนกับค่าที่ใหม่กว่าจากเครื่องอื่น → ข้อความหนึ่งบรรทัด (หายเมื่อแก้ครั้งถัดไป)
+    fetchedAt: 0        // เวลาที่อ่านเอกสาร pm ได้ล่าสุด (ms)
+  };
   var intelMap = null; // {TICKER: {intel, gate}} จาก IntelligenceEngine — null เมื่อ engine ไม่ได้โหลด
 
   // ---- ช่องเงินสดรอซื้อหุ้นต่างประเทศ (→ เอกสารพอร์ต foreignSleeve) ----
@@ -188,16 +225,17 @@
     var c = tierConfig();
     return c.map[ticker] || window.PMEngine.DEFAULT_TIER_MAP[ticker] || "C";
   }
+  // setter ทุกตัว: เขียนค่าในเครื่องทั้งก้อน (UI) + บันทึก "การเปลี่ยนจุดเดียว" เป็น op (path ใต้คีย์) ให้ server
   function setTier(ticker, key) {
-    var c = tierConfig(); c.map[ticker] = key; writeJson(TIER_STORE, c); render();
+    var c = tierConfig(); c.map[ticker] = key; writeSetting(TIER_STORE, c, ["map", String(ticker)]); render();
   }
   function setTierParam(tierKey, field, value) {
     var c = tierConfig(); c.tiers[tierKey] = c.tiers[tierKey] || {};
     var n = fin(value); if (n == null || n < 0 || n > 100) return;
-    c.tiers[tierKey][field] = n; writeJson(TIER_STORE, c); render();
+    c.tiers[tierKey][field] = n; writeSetting(TIER_STORE, c, ["tiers", String(tierKey), String(field)]); render();
   }
   function megaStance() { var v = readJson(STANCE_STORE, "bullish"); return v === "bearish" ? "bearish" : "bullish"; }
-  function setStance(v) { writeJson(STANCE_STORE, v === "bearish" ? "bearish" : "bullish"); render(); }
+  function setStance(v) { writeSetting(STANCE_STORE, v === "bearish" ? "bearish" : "bullish", []); render(); }
   // มุมมองตาราง Current Portfolio: "all" = ทั้งพอร์ต (index core + หุ้น + เงินสด) · "stocks" = เฉพาะหุ้นรายตัว
   function currentView() { return readJson(CVIEW_STORE, "all") === "stocks" ? "stocks" : "all"; }
   function setCurrentView(v) { writeJson(CVIEW_STORE, v === "stocks" ? "stocks" : "all"); render(); }
@@ -213,15 +251,406 @@
     var c = readJson(ALLOC_STORE, {});
     if (field === "indexPct") { var n = fin(value); if (n == null || n < 0 || n > 100) return; c.indexPct = n; }
     else if (field === "maxSinglePct") { var m = fin(value); if (m == null || m <= 0 || m > 100) return; c.maxSinglePct = m; }
-    else if (field === "indexTicker") { c.indexTicker = String(value || "QQQM").toUpperCase().trim() || "QQQM"; }
+    // ช่องพิมพ์ไม่มี maxlength → เหลือเฉพาะตัวอักษร ticker แล้วตัดที่ PM_KEY_MAX_LEN (กติกาเดียวกับ server · ไม่ผ่าครึ่ง emoji)
+    else if (field === "indexTicker") { c.indexTicker = (String(value || "QQQM").toUpperCase().replace(PM_NOT_TICKER_CHARS, "") || "QQQM").slice(0, PM_KEY_MAX_LEN); }
     else if (field === "splitMethod") { c.splitMethod = value === "equal" ? "equal" : "conviction"; }
-    writeJson(ALLOC_STORE, c); render();
+    else return;
+    writeSetting(ALLOC_STORE, c, [String(field)]); render();
   }
   function entryProgress() { return readJson(PROGRESS_STORE, {}); }
   function toggleEntry(ticker, n, done) {
     var p = entryProgress(); p[ticker] = p[ticker] || {};
     if (done) p[ticker][n] = true; else delete p[ticker][n];
-    writeJson(PROGRESS_STORE, p); render();
+    writeSetting(PROGRESS_STORE, p, [String(ticker), String(n)], !done); render();
+  }
+
+  // ---------------- ค่าตั้งของหน้า → server (/api/portfolio?doc=pm · แถว pm_settings_main) ----------------
+  // 4 คีย์ข้างบนเก็บบน server เป็นความจริง · localStorage = cache (วาดเร็ว/ออฟไลน์) → ล้างข้อมูลเว็บแล้วได้คืน · ทุกเครื่องชุดเดียวกัน
+  //   เอกสาร: { v: 1, tierConfig?, entryProgress?, megaStance?, allocPolicy?, updatedAt } (lib/pm-settings-validation.js)
+  //   · เปิดหน้า: วาดจาก localStorage ทันที → GET สด (no-store)
+  //       ยังไม่มี (data null) + เครื่องมีค่า = ย้ายครั้งเดียว: PUT { v:1, ค่าในเครื่องทุกคีย์, updatedAt }
+  //       GET ล้ม = ใช้ค่าในเครื่องต่อ ไม่ PUT (ไม่รู้ว่า server มีอะไร = ห้ามทับ) + ข้อความเบา ๆ จนกว่าจะอ่านได้
+  //       เอกสารที่ไม่ใช่ v:1 = ไม่รับ ไม่ทับ
+  //       มีเอกสาร = server เป็นความจริง: cache = ค่าของ server + op ที่ค้างส่ง (ทุกแท็บ)
+  //         ครั้งแรกของเครื่องนี้ (ยังไม่มี pmSettingsLocalBackup_v1): เก็บค่าในเครื่องเดิมเป็น backup ครั้งเดียว →
+  //         รวมรายตัว: ชนกัน = server ชนะ · หุ้น/tier/ฟิลด์ที่มีแต่ในเครื่อง = op ส่งขึ้น
+  //         คีย์ที่ server ไม่มีทั้งคีย์ + เครื่องมีค่า = op ส่งขึ้นทั้งคีย์ (ทุกครั้งที่อ่าน)
+  //   · ผู้ใช้แก้ (writeSetting): เขียนเครื่องทันที + op ของจุดที่เปลี่ยน { path, value | del, base = ค่าเดิมในเครื่อง, at }
+  //       → หน่วง ~0.8 วิ → GET สด → สำเนาเอกสาร server ทุกคีย์ → ใช้ op ทีละตัวบนสำเนา → normalize → PUT
+  //       (ไม่เคยเอาค่าในเครื่องทั้งก้อนไปทับ — ฐานในเครื่องเก่า/ว่างก็ไม่ลบค่าอื่นของ server)
+  //       op ชน = ค่าปัจจุบันที่จุดนั้น (ของ server + op ก่อนหน้าในคิว) ≠ base และ server.updatedAt ใหม่กว่า op.at
+  //         → ทิ้ง op ใช้ค่า server + ข้อความหนึ่งบรรทัด
+  //       op ที่ส่งค่าที่มีแต่ในเครื่อง (merge: รวมครั้งแรก / คีย์ที่ server ไม่มี) ไม่ใช้กติกาเวลา: server มีค่าที่จุดนั้นแล้ว
+  //         = server ชนะ (ทั้งคีย์ → รวมรายตัว เพิ่มเฉพาะส่วนที่มีแต่ในเครื่อง) + ข้อความถ้ามีส่วนของเครื่องนี้ถูกทิ้ง
+  //       ค่าของ server ตรงกับ op แล้ว = ทิ้งเงียบ ๆ (เช่นอีกแท็บส่งไปแล้ว)
+  //       ทีละรอบ · แก้ระหว่างส่ง = ส่งต่ออีกรอบ · สำเร็จ = ลบเฉพาะ op ที่รอบนี้ส่ง (op ของแท็บอื่นยังอยู่)
+  //       ล้ม = ค่าอยู่ในเครื่อง + ข้อความ + op ค้าง (ข้ามการปิดหน้า) → ลองใหม่ตอนแก้ครั้งถัดไป / กลับมาที่หน้า
+  //       400 / เอกสารบน server อ่านไม่ออก = ข้อความ + console.error ไม่ลองซ้ำเอง (แก้ค่าครั้งถัดไป = ลองอีกครั้ง)
+  //   · กลับมาที่แท็บ (refreshOnFocus ตัวเดิม): มี op ค้าง = ลองส่ง · ไม่งั้นอ่านใหม่ (ห่างครั้งก่อน > 30 วิ) แล้วรับของที่ต่าง
+  //       วาดผ่าน renderWhenIdle (พิมพ์อยู่ = รอ focusout)
+  function isObj(v) { return !!v && typeof v === "object" && !Array.isArray(v); }
+  function hasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  // "__proto__" มาเป็นคีย์ได้จาก JSON.parse แต่หน้าเขียนลงไม่ได้ (กลายเป็นเปลี่ยน prototype) — server ปฏิเสธ หน้าก็ทิ้ง
+  function okTickerKey(k) { return typeof k === "string" && k.length > 0 && k.length <= PM_KEY_MAX_LEN && k !== "__proto__"; }
+  function okNum(v, lo, hi, loOpen) { return typeof v === "number" && isFinite(v) && (loOpen ? v > lo : v >= lo) && v <= hi; }
+  function pickTierNums(o) {
+    var d = {};
+    for (var f in o) if (hasOwn(o, f) && PM_TIER_FIELDS.indexOf(f) >= 0 && okNum(o[f], 0, 100)) d[f] = o[f];
+    return d;
+  }
+  function pickTicks(o) {
+    var d = {};
+    for (var n in o) if (hasOwn(o, n) && /^\d{1,3}$/.test(n) && o[n] === true) d[n] = true;
+    return d;
+  }
+  // ค่าหนึ่งคีย์ → รูปที่ server รับ (กติกาเดียวกับ lib/pm-settings-validation.js) · ส่วนที่ผิดรูปถูกตัดทิ้ง (หน้าเองก็ไม่ใช้ส่วนนั้น)
+  //   ลำดับคีย์เดิมคงไว้ · ค่าที่หน้าเขียนเองผ่านออกมาเหมือนเดิมทุกตัว · คืน undefined = คีย์นี้ไม่มีค่าที่ส่งได้
+  function normalizePmSetting(key, v) {
+    var out, k, x;
+    if (key === "megaStance") return v === "bullish" || v === "bearish" ? v : undefined;
+    if (!isObj(v)) return undefined;
+    if (key === "tierConfig") {
+      out = { map: {}, tiers: {} };
+      if (isObj(v.map)) for (k in v.map) if (hasOwn(v.map, k) && okTickerKey(k) && PM_TIER_KEYS.indexOf(v.map[k]) >= 0) out.map[k] = v.map[k];
+      if (isObj(v.tiers)) for (k in v.tiers) if (hasOwn(v.tiers, k) && PM_TIER_KEYS.indexOf(k) >= 0 && isObj(v.tiers[k])) out.tiers[k] = pickTierNums(v.tiers[k]);
+      return out;
+    }
+    if (key === "entryProgress") {
+      out = {};
+      for (k in v) if (hasOwn(v, k) && okTickerKey(k) && isObj(v[k])) out[k] = pickTicks(v[k]);
+      return out;
+    }
+    if (key === "allocPolicy") {
+      out = {};
+      for (k in v) {
+        if (!hasOwn(v, k)) continue;
+        x = v[k];
+        if (k === "indexTicker") {
+          x = typeof x === "string" ? x.toUpperCase().replace(PM_NOT_TICKER_CHARS, "").slice(0, PM_KEY_MAX_LEN) : "";
+          if (x) out[k] = x;
+        }
+        else if (k === "indexPct") { if (okNum(x, 0, 100)) out[k] = x; }
+        else if (k === "maxSinglePct") { if (okNum(x, 0, 100, true)) out[k] = x; }
+        else if (k === "splitMethod") { if (x === "equal" || x === "conviction") out[k] = x; }
+      }
+      return out;
+    }
+    return undefined;
+  }
+  function rawLocal(store) { try { return localStorage.getItem(store); } catch (e) { return null; } }
+  // ค่าในเครื่องของคีย์หนึ่ง (รูปที่ส่งได้) · undefined = ไม่มีค่า
+  function localPmValue(s) {
+    var raw = rawLocal(s.store), v;
+    if (raw == null) return undefined;
+    try { v = JSON.parse(raw); } catch (e) { return undefined; }
+    return v == null ? undefined : normalizePmSetting(s.key, v);
+  }
+  function pmSettingOf(store) {
+    for (var i = 0; i < PM_SETTINGS.length; i++) if (PM_SETTINGS[i].store === store) return PM_SETTINGS[i];
+    return null;
+  }
+  function pmSettingByKey(key) {
+    for (var i = 0; i < PM_SETTINGS.length; i++) if (PM_SETTINGS[i].key === key) return PM_SETTINGS[i];
+    return null;
+  }
+  function cloneJson(v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); }
+  // ค่าที่ path ใต้ค่าของคีย์หนึ่ง · null = ไม่มี (ค่าจริงที่ path ไม่เคยเป็น null)
+  function valueAtPath(root, path) {
+    var cur = root;
+    for (var i = 0; i < path.length; i++) {
+      if (!isObj(cur) || !hasOwn(cur, path[i])) return null;
+      cur = cur[path[i]];
+    }
+    return cur === undefined ? null : cur;
+  }
+  // ใช้ op หนึ่งตัวกับค่าของคีย์ (ไม่แก้ตัวเดิม — คืนสำเนา) · path [] = ทั้งคีย์
+  function applyPmOp(root, op) {
+    if (!op.path.length) return op.del ? undefined : cloneJson(op.value);
+    var out = isObj(root) ? cloneJson(root) : {}, cur = out, k;
+    for (var i = 0; i < op.path.length - 1; i++) {
+      k = op.path[i];
+      if (!isObj(cur[k]) || !hasOwn(cur, k)) { if (op.del) return out; cur[k] = {}; }
+      cur = cur[k];
+    }
+    k = op.path[op.path.length - 1];
+    if (op.del) delete cur[k]; else cur[k] = cloneJson(op.value);
+    return out;
+  }
+  function pmOpDone(op, cur) { return op.del ? cur === null : stableJson(cur) === stableJson(op.value); }
+  function isPmOp(op) {
+    if (!isObj(op) || typeof op.id !== "string" || !op.id || typeof op.at !== "string" || !pmSettingByKey(op.key) || !Array.isArray(op.path)) return false;
+    for (var i = 0; i < op.path.length; i++) if (typeof op.path[i] !== "string" || !op.path[i] || op.path[i] === "__proto__") return false;
+    return op.del === true ? op.path.length > 0 : hasOwn(op, "value");
+  }
+  var pmOpSeq = 0;
+  function newPmOpId() { pmOpSeq++; return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8) + "-" + pmOpSeq; }
+  // คิว op อยู่ใน localStorage (ใช้ร่วมทุกแท็บ · ข้ามการปิดหน้า) — อ่านสดทุกครั้ง · เขียนไม่ได้ = เก็บในหน่วยความจำของแท็บนี้
+  var pmOpsMem = null;
+  function readPmOps() {
+    if (pmOpsMem) return pmOpsMem.slice();
+    try {
+      var p = JSON.parse(localStorage.getItem(PM_PENDING_KEY) || "null");
+      return p && Array.isArray(p.ops) ? p.ops.filter(isPmOp) : [];
+    } catch (e) { return []; }
+  }
+  function writePmOps(list) {
+    try {
+      if (list.length) localStorage.setItem(PM_PENDING_KEY, JSON.stringify({ ops: list }));
+      else localStorage.removeItem(PM_PENDING_KEY);
+      pmOpsMem = null;
+    } catch (e) { pmOpsMem = list.slice(); }
+  }
+  function addPmOps(ops) { if (ops.length) writePmOps(readPmOps().concat(ops)); }
+  // ลบเฉพาะ id ที่ให้มา (op ที่แท็บอื่นเพิ่มระหว่างนั้นยังอยู่)
+  function removePmOps(ids) {
+    if (!ids.length) return;
+    var gone = {};
+    ids.forEach(function (id) { gone[id] = true; });
+    writePmOps(readPmOps().filter(function (op) { return !gone[op.id]; }));
+  }
+  function hasPmPending() { return readPmOps().length > 0; }
+  // จุดเขียนค่าตั้งทุกจุดของผู้ใช้: localStorage ทันที (UI ตอบเร็ว) → ค่าเปลี่ยนจริง = op ของจุดนั้น + ตั้งคิวบันทึก server
+  //   path = ตำแหน่งใต้คีย์ที่เปลี่ยน ([] = ทั้งคีย์ เช่น megaStance) · del = ลบจุดนั้น (เอาติ๊ก entry ออก)
+  function writeSetting(store, v, path, del) {
+    var s = pmSettingOf(store), beforeRaw = rawLocal(store), before = null;
+    try { before = beforeRaw == null ? null : JSON.parse(beforeRaw); } catch (e) { before = null; }
+    writeJson(store, v);
+    if (!s || rawLocal(store) === beforeRaw) return;   // ค่าเดิม (หรือเขียนไม่ได้) — ไม่มีอะไรต้องส่ง
+    var op = { id: newPmOpId(), key: s.key, path: path.slice(), base: valueAtPath(before, path), at: new Date().toISOString() };
+    if (del) op.del = true;
+    else {
+      op.value = valueAtPath(v, path);
+      if (op.value === null) return;
+    }
+    addPmOps([op]);
+    pmSync.superseded = false;   // ข้อความ "ค่าที่ใหม่กว่า" เป็นของรอบก่อน — setter วาดใหม่ต่อจากนี้อยู่แล้ว
+    schedulePmSave();
+  }
+  // backup ค่าในเครื่องชุดเดิม (ครั้งเดียวต่อเครื่อง — มีแล้วไม่เขียนทับ) · มี backup = รับของ server ครั้งแรกไปแล้ว
+  function hasPmBackup() { return rawLocal(PM_BACKUP_KEY) != null; }
+  function writePmBackup() {
+    if (hasPmBackup()) return;
+    var values = {};
+    PM_SETTINGS.forEach(function (s) {
+      var raw = rawLocal(s.store), v = null;
+      try { v = raw == null ? null : JSON.parse(raw); } catch (e) { v = raw; }
+      values[s.key] = v;
+    });
+    try { localStorage.setItem(PM_BACKUP_KEY, JSON.stringify({ savedAt: new Date().toISOString(), values: values })); } catch (e) { /* ignore */ }
+  }
+  // op ที่ "ส่งค่าที่มีแต่ในเครื่องขึ้นไป" (รวมครั้งแรก / คีย์ที่ server ไม่มี) — ไม่ใช่การกดของผู้ใช้ → merge: true
+  //   ตอนส่ง: server ยังไม่มีค่าที่จุดนั้น = ใส่ · มีแล้ว = server ชนะเสมอ (ไม่ใช้กติกาเวลา) — ทั้งคีย์ = รวมรายตัวแบบเดียวกับครั้งแรก
+  function mergeOp(key, path, value, at) { return { id: newPmOpId(), key: key, path: path, value: cloneJson(value), base: null, at: at, merge: true }; }
+  // รวมค่าของเครื่องนี้ (mine) เข้ากับค่าที่ server มี (theirs) รายตัว: ชนกัน = server ชนะ (lost = มีส่วนของเครื่องนี้ถูกทิ้ง)
+  //   มีแต่ในเครื่อง = adds [[path, value]] · tierConfig: รายหุ้นใน map · ราย tier ใน tiers · entryProgress: รายหุ้น
+  //   (หุ้น/tier ที่ว่างไม่นับ) · allocPolicy: รายฟิลด์ · megaStance: ค่าเดียว (ต่าง = lost)
+  function pmMergeEntries(key, mine, theirs) {
+    var adds = [], lost = false;
+    mine = normalizePmSetting(key, mine);
+    theirs = normalizePmSetting(key, theirs);
+    if (mine === undefined) return { adds: adds, lost: false };
+    if (theirs === undefined) return { adds: [[[], mine]], lost: false };
+    function each(obj, prefix, skipEmpty) {
+      Object.keys(obj).forEach(function (k) {
+        if (skipEmpty && !Object.keys(obj[k]).length) return;
+        var p = prefix.concat([k]), have = valueAtPath(theirs, p);
+        if (have === null) adds.push([p, obj[k]]);
+        else if (stableJson(have) !== stableJson(obj[k])) lost = true;
+      });
+    }
+    if (key === "tierConfig") { each(mine.map, ["map"], false); each(mine.tiers, ["tiers"], true); }
+    else if (key === "entryProgress") each(mine, [], true);
+    else if (key === "allocPolicy") each(mine, [], false);
+    else lost = stableJson(mine) !== stableJson(theirs);
+    return { adds: adds, lost: lost };
+  }
+  // รับของ server ครั้งแรกของเครื่องนี้: รวมรายตัว — ชนกัน = server ชนะ (ค่าเดิมอยู่ใน backup) · มีแต่ในเครื่อง = op
+  //   (คีย์ที่ server ไม่มีทั้งคีย์ → pmMissingKeyOps · megaStance ที่ server มีแล้ว = ของ server)
+  function pmFirstAdoptOps(data) {
+    var out = [], at = new Date().toISOString();
+    ["tierConfig", "entryProgress", "allocPolicy"].forEach(function (key) {
+      var local = localPmValue(pmSettingByKey(key));
+      if (local === undefined || !hasOwn(data, key)) return;
+      pmMergeEntries(key, local, data[key]).adds.forEach(function (a) { out.push(mergeOp(key, a[0], a[1], at)); });
+    });
+    return out;
+  }
+  // คีย์ที่ server ไม่มีทั้งคีย์ แต่เครื่องนี้มีค่า → op ส่งขึ้นทั้งคีย์ (มี op ทั้งคีย์ค้างอยู่แล้ว = ไม่เพิ่มซ้ำ)
+  function pmMissingKeyOps(data, existing) {
+    var out = [], at = new Date().toISOString();
+    PM_SETTINGS.forEach(function (s) {
+      if (hasOwn(data, s.key)) return;
+      if (existing.some(function (op) { return op.key === s.key && !op.path.length; })) return;
+      var v = localPmValue(s);
+      if (v !== undefined) out.push(mergeOp(s.key, [], v, at));
+    });
+    return out;
+  }
+  function schedulePmSave() {
+    if (pmSync.timer) clearTimeout(pmSync.timer);
+    pmSync.timer = setTimeout(function () { pmSync.timer = null; syncPmSettings(true); }, PM_SAVE_DELAY_MS);
+  }
+  function pmErr(kind, msg) { var e = new Error(msg); e.pmKind = kind; return e; }
+  // อ่าน (+ ย้าย / ส่ง op ที่ค้าง) หนึ่งรอบ — ทีละรอบ · fromSave = มาจากการแก้ของผู้ใช้ (รอบค้างอยู่ = จำไว้ทำต่อ)
+  function syncPmSettings(fromSave) {
+    if (pmSync.busy) { if (fromSave) pmSync.again = true; return; }
+    if (pmSync.timer) { clearTimeout(pmSync.timer); pmSync.timer = null; }
+    pmSync.busy = true;
+    pmSync.again = false;
+    var sent = null;        // id ของ op ที่ PUT รอบนี้ครอบไว้ (สำเร็จ = ลบออกจากคิว) · null = รอบนี้ไม่ได้ PUT
+    var stage = "get";
+    var superseded = false; // รอบนี้ทิ้ง op ที่ชนกับค่าที่ใหม่กว่าจากเครื่องอื่น
+    var p;
+    try { p = window.fetch(PM_DOC_URL, { cache: "no-store" }); } catch (e) { p = Promise.reject(e); }
+    p.then(function (r) {
+      if (!r || !r.ok) throw pmErr("failed", "GET " + PM_DOC_URL + " HTTP " + (r ? r.status : "?"));
+      return r.json();
+    }).then(function (j) {
+      if (!isObj(j) || !hasOwn(j, "data")) throw pmErr("failed", "GET " + PM_DOC_URL + ": no data field");
+      pmSync.fetchedAt = Date.now();
+      pmSync.readOk = true;
+      var data = j.data, next, ops;
+      if (data != null && (!isObj(data) || data.v !== 1)) throw pmErr("unknown", "PM settings on the server are not a v1 doc — left untouched");
+      if (data == null) {
+        // server ยังไม่มีเอกสาร → ย้ายค่าในเครื่องทั้งชุดขึ้นไปครั้งเดียว (ค่าในเครื่องรวม op ที่ค้างแล้ว)
+        next = { v: 1 };
+        ops = readPmOps();
+        var any = false;
+        PM_SETTINGS.forEach(function (s) {
+          var v = localPmValue(s);
+          if (v === undefined) {
+            ops.forEach(function (op) { if (op.key === s.key) v = applyPmOp(v, op); });
+            if (v !== undefined) v = normalizePmSetting(s.key, v);
+          }
+          if (v !== undefined) { next[s.key] = v; any = true; }
+        });
+        var allIds = ops.map(function (op) { return op.id; });
+        if (!any) { removePmOps(allIds); return null; }   // ทั้ง server และเครื่องนี้ยังไม่มีค่าตั้ง
+        sent = allIds;
+      } else {
+        if (!hasPmBackup()) {
+          // รับของ server ครั้งแรกของเครื่องนี้: backup ค่าเดิมก่อนจะถูกทับ แล้วรวมรายตัว
+          writePmBackup();
+          addPmOps(pmFirstAdoptOps(data));
+        }
+        addPmOps(pmMissingKeyOps(data, readPmOps()));
+        ops = readPmOps();
+        if (!ops.length) return { adopt: data };
+        var serverAt = Date.parse(data.updatedAt), applied = [], dropped = [], touched = {};
+        next = {};
+        Object.keys(data).forEach(function (k) { next[k] = data[k]; });   // ทุกคีย์ของ server (เครื่องอื่นแก้) เป็นฐาน
+        ops.forEach(function (op) {
+          // ค่าปัจจุบันที่จุดนั้น = ของ server + op ก่อนหน้าในคิวที่ใช้ไปแล้ว (แก้จุดเดิมหลายครั้ง เช่น C→A→B: op ตัวหลังมี base = A
+          //   ต้องเทียบกับ A ที่ op ตัวแรกเพิ่งใส่ ไม่ใช่ C ของ server — ไม่งั้นแค่อีกเครื่องแก้คีย์อื่นก็ทำให้ op ตัวหลังถูกทิ้ง)
+          var running = valueAtPath(hasOwn(next, op.key) ? next[op.key] : null, op.path), opAt = Date.parse(op.at);
+          if (pmOpDone(op, running)) { dropped.push(op.id); return; }   // ค่าตรงกับ op แล้ว (อีกแท็บ/อีกเครื่องตั้งค่าเดียวกัน) — ทิ้งเงียบ ๆ
+          if (op.merge && running !== null) {
+            // ส่งค่าที่มีแต่ในเครื่อง แต่ server มีค่าที่จุดนั้นแล้ว (อีกเครื่องสร้างระหว่างนั้น — เวลาใดก็ตาม) → ไม่ทับ:
+            //   ทั้งคีย์ = รวมรายตัว (server ชนะ · ส่วนที่มีแต่ในเครื่องเพิ่มเข้าไป) · รายตัว = ของ server
+            var mg = op.path.length ? { adds: [], lost: true } : pmMergeEntries(op.key, op.value, running);
+            if (mg.lost) superseded = true;
+            if (!mg.adds.length) { dropped.push(op.id); return; }
+            mg.adds.forEach(function (a) { next[op.key] = applyPmOp(next[op.key], { path: a[0], value: a[1] }); });
+            touched[op.key] = true;
+            applied.push(op.id);
+            return;
+          }
+          if (!op.merge && stableJson(running) !== stableJson(op.base) && isFinite(serverAt) && isFinite(opAt) && serverAt > opAt) {
+            dropped.push(op.id);   // อีกเครื่องเปลี่ยนจุดนี้หลังการแก้ที่ค้าง → ใช้ค่าของ server
+            superseded = true;
+            return;
+          }
+          next[op.key] = applyPmOp(next[op.key], op);
+          touched[op.key] = true;
+          applied.push(op.id);
+        });
+        Object.keys(touched).forEach(function (k) {
+          var nv = normalizePmSetting(k, next[k]);
+          if (nv === undefined) delete next[k]; else next[k] = nv;
+        });
+        if (!applied.length) { removePmOps(dropped); return { adopt: data }; }
+        sent = applied.concat(dropped);
+      }
+      next.v = 1;
+      next.updatedAt = new Date().toISOString();
+      stage = "put";
+      return window.fetch(PM_DOC_URL, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ data: next })
+      }).then(function (r2) {
+        if (r2 && r2.status === 400) throw pmErr("rejected", "PUT " + PM_DOC_URL + " HTTP 400 — the server refused the settings doc");
+        if (!r2 || !r2.ok) throw pmErr("failed", "PUT " + PM_DOC_URL + " HTTP " + (r2 ? r2.status : "?"));
+        return { adopt: next };
+      });
+    }).then(function (res) {
+      pmSync.busy = false;
+      if (sent) removePmOps(sent);   // เฉพาะ op ที่รอบนี้ส่ง — op ที่เพิ่มระหว่างส่ง (แท็บนี้/แท็บอื่น) ยังค้างอยู่
+      setPmUi({ status: null, readFailed: false, superseded: pmSync.superseded || superseded });
+      if (res && res.adopt) adoptPmDoc(res.adopt);
+      if (pmSync.again && hasPmPending()) syncPmSettings(true);
+    }, function (e) {
+      pmSync.busy = false;
+      var again = pmSync.again;
+      pmSync.again = false;
+      var kind = (e && e.pmKind) || "failed";
+      // แก้ค่าระหว่างรอบที่ล้ม = คำขอใหม่ของผู้ใช้ → ตั้งคิวหนึ่งครั้ง (ไม่ใช่การวนลองเอง)
+      if (again && hasPmPending()) schedulePmSave();
+      var readFailed = kind === "failed" && stage === "get" && !pmSync.readOk;
+      // อ่านอย่างเดียว (ไม่มี op ค้าง · ไม่ได้ย้าย) แล้วติดต่อไม่ได้ → ใช้ค่าในเครื่องต่อ · ยังไม่เคยอ่านได้ = ข้อความเบา ๆ
+      if (kind === "failed" && stage === "get" && !hasPmPending()) { setPmUi({ readFailed: readFailed }); return; }
+      if (kind !== "failed") { try { console.error("[AI Portfolio Manager] " + (e && e.message)); } catch (x) { /* ignore */ } }
+      setPmUi({ status: kind, readFailed: readFailed || (pmSync.readFailed && !pmSync.readOk) });
+    });
+  }
+  // เอกสารบน server → cache ในเครื่อง = ค่าของ server + op ที่ค้าง (อ่านจาก localStorage — รวม op ของแท็บอื่น)
+  //   คีย์ที่ server ไม่มี = คงค่าในเครื่อง (ส่งขึ้นผ่าน pmMissingKeyOps)
+  function adoptPmDoc(doc) {
+    if (!isObj(doc)) return;
+    var ops = readPmOps(), changed = false;
+    PM_SETTINGS.forEach(function (s) {
+      if (!hasOwn(doc, s.key)) return;
+      var v = normalizePmSetting(s.key, doc[s.key]);
+      if (v === undefined) return;
+      ops.forEach(function (op) { if (op.key === s.key) v = applyPmOp(v, op); });
+      v = normalizePmSetting(s.key, v);
+      if (v === undefined) return;
+      var cur;
+      try { cur = JSON.parse(rawLocal(s.store) || "null"); } catch (e) { cur = null; }
+      if (cur != null && stableJson(cur) === stableJson(v)) return;
+      writeJson(s.store, v);
+      changed = true;
+    });
+    if (changed) renderWhenIdle();
+  }
+  // สถานะที่ข้อความใต้หัวหน้าใช้ (status · readFailed · superseded) — เปลี่ยนจริงเท่านั้นจึงวาดใหม่
+  function setPmUi(patch) {
+    var changed = false;
+    for (var k in patch) if (hasOwn(patch, k) && pmSync[k] !== patch[k]) { pmSync[k] = patch[k]; changed = true; }
+    if (changed) renderWhenIdle();
+  }
+  // กลับมาที่แท็บ: ค้างส่ง = ลองส่งอีกครั้ง (ยกเว้น server ปฏิเสธ / อ่านไม่ออก) · ไม่งั้นอ่านใหม่ถ้าห่างครั้งก่อน > 30 วิ
+  function refreshPmSettings() {
+    if (pmSync.busy || pmSync.timer) return;   // รอบที่ค้าง / ตั้งเวลาไว้ ได้เอกสารสดเองอยู่แล้ว
+    if (hasPmPending()) {
+      if (pmSync.status === "rejected" || pmSync.status === "unknown") return;
+      syncPmSettings(false);
+      return;
+    }
+    if (Date.now() - pmSync.fetchedAt > PM_REFRESH_MS) syncPmSettings(false);
+  }
+  // ข้อความเล็กใต้หัวหน้า (ไม่มีตัวเลขเงิน): บันทึกไม่สำเร็จ / server ปฏิเสธ / อ่านไม่ออก — หายเมื่อสำเร็จ
+  //   · ยังอ่านจาก server ไม่ได้สักครั้ง = ข้อความเบา ๆ · ทิ้ง op ที่ชนกับค่าที่ใหม่กว่า = หนึ่งบรรทัด (หายเมื่อแก้ครั้งถัดไป)
+  function pmSyncNoteHtml() {
+    var s = pmSync.status, out = "";
+    if (s) {
+      var txt = s === "rejected" ? PM_SYNC_REJECT_TH : (s === "unknown" ? PM_SYNC_UNKNOWN_TH : PM_SYNC_FAIL_TH);
+      out += '<div class="pm-stale" role="status" data-pm-settings-sync="' + s + '">⚠ ' + esc(txt) + "</div>";
+    } else if (pmSync.readFailed && !pmSync.readOk) {
+      out += '<div class="pm-stale" role="status" data-pm-settings-sync="offline"><span class="pm-dim">ⓘ ' + esc(PM_SYNC_OFFLINE_TH) + "</span></div>";
+    }
+    if (pmSync.superseded) out += '<div class="pm-stale" role="status" data-pm-settings-sync="superseded">ⓘ ' + esc(PM_SYNC_SUPERSEDED_TH) + "</div>";
+    return out;
   }
 
   // ---------------- positions (sleeve หุ้นต่างประเทศ = "AI portfolio") ----------------
@@ -661,7 +1090,7 @@
   function allocEditor(p) {
     return '<details class="pm-details pm-alloccfg" data-pv-skip="1"><summary>⚙️ ตั้งค่า index core</summary>' +
       '<div class="pm-allocrow"><label>Index ticker <input class="pm-alloc-inp" type="text" value="' + esc(p.indexTicker) + '" data-pm-alloc="indexTicker"></label></div>' +
-      '<small>ตัวที่ถือเป็นแกน index ของพอร์ต — ใช้แยกแถว index ออกจากหุ้นรายตัว (ค่าเก็บในเครื่อง)</small></details>';
+      '<small>ตัวที่ถือเป็นแกน index ของพอร์ต — ใช้แยกแถว index ออกจากหุ้นรายตัว (บันทึกบน server — ใช้ร่วมกันทุกเครื่อง)</small></details>';
   }
   // ---------------- S4: Accumulation Opportunities (Zone นำ Score รอง) ----------------
   // "Dip" = dipTiming ของ PMEngine (ยิ่งย่อยิ่งได้แต้ม) — คนละสูตรกับ Timing Score เทคนิคหน้าอื่น
@@ -794,7 +1223,7 @@
         '<div class="pm-entries">' + lad + "</div></article>";
     }).join("");
     return '<section class="pm-sec"><h2>🧰 Position Manager <small>(Entry Ladder — ระบบจำว่า deploy ไปแล้วขั้นไหน)</small></h2>' +
-      "<p>ติ๊ก ✓ เมื่อวางเงินจริงของ entry นั้นแล้ว — ระบบจะจำไว้ข้ามวัน และหักออกจากแผน Cash Deployment ด้านบน (เก็บในเครื่อง)</p>" +
+      "<p>ติ๊ก ✓ เมื่อวางเงินจริงของ entry นั้นแล้ว — ระบบจะจำไว้ข้ามวัน และหักออกจากแผน Cash Deployment ด้านบน (บันทึกบน server — ใช้ร่วมกันทุกเครื่อง)</p>" +
       (cards || '<div class="mc-empty">ยังไม่มีตำแหน่งที่มี Investment Thesis</div>') +
       tierEditor(out) + "</section>";
   }
@@ -808,7 +1237,7 @@
     }).join("");
     return '<details class="pm-details pm-tiercfg"><summary>⚙️ Master Position Size — ปรับกรอบ Tier ได้ (Min / Max % ของ sleeve)</summary>' +
       '<table class="pm-table"><thead><tr><th>Tier</th><th>Min</th><th>Max</th></tr></thead><tbody>' + rows + "</tbody></table>" +
-      "<small>เปลี่ยน Tier รายตัวได้ที่ตาราง Current Portfolio — ค่าเก็บในเครื่อง (localStorage)</small></details>";
+      "<small>เปลี่ยน Tier รายตัวได้ที่ตาราง Current Portfolio — บันทึกบน server (ใช้ร่วมกันทุกเครื่อง)</small></details>";
   }
 
   // ---------------- S7: Risk Management ----------------
@@ -1138,6 +1567,7 @@
   function refreshOnFocus() {
     if (document.hidden) return;
     if (Date.now() - psFetchedAt > 30000) ensurePortfolioFetched();
+    refreshPmSettings();   // ค่าตั้ง (?doc=pm): ค้างส่ง = ลองส่ง · ไม่งั้นอ่านใหม่ตามเกณฑ์ 30 วิ ของตัวเอง
   }
   // snapshot เขียนใหม่:
   //   · Load Latest Data (loadedAt ใหม่กว่า psCache) → ใช้สำเนาใน snapshot ที่สดกว่า
@@ -1185,7 +1615,7 @@
     if (!PM || !TE || !TD) { root.innerHTML = '<div class="mc-empty"><strong>Engine ไม่พร้อม</strong> — refresh หน้านี้</div>'; return; }
     var snapshot = readSnapshot();
     if (!snapshot) {
-      root.innerHTML = headerHtml() + '<div class="mc-empty"><strong>ยังไม่มี Data Snapshot</strong><br>กด Load Latest Data ก่อน — น้ำหนักพอร์ต/เทคนิค/Mega Trend ต้องใช้ข้อมูลจริง</div>';
+      root.innerHTML = headerHtml() + pmSyncNoteHtml() + '<div class="mc-empty"><strong>ยังไม่มี Data Snapshot</strong><br>กด Load Latest Data ก่อน — น้ำหนักพอร์ต/เทคนิค/Mega Trend ต้องใช้ข้อมูลจริง</div>';
       return;
     }
     snapshot = effectiveSnapshot(snapshot);
@@ -1198,10 +1628,10 @@
       megaStance: megaStance(),
       indexTicker: ap.indexTicker, indexPct: ap.indexPct, splitMethod: ap.splitMethod, maxSinglePct: ap.maxSinglePct
     });
-    if (!out.available) { root.innerHTML = '<div class="mc-empty">' + esc(out.reason || "ประเมินไม่ได้") + "</div>"; return; }
+    if (!out.available) { root.innerHTML = pmSyncNoteHtml() + '<div class="mc-empty">' + esc(out.reason || "ประเมินไม่ได้") + "</div>"; return; }
     state.out = out;
     intelMap = computeIntelMap(out, snapshot);
-    root.innerHTML = headerHtml() +
+    root.innerHTML = headerHtml() + pmSyncNoteHtml() +
       sectionOverview(out, inp) +
       sectionCurrent(out, inp) +
       sectionZones(out) +
@@ -1299,8 +1729,9 @@
   function boot() {
     render();
     ensurePortfolioFetched();   // เอกสารพอร์ตสด — snapshot.portfolioStatus เป็นแค่สำเนาตอน Load Latest Data
+    syncPmSettings(false);      // ค่าตั้งจาก server (?doc=pm) · ย้ายจากเครื่องครั้งแรก · ส่งค่าที่ค้างจากรอบก่อน
     if (bootDraft) persistCash(bootDraft.cash, bootDraft);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
-  window.PortfolioManagerPage = { render: render, persistCash: persistCash };
+  window.PortfolioManagerPage = { render: render, persistCash: persistCash, normalizePmSetting: normalizePmSetting };
 })();

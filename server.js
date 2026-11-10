@@ -4,6 +4,7 @@ const path = require("path");
 const { loadLocalEnv } = require("./local-env");
 const { isValidPortfolioData } = require("./lib/portfolio-validation");
 const { isValidJournalDoc, JOURNAL_STATE_ID } = require("./lib/journal-validation");
+const { isValidPmSettingsDoc, PM_STATE_ID } = require("./lib/pm-settings-validation");
 const { fetchWithTimeout, yahooChartJson } = require("./lib/http");
 const marketDataApiHandler = require("./api/price-history");
 const backtestApiHandler = require("./api/backtest");
@@ -26,6 +27,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const LOCAL_DATA_DIR = process.env.LOCAL_DATA_DIR ? path.resolve(process.env.LOCAL_DATA_DIR) : path.join(__dirname, ".local-data");
 const LOCAL_PORTFOLIO_FILE = path.join(LOCAL_DATA_DIR, "portfolio.json");
 const LOCAL_JOURNAL_FILE = path.join(LOCAL_DATA_DIR, "decision-journal.json");
+const LOCAL_PM_SETTINGS_FILE = path.join(LOCAL_DATA_DIR, "pm-settings.json");
 const LOCAL_AI_UNIVERSE_FILE = path.join(LOCAL_DATA_DIR, "ai-universe.json");
 const LOCAL_THAI_NAV_CACHE_FILE = path.join(LOCAL_DATA_DIR, "thai-fund-nav-cache.json");
 const LOCAL_MARKET_DATA_CACHE_FILE = path.join(LOCAL_DATA_DIR, "market-data-cache.json");
@@ -451,6 +453,35 @@ function writeLocalJournalData(data) {
   );
 }
 
+// AI Portfolio Manager settings local-fallback store (?doc=pm): same shape,
+// own file, so it never overwrites the portfolio or the journal file.
+// Only a missing file means "no doc yet" (null). A file that exists but can
+// not be read or parsed throws → handlePortfolio answers 500, so the page
+// never takes it for an empty server and migrates over it.
+function readLocalPmSettingsData() {
+  if (!fs.existsSync(LOCAL_PM_SETTINGS_FILE)) return null;
+  const raw = fs.readFileSync(LOCAL_PM_SETTINGS_FILE, "utf8");
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new Error("Local PM settings file is unreadable.");
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || !Object.prototype.hasOwnProperty.call(parsed, "data")) {
+    throw new Error("Local PM settings file is malformed.");
+  }
+  return parsed.data ?? null;
+}
+
+function writeLocalPmSettingsData(data) {
+  fs.mkdirSync(LOCAL_DATA_DIR, { recursive: true });
+  fs.writeFileSync(
+    LOCAL_PM_SETTINGS_FILE,
+    JSON.stringify({ data, updatedAt: new Date().toISOString() }, null, 2),
+    "utf8"
+  );
+}
+
 function sanitizeAiUniverseState(data) {
   const safe = data && typeof data === "object" ? data : {};
   const seen = new Set();
@@ -564,11 +595,13 @@ async function handlePortfolio(req, res) {
 
   try {
     // Mirrors api/portfolio.js (spec §6): `?doc=journal` addresses the Decision
-    // Journal (separate app_state row / local file, own validator); no `doc` is
-    // the portfolio blob with unchanged behaviour; any other value is rejected
-    // before any I/O. Keep this switch in sync with api/portfolio.js.
+    // Journal and `?doc=pm` the AI Portfolio Manager settings (each its own
+    // app_state row / local file and validator); no `doc` is the portfolio blob
+    // with unchanged behaviour; any other value is rejected before any I/O.
+    // Keep this switch in sync with api/portfolio.js.
     const doc = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`).searchParams.get("doc");
-    const unknownDoc = Boolean(doc) && doc !== "journal";
+    const unknownDoc = Boolean(doc) && doc !== "journal" && doc !== "pm";
+    const PM_REJECT = "Refusing to save: PM settings are malformed.";
 
     if (!useSupabase && ENABLE_LOCAL_FALLBACK) {
       if (unknownDoc) {
@@ -577,7 +610,7 @@ async function handlePortfolio(req, res) {
       }
 
       if (req.method === "GET") {
-        const data = doc === "journal" ? readLocalJournalData() : readLocalPortfolioData();
+        const data = doc === "journal" ? readLocalJournalData() : doc === "pm" ? readLocalPmSettingsData() : readLocalPortfolioData();
         sendJson(res, 200, { data, mode: "local-fallback" });
         return;
       }
@@ -590,6 +623,12 @@ async function handlePortfolio(req, res) {
             return;
           }
           writeLocalJournalData(body.data);
+        } else if (doc === "pm") {
+          if (!isValidPmSettingsDoc(body?.data)) {
+            sendJson(res, 400, { error: PM_REJECT });
+            return;
+          }
+          writeLocalPmSettingsData(body.data);
         } else {
           if (!isValidPortfolioData(body?.data)) {
             sendJson(res, 400, { error: "Refusing to save: portfolio data is empty or malformed." });
@@ -624,8 +663,9 @@ async function handlePortfolio(req, res) {
       return;
     }
 
+    const stateId = doc === "journal" ? JOURNAL_STATE_ID : doc === "pm" ? PM_STATE_ID : PORTFOLIO_STATE_ID;
+
     if (req.method === "GET") {
-      const stateId = doc === "journal" ? JOURNAL_STATE_ID : PORTFOLIO_STATE_ID;
       const endpoint = `${getSupabaseUrl()}/rest/v1/app_state?id=eq.${stateId}&select=data`;
       const response = await fetch(endpoint, { headers: portfolioHeaders() });
       if (!response.ok) throw new Error(await response.text());
@@ -641,11 +681,15 @@ async function handlePortfolio(req, res) {
           sendJson(res, 400, { error: "Refusing to save: journal data is malformed." });
           return;
         }
+      } else if (doc === "pm") {
+        if (!isValidPmSettingsDoc(body?.data)) {
+          sendJson(res, 400, { error: PM_REJECT });
+          return;
+        }
       } else if (!isValidPortfolioData(body?.data)) {
         sendJson(res, 400, { error: "Refusing to save: portfolio data is empty or malformed." });
         return;
       }
-      const stateId = doc === "journal" ? JOURNAL_STATE_ID : PORTFOLIO_STATE_ID;
       const endpoint = `${getSupabaseUrl()}/rest/v1/app_state`;
       const response = await fetch(endpoint, {
         method: "POST",

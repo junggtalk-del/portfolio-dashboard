@@ -213,7 +213,7 @@ function mkDom() {
 
 function boot(opts) {
   var o = opts || {};
-  var els = {}, puts = [], dispatched = [], listeners = {}, docListeners = {}, fetches = [], loadErrors = [], heldPuts = [], holdingsPuts = [];
+  var els = {}, puts = [], dispatched = [], listeners = {}, docListeners = {}, fetches = [], loadErrors = [], heldPuts = [], holdingsPuts = [], pmDocCalls = [];
   var store = o.store || {};
   var dom = mkDom();
   var gets = 0;
@@ -264,6 +264,13 @@ function boot(opts) {
         holdingsPuts.push(JSON.parse(init.body));
         if (flag("failHoldingsPut")) return respond(false, 500, { error: "boom" });
         return respond(true, 200, { ok: true });
+      }
+      // ค่าตั้งของหน้า (?doc=pm) เป็นเอกสารแยก — ไม่ใช่เอกสารพอร์ต · ชุดนี้ไม่มีค่าตั้งในเครื่อง → server ว่าง ไม่มีอะไรต้องย้าย
+      //   (พฤติกรรมของ ?doc=pm ล็อกที่ scripts/pm-settings-sync-test.js)
+      if (u === "/api/portfolio?doc=pm") {
+        pmDocCalls.push((init && init.method) || "GET");
+        if (init && init.method === "PUT") return respond(true, 200, { ok: true });
+        return respond(true, 200, { data: null });
       }
       if (/^\/api\/portfolio(\?|$)/.test(u)) {
         if (init && init.method === "PUT") {
@@ -332,7 +339,7 @@ function boot(opts) {
   });
   var getsAtMark = 0, putsAtMark = 0, fetchesAtMark = 0;
   var inst = {
-    win: win, els: els, puts: puts, store: store, dispatched: dispatched, fetches: fetches, loadErrors: loadErrors,
+    win: win, els: els, puts: puts, store: store, dispatched: dispatched, fetches: fetches, loadErrors: loadErrors, pmDocCalls: pmDocCalls,
     serverFixture: server, holdingsPuts: holdingsPuts, change: dom.change,
     snap: function () { return snapState; },
     snapWrites: function () { return snapWrites; },
@@ -384,8 +391,8 @@ function hasFromPM(body) { return JSON.stringify(body).indexOf("fromPM") >= 0; }
 function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || []).filter(function (a) { return a.type === "foreign-stock"; }); }
 
 (async function main() {
-  t("portfolio-manager.html: page pm-30 (editor-follows-pm Task 2 fix round 1 · quarter-ended hint) · css pm-13 · foreign-sleeve.js before the PM engine/page",
-    /portfolio-manager-page\.js\?v=20261109-pm-30"/.test(HTML) && /portfolio-manager\.css\?v=20261109-pm-13"/.test(HTML) &&
+  t("portfolio-manager.html: page pm-33 (PM settings on the server · ?doc=pm · per-change ops · merge uploads never overwrite) · css pm-13 · foreign-sleeve.js before the PM engine/page",
+    /portfolio-manager-page\.js\?v=20261110-pm-33"/.test(HTML) && /portfolio-manager\.css\?v=20261109-pm-13"/.test(HTML) &&
     HTML.indexOf("foreign-sleeve.js") > 0 && HTML.indexOf("foreign-sleeve.js") < HTML.indexOf("portfolio-manager-engine.js"));
   t("index.html loads app.js?v=20261109-app-13", /\/app\.js\?v=20261109-app-13"/.test(read("index.html")));
 
@@ -834,6 +841,9 @@ function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || [])
     ["function sectionCurrent", "function pieSvg", "function writeJson", "CVIEW_STORE"].every(function (k) { var i = SRC.indexOf(k); return i >= 0 && i < SRC.indexOf("  // ธงแดง/มูลค่าเปลี่ยนจาก Action Center"); }));
   t("CSS styles the cash box (.pm-cash-inp / .pm-cashbox)", /\.pm-cash-inp\s*\{/.test(css) && /\.pm-cashbox\s*\{/.test(css));
   t("every PUT this suite saw carried no fromPM", [MAIN, D, D2, R, F, N, L, SB, RW, QW, PW, HW, NW, EW, FW, ZW, YW].every(function (I) { return I.puts.every(function (p) { return !hasFromPM(p); }); }));
+  t("cash / row writes never touch the PM settings doc: ?doc=pm only read on load (no settings stored → never PUT)",
+    [MAIN, D, D2, R, F, N, L, SB, RW, QW, PW, HW, NW, EW, FW, ZW, YW].every(function (I) { return I.pmDocCalls.length >= 1 && I.pmDocCalls.every(function (m) { return m === "GET"; }); }),
+    MAIN.pmDocCalls);
   t("the row-sync note carries no money and no advisory words", ROW_FAIL_TH.indexOf("฿") < 0 && !/\d/.test(ROW_FAIL_TH) && !ADVISORY_TH.test(ROW_FAIL_TH) && !ADVISORY_EN.test(ROW_FAIL_TH));
 
   finish();
