@@ -611,15 +611,24 @@
     const snap = snapshot();
     const t = $("mcSnapTime"), pill = $("mcSnapPill");
     if (t) t.textContent = snap && snap.loadedAt ? new Date(snap.loadedAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
-    const fr = api && api.freshness ? api.freshness(snap) : null;
-    if (pill && fr) { pill.textContent = "● " + (fr.thai || fr.label); pill.className = "mc-pill " + (fr.key === "fresh" ? "mc-pill-fresh" : "mc-pill-stale"); }
+    // snapshot ที่บันทึกลงเบราว์เซอร์ไม่สำเร็จ (persistError) → บอกตรง ๆ แทน "ข้อมูลสด" (เปลี่ยนหน้าแล้วจะกลับเป็นชุดเก่า)
+    let notice = null;
+    try { notice = api && typeof api.persistNotice === "function" ? api.persistNotice(snap) : null; } catch (e) { notice = null; }
+    const fr = notice || (api && api.freshness ? api.freshness(snap) : null);
+    if (pill && fr) {
+      // บันทึกไม่ลง: pill แสดงป้ายสั้น ข้อความเต็มอยู่ใน title (หัวหน้าจอแคบแน่นอยู่แล้ว ไม่ดันปุ่ม Load หลุดจอ)
+      pill.textContent = "● " + (notice ? (notice.short || notice.thai) : (fr.thai || fr.label));
+      pill.className = "mc-pill " + (fr.key === "fresh" ? "mc-pill-fresh" : "mc-pill-stale");
+      if (notice && pill.setAttribute) pill.setAttribute("title", notice.thai);
+      else if (pill.removeAttribute) pill.removeAttribute("title");
+    }
   }
   async function loadLatest() {
     const api = window.PortfolioDataSnapshot;
     const btn = $("mcLoadLatest") || $("mcxLoad"), pill = $("mcSnapPill");
     if (!api || typeof api.loadLatestData !== "function") return;
     if (btn) { btn.disabled = true; btn.textContent = "Loading..."; }
-    if (pill) { pill.textContent = "● Loading"; pill.className = "mc-pill mc-pill-stale"; }
+    if (pill) { pill.textContent = "● Loading"; pill.className = "mc-pill mc-pill-stale"; if (pill.removeAttribute) pill.removeAttribute("title"); }
     try { await api.loadLatestData(); } catch (e) { if (btn) btn.textContent = "Load failed"; }
     finally { if (btn) { btn.disabled = false; window.setTimeout(() => { btn.textContent = "Load Latest Data"; }, 1600); } updateSnapBar(); render(); }
   }
@@ -635,6 +644,7 @@
   // Load Latest Data refreshed snapshot.portfolioStatus from the server — drop the
   // page-load fetch so the (equally fresh) snapshot copy takes over.
   window.addEventListener("portfolio-data-snapshot", () => { try { qpCache = null; updateSnapBar(); render(); } catch (e) {} });
+  window.addEventListener("portfolio-data-snapshot-persist-failed", () => { try { updateSnapBar(); } catch (e) {} });
   updateSnapBar();
   render();
 })();

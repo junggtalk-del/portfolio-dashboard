@@ -276,7 +276,8 @@ var ctx = vm.createContext(win);
 
 // โหลดสคริปต์ชุดเดียวกับที่ HTML โหลดจริง โดยอ่านลำดับจากตัว HTML เอง
 // (hardcode ลิสต์เคยทำให้เทสต์เขียวบนเส้นทางที่ไม่ใช่ของจริงมาแล้วในโปรเจกต์นี้)
-var SKIP = ["theme.js", "api-auth.js", "privacy.js", "app-navigation.js"];
+// big-cache.js (2026-11-10) = โครงของเปลือก app-navigation (cache ของ engine ที่เปลือกฉีดเข้าหน้า) — หน้านี้ไม่ได้ใช้เอง
+var SKIP = ["theme.js", "api-auth.js", "privacy.js", "big-cache.js", "app-navigation.js"];
 var HTML_SCRIPTS = (function () {
   var src = fs.readFileSync(PUB + "/thai-dr-monitor.html", "utf8");
   var out = [], re = /<script src="\/([A-Za-z0-9._-]+\.js)/g, m;

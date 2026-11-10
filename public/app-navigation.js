@@ -8,6 +8,19 @@
   const SNAPSHOT_STORAGE_KEY = "portfolio_dashboard_data_snapshot";
   const SNAPSHOT_DATA_VERSION = "2026-06-portfolio-dashboard-v1";
   const REQUIRED_SNAPSHOT_SYMBOLS = ["SPY", "QQQM", "XLK", "^GSPC", "^VIX", "^VVIX", "^VIXEQ", "BTC-USD", "^IXIC", "DX-Y.NYB", "^TNX", "GLD", "HYG", "^MOVE"];
+  const SNAPSHOT_PERSIST_WARNING = {
+    quota: "บันทึกข้อมูลลงเบราว์เซอร์ไม่สำเร็จ (พื้นที่เต็ม) — เปลี่ยนหน้าแล้วข้อมูลจะกลับเป็นชุดเก่า",
+    storage: "บันทึกข้อมูลลงเบราว์เซอร์ไม่สำเร็จ — เปลี่ยนหน้าแล้วข้อมูลจะกลับเป็นชุดเก่า"
+  };
+  // ป้ายสั้นบน pill (ข้อความเต็มอยู่ใน title) — หัวหน้าจอแคบไม่ถูกดันจนปุ่ม Load หลุดจอ
+  const SNAPSHOT_PERSIST_SHORT = { quota: "บันทึกไม่สำเร็จ (พื้นที่เต็ม)", storage: "บันทึกไม่สำเร็จ" };
+  function persistNoticeFor(reason) {
+    return reason ? {
+      key: "unsaved", reason,
+      thai: SNAPSHOT_PERSIST_WARNING[reason] || SNAPSHOT_PERSIST_WARNING.storage,
+      short: SNAPSHOT_PERSIST_SHORT[reason] || SNAPSHOT_PERSIST_SHORT.storage
+    } : null;
+  }
 
   function normalizePath(pathname) {
     const path = String(pathname || "/").replace(/\/+$/, "") || "/";
@@ -89,13 +102,43 @@
       return null;
     }
 
+    // Same persist contract as data-snapshot.js (2026-11-10): a failed setItem is never silent —
+    // drop the pure caches (BigCache.EVICTABLE_KEYS), retry once, else keep the memory copy, mark it
+    // (snapshot.persistError) and fire "portfolio-data-snapshot-persist-failed".
+    let persistError = null;
+    function isQuotaError(error) {
+      if (!error) return false;
+      return error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED" || error.code === 22 || error.code === 1014 ||
+        /quota/i.test(String(error.message || ""));
+    }
+    function persist(snapshot) {
+      if (snapshot && typeof snapshot === "object" && "persistError" in snapshot) delete snapshot.persistError;
+      let json;
+      try { json = JSON.stringify(snapshot); } catch (_error) { return "storage"; }
+      let firstError = null;
+      try { window.localStorage.setItem(SNAPSHOT_STORAGE_KEY, json); return null; } catch (error) { firstError = error; }
+      try { if (window.BigCache && typeof window.BigCache.evictLocalCaches === "function") window.BigCache.evictLocalCaches(window.localStorage); } catch (_error) {}
+      try { window.localStorage.setItem(SNAPSHOT_STORAGE_KEY, json); return null; } catch (error) {
+        return isQuotaError(error) || isQuotaError(firstError) ? "quota" : "storage";
+      }
+    }
+
     function write(snapshot) {
       memorySnapshot = snapshot;
-      try {
-        window.localStorage.setItem(SNAPSHOT_STORAGE_KEY, JSON.stringify(snapshot));
-      } catch (_error) {}
+      const failure = persist(snapshot);
+      persistError = failure;
+      if (failure && snapshot && typeof snapshot === "object") snapshot.persistError = failure;
       window.dispatchEvent(new CustomEvent("portfolio-data-snapshot", { detail: snapshot }));
+      if (failure) {
+        window.dispatchEvent(new CustomEvent("portfolio-data-snapshot-persist-failed", {
+          detail: { snapshot, snapshotId: snapshot && snapshot.snapshotId, reason: failure }
+        }));
+      }
       return snapshot;
+    }
+
+    function persistNotice(snapshot = read()) {
+      return persistNoticeFor(snapshot && snapshot.persistError);
     }
 
     function ageMinutes(snapshot = read()) {
@@ -398,6 +441,8 @@
       read,
       write,
       freshness,
+      persistNotice,
+      lastPersistError: () => persistError,
       ageMinutes,
       loadLatestData,
       retryFailed: () => loadLatestData({ retryFailed: true }),
@@ -420,10 +465,24 @@
     }
   }
 
+  // The snapshot could not be saved to the browser (snapshot.persistError) → the header must say so
+  // instead of "ข้อมูลสด" (the next page would show the previous snapshot).
+  function persistNoticeOf(api, snapshot) {
+    try { if (typeof api?.persistNotice === "function") return api.persistNotice(snapshot); } catch (_error) {}
+    return persistNoticeFor(snapshot && snapshot.persistError);
+  }
+  // the pill shows the short label; the full sentence lives in title (no money in it)
+  function setPillWarning(pill, text) {
+    if (!pill) return;
+    if (text) pill.setAttribute?.("title", text);
+    else pill.removeAttribute?.("title");
+  }
+
   function updateDataStatus(snapshot) {
     const api = ensureSnapshotApi();
     const current = snapshot || api?.read?.();
-    const fresh = api?.freshness?.(current) || { label: "No snapshot", thai: "ยังไม่มีข้อมูลล่าสุด", key: "missing" };
+    const notice = persistNoticeOf(api, current);
+    const fresh = notice || api?.freshness?.(current) || { label: "No snapshot", thai: "ยังไม่มีข้อมูลล่าสุด", key: "missing" };
     const loadedAt = document.querySelector("#appDataLoadedAt");
     const counts = document.querySelector("#appDataCounts");
     const freshness = document.querySelector("#appDataFreshness");
@@ -434,9 +493,10 @@
     const success = Math.max(0, total - failed);
     if (counts) counts.textContent = total ? `${success}/${total}${failed ? ` · ล้มเหลว ${failed}` : ""}` : "";
     if (freshness) {
-      freshness.textContent = `● ${fresh.thai}`;
+      freshness.textContent = `● ${notice ? (notice.short || notice.thai) : fresh.thai}`;
       freshness.dataset.freshness = fresh.key;
       freshness.className = "mc-pill " + (fresh.key === "fresh" ? "mc-pill-fresh" : "mc-pill-stale");
+      setPillWarning(freshness, notice ? notice.thai : "");
     }
     if (retry) retry.hidden = !failed;
   }
@@ -453,6 +513,7 @@
     if (freshness) {
       freshness.textContent = `● Step ${detail.step || "-"}/6`;
       freshness.className = "mc-pill mc-pill-stale";
+      setPillWarning(freshness, "");
     }
   }
 
@@ -489,6 +550,7 @@
     loadButton?.addEventListener("click", () => runLoad("all"));
     retryButton?.addEventListener("click", () => runLoad("retry"));
     window.addEventListener("portfolio-data-snapshot", (event) => updateDataStatus(event.detail));
+    window.addEventListener("portfolio-data-snapshot-persist-failed", (event) => updateDataStatus(event.detail && event.detail.snapshot));
     window.addEventListener("portfolio-data-snapshot-progress", (event) => updateProgress(event.detail));
   }
 
@@ -685,10 +747,13 @@
     ensureScript("/market-regime.js?v=20260715-regime-2");
     // Bitcoin Intelligence engine — available wherever Load Latest Data can run, so
     // the snapshot loader can extend snapshot.bitcoinIntelligence. Runs only on load.
-    ensureScript("/bitcoin-intelligence.js?v=20260704-btcintel-12");
+    // Both engines keep their big OHLC caches in IndexedDB via window.BigCache (big-cache.js, loaded
+    // statically on every page that loads this file, before it — scripts/big-cache-test.js checks it).
+    // They resolve window.BigCache lazily when Load Latest Data runs, so these async injections are safe.
+    ensureScript("/bitcoin-intelligence.js?v=20261110-btcintel-13");
     // Wave 3 Setup engine — available wherever Load Latest Data can run, so the snapshot
     // loader can extend snapshot.wave3. Reuses BitcoinIntelligence.Indicators; load after it.
-    ensureScript("/wave3-engine.js?v=20260711-w3-1");
+    ensureScript("/wave3-engine.js?v=20261110-w3-2");
 
     const activePath = window.location.pathname;
 

@@ -50,10 +50,18 @@
   function mUp(x, a, b) { if (a === b) return x >= a ? 1 : 0; const t = (x - a) / (b - a); return t < 0 ? 0 : t > 1 ? 1 : t; }
   function mBell(x, c, w) { const z = (x - c) / (w || 1); return Math.exp(-z * z); }
 
-  function storage() {
-    try { if (typeof window !== "undefined" && window.localStorage) return window.localStorage; } catch (e) {}
-    if (!storage._mem) { const m = {}; storage._mem = { getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; }
-    return storage._mem;
+  // History store: IndexedDB via window.BigCache (big-cache.js) under HISTORY_KEY — moved out of
+  // localStorage 2026-11-10 (~0.38M chars there, written during Load Latest Data before the snapshot,
+  // starved the snapshot of quota). No BigCache (Node / page without big-cache.js) → module memory,
+  // the same in-process fallback the old storage()._mem gave.
+  function historyStore() {
+    const bc = typeof window !== "undefined" ? window.BigCache : null;
+    if (bc && typeof bc.get === "function" && typeof bc.set === "function") return bc;
+    if (!historyStore._mem) {
+      const m = new Map();
+      historyStore._mem = { get: (k) => Promise.resolve(m.has(k) ? m.get(k) : null), set: (k, v) => { m.set(k, v); return Promise.resolve(true); } };
+    }
+    return historyStore._mem;
   }
 
   // ============================================================ Indicators
@@ -1261,17 +1269,17 @@
   };
 
   // ============================================================ History store (incremental)
-  function readColumnar() {
-    try { const raw = storage().getItem(HISTORY_KEY); if (!raw) return null; const o = JSON.parse(raw); if (o && Array.isArray(o.d) && o.d.length) return o; } catch (e) {}
+  async function readColumnar() {
+    try { const o = await historyStore().get(HISTORY_KEY); if (o && Array.isArray(o.d) && o.d.length) return o; } catch (e) {}
     return null;
   }
   function columnarToBars(o) {
     const out = []; for (let i = 0; i < o.d.length; i++) out.push({ date: o.d[i], open: o.o[i], high: o.h[i], low: o.l[i], close: o.c[i], volume: o.v[i] }); return out;
   }
-  function writeColumnar(bars) {
+  async function writeColumnar(bars) {
     const o = { d: [], o: [], h: [], l: [], c: [], v: [], updatedAt: new Date().toISOString() };
     for (const b of bars) { o.d.push(b.date); o.o.push(b.open); o.h.push(b.high); o.l.push(b.low); o.c.push(b.close); o.v.push(b.volume); }
-    try { storage().setItem(HISTORY_KEY, JSON.stringify(o)); } catch (e) { /* quota — engine still runs from in-memory bars */ }
+    try { await historyStore().set(HISTORY_KEY, o); } catch (e) { /* cache is best-effort — engine still runs from in-memory bars */ }
   }
   function mergeBars(oldBars, newBars) {
     const map = new Map();
@@ -1288,7 +1296,7 @@
     return bars;
   }
   async function ensureHistory(fetchFn) {
-    const cached = readColumnar();
+    const cached = await readColumnar();
     let bars = cached ? columnarToBars(cached) : [];
     let mode = "cache";
     try {
@@ -1299,7 +1307,7 @@
         const recent = await fetchOhlc(fetchFn, startInc);
         if (recent.length) { bars = mergeBars(bars, recent); mode = "incremental"; }
       }
-      if (bars.length) writeColumnar(bars);
+      if (bars.length) await writeColumnar(bars);
     } catch (e) {
       if (!bars.length) throw e; // no cache and fetch failed
       mode = "cache-only(" + (e && e.message ? e.message : "err") + ")";

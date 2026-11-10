@@ -228,7 +228,7 @@ t("editor: ไม่มี cash / holdings ว่าง / ไม่มีโม�
 console.log("== ซอร์ส ==");
 t("โค้ดที่เพิ่มไม่มีคำแนะนำซื้อขาย (รวมคอมเมนต์ในฟังก์ชันที่แก้)",
   !ADVISORY.test(grab(MC_SRC, fnRe("quarterlyPortfolio"), "q") + grab(MC_SRC, fnRe("portfolioSection"), "p") + grab(AC_SRC, fnRe("computeQuarterlyBuckets"), "c")));
-t("home.html โหลด mission-control-page.js?v=20261109-mc2-18 (final fix wave) · action-center.html โหลด action-center-page.js?v=20261109-zones-15",
-  /\/mission-control-page\.js\?v=20261109-mc2-18"/.test(read("home.html")) && /\/action-center-page\.js\?v=20261109-zones-15"/.test(read("action-center.html")));
+t("home.html โหลด mission-control-page.js?v=20261110-mc2-20 (mc2-19: หัวหน้าบอกเมื่อ snapshot บันทึกไม่ลง) · action-center.html โหลด action-center-page.js?v=20261109-zones-15",
+  /\/mission-control-page\.js\?v=20261110-mc2-20"/.test(read("home.html")) && /\/action-center-page\.js\?v=20261109-zones-15"/.test(read("action-center.html")));
 
 finish();

@@ -31,7 +31,8 @@
   // ============================================================
 
   var MOUNT_ID = "haRoot";
-  var CACHE_KEY = "home_rules_ohlc_v1";          // คงคีย์เดิมของการ์ดกฎ 3 ข้อ — ใช้ cache ร่วม
+  var CACHE_KEY = "home_rules_ohlc_v1";          // ชื่อเดิมของการ์ดกฎ 3 ข้อ — ตอนนี้เป็น prefix ของ record ละสัญลักษณ์ใน BigCache
+  var CACHE_PREFIX = CACHE_KEY + ":";
   var DOC_URL = "/api/portfolio?doc=journal";
   var DRAFT_KEY = "decision_journal_draft_v1";   // ร่างของ Decision Journal { doc, savedAt } — ใช้ร่วมกับหน้า journal (หน้านั้นส่งร่างเองตอนเปิด)
   var LAUNCH_KEY = "home_action_launched_v1";
@@ -244,21 +245,89 @@
   }
 
   // ---------------- ราคา: /api/ohlc + cache ในเครื่อง (คีย์เดียวกับ decision-journal: วัน + แท่งที่ปิด) ----------------
+  // ที่เก็บ cache (2026-11-10): window.BigCache (IndexedDB) record ละสัญลักษณ์ "home_rules_ohlc_v1:<SYM>" → entry รูปเดิม
+  //   { at, start, cutoff, sourceType, bars: แถวอัด } — ย้ายออกจาก localStorage เพราะก้อนเดียว ≈1M ตัวอักษร
+  //   กินโควตาจน Data Snapshot บันทึกไม่ลง (เปลี่ยนหน้าแล้วกลับเป็นชุดเก่า) · record ละตัว = ดึงขนานไม่แย่งเขียนก้อนเดียว
+  //   BigCache เป็น async → อ่าน/เขียน/ล้าง เป็น Promise · ไม่มี BigCache (หน้าไม่ได้โหลด big-cache.js) → memory ของหน้านี้
+  //   force refresh ล้างทุก record ใต้ prefix · ทุกการอ่านรอให้ล้างเสร็จก่อน (เท่ากับ removeItem ทันทีแบบเดิม)
+  //   MAX_CACHE_SYMBOLS: ตัดตัวที่ at เก่าสุดทิ้งตอนจบ refresh (ไม่มีงานเขียนค้าง — ไม่ลบของที่เพิ่งเขียน)
   function packBars(bars) { return bars.map(function (b) { return [b.date, b.open, b.high, b.low, b.close, b.volume]; }); }
   function unpackBars(rows) {
     return (rows || []).map(function (r) { return { date: r[0], open: r[1], high: r[2], low: r[3], close: r[4], volume: r[5] }; });
   }
-  function cacheRead() { try { var j = JSON.parse(lsGet(CACHE_KEY) || "{}"); return j && typeof j === "object" ? j : {}; } catch (e) { return {}; } }
-  function cacheWrite(sym, entry) {
-    var all = cacheRead();
-    all[sym] = entry;
-    var keys = [], k;
-    for (k in all) if (Object.prototype.hasOwnProperty.call(all, k)) keys.push(k);
-    if (keys.length > MAX_CACHE_SYMBOLS) {
-      keys.sort(function (a, b) { return String(all[a].at) < String(all[b].at) ? -1 : 1; });
-      while (keys.length > MAX_CACHE_SYMBOLS) delete all[keys.shift()];
+  function noop() { return undefined; }
+  var memStore = null;
+  function cacheStore() {
+    var bc = window.BigCache;
+    if (bc && typeof bc.get === "function" && typeof bc.set === "function" && typeof bc.del === "function" && typeof bc.keys === "function") return bc;
+    if (!memStore) {
+      var m = {};
+      memStore = {
+        get: function (k) { return Promise.resolve(Object.prototype.hasOwnProperty.call(m, "k:" + k) ? m["k:" + k] : null); },
+        set: function (k, v) { m["k:" + k] = v; return Promise.resolve(true); },
+        del: function (k) { delete m["k:" + k]; return Promise.resolve(true); },
+        keys: function (p) {
+          var out = [], k;
+          for (k in m) if (Object.prototype.hasOwnProperty.call(m, k) && k.slice(2).indexOf(p) === 0) out.push(k.slice(2));
+          return Promise.resolve(out.sort());
+        }
+      };
     }
-    lsSet(CACHE_KEY, JSON.stringify(all));
+    return memStore;
+  }
+  function attempt(fn) { try { return Promise.resolve(fn()); } catch (e) { return Promise.reject(e); } }
+  var cacheClearing = null;     // force refresh: การล้างที่กำลังทำ — อ่าน cache ทุกครั้งรอให้เสร็จก่อน
+  function cacheRead(sym) {
+    var st = cacheStore();
+    return (cacheClearing || Promise.resolve()).then(function () {
+      return attempt(function () { return st.get(CACHE_PREFIX + sym); });
+    }).then(function (v) { return v && typeof v === "object" ? v : null; }, function () { return null; });
+  }
+  function cacheWrite(sym, entry) {
+    var st = cacheStore();
+    return attempt(function () { return st.set(CACHE_PREFIX + sym, entry); }).then(noop, noop);
+  }
+  function cacheClear() {
+    var st = cacheStore();
+    var p = (cacheClearing || Promise.resolve()).then(function () {
+      return attempt(function () { return st.keys(CACHE_PREFIX); });
+    }).then(function (keys) {
+      var dels = [];
+      each(keys, function (k) { dels.push(attempt(function () { return st.del(k); }).then(noop, noop)); });
+      return Promise.all(dels);
+    }).then(noop, noop);
+    cacheClearing = p;
+    p.then(function () { if (cacheClearing === p) cacheClearing = null; });
+    return p;
+  }
+  // เก็บไม่เกิน MAX_CACHE_SYMBOLS record — ตัดตัวที่ at เก่าสุดก่อน (กติกาเดิม) · ทำทีละรอบ ขอซ้อน = ทำอีกรอบหลังจบ
+  var pruning = null, pruneAgain = false;
+  function cachePrune() {
+    if (pruning) { pruneAgain = true; return pruning; }
+    var st = cacheStore();
+    pruning = (cacheClearing || Promise.resolve()).then(function () {
+      return attempt(function () { return st.keys(CACHE_PREFIX); });
+    }).then(function (keys) {
+      keys = keys || [];
+      if (keys.length <= MAX_CACHE_SYMBOLS) return undefined;
+      var reads = [];
+      each(keys, function (k) {
+        reads.push(attempt(function () { return st.get(k); }).then(function (v) { return { k: k, at: v && v.at }; }, function () { return { k: k, at: undefined }; }));
+      });
+      return Promise.all(reads).then(function (list) {
+        list.sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : 1; });
+        var dels = [];
+        for (var i = 0; i < list.length - MAX_CACHE_SYMBOLS; i++) {
+          (function (k) { dels.push(attempt(function () { return st.del(k); }).then(noop, noop)); })(list[i].k);
+        }
+        return Promise.all(dels);
+      });
+    }).then(noop, noop).then(function () {
+      pruning = null;
+      if (pruneAgain) { pruneAgain = false; return cachePrune(); }
+      return undefined;
+    });
+    return pruning;
   }
   function cacheFits(c, start, ymd, cutoff) {
     return !!(c && c.at === ymd && c.cutoff === cutoff && c.start <= start && Array.isArray(c.bars));
@@ -292,22 +361,25 @@
     var now = nowBangkok(), ymd = now.slice(0, 10);
     var cutoff = E.closedBarCutoff(E.marketOf(sym), now);
     var start = E.ymdAdd(ymd, -HISTORY_DAYS);
-    var disk = cacheRead()[sym];
-    if (cacheFits(disk, start, ymd, cutoff)) return Promise.resolve({ ok: true, bars: unpackBars(disk.bars), sourceType: disk.sourceType || null, cached: true });
+    // คำขอเดียวต่อ (สัญลักษณ์ + วัน + แท่งที่ปิด) ครอบทั้งการอ่าน cache และการดึง — ลงทะเบียนทันที (sync) ก่อนรออะไร
     var key = sym + "|" + start + "|" + ymd + "|" + cutoff;
     if (barsInflight[key]) return barsInflight[key];
-    var url = "/api/ohlc?symbol=" + encodeURIComponent(E.providerSymbol(sym)) + "&start=" + start + "&_ts=" + wallClock().getTime();
-    var p = getJson(url).then(function (r) {
-      var body = r.body && typeof r.body === "object" ? r.body : {};
-      var bars = Array.isArray(body.bars) ? body.bars : null;
-      var notFound = !r.ok && typeof body.error === "string" && /\(404\)/.test(body.error);
-      if (!(r.ok && bars) && !notFound) {
-        return { ok: false, bars: [], sourceType: null, error: r.error || (typeof body.error === "string" ? body.error : "HTTP " + r.status) };
-      }
-      var got = notFound ? [] : bars;
-      var sourceType = notFound ? "NOT_FOUND" : (typeof body.sourceType === "string" ? body.sourceType : null);
-      cacheWrite(sym, { at: ymd, start: start, cutoff: cutoff, sourceType: sourceType, bars: packBars(got) });
-      return { ok: true, bars: got, sourceType: sourceType, notFound: notFound };
+    var p = cacheRead(sym).then(function (disk) {
+      if (cacheFits(disk, start, ymd, cutoff)) return { ok: true, bars: unpackBars(disk.bars), sourceType: disk.sourceType || null, cached: true };
+      var url = "/api/ohlc?symbol=" + encodeURIComponent(E.providerSymbol(sym)) + "&start=" + start + "&_ts=" + wallClock().getTime();
+      return getJson(url).then(function (r) {
+        var body = r.body && typeof r.body === "object" ? r.body : {};
+        var bars = Array.isArray(body.bars) ? body.bars : null;
+        var notFound = !r.ok && typeof body.error === "string" && /\(404\)/.test(body.error);
+        if (!(r.ok && bars) && !notFound) {
+          return { ok: false, bars: [], sourceType: null, error: r.error || (typeof body.error === "string" ? body.error : "HTTP " + r.status) };
+        }
+        var got = notFound ? [] : bars;
+        var sourceType = notFound ? "NOT_FOUND" : (typeof body.sourceType === "string" ? body.sourceType : null);
+        return cacheWrite(sym, { at: ymd, start: start, cutoff: cutoff, sourceType: sourceType, bars: packBars(got) }).then(function () {
+          return { ok: true, bars: got, sourceType: sourceType, notFound: notFound };
+        });
+      });
     });
     barsInflight[key] = p;
     function settle() { if (barsInflight[key] === p) delete barsInflight[key]; }
@@ -1209,7 +1281,7 @@
   function refresh(force) {
     var E = DJ(), HA = HAE();
     if (!E || !HA) return Promise.resolve();
-    if (force) { try { window.localStorage.removeItem(CACHE_KEY); } catch (e) { /* ไม่เป็นไร */ } }
+    if (force) cacheClear();   // ล้างทุก record ของกล่อง · การอ่าน cache ที่ตามมา (รอบนี้ + รอบที่ซ้อน) รอให้ล้างเสร็จก่อน
     var seq = ++runSeq;
     var uni = buildUniverse();
     var next = uni.map(function (u) {
@@ -1237,7 +1309,10 @@
       render();
       // การ์ดใช้ได้แล้ว · ราคาของสัญลักษณ์ในประวัติ (นอก universe) ดึงต่อหลังรู้เนื้อหาเอกสาร แล้ววาดสรุปใหม่
       var saved = afterLoad();
-      return Promise.all([saved, loadHistoryBars(seq)]).then(function (r) { return r[0]; });
+      return Promise.all([saved, loadHistoryBars(seq)]).then(function (r) {
+        cachePrune();   // จบรอบแล้ว (ไม่มีงานเขียนราคาค้างจากรอบนี้) → ตัด cache ให้เหลือ MAX_CACHE_SYMBOLS · ไม่ต้องรอ
+        return r[0];
+      });
     });
   }
   // ---------------- สรุปผล: ราคาของสัญลักษณ์ในประวัติ + outcomes ----------------

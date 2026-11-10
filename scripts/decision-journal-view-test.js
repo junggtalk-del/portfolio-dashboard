@@ -295,7 +295,8 @@ win.__DJ_NOW = "2026-10-25T12:00";
 var ctx = vm.createContext(win);
 
 // ---------- โหลดสคริปต์ชุดเดียวกับที่ HTML โหลดจริง ----------
-var SKIP = ["theme.js", "api-auth.js", "privacy.js", "app-navigation.js"];
+// big-cache.js (2026-11-10) = โครงของเปลือก app-navigation (cache ของ engine ที่เปลือกฉีดเข้าหน้า) — หน้านี้ไม่ได้ใช้เอง
+var SKIP = ["theme.js", "api-auth.js", "privacy.js", "big-cache.js", "app-navigation.js"];
 var DJ_HTML_PATH = path.join(PUB, "decision-journal.html");
 var DJ_HTML = null;
 try { DJ_HTML = fs.readFileSync(DJ_HTML_PATH, "utf8"); }
@@ -638,7 +639,7 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     var re = /<script src="([^"]+)"/g, m, out = [];
     while ((m = re.exec(body)) !== null) out.push(m[1]);
     return out.join("|") === ["/technical-indicators.js?v=20260617-action-priority", "/decision-journal-engine.js?v=20261030-dj-5",
-      "/decision-journal-page.js?v=20261106-dj-6", "/app-navigation.js?v=20261109-nav-28"].join("|");
+      "/decision-journal-page.js?v=20261106-dj-6", "/big-cache.js?v=20261110-bc-2", "/app-navigation.js?v=20261110-nav-30"].join("|");
   })());
   t("lang th + viewport", /<html lang="th">/.test(dj) && /name="viewport"[^>]*width=device-width/.test(dj));
 
@@ -752,9 +753,10 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     var pvRefs = htmls.filter(function (f) { return readPub(f).indexOf("privacy.js?v=") >= 0; });
     // nav-27 (dj-3): เอา PAGE_META ของ /decision-journal ออก — ทุกหน้าต้องโหลดไฟล์ใหม่ (เวอร์ชันเดียวทั้งเว็บ)
     // nav-28 (2026-11-09): ย้ายกลุ่ม Portfolio ไปต่อท้ายกลุ่ม AI Portfolio Manager
-    t("every HTML that references app-navigation.js uses 20261109-nav-28",
-      navRefs.length >= 19 && navRefs.every(function (f) { return /app-navigation\.js\?v=20261109-nav-28"/.test(readPub(f)) && !/app-navigation\.js\?v=(?!20261109-nav-28")/.test(readPub(f)); }),
-      navRefs.filter(function (f) { return !/app-navigation\.js\?v=20261109-nav-28"/.test(readPub(f)); }));
+    // nav-29 (2026-11-10): snapshot fallback ไม่ล้มเงียบเมื่อพื้นที่เต็ม + engine เวอร์ชัน BigCache
+    t("every HTML that references app-navigation.js uses 20261110-nav-30",
+      navRefs.length >= 19 && navRefs.every(function (f) { return /app-navigation\.js\?v=20261110-nav-30"/.test(readPub(f)) && !/app-navigation\.js\?v=(?!20261110-nav-30")/.test(readPub(f)); }),
+      navRefs.filter(function (f) { return !/app-navigation\.js\?v=20261110-nav-30"/.test(readPub(f)); }));
     t("every HTML that references privacy.js uses 20261025-pv-2",
       pvRefs.length >= 19 && pvRefs.every(function (f) { return /privacy\.js\?v=20261025-pv-2"/.test(readPub(f)) && !/privacy\.js\?v=(?!20261025-pv-2")/.test(readPub(f)); }),
       pvRefs.filter(function (f) { return !/privacy\.js\?v=20261025-pv-2"/.test(readPub(f)); }));

@@ -55,15 +55,63 @@
     return null;
   }
 
+  // ---- persist (2026-11-10): never fail silently ----
+  // localStorage quota is 5,242,880 chars per origin. A failed setItem used to be swallowed → the new
+  // snapshot lived only in memory and the next page load showed the previous one ("ข้อมูลเก่า").
+  // Now: on a setItem exception, drop the pure re-fetchable caches (BigCache.EVICTABLE_KEYS — never user
+  // data) and retry once; if it still fails, keep the in-memory copy but MARK it (snapshot.persistError)
+  // and fire "portfolio-data-snapshot-persist-failed" so the header says so instead of pretending.
+  const PERSIST_WARNING = {
+    quota: "บันทึกข้อมูลลงเบราว์เซอร์ไม่สำเร็จ (พื้นที่เต็ม) — เปลี่ยนหน้าแล้วข้อมูลจะกลับเป็นชุดเก่า",
+    storage: "บันทึกข้อมูลลงเบราว์เซอร์ไม่สำเร็จ — เปลี่ยนหน้าแล้วข้อมูลจะกลับเป็นชุดเก่า"
+  };
+  // ป้ายสั้นบน pill ของหัวหน้า (ข้อความเต็มอยู่ใน title) — หัวหน้าจอแคบไม่ถูกดันจนปุ่มหลุดจอ
+  const PERSIST_SHORT = { quota: "บันทึกไม่สำเร็จ (พื้นที่เต็ม)", storage: "บันทึกไม่สำเร็จ" };
+  let persistError = null;
+  function isQuotaError(error) {
+    if (!error) return false;
+    return error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED" || error.code === 22 || error.code === 1014 ||
+      /quota/i.test(String(error.message || ""));
+  }
+  function evictLocalCaches() {
+    try {
+      const bigCache = window.BigCache;
+      if (bigCache && typeof bigCache.evictLocalCaches === "function") return bigCache.evictLocalCaches(localStorage);
+    } catch (_error) {}
+    return [];
+  }
+  // null = stored · "quota" | "storage" = not stored
+  function persistSnapshot(snapshot) {
+    if (snapshot && typeof snapshot === "object" && "persistError" in snapshot) delete snapshot.persistError;
+    let json;
+    try { json = JSON.stringify(snapshot); } catch (_error) { return "storage"; }
+    let firstError = null;
+    try { localStorage.setItem(STORAGE_KEY, json); return null; } catch (error) { firstError = error; }
+    evictLocalCaches();
+    try { localStorage.setItem(STORAGE_KEY, json); return null; } catch (error) {
+      return isQuotaError(error) || isQuotaError(firstError) ? "quota" : "storage";
+    }
+  }
+
   function writeSnapshot(snapshot) {
     memorySnapshot = snapshot;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-    } catch (_error) {
-      // Keep in-memory snapshot when browser storage is unavailable.
-    }
+    const failure = persistSnapshot(snapshot);
+    persistError = failure;
+    if (failure && snapshot && typeof snapshot === "object") snapshot.persistError = failure;
     window.dispatchEvent(new CustomEvent("portfolio-data-snapshot", { detail: snapshot }));
+    if (failure) {
+      window.dispatchEvent(new CustomEvent("portfolio-data-snapshot-persist-failed", {
+        detail: { snapshot, snapshotId: snapshot && snapshot.snapshotId, reason: failure }
+      }));
+    }
     return snapshot;
+  }
+
+  // Header widgets: { key: "unsaved", reason, thai } when this snapshot could not be saved, else null.
+  function persistNotice(snapshot = readSnapshot()) {
+    const reason = snapshot && snapshot.persistError;
+    if (!reason) return null;
+    return { key: "unsaved", reason, thai: PERSIST_WARNING[reason] || PERSIST_WARNING.storage, short: PERSIST_SHORT[reason] || PERSIST_SHORT.storage };
   }
 
   function snapshotAgeMinutes(snapshot = readSnapshot()) {
@@ -523,6 +571,8 @@
     read: readSnapshot,
     write: writeSnapshot,
     freshness,
+    persistNotice,
+    lastPersistError: () => persistError,
     ageMinutes: snapshotAgeMinutes,
     loadLatestData,
     retryFailed: () => loadLatestData({ retryFailed: true }),
@@ -538,6 +588,8 @@
       read: () => null,
       write: (snapshot) => snapshot,
       freshness: () => ({ key: "error", label: "Load failed", thai: "โหลดไม่สำเร็จ" }),
+      persistNotice: () => null,
+      lastPersistError: () => null,
       ageMinutes: () => Infinity,
       canonicalSymbol: (s) => String(s || "").trim().toUpperCase().replace(/[^A-Z0-9.^-]/g, ""),
       loadLatestData: async () => {

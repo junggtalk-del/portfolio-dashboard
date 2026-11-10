@@ -539,15 +539,39 @@
   // decomposition from patternScore.components). No engine/calculation/provider is touched.
 
   // Read the price history the engine already cached (columnar {d,c,...}) — display only.
-  function readHistoryCache() {
-    try {
-      const raw = window.localStorage && window.localStorage.getItem("btc_intelligence_history_v1");
-      if (!raw) return null;
-      const o = JSON.parse(raw);
-      if (o && Array.isArray(o.d) && Array.isArray(o.c) && o.d.length > 60) return { dates: o.d, closes: o.c };
-    } catch (e) {}
-    return null;
+  // The engine keeps it in IndexedDB via window.BigCache (moved out of localStorage 2026-11-10), which
+  // is async: renders use the copy loaded so far (null at first → panels render without the price
+  // history), and the open Intelligence tab re-renders once the read resolves. Re-read after each
+  // snapshot event (a load may have extended the history).
+  const HISTORY_KEY = "btc_intelligence_history_v1";
+  let histCache = null, histState = "idle", histSeq = 0; // idle | loading | done
+  function loadHistoryCache() {
+    if (histState !== "idle") return;
+    const bc = window.BigCache;
+    if (!bc || typeof bc.get !== "function") { histState = "done"; return; }
+    histState = "loading";
+    const seq = ++histSeq;
+    let p;
+    try { p = Promise.resolve(bc.get(HISTORY_KEY)); } catch (e) { p = Promise.resolve(null); }
+    p.then((o) => {
+      if (seq !== histSeq) return;
+      histState = "done";
+      histCache = (o && Array.isArray(o.d) && Array.isArray(o.c) && o.d.length > 60) ? { dates: o.d, closes: o.c } : null;
+      rerenderIfShown();
+    }, () => { if (seq === histSeq) histState = "done"; });
   }
+  function readHistoryCache() {
+    loadHistoryCache();
+    return histCache;
+  }
+  // only when the Intelligence body is on screen — #btcTabBody is shared with the other tabs
+  function rerenderIfShown() {
+    try { if (document.getElementById("btcTabBody") && document.getElementById("bi-verdict")) rerender(); } catch (e) {}
+  }
+  try {
+    if (typeof window.addEventListener === "function") window.addEventListener("portfolio-data-snapshot", () => { histState = "idle"; loadHistoryCache(); });
+  } catch (e) {}
+  loadHistoryCache();
   function findIdxByDate(cache, date) {
     const i = cache.dates.indexOf(date);
     if (i >= 0) return i;

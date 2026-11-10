@@ -255,7 +255,8 @@ function getCount(substr) { return fetchCalls.filter(function (u) { return u.ind
 
 // ---------- โหลดสคริปต์ชุดเดียวกับ home.html ----------
 var HOME = read("home.html");
-var WANT = ["technical-indicators.js", "decision-journal-engine.js", "home-action-engine.js", "home-action-page.js"];
+// big-cache.js (2026-11-10): cache ราคาของกล่องย้ายจาก localStorage ไป BigCache — โหลดก่อนผู้ใช้ทุกตัวเหมือน home.html
+var WANT = ["big-cache.js", "technical-indicators.js", "decision-journal-engine.js", "home-action-engine.js", "home-action-page.js"];
 var scripts = (function () {
   var out = [], re = /<script src="\/([A-Za-z0-9._-]+\.js)/g, m;
   while ((m = re.exec(HOME)) !== null) if (WANT.indexOf(m[1]) >= 0) out.push(m[1]);
@@ -267,12 +268,15 @@ t("home.html loads indicators → journal engine → action engine → action pa
   HOME.indexOf("home-action-page.js") < HOME.indexOf("app-navigation.js?v="), scripts);
 t("css versions identical in home/ai-cycle/wave3 and bumped", cssVer(HOME) === cssVer(read("ai-cycle.html")) && cssVer(HOME) === cssVer(read("wave3.html")) && cssVer(HOME) !== "20261030-mcx-10", cssVer(HOME));
 var bootOk = scripts.length === WANT.length;
+// เครื่องผู้ใช้ก่อนแก้ยังมี cache ก้อนเดิมใน localStorage (≈1M ตัวอักษร) → big-cache.js ต้องลบทิ้งตอนโหลดหน้า
+store["home_rules_ohlc_v1"] = JSON.stringify({ NVDA: { at: "2026-10-29", start: "2024-10-29", cutoff: "2026-10-28", bars: [] } });
 scripts.forEach(function (f) {
   try { vm.runInContext(read(f), ctx, { filename: f }); }
   catch (e) { bootOk = false; console.error("   boot " + f + ": " + e.message); }
 });
 var H = win.HomeAction;
 t("boots · window.HomeAction exposed", bootOk && !!H && typeof H.refresh === "function" && typeof H.render === "function");
+t("big-cache.js removed the legacy localStorage price cache on page load", store["home_rules_ohlc_v1"] === undefined && !!win.BigCache);
 
 (async function () {
   if (!H) { finish(); return; }
@@ -331,6 +335,14 @@ t("boots · window.HomeAction exposed", bootOk && !!H && typeof H.refresh === "f
   await H.refresh(false); await settle();
   t("second non-forced run on the same day + closed bar is served from cache: no /api/ohlc call at all", ohlcSince(n0).length === 0 &&
     cards().join() === "NVDA,GOOG", ohlcSince(n0));
+  // ---- cache ราคาอยู่ใน BigCache (IndexedDB ในเบราว์เซอร์ · memory ใน VM) record ละสัญลักษณ์ ไม่ใช่ localStorage (2026-11-10) ----
+  var HKEYS = ["home_rules_ohlc_v1:BTCUSD", "home_rules_ohlc_v1:ETHUSD", "home_rules_ohlc_v1:GOOG", "home_rules_ohlc_v1:INTC", "home_rules_ohlc_v1:NVDA"];
+  var bk0 = await win.BigCache.keys("home_rules_ohlc_v1:");
+  t("price cache = one BigCache record per symbol · nothing in localStorage", bk0.join() === HKEYS.join() && store["home_rules_ohlc_v1"] === undefined &&
+    !Object.keys(store).some(function (k) { return /ohlc/.test(k); }), [bk0, Object.keys(store)]);
+  var nvRec = await win.BigCache.get("home_rules_ohlc_v1:NVDA");
+  t("record keeps the old entry shape { at, start, cutoff, sourceType, bars: packed rows }", !!nvRec && nvRec.at === "2026-10-29" && nvRec.start === "2024-10-29" &&
+    nvRec.cutoff === "2026-10-28" && nvRec.sourceType === "LIVE_MARKET_DATA" && nvRec.bars.length === 262 && nvRec.bars[0].length === 6, nvRec && [nvRec.at, nvRec.start, nvRec.cutoff, nvRec.bars.length]);
   var n1 = fetchCalls.length;
   await H.refresh(true); await settle();
   t("forced refresh clears the cache and refetches (BTC-USD requested again)", ohlcSince(n1).some(function (u) { return /symbol=BTC-USD&/.test(u); }), ohlcSince(n1));
@@ -343,6 +355,16 @@ t("boots · window.HomeAction exposed", bootOk && !!H && typeof H.refresh === "f
   t("overlapping refreshes share one in-flight request per symbol", Object.keys(dup).length === 5 && Object.keys(dup).every(function (k) { return dup[k] === 1; }), dup);
   t("…and the newest run still renders every row and both cards", H._state.rows.length === 5 && H._state.rows.every(function (r) { return r.status === "ok"; }) &&
     cards().join() === "NVDA,GOOG" && H._state.loading === false);
+  // MAX_CACHE_SYMBOLS (24): เกินแล้วตัดตัวที่ at เก่าสุดทิ้ง — ตัวของวันนี้อยู่ครบ
+  for (var oi = 0; oi < 30; oi++) await win.BigCache.set("home_rules_ohlc_v1:OLD" + (oi < 10 ? "0" : "") + oi, { at: "2026-09-" + (oi < 9 ? "0" : "") + (oi % 28 + 1), start: "2024-09-01", cutoff: "2026-09-01", bars: [] });
+  var nP = fetchCalls.length;
+  await H.refresh(false); await settle();
+  var bkP = await win.BigCache.keys("home_rules_ohlc_v1:");
+  t("pruning keeps at most 24 records, today's 5 symbols all kept, the oldest 'at' dropped first, no refetch", bkP.length === 24 &&
+    HKEYS.every(function (k) { return bkP.indexOf(k) >= 0; }) && bkP.indexOf("home_rules_ohlc_v1:OLD00") < 0 && ohlcSince(nP).length === 0, [bkP.length, bkP.slice(0, 6)]);
+  await H.refresh(true); await settle();
+  var bkF = await win.BigCache.keys("home_rules_ohlc_v1:");
+  t("forced refresh clears every record under the prefix, then only the universe is cached again", bkF.join() === HKEYS.join(), bkF);
   // 404 → แถวแดง "ไม่พบสัญลักษณ์นี้ที่แหล่งข้อมูล" · ไม่มีการ์ด · ตัวอื่นไม่กระทบ
   failSym.GOOG = 404;
   await H.refresh(true); await settle();

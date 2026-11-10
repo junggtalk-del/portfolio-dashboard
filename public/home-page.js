@@ -510,10 +510,14 @@
     const snap = readSnapshot();
     const t = $("mcSnapTime"), pill = $("mcSnapPill");
     if (t) t.textContent = snap && snap.loadedAt ? new Date(snap.loadedAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
-    const fr = api && api.freshness ? api.freshness(snap) : null;
+    // snapshot ที่บันทึกลงเบราว์เซอร์ไม่สำเร็จ (persistError) → บอกตรง ๆ แทน "ข้อมูลสด"
+    let notice = null;
+    try { notice = api && typeof api.persistNotice === "function" ? api.persistNotice(snap) : null; } catch (_e) { notice = null; }
+    const fr = notice || (api && api.freshness ? api.freshness(snap) : null);
     if (pill && fr) {
       pill.textContent = "● " + (fr.thai || fr.label);
       pill.className = "mc-pill " + (fr.key === "fresh" ? "mc-pill-fresh" : "mc-pill-stale");
+      if (notice) pill.setAttribute("title", notice.thai); else pill.removeAttribute("title");
     }
   }
 

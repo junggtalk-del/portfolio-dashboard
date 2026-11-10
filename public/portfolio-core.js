@@ -136,10 +136,21 @@
     }
   }
 
+  // Local copy is a convenience — the server is the source of truth. A full / disabled localStorage
+  // must never stop saveHoldings from reaching its PUT (2026-11-10: QuotaExceededError here threw before
+  // the PUT, so PM edits never reached the server) nor make loadHoldings fall back to a stale local copy.
   function writeLocalHoldings(holdings) {
     const clean = dedupeHoldings(holdings);
-    localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(clean));
-    updateSnapshotHoldings(clean);
+    try {
+      localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(clean));
+    } catch (_error) {
+      // keep going — the snapshot copy + server PUT still carry the holdings
+    }
+    try {
+      updateSnapshotHoldings(clean);
+    } catch (_error) {
+      // best-effort
+    }
   }
 
   function updateSnapshotHoldings(holdings) {
@@ -210,7 +221,11 @@
       }
       throw new Error(message);
     }
-    updateSnapshotHoldings(clean);
+    try {
+      updateSnapshotHoldings(clean);
+    } catch (_error) {
+      // best-effort — the PUT already succeeded
+    }
     return clean;
   }
 

@@ -344,11 +344,19 @@
     "TKC PROEN ADD MOSHI ONEE ILM PHG NER TM DHOUSE").split(/\s+/);
   const THAI_UNIVERSE = Array.from(new Set(THAI_SET100.concat(THAI_MAI))).map(function (s) { return { sym: s + ".BK", fetchSym: s + ".BK", name: s }; });
 
-  // ---- localStorage OHLC cache for the fetched universes (once/day; bounded depth) ----
-  const OHLC_CACHE_KEY = "wave3_ohlc_v1";
-  function storage() { try { return typeof localStorage !== "undefined" ? localStorage : (typeof window !== "undefined" ? window.localStorage : null); } catch (_e) { return null; } }
-  function readOhlcCache() { const s = storage(); if (!s) return {}; try { return JSON.parse(s.getItem(OHLC_CACHE_KEY) || "{}") || {}; } catch (_e) { return {}; } }
-  function writeOhlcCache(o) { const s = storage(); if (!s) return; try { s.setItem(OHLC_CACHE_KEY, JSON.stringify(o)); } catch (_e) { /* quota — engine still runs from memory */ } }
+  // ---- OHLC cache for the fetched universes (once/day; bounded depth) ----
+  // Lives in IndexedDB via window.BigCache (big-cache.js), one record per symbol
+  // ("wave3_ohlc_v1:<SYM>" → { u: day, d, c, v }) so the 10 parallel fetches never race on one object.
+  // Moved out of localStorage 2026-11-10: the ~1.66M-char "wave3_ohlc_v1" object was written during
+  // Load Latest Data before the snapshot and starved it of quota (snapshot silently not saved).
+  // No BigCache (Node / a page without big-cache.js) → per-run memory, like the old no-localStorage path.
+  const OHLC_CACHE_PREFIX = "wave3_ohlc_v1:";
+  function ohlcStore() {
+    const bc = typeof window !== "undefined" ? window.BigCache : null;
+    if (bc && typeof bc.get === "function" && typeof bc.set === "function") return bc;
+    const mem = new Map();
+    return { get: (k) => Promise.resolve(mem.has(k) ? mem.get(k) : null), set: (k, v) => { mem.set(k, v); return Promise.resolve(true); } };
+  }
 
   async function fetchOhlc(fetchFn, sym, days) {
     const res = await fetchFn("/api/ohlc?symbol=" + encodeURIComponent(sym) + "&days=" + (days || 480), { cache: "no-store" });
@@ -359,13 +367,14 @@
     for (const b of bars) { const cl = num(b.close); if (cl == null) continue; d.push(String(b.date).slice(0, 10)); c.push(cl); v.push(num(b.volume) || 0); }
     return { d, c, v };
   }
-  async function seriesCached(fetchFn, sym, cache, today) {
-    const hit = cache[sym];
+  async function seriesCached(fetchFn, sym, store, today) {
+    let hit = null;
+    try { hit = await store.get(OHLC_CACHE_PREFIX + sym); } catch (_e) { hit = null; }
     if (hit && hit.u === today && Array.isArray(hit.c) && hit.c.length >= 60) return { dates: hit.d, closes: hit.c, volumes: hit.v };
     const s = await fetchOhlc(fetchFn, sym, 480);
     if (!s.c.length) { if (hit) return { dates: hit.d, closes: hit.c, volumes: hit.v }; return null; } // keep stale on empty
     const cap = 520; if (s.c.length > cap) { s.d = s.d.slice(-cap); s.c = s.c.slice(-cap); s.v = s.v.slice(-cap); }
-    cache[sym] = { u: today, d: s.d, c: s.c, v: s.v };
+    try { await store.set(OHLC_CACHE_PREFIX + sym, { u: today, d: s.d, c: s.c, v: s.v }); } catch (_e) { /* cache is best-effort */ }
     return { dates: s.d, closes: s.c, volumes: s.v };
   }
 
@@ -413,16 +422,15 @@
     // 3 + 4 · Thailand + Crypto — fetched via /api/ohlc (cached once/day, concurrency-capped). Best-effort.
     let thailand = [], crypto = [];
     if (fetchFn) {
-      const cache = readOhlcCache();
+      const store = ohlcStore();
       const fetchUni = async function (list, uni) {
         return (await mapPool(list, 10, async function (it) {
-          const s = await seriesCached(fetchFn, it.fetchSym, cache, today); if (!s) return null;
+          const s = await seriesCached(fetchFn, it.fetchSym, store, today); if (!s) return null;
           return analyzeAsset({ symbol: it.sym, name: it.name, universe: uni, isHolding: false, dates: s.dates, closes: s.closes, volumes: s.volumes });
         })).filter(Boolean);
       };
       try { crypto = await fetchUni(CRYPTO_TOP20, "crypto"); } catch (_e) { crypto = []; }
       try { thailand = await fetchUni(THAI_UNIVERSE, "thailand"); } catch (_e) { thailand = []; }
-      writeOhlcCache(cache);
     }
 
     const mk = function (items) { items.sort(byReadiness); return Object.assign({ items: items }, counts(items)); };
