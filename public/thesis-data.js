@@ -1103,7 +1103,7 @@
           }
         ]
       },
-      "nextEarnings": "2026-11",
+      "nextEarnings": "2026-11-17",
       "forwardView": {
         "asOf": "2026-08",
         "estimateHistory": [
