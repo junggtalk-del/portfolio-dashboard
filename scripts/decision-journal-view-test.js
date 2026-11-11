@@ -639,7 +639,7 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     var re = /<script src="([^"]+)"/g, m, out = [];
     while ((m = re.exec(body)) !== null) out.push(m[1]);
     return out.join("|") === ["/technical-indicators.js?v=20260617-action-priority", "/decision-journal-engine.js?v=20261030-dj-5",
-      "/decision-journal-page.js?v=20261106-dj-6", "/big-cache.js?v=20261110-bc-2", "/app-navigation.js?v=20261110-nav-30"].join("|");
+      "/decision-journal-page.js?v=20261106-dj-6", "/big-cache.js?v=20261110-bc-2", "/app-navigation.js?v=20261111-nav-32"].join("|");
   })());
   t("lang th + viewport", /<html lang="th">/.test(dj) && /name="viewport"[^>]*width=device-width/.test(dj));
 
@@ -693,8 +693,19 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
   t("CSS: dj-hidden hides", /\.dj-hidden\s*\{[^}]*display:\s*none/.test(cssCode));
 
   var nav = readPub("app-navigation.js");
-  t("nav: SIDEBAR Portfolio group has Decision Journal as its first item",
-    /\{ label: "Portfolio", items: \[\s*(?:\/\/[^\n]*\s*)*\{ p: "\/decision-journal", i: "📓", t: "Decision Journal" \},/.test(nav));
+  // nav-31 (2026-11-11): กลุ่มเดียวชื่อ Portfolio — AI Portfolio Manager › Portfolio Position › Quarterly Editor › Investment Thesis › Decision Journal
+  t("nav: SIDEBAR has one Portfolio group in the user's order, Decision Journal last", (function () {
+    var groups = nav.match(/\{ label: "[^"]+", items: \[/g) || [];
+    var labels = groups.map(function (g) { return /label: "([^"]+)"/.exec(g)[1]; });
+    var i = nav.indexOf('{ label: "Portfolio", items: [');
+    var blk = i >= 0 ? nav.slice(i, nav.indexOf("] },", i)) : "";
+    var paths = (blk.match(/\{ p: "[^"]*"/g) || []).map(function (s) { return s.slice(6, -1); });
+    // nav-32 (2026-11-11): กลุ่ม Bitcoin ต่อท้ายกลุ่ม Portfolio ทันที
+    return labels.filter(function (l) { return l === "Portfolio"; }).length === 1 && labels.indexOf("AI Portfolio Manager") < 0 &&
+      labels.indexOf("Portfolio") === 1 && labels.indexOf("Bitcoin") === 2 && labels.filter(function (l) { return l === "Bitcoin"; }).length === 1 &&
+      paths.join("|") === ["/portfolio-manager", "/portfolio", "/", "/thesis", "/decision-journal"].join("|") &&
+      /\{ p: "\/decision-journal", i: "📓", t: "Decision Journal" \}/.test(blk);
+  })());
   // dj-3: หน้าวาดหัวของตัวเอง — ถ้ายังมี PAGE_META เปลือกเว็บจะวาดหัวซ้ำ (ชื่อหน้า 2 ครั้ง)
   t("nav: no PAGE_META entry (the page draws its own header)", !/"\/decision-journal":\s*\{\s*category/.test(nav));
   t("nav: /decision-journal appears once (SIDEBAR only)", (nav.match(/"\/decision-journal"/g) || []).length === 1);
@@ -754,9 +765,11 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     // nav-27 (dj-3): เอา PAGE_META ของ /decision-journal ออก — ทุกหน้าต้องโหลดไฟล์ใหม่ (เวอร์ชันเดียวทั้งเว็บ)
     // nav-28 (2026-11-09): ย้ายกลุ่ม Portfolio ไปต่อท้ายกลุ่ม AI Portfolio Manager
     // nav-29 (2026-11-10): snapshot fallback ไม่ล้มเงียบเมื่อพื้นที่เต็ม + engine เวอร์ชัน BigCache
-    t("every HTML that references app-navigation.js uses 20261110-nav-30",
-      navRefs.length >= 19 && navRefs.every(function (f) { return /app-navigation\.js\?v=20261110-nav-30"/.test(readPub(f)) && !/app-navigation\.js\?v=(?!20261110-nav-30")/.test(readPub(f)); }),
-      navRefs.filter(function (f) { return !/app-navigation\.js\?v=20261110-nav-30"/.test(readPub(f)); }));
+    // nav-31 (2026-11-11): รวมกลุ่ม AI Portfolio Manager + Portfolio เป็นกลุ่มเดียว "Portfolio"
+    // nav-32 (2026-11-11): กลุ่ม Bitcoin ต่อท้ายกลุ่ม Portfolio
+    t("every HTML that references app-navigation.js uses 20261111-nav-32",
+      navRefs.length >= 19 && navRefs.every(function (f) { return /app-navigation\.js\?v=20261111-nav-32"/.test(readPub(f)) && !/app-navigation\.js\?v=(?!20261111-nav-32")/.test(readPub(f)); }),
+      navRefs.filter(function (f) { return !/app-navigation\.js\?v=20261111-nav-32"/.test(readPub(f)); }));
     t("every HTML that references privacy.js uses 20261025-pv-2",
       pvRefs.length >= 19 && pvRefs.every(function (f) { return /privacy\.js\?v=20261025-pv-2"/.test(readPub(f)) && !/privacy\.js\?v=(?!20261025-pv-2")/.test(readPub(f)); }),
       pvRefs.filter(function (f) { return !/privacy\.js\?v=20261025-pv-2"/.test(readPub(f)); }));

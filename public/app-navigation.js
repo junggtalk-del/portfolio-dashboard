@@ -560,16 +560,19 @@
       { p: "/home", i: "🛰️", t: "Home" },
       { p: "/market-risk", i: "🌐", t: "Macro Dashboard" }
     ] },
-    { label: "AI Portfolio Manager", items: [
-      { p: "/portfolio-manager", i: "💼", t: "AI Portfolio Manager" },
-      { p: "/thesis", i: "🧾", t: "Investment Thesis" }
-    ] },
-    // ผู้ใช้สั่ง 2026-11-09: กลุ่ม Portfolio ต่อท้ายกลุ่ม AI Portfolio Manager ทันที
+    // ผู้ใช้สั่ง 2026-11-11: รวมกลุ่ม AI Portfolio Manager + Portfolio เป็นกลุ่มเดียวชื่อ "Portfolio" ตามลำดับนี้
     { label: "Portfolio", items: [
+      { p: "/portfolio-manager", i: "💼", t: "AI Portfolio Manager" },
       // Asset Allocation ถูกรวมเข้าไปอยู่ท้ายหน้า /portfolio แล้ว จึงไม่มีเมนูของตัวเอง
-      { p: "/decision-journal", i: "📓", t: "Decision Journal" },
       { p: "/portfolio", i: "📊", t: "Portfolio Position" },
-      { p: "/", i: "🗓️", t: "Quarterly Editor" }
+      { p: "/", i: "🗓️", t: "Quarterly Editor" },
+      { p: "/thesis", i: "🧾", t: "Investment Thesis" },
+      { p: "/decision-journal", i: "📓", t: "Decision Journal" }
+    ] },
+    // ผู้ใช้สั่ง 2026-11-11: กลุ่ม Bitcoin ต่อท้ายกลุ่ม Portfolio ทันที
+    { label: "Bitcoin", items: [
+      { p: "/bitcoin-monitor", i: "₿", t: "Bitcoin Monitor" },
+      { p: "/smart-dca", i: "🪙", t: "Smart DCA" }
     ] },
     { label: "Thai Market", items: [
       { p: "/catalyst-hunter", i: "🇹🇭", t: "Thai Catalyst Hunter" },
@@ -583,10 +586,6 @@
     { label: "Signals", items: [
       { p: "/action-center", i: "🎯", t: "Action Center" },
       { p: "/scanner", i: "🔎", t: "Market Scanner" }
-    ] },
-    { label: "Bitcoin", items: [
-      { p: "/bitcoin-monitor", i: "₿", t: "Bitcoin Monitor" },
-      { p: "/smart-dca", i: "🪙", t: "Smart DCA" }
     ] },
     { label: "Research", items: [
       { p: "#", i: "⚖️", t: "Compare", soon: true }
@@ -614,9 +613,9 @@
     "/adaptive-position": { category: "Strategic Intelligence", title: "🎛️ Adaptive Position", subtitle: "ควรถือ exposure เท่าไหร่ — Mega Trend Gate · Core/Tactical · เงื่อนไขสะสมจังหวะย่อ · ความมั่นใจของ position" },
     "/catalyst-hunter": { category: "Thai Market", title: "🇹🇭 Thai Catalyst Hunter", subtitle: "หุ้นไทยที่ราคาถูกทิ้ง แต่เรื่องราวของธุรกิจกำลังเปลี่ยน — ย่อลึก · ทำไมตก · เรื่องใหม่ · หลักฐาน · ตลาดรับรู้หรือยัง" },
     "/thai-dr-monitor": { category: "Thai Market", title: "🌏 Thai DR Monitor", subtitle: "DR ที่จดทะเบียนในไทยมีอะไรบ้าง — ยุบรวมตามสินทรัพย์อ้างอิง · แยกตลาด/ประเภท · ตัวไหนเพิ่งจดทะเบียน · ข้อมูลไหนยังต้องตรวจ" },
-    "/thesis": { category: "AI Portfolio Manager", title: "🧾 Investment Thesis", subtitle: "บริษัทนี้ยังเดินตาม thesis ระยะยาวอยู่ไหม — พื้นฐาน · AI execution · moat · ทำไมหุ้นตก · ควรสะสมจังหวะย่อไหม" },
+    "/thesis": { category: "Portfolio", title: "🧾 Investment Thesis", subtitle: "บริษัทนี้ยังเดินตาม thesis ระยะยาวอยู่ไหม — พื้นฐาน · AI execution · moat · ทำไมหุ้นตก · ควรสะสมจังหวะย่อไหม" },
     "/accumulation-center": { category: "Strategic Intelligence", title: "🧺 Accumulation Center", subtitle: "จังหวะย่อตัวไหนควรค่าแก่การสะสมวันนี้ — จัดอันดับ 7 ปัจจัย (Thesis นำ · เทคนิคเป็นแค่เครื่องมือจับจังหวะ)" },
-    "/portfolio-manager": { category: "AI Portfolio Manager", title: "💼 AI Portfolio Manager", subtitle: "Portfolio Decision Layer — เงินก้อนถัดไปควรไปที่ไหน · Tier · Dynamic Target · Entry Ladder · Cash Deployment · Risk Rules" }
+    "/portfolio-manager": { category: "Portfolio", title: "💼 AI Portfolio Manager", subtitle: "Portfolio Decision Layer — เงินก้อนถัดไปควรไปที่ไหน · Tier · Dynamic Target · Entry Ladder · Cash Deployment · Risk Rules" }
   };
 
   function buildSidebar(activePath) {
