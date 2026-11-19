@@ -447,39 +447,46 @@
     return ia < ib ? -1 : 1;
   }
 
-  // summary(entries, outcomesById, opts: { nowBangkok, horizonDays: 7|30, D? })
-  // → { horizonDays, since, counts, followed, missed, byRule, rows }
+  // summary(entries, outcomesById, opts: { nowBangkok, horizonDays: 7|30|90, D?, allTime? })
+  // → { horizonDays, since, counts, followed, missed, byRule, rows } (+ allTime: true เฉพาะตอนเปิดโหมด allTime)
   //   outcomesById[entry.id] = DecisionJournal.outcomes(entry, bars, nowBangkok) — หน้าเว็บคิดมาให้ (เอนจินนี้ไม่แตะราคา)
   //   นับเฉพาะ entry ของกล่อง Action (isHomeAction) ที่ไม่ถูกลบ · date เป็น ymd · date >= since (วันนี้ − SUMMARY_DAYS)
-  //   horizonDays ที่ไม่อยู่ใน HORIZONS → ใช้ HORIZONS[0] · ผลบอก horizonDays ที่ใช้จริง
-  //   ไม่มีเอนจิน / nowBangkok อ่านไม่ได้ → since null และไม่มีแถว (ไม่รู้ว่าวันนี้คือวันไหน = ไม่เดาช่วง 90 วัน)
+  //   horizonDays ที่ยอมรับ = อยู่ใน HORIZONS (ปุ่มสลับของกล่อง Home: 7/30) หรือใน D.HORIZONS (ช่วงที่เอนจิน Journal วัดผล: 7/30/90)
+  //     อื่น ๆ → ใช้ HORIZONS[0] · ผลบอก horizonDays ที่ใช้จริง
+  //   allTime === true (การ์ดหน้า Journal) → นับทุกสัญญาณที่บันทึกไว้ ไม่กรองด้วย since และไม่อ่าน nowBangkok ·
+  //     ยังต้องมีเอนจิน (ไม่มี = ไม่มีแถว) · ผลมี since null และ allTime true · ไม่ส่ง allTime = พฤติกรรมเดิม ผลไม่มีคีย์ allTime
+  //   ไม่มีเอนจิน / nowBangkok อ่านไม่ได้ (โหมดปกติ) → since null และไม่มีแถว (ไม่รู้ว่าวันนี้คือวันไหน = ไม่เดาช่วง 90 วัน)
   //   counts   : done / skipped / unanswered ตาม ha.response (คำตอบที่ไม่รู้จัก = นับใน total อย่างเดียว)
   //              pending = แถวที่ช่วงที่เลือกยังไม่ scored (pending หรือ no-data) · total = ทุกแถวที่นับ
   //   followed : คำตอบ done ที่ scored แล้ว → { n, avgPct (เฉลี่ย impactPct), money: { สกุล: ผลรวม } เฉพาะแถวที่มีฐานเงิน,
   //              moneyN: { สกุล: จำนวนแถวที่มีฐานเงิน } } — moneyN < n = เงินรวมมาจากบางแถว (หน้าเว็บต้องบอก)
   //   missed   : skipped + unanswered ที่ scored แล้ว — คิดแบบเดียวกัน ตัวเลขอ่านว่า "ถ้าทำจะได้"
   //   byRule   : "1" "2" "3" → { n, avgPct } ทุกแถวที่ scored ไม่สนคำตอบ (กฎนั้นพูดแล้วราคาไปทางไหน)
-  //   rows     : ทุกแถวที่นับ (scored หรือไม่ก็ตาม) เรียงวันที่ใหม่→เก่า · pct/status ของทั้ง 7 และ 30 วัน ·
-  //              impactPct / money ของช่วงที่เลือก (ยังไม่ scored หรือไม่รู้ฝั่ง = null)
+  //   rows     : ทุกแถวที่นับ (scored หรือไม่ก็ตาม) เรียงวันที่ใหม่→เก่า · pct/status ของ 7 และ 30 วันเท่านั้น (ไม่มีคอลัมน์ 90) ·
+  //              impactPct / money ของช่วงที่เลือก (รวม 90 · ยังไม่ scored หรือไม่รู้ฝั่ง = null)
   //   ค่าดิบทั้งหมด ไม่ปัด — หน้าเว็บปัดเอง
   function summary(entries, outcomesById, opts) {
     var o = opts || {};
     var D = resolveD(o.D);
-    var h = HORIZONS.indexOf(o.horizonDays) >= 0 ? o.horizonDays : HORIZONS[0];
-    var now = (D && D._internal && typeof D._internal.parseNow === "function") ? D._internal.parseNow(o.nowBangkok) : null;
+    var allTime = o.allTime === true;
+    var dHorizons = (D && Array.isArray(D.HORIZONS)) ? D.HORIZONS : [];
+    var h = (HORIZONS.indexOf(o.horizonDays) >= 0 || dHorizons.indexOf(o.horizonDays) >= 0) ? o.horizonDays : HORIZONS[0];
+    var now = (!allTime && D && D._internal && typeof D._internal.parseNow === "function") ? D._internal.parseNow(o.nowBangkok) : null;
     var since = now ? D.ymdAdd(now.ymd, -SUMMARY_DAYS) : null;
-    var list = (since !== null && Array.isArray(entries)) ? entries : [];
+    var ready = allTime ? !!(D && typeof D.isYmd === "function") : since !== null;
+    var list = (ready && Array.isArray(entries)) ? entries : [];
     var ocs = (outcomesById && typeof outcomesById === "object") ? outcomesById : {};
     var counts = { done: 0, skipped: 0, unanswered: 0, pending: 0, total: 0 };
     var fol = makeAcc();
     var mis = makeAcc();
     var rules = { "1": makeAcc(), "2": makeAcc(), "3": makeAcc() };
     var rows = [];
+    var out;
     var i, e, ha, rs, oc, h7, h30, cur, ip, money, resp, rule, ruleKey;
 
     for (i = 0; i < list.length; i++) {
       e = list[i];
-      if (!isHomeAction(e) || e.deletedAt || !D.isYmd(e.date) || e.date < since) continue;
+      if (!isHomeAction(e) || e.deletedAt || !D.isYmd(e.date) || (!allTime && e.date < since)) continue;
       ha = (e.ha && typeof e.ha === "object") ? e.ha : {};
       rs = (e.rules && typeof e.rules === "object") ? e.rules : {};
       oc = (typeof e.id === "string" && Object.prototype.hasOwnProperty.call(ocs, e.id)) ? ocs[e.id] : null;
@@ -521,7 +528,7 @@
     }
 
     rows.sort(byDateDescIdAsc);
-    return {
+    out = {
       horizonDays: h,
       since: since,
       counts: counts,
@@ -534,6 +541,9 @@
       },
       rows: rows
     };
+    // ใส่คีย์เฉพาะตอนเปิดโหมด — การเรียกแบบเดิม (กล่อง Home) ได้ผลเท่าเดิมทุกไบต์
+    if (allTime) out.allTime = true;
+    return out;
   }
 
   var HomeActionEngine = {

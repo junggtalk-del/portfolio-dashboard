@@ -358,7 +358,7 @@ function es5Problems(code) {
   ES5_RULES.forEach(function (r) { var m = r[1].exec(code); if (m) out.push(r[0] + ": " + m[0]); });
   return out;
 }
-var ADVISORY_TH = /ควรซื้อ|ควรขาย|น่าซื้อ|น่าขาย|แนะนำซื้อ|จุดเข้า|ตัดขาดทุน/;
+var ADVISORY_TH = /ควรซื้อ|ควรขาย|น่าซื้อ|น่าขาย|น่าเข้า|แนะนำซื้อ|จุดเข้า|ตัดขาดทุน/;
 var ADVISORY_EN = /\b(Buy|Sell)\b/;
 var LEAK = /(NaN|undefined|Infinity|\[object )/;
 function readPub(f) { return fs.readFileSync(path.join(PUB, f), "utf8"); }
@@ -372,8 +372,9 @@ function section(name, fn) { SECTIONS.push({ name: name, fn: fn }); }
 // ============================================================
 section("boot (Task 8)", function () {
   t("boots", bootOk);
-  t("scripts from HTML: technical-indicators → engine → page",
-    HTML_SCRIPTS.join() === "technical-indicators.js,decision-journal-engine.js,decision-journal-page.js", HTML_SCRIPTS);
+  // dj-7 (2026-11-19): เอนจินของกล่อง Action (pure) โหลดก่อนหน้า — การ์ดสรุปผลใช้ summary() ตัวเดียวกับกล่องบนหน้าแรก
+  t("scripts from HTML: technical-indicators → engine → home-action engine → page",
+    HTML_SCRIPTS.join() === "technical-indicators.js,decision-journal-engine.js,home-action-engine.js,decision-journal-page.js", HTML_SCRIPTS);
   t("globals", !!win.DecisionJournal && !!win.DecisionJournalPage && !!win.AITechnicalIndicators);
   t("page API: render / load / _nowBangkok are functions, _state is an object",
     !!P && typeof P.render === "function" && typeof P.load === "function" &&
@@ -398,13 +399,14 @@ section("load + skeleton (Task 8)", function () {
     t("no unrouted fetch", unrouted.length === 0, unrouted);
 
     // dj-3: จอกว้างสองคอลัมน์ — ฟอร์มบันทึกใหม่ซ้าย · บันทึกทั้งหมด + สถิติขวา → ใน DOM สถิติจึงมาก่อนไม้จริง
-    var order = ["djSummary", "djReview", "djNew", "djLog", "djStats", "djTrades", "djMethod"].map(function (id) { return html().indexOf('id="' + id + '"'); });
-    t("sections in order: summary → review → new | log + stats → trades → method", order.every(function (p, i) { return p >= 0 && (i === 0 || p > order[i - 1]); }), order);
+    // dj-7: การ์ด "ผลของการทำตามกฎ (จากกล่อง Action)" (djHaOut) ต่อจากสถิติในคอลัมน์ขวา → 8 section
+    var order = ["djSummary", "djReview", "djNew", "djLog", "djStats", "djHaOut", "djTrades", "djMethod"].map(function (id) { return html().indexOf('id="' + id + '"'); });
+    t("sections in order: summary → review → new | log + stats + home-action card → trades → method", order.every(function (p, i) { return p >= 0 && (i === 0 || p > order[i - 1]); }), order);
     var heads = { djSummary: "ภาพรวม", djReview: "ถึงกำหนดทบทวน", djNew: "บันทึกใหม่", djLog: "บันทึกทั้งหมด", djTrades: "ไม้จริง", djStats: "สถิติ", djMethod: "วิธีคิด" };
     t("each section has its Thai heading", Object.keys(heads).every(function (id) {
       return new RegExp("<h2[^>]*>[^<]*" + heads[id]).test(sec(id));
     }), Object.keys(heads).filter(function (id) { return !new RegExp("<h2[^>]*>[^<]*" + heads[id]).test(sec(id)); }));
-    t("sections are <section> elements with dj-block", countOf(/<section id="dj[A-Za-z]+" class="dj-block/g) === 7);
+    t("sections are <section> elements with dj-block", countOf(/<section id="dj[A-Za-z]+" class="dj-block/g) === 8);
     // dj-3: หน้าวาดหัวของตัวเอง (ชื่อ · ค้นหา · ธีม · บันทึกใหม่) และเอา PAGE_META ออก → ไม่มีหัว shell ซ้ำ
     t("own page header before the summary: one h1, search box, jump to the form · no hero",
       countOf(/<header class="dj-head">/g) === 1 && countOf(/<h1[ >]/g) === 1 && /<h1 class="dj-head-t">Decision Journal<\/h1>/.test(html()) &&
@@ -477,7 +479,7 @@ section("load: failures are honest (Task 8)", function () {
   }).then(function () {
     var S = P._state;
     t("data null → empty doc, idle, counts 0", S.syncState === "idle" && S.doc && S.doc.entries.length === 0 && entriesN() === "0", [S.syncState, entriesN()]);
-    t("empty doc still renders all sections without leaks", countOf(/<section id="dj/g) === 7 && !LEAK.test(html()));
+    t("empty doc still renders all sections without leaks", countOf(/<section id="dj/g) === 8 && !LEAK.test(html()));
     // เอกสารผิดรูปจากเซิร์ฟเวอร์ → ไม่เอามาแสดง บอกว่าผิดรูป
     JOURNAL = { v: 1, entries: "x", trades: [] };
     return P.load(true);
@@ -629,7 +631,8 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
   // dj-3 (2026-10-26): ปรับสีและเลย์เอาต์ตามภาพที่ผู้ใช้ส่งมา
   // dj-4 (2026-10-29): บันทึกทั้งหมดเป็นรายการแถวย่อ แตะแล้วกางรายละเอียด
   // dj-6 (2026-11-06): รู้จัก entry จากกล่อง Action บนหน้าแรก (ชิปที่มา · ไม่นับในสถิติ · คง haLaunchedAt)
-  var want = headRefs(dr).map(function (r) { return r.indexOf("/thai-dr-monitor.css") === 0 ? "/decision-journal.css?v=20261106-dj-6" : r; });
+  // dj-7 (2026-11-19): ช่อง "ทำอะไร" = สิ่งที่ทำจริง + การ์ดผลของการทำตามกฎ (โหลด home-action-engine.js เพิ่ม)
+  var want = headRefs(dr).map(function (r) { return r.indexOf("/thai-dr-monitor.css") === 0 ? "/decision-journal.css?v=20261119-dj-7" : r; });
   t("head = thai-dr-monitor head with the page CSS swapped", headRefs(dj).join("|") === want.join("|"), headRefs(dj));
   t("title", /<title>Decision Journal · AI Investment Mission Control<\/title>/.test(dj));
   t("nothing after privacy.js in head", /privacy\.js\?v=[^"]+"><\/script>\s*<\/head>/.test(dj));
@@ -639,7 +642,8 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     var re = /<script src="([^"]+)"/g, m, out = [];
     while ((m = re.exec(body)) !== null) out.push(m[1]);
     return out.join("|") === ["/technical-indicators.js?v=20260617-action-priority", "/decision-journal-engine.js?v=20261030-dj-5",
-      "/decision-journal-page.js?v=20261106-dj-6", "/big-cache.js?v=20261110-bc-2", "/app-navigation.js?v=20261111-nav-32"].join("|");
+      "/home-action-engine.js?v=20261119-ha-2", "/decision-journal-page.js?v=20261119-dj-7", "/big-cache.js?v=20261110-bc-2",
+      "/app-navigation.js?v=20261111-nav-32"].join("|");
   })());
   t("lang th + viewport", /<html lang="th">/.test(dj) && /name="viewport"[^>]*width=device-width/.test(dj));
 
@@ -1199,7 +1203,7 @@ section("draft retried on load and by button (Task 9)", function () {
     store.decision_journal_draft_v1 = "{bad json";
     var n = putCalls().length;
     return P.load(true).then(function () {
-      t("unreadable draft ignored: no PUT, page idle", putCalls().length === n && S.syncState === "idle" && countOf(/<section id="dj/g) === 7);
+      t("unreadable draft ignored: no PUT, page idle", putCalls().length === n && S.syncState === "idle" && countOf(/<section id="dj/g) === 8);
       t("_readDraft() returns null for it", P._readDraft() === null);
       P._clearDraft();
       t("_clearDraft() removes it", !store.decision_journal_draft_v1 && S.draft === null);
@@ -1490,7 +1494,7 @@ section("async completions do not rebuild the form while typing (Task 9 review f
     cleanup();
     P.render();
     t("focus left the form → full render again", html().indexOf(MARK) < 0 && /บันทึกบนเซิร์ฟเวอร์แล้ว/.test(sec("djSummary")) &&
-      countOf(/<section id="dj/g) === 7);
+      countOf(/<section id="dj/g) === 8);
   }).then(null, function (e) { cleanup(); throw e; });
 });
 
@@ -3234,7 +3238,8 @@ section("home-action entries on the journal (dj-6)", function () {
     t("home-action entries never enter the review queue", !/data-dj-review="ha_/.test(html()));
     t("…while the manual entry that is due is in the queue (the queue really rendered)", reviewIds().join() === "e_fix1", reviewIds());
     t("delete control exists for the home-action entry", /data-dj-delete="ha_NVDA_2_sell_2026-10-28"/.test(html()) || /data-dj-del[^=]*="ha_NVDA_2_sell_2026-10-28"/.test(html()));
-    t("decision-journal.html bumped and page is ES5", /decision-journal-page\.js\?v=20261106-dj-6/.test(DJ_HTML) && es5ok("decision-journal-page.js"));
+    // ตามเวอร์ชันปัจจุบัน (dj-6 → dj-7 ตอนเพิ่มการ์ดผลของการทำตามกฎ 2026-11-19)
+    t("decision-journal.html bumped and page is ES5", /decision-journal-page\.js\?v=20261119-dj-7/.test(DJ_HTML) && es5ok("decision-journal-page.js"));
 
     // แถว: วันที่ · สัญลักษณ์ · ฝั่งที่กฎบอก · ชิปสีตามคำตอบ (แทนป้ายตามกฎ/แหกกฎ) · บรรทัดย่อยจาก context.event + ราคา
     var r = haRow();
@@ -3277,7 +3282,7 @@ section("home-action entries on the journal (dj-6)", function () {
     t("unanswered → slate chip", /<span class="dj-ha-chip" data-hue="slate">จากกล่อง Action · กฎ 2 · ไม่ได้ตอบ<\/span>/.test(r), textOf(r));
     var css = readPub("decision-journal.css").replace(/\/\*[\s\S]*?\*\//g, "");
     t("CSS: .dj-ha-chip styled from the hue tokens and decision-journal.css bumped",
-      /\.dj-ha-chip\s*\{[^}]*var\(--dj-i\)/.test(css) && /decision-journal\.css\?v=20261106-dj-6/.test(DJ_HTML));
+      /\.dj-ha-chip\s*\{[^}]*var\(--dj-i\)/.test(css) && /decision-journal\.css\?v=20261119-dj-7/.test(DJ_HTML));
 
     // บันทึกปกติจากหน้านี้ (GET สด → merge → PUT): haLaunchedAt + entry ของกล่อง Action ต้องไปครบ
     JOURNAL = haJournal("done", 91);
@@ -3352,6 +3357,1016 @@ section("home-action entries on the journal (dj-6)", function () {
     JOURNAL = freshJournal();
     return freshLogPage();
   }, function (e) { restore(); JOURNAL = freshJournal(); throw e; });
+});
+
+// ============================================================
+// dj-7 (2026-11-19) — ช่อง "ทำอะไร" ของ entry จากกล่อง Action = สิ่งที่ทำจริงตามคำตอบ (แสดงผลเท่านั้น)
+//   action.kind ที่เก็บ = ฝั่งของกฎเสมอ (makeEntry) · หน้าคิดสิ่งที่ทำจริงจาก ha.response + ha.side:
+//   ทำแล้ว → ฝั่งของกฎ · ไม่ทำ/ไม่ได้ตอบ + ซื้อ → ไม่ทำอะไร · + ขาย → ถือต่อ · ไม่รู้คำตอบ/ไม่รู้ฝั่ง → action.kind เดิม
+//   ใช้ทุกที่ที่แสดง/กรอง "ทำอะไร" (แถว · หัวการ์ดทบทวน · ตัวกรอง · ค้นหา · บรรทัด "ผลของการ…" · ส่วนไม้จริง)
+//   · ชิป "จากกล่อง Action · กฎ n · คำตอบ" คงเดิม · ค่าที่เก็บ (และที่ PUT กลับ) ไม่เปลี่ยน
+// ============================================================
+var HA_BUY_ID = "ha_NVDA_3_buy_2026-10-28";
+// entry ฝั่งซื้อ (กฎ 3 · ย่อ) — opts เหมือน haEntryOf แต่มี amount (ฝั่งซื้อผู้ใช้กรอกเป็นบาท)
+function haBuyOf(response) {
+  var ev = { symbol: "NVDA", rule: 3, side: "buy", date: "2026-10-28", close: 90, kind: "dip", detail: {} };
+  return HA.makeEntry(ev, { response: response, nowIso: "2026-10-28T03:00:00.000Z", respondedAt: response === "unanswered" ? null : "2026-10-28T03:00:00.000Z",
+    execPrice: response === "done" ? 91 : null, positionValue: 50000, positionCurrency: "THB", amount: 20000, D: E });
+}
+// ขายตามกฎ 2 วันอื่น (id ต่างจาก HA_ID) — ให้มีทั้งตัวที่ทำแล้วและตัวที่ไม่ทำในเอกสารเดียว
+function haSellOn(date, response, close) {
+  var ev = { symbol: "NVDA", rule: 2, side: "sell", date: date, close: close, kind: "break", detail: {} };
+  return HA.makeEntry(ev, { response: response, nowIso: date + "T03:00:00.000Z", respondedAt: response === "unanswered" ? null : date + "T03:00:00.000Z",
+    execPrice: response === "done" ? close : null, positionValue: 50000, positionCurrency: "THB", amount: null, D: E });
+}
+// เอกสาร = e_fix1 (เขียนเอง · ขาย · ครบ +7 แล้ว) + entry จากกล่องที่ส่งมา
+function journalWith(haEntries, manual) {
+  var j = freshJournal();
+  j.entries = [manual || j.entries[0]].concat(haEntries);
+  return j;
+}
+// ป้าย "ทำอะไร" (.dj-act) ตัวแรกใน HTML ที่ส่งมา → { hue, text } | null
+function actPill(h) {
+  var m = /class="dj-act" data-hue="([^"]*)">([^<]*)</.exec(h || "");
+  return m ? { hue: m[1], text: m[2] } : null;
+}
+function sortedIds() { return logIds().slice().sort(); }
+
+section("home-action entries show what was actually done (dj-7)", function () {
+  var S = P._state;
+  var CASES = [
+    { side: "sell", response: "done", text: "ขาย", hue: "violet", chip: "ทำแล้ว" },
+    { side: "sell", response: "skipped", text: "ถือต่อ", hue: "slate", chip: "ไม่ทำ" },
+    { side: "sell", response: "unanswered", text: "ถือต่อ", hue: "slate", chip: "ไม่ได้ตอบ" },
+    { side: "buy", response: "done", text: "ซื้อ", hue: "blue", chip: "ทำแล้ว" },
+    { side: "buy", response: "skipped", text: "ไม่ทำอะไร", hue: "amber", chip: "ไม่ทำ" },
+    { side: "buy", response: "unanswered", text: "ไม่ทำอะไร", hue: "amber", chip: "ไม่ได้ตอบ" }
+  ];
+  var DONE_ID = "ha_NVDA_2_sell_2026-10-21";
+  var seen = [];
+  S.openEntries = {};
+  doc.activeElement = null;
+  t("fixture: haBuyOf builds a rule-3 buy entry whose stored action.kind is buy even when skipped",
+    !!haBuyOf("skipped") && haBuyOf("skipped").id === HA_BUY_ID && haBuyOf("skipped").action.kind === "buy" &&
+    haBuyOf("skipped").ha.side === "buy" && haBuyOf("skipped").ha.amount === 20000 && haEntryOf("skipped", null).action.kind === "sell");
+
+  // 1) วาดทีละกรณี: เอกสาร = e_fix1 + entry จากกล่อง 1 ตัว
+  var chain = Promise.resolve();
+  CASES.forEach(function (c) {
+    var id = c.side === "sell" ? HA_ID : HA_BUY_ID;
+    chain = chain.then(function () {
+      JOURNAL = journalWith([c.side === "sell" ? haEntryOf(c.response, c.response === "done" ? 91 : null) : haBuyOf(c.response)]);
+      return freshLogPage();
+    }).then(function () {
+      var row = c.side === "sell" ? haRow() : rowOfEntry(id);
+      var live = S.doc ? S.doc.entries.filter(function (x) { return x && x.id === id; })[0] : null;
+      seen.push({
+        c: c, pill: actPill(row), manual: actPill(rowOfEntry("e_fix1")),
+        chipOk: row.indexOf(">จากกล่อง Action · กฎ " + (c.side === "sell" ? 2 : 3) + " · " + c.chip + "</span>") >= 0,
+        stored: live ? live.action.kind : null
+      });
+    });
+  });
+  return chain.then(function () {
+    function off(key) {
+      return seen.filter(function (s) { return !s.pill || s.pill[key] !== s.c[key]; })
+        .map(function (s) { return [s.c.side, s.c.response, s.pill]; });
+    }
+    t("row action pill follows the answer for all 6 cases", seen.length === 6 && off("text").length === 0, off("text"));
+    t("data-hue of the pill follows the shown action (hold → slate · none → amber)", seen.length === 6 && off("hue").length === 0, off("hue"));
+    t("…the source chip (จากกล่อง Action · กฎ n · คำตอบ) is unchanged in every case",
+      seen.length === 6 && seen.every(function (s) { return s.chipOk; }), seen.map(function (s) { return s.chipOk; }));
+    t("…the page's loaded doc keeps action.kind = the rule's side in every case",
+      seen.length === 6 && seen.every(function (s) { return s.stored === s.c.side; }), seen.map(function (s) { return s.stored; }));
+
+    // 2) ข้อมูลเก่า/เสีย: ไม่รู้ฝั่ง หรือไม่รู้คำตอบ → ใช้ action.kind ที่เก็บไว้ (ไม่เดาฝั่ง)
+    //    + บันทึกที่เขียนเอง (ไม่มี source) แม้มีก้อน ha ติดมา → ไม่ถูกแปล
+    var noSide = haEntryOf("skipped", null);
+    delete noSide.ha.side;
+    var oddSide = haBuyOf("skipped");
+    oddSide.ha.side = "hold";
+    var oddResp = haSellOn("2026-10-21", "skipped", 95);
+    oddResp.ha.response = "maybe";
+    var manual = freshJournal().entries[0];
+    manual.ha = { response: "skipped", side: "sell" };
+    JOURNAL = journalWith([noSide, oddSide, oddResp], manual);
+    return freshLogPage();
+  }).then(function () {
+    var manualPills = seen.map(function (s) { return s.manual; }).concat([actPill(rowOfEntry("e_fix1"))]);
+    t("manual entries are unchanged (e_fix1 still shows its stored action)",
+      manualPills.length === 7 && manualPills.every(function (p) { return !!p && p.text === "ขาย" && p.hue === "violet"; }), manualPills);
+    var p1 = actPill(haRow()), p2 = actPill(rowOfEntry(HA_BUY_ID)), p3 = actPill(rowOfEntry(DONE_ID));
+    t("ha.side missing → falls back to the stored action.kind (Review Focus 1)",
+      !!p1 && p1.text === "ขาย" && p1.hue === "violet" && !!p2 && p2.text === "ซื้อ" && p2.hue === "blue", [p1, p2]);
+    t("…an unknown answer also falls back to the stored action.kind", !!p3 && p3.text === "ขาย" && p3.hue === "violet", p3);
+    t("…no NaN/undefined in rows with odd home-action data", !LEAK.test(sec("djLog")), (LEAK.exec(sec("djLog")) || [])[0]);
+
+    // 3) ตัวกรอง + คำค้น: e_fix1 (ขาย) · ขาย/ไม่ทำ (HA_ID) · ขาย/ทำแล้ว (DONE_ID) · ซื้อ/ไม่ทำ (HA_BUY_ID)
+    JOURNAL = journalWith([haEntryOf("skipped", null), haSellOn("2026-10-21", "done", 95), haBuyOf("skipped")]);
+    return freshLogPage();
+  }).then(function () {
+    var all = sortedIds();
+    t("fixture: four rows before filtering", all.join() === [DONE_ID, HA_ID, HA_BUY_ID, "e_fix1"].sort().join(), all);
+    changeAttr("data-dj-filter", "action", "hold");
+    var hold = sortedIds();
+    t("filter ทำอะไร = hold shows the skipped sell and hides the done sell", hold.join() === HA_ID, hold);
+    changeAttr("data-dj-filter", "action", "sell");
+    var sell = sortedIds();
+    t("…filter sell = the manual sell + the done sell (not the skipped one)", sell.join() === [DONE_ID, "e_fix1"].sort().join(), sell);
+    changeAttr("data-dj-filter", "action", "none");
+    var none = sortedIds();
+    changeAttr("data-dj-filter", "action", "buy");
+    var buy = sortedIds();
+    t("…filter none = the skipped buy · filter buy = nothing", none.join() === HA_BUY_ID && buy.length === 0, [none, buy]);
+    changeAttr("data-dj-filter", "action", "");
+    typeSearch("ถือต่อ");
+    var q1 = sortedIds();
+    t("search 'ถือต่อ' finds the skipped sell", q1.join() === HA_ID, q1);
+    typeSearch("ขาย");
+    var q2 = sortedIds();
+    typeSearch("ไม่ทำอะไร");
+    var q3 = sortedIds();
+    t("…search 'ขาย' skips it · 'ไม่ทำอะไร' finds the skipped buy",
+      q2.join() === [DONE_ID, "e_fix1"].sort().join() && q3.join() === HA_BUY_ID, [q2, q3]);
+    typeSearch("");
+
+    // 4) รายละเอียดที่กางแล้วของขายที่ไม่ทำ: ไม่มี "ผลของการขาย"
+    S.openEntries[HA_ID] = true;
+    return P._loadOutcomes();
+  }).then(function () {
+    P.render();
+    var c = cardOf(HA_ID);
+    t("expanded detail of a skipped sell has no 'ผลของการขาย' line",
+      / open>/.test(detOf(HA_ID)) && /class="dj-out"/.test(c) && /ราคาตั้งต้น 90\.00/.test(c) && c.indexOf("ผลของการ") < 0, textOf(c));
+    // makeEntry ไม่มี view → ownResult ออกก่อนถึงบรรทัดนี้อยู่แล้ว · ใส่ view ให้ (ข้อมูลสมมุติ) เพื่อพิสูจน์ว่าเงื่อนไขอ่านสิ่งที่ทำจริง
+    //   ทำแล้ว 2026-09-01 (คุม: บรรทัดต้องขึ้น) · ไม่ทำ 2026-09-02 (บรรทัดต้องไม่ขึ้น) · ทั้งคู่ครบ +7 แล้ว → ขึ้นคิวทบทวนด้วย (หัวการ์ดทบทวน)
+    var vDone = haSellOn("2026-09-01", "done", 100), vSkip = haSellOn("2026-09-02", "skipped", 100);
+    vDone.view = { direction: "down", horizonDays: 7 };
+    vSkip.view = { direction: "down", horizonDays: 7 };
+    JOURNAL = journalWith([vDone, vSkip]);
+    return freshLogPage();
+  }).then(function () { return P._loadOutcomes(); }).then(function () {
+    var V_DONE = "ha_NVDA_2_sell_2026-09-01", V_SKIP = "ha_NVDA_2_sell_2026-09-02";
+    S.openEntries[V_DONE] = true;
+    S.openEntries[V_SKIP] = true;
+    P.render();
+    var cd = cardOf(V_DONE), cs = cardOf(V_SKIP);
+    var arDone = (S.outcomesById[V_DONE] || {}).actionResult, arSkip = (S.outcomesById[V_SKIP] || {}).actionResult;
+    t("…with a view: the done sell shows 'ผลของการขาย', the skipped one does not (engine still judged both as a sell)",
+      /good|bad|flat/.test(String(arDone)) && /good|bad|flat/.test(String(arSkip)) &&
+      cd.indexOf("ผลของการขาย") >= 0 && cs.indexOf("ผลของการ") < 0, [arDone, arSkip, textOf(cs)]);
+    var rd = actPill(reviewCard(V_DONE)), rs = actPill(reviewCard(V_SKIP));
+    t("…the review card head shows what was done too (ขาย · ถือต่อ) and no 'ผลของการ' for the skipped one",
+      !!rd && rd.text === "ขาย" && !!rs && rs.text === "ถือต่อ" && rs.hue === "slate" && reviewCard(V_SKIP).indexOf("ผลของการ") < 0, [rd, rs]);
+
+    // 5) ส่วนไม้จริง (ไม้ที่ผูก · รายการเลือกบันทึก) + PUT ถัดไปจากหน้า: ข้อมูลที่เก็บไม่เปลี่ยน
+    S.openEntries = {};
+    JOURNAL = journalWith([haEntryOf("skipped", null), haBuyOf("skipped")]);
+    JOURNAL.trades.push(mkTrade({ id: "t_ha1", createdAt: "2026-10-24T03:00:00.000Z", date: "2026-10-24", symbol: "NVDA", side: "buy",
+      qty: 1, price: 100, currency: "USD", entryId: HA_BUY_ID }));
+    return freshLogPage();
+  }).then(function () {
+    var tr = sec("djTrades");
+    t("real-trades section labels a home-action entry by what was done (linked cell + entry picker)",
+      tr.indexOf("<td>2026-10-28 · ไม่ทำอะไร</td>") >= 0 &&
+      tr.indexOf('<option value="' + HA_ID + '">2026-10-28 · NVDA · ถือต่อ</option>') >= 0 &&
+      tr.indexOf('<option value="' + HA_BUY_ID + '">2026-10-28 · NVDA · ไม่ทำอะไร</option>') >= 0, textOf(tr).slice(0, 600));
+    var wantSell = JSON.stringify(haEntryOf("skipped", null)), wantBuy = JSON.stringify(haBuyOf("skipped"));
+    var before = puts.length;
+    clickAttr("data-dj-del", "e_fix1");
+    var confirmed = clickAttr("data-dj-del-confirm", "e_fix1");
+    return flush().then(function () {
+      var b = lastPut(), hs = entryIn(b, HA_ID), hb = entryIn(b, HA_BUY_ID);
+      t("a later PUT from the page sends the home-action entry with action.kind still 'sell'",
+        confirmed && puts.length === before + 1 && !!hs && hs.action.kind === "sell" && hs.ha.response === "skipped" && hs.ha.side === "sell" &&
+        !!hb && hb.action.kind === "buy", [confirmed, puts.length - before, hs && hs.action, hb && hb.action]);
+      t("…both home-action entries go back byte-for-byte as stored", !!hs && JSON.stringify(hs) === wantSell && !!hb && JSON.stringify(hb) === wantBuy,
+        [hs && JSON.stringify(hs), wantSell]);
+    });
+  }).then(function () {
+    S.openEntries = {};
+    JOURNAL = freshJournal();
+    return freshLogPage();
+  }, function (e) { S.openEntries = {}; JOURNAL = freshJournal(); throw e; });
+});
+
+// ============================================================
+// dj-7 (2026-11-19) — การ์ด "ผลของการทำตามกฎ (จากกล่อง Action)" (section djHaOut ต่อจากสถิติในคอลัมน์ขวา)
+//   ทุกช่อง = HomeActionEngine.summary(…, { allTime: true }) ตัวเดียวกับกล่องบนหน้าแรก × ช่วง 7 · 30 · 90
+//   กับ state.outcomesById ชุดเดียวกับบันทึกทั้งหมด — หน้าแค่ปัดและใส่ป้าย (คาดหวังในเทสต์คิดด้วย HA.summary อีกตัว)
+//   แถว: ทำแล้ว (followed) · ไม่ทำ / ไม่ได้ตอบ (ถ้าทำจะได้) (missed) · เงินแยกสกุล ไม่บวกข้ามสกุล · ล็อกอยู่ = XXX
+// ============================================================
+var HAO = {
+  SELL_THB: "ha_PTT.BK_2_sell_2026-10-14",   // ขาย · ทำแล้ว · ฐาน 50,000 THB
+  SELL_USD: "ha_NVDA_1_sell_2026-10-15",     // ขาย · ไม่ทำ · ฐาน 2,000 USD
+  BUY_NOBASE: "ha_NVDA_1_buy_2026-10-16",    // ซื้อ · ทำแล้ว · ไม่มีฐานเงิน
+  BUY_UNANS: "ha_NVDA_3_buy_2026-10-19",     // ซื้อ · ไม่ได้ตอบ · ฐาน 20,000 บาท
+  DELETED: "ha_PTT.BK_2_sell_2026-10-07"     // ขาย · ทำแล้ว · ถูกลบแล้ว (ห้ามนับ)
+};
+var HAO_HZ = [7, 30, 90];
+var HAO_GROUPS = ["followed", "missed"];
+function haoEntry(o) {
+  var ev = { symbol: o.symbol, rule: o.rule, side: o.side, date: o.date, close: 100, kind: o.kind, detail: {} };
+  return HA.makeEntry(ev, { response: o.response, nowIso: o.date + "T03:00:00.000Z",
+    respondedAt: o.response === "unanswered" ? null : o.date + "T03:00:00.000Z", execPrice: null,
+    positionValue: o.positionValue == null ? null : o.positionValue, positionCurrency: o.currency || null,
+    amount: o.amount == null ? null : o.amount, D: E });
+}
+// e_fix1 (เขียนเอง) + entry จากกล่อง 4 ตัว + entry จากกล่องที่ถูกลบ 1 ตัว
+function haoJournal() {
+  var del = haoEntry({ symbol: "PTT.BK", rule: 2, side: "sell", date: "2026-10-07", kind: "break", response: "done", positionValue: 50000, currency: "THB" });
+  del.deletedAt = "2026-10-20T03:00:00.000Z";
+  del.updatedAt = del.deletedAt;
+  return journalWith([
+    haoEntry({ symbol: "PTT.BK", rule: 2, side: "sell", date: "2026-10-14", kind: "break", response: "done", positionValue: 50000, currency: "THB" }),
+    haoEntry({ symbol: "NVDA", rule: 1, side: "sell", date: "2026-10-15", kind: "cross-down", response: "skipped", positionValue: 2000, currency: "USD" }),
+    haoEntry({ symbol: "NVDA", rule: 1, side: "buy", date: "2026-10-16", kind: "cross-up", response: "done" }),
+    haoEntry({ symbol: "NVDA", rule: 3, side: "buy", date: "2026-10-19", kind: "dip", response: "unanswered", amount: 20000 }),
+    del
+  ]);
+}
+// ผลวัดที่รู้ค่า: pct = % ที่ราคาขยับจากราคาปิดวันสัญญาณ · null = ยังไม่ครบ (pending)
+function haoOc(p7, p30, p90) {
+  function hz(p) { return p === null ? { status: "pending", pct: null } : { status: "scored", pct: p }; }
+  return { horizons: { "7": hz(p7), "30": hz(p30), "90": hz(p90) } };
+}
+function haoOutcomes() {
+  var o = {};
+  o[HAO.SELL_THB] = haoOc(-4, -10, -12);     // ขาย → ผลต่อพอร์ต +4 / +10 / +12 · +฿2,000 / +฿5,000 / +฿6,000
+  o[HAO.SELL_USD] = haoOc(5, 2, null);       // ขาย → −5 / −2 / รอ · −$100.00 / −$40.00
+  o[HAO.BUY_NOBASE] = haoOc(3, 6, null);     // ซื้อ → +3 / +6 / รอ · ไม่มีฐานเงิน
+  o[HAO.BUY_UNANS] = haoOc(-1, null, null);  // ซื้อ → −1 / รอ / รอ · −฿200
+  o[HAO.DELETED] = haoOc(-50, -50, -50);     // ถูกลบ — ถ้าถูกนับจะเห็นทันที (+50% · +฿25,000)
+  return o;
+}
+function haoCard() { return sec("djHaOut"); }
+// <td> ของกลุ่ม × ช่วง (data-dj-hao="followed:7") — ในช่องไม่มี <td> ซ้อน
+function haoCellIn(h, group, days) {
+  var i = h.indexOf('data-dj-hao="' + group + ":" + days + '"');
+  if (i < 0) return "";
+  var s = h.lastIndexOf("<td", i);
+  return h.slice(s, h.indexOf("</td>", i) + 5);
+}
+function haoCell(group, days) { return haoCellIn(haoCard(), group, days); }
+function haoPct(cell) { var m = /class="dj-hao-pct[^"]*">([^<]*)</.exec(cell); return m ? m[1] : null; }
+function haoN(cell) { var m = /class="dj-hao-n">([^<]*)</.exec(cell); return m ? m[1] : null; }
+function haoWait(cell) { return /<span class="dj-hao-wait">รอผล<\/span>/.test(cell) && haoPct(cell) === null; }
+// เงินในช่อง → [{ ccy, amt, base }] ตามลำดับที่แสดง
+function haoMoney(cell) {
+  var re = /<span class="dj-hao-m"><span class="dj-hao-ccy">([A-Z]+)<\/span> <span class="dj-hao-amt[^"]*">([^<]*)<\/span>(?:<span class="dj-hao-base">([^<]*)<\/span>)?<\/span>/g;
+  var out = [], m;
+  while ((m = re.exec(cell)) !== null) out.push({ ccy: m[1], amt: m[2], base: m[3] || null });
+  return out;
+}
+// fmtPct(n, 1) ของหน้า (เครื่องหมายลบ U+2212 · 0 ไม่มีเครื่องหมาย)
+function pct1(n) {
+  var r = Number(Math.abs(n).toFixed(1));
+  return (r === 0 ? "" : (n > 0 ? "+" : "−")) + Math.abs(n).toFixed(1) + "%";
+}
+// ช่องตรงกับก้อน followed/missed ของ summary ไหม → [] = ตรง · อื่น ๆ = รายการที่ไม่ตรง
+function haoMismatch(h, sums) {
+  var bad = [];
+  HAO_HZ.forEach(function (days, k) {
+    HAO_GROUPS.forEach(function (g) {
+      var acc = sums[k][g], cell = haoCellIn(h, g, days);
+      var ok = acc.n > 0 ? (haoPct(cell) === pct1(acc.avgPct) && haoN(cell) === acc.n + " รายการ") : haoWait(cell);
+      if (!ok) bad.push([g, days, acc.n, acc.avgPct, haoPct(cell), haoN(cell)]);
+    });
+  });
+  return bad;
+}
+function haoSums(entries, ocs, extra) {
+  return HAO_HZ.map(function (days) {
+    var o = { nowBangkok: "2026-10-25T12:00", horizonDays: days, D: E };
+    if (extra) Object.keys(extra).forEach(function (k) { o[k] = extra[k]; });
+    return HA.summary(entries, ocs, o);
+  });
+}
+function plain(s) { return textOf(s).replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"); }
+// บล็อก @media ทั้งก้อน (นับวงเล็บปีกกา)
+function mediaBlock(css, head) {
+  var i = css.indexOf(head);
+  if (i < 0) return "";
+  var j = css.indexOf("{", i), depth = 0, k;
+  for (k = j; k < css.length; k++) {
+    if (css[k] === "{") depth++;
+    else if (css[k] === "}" && --depth === 0) break;
+  }
+  return css.slice(i, k + 1);
+}
+
+section("home-action outcome card (dj-7)", function () {
+  var S = P._state;
+  S.openEntries = {};
+  doc.activeElement = null;
+  JOURNAL = haoJournal();
+  var ids = JOURNAL.entries.map(function (x) { return x && x.id; });
+  t("fixture: e_fix1 + 4 home-action entries + 1 deleted home-action entry (makeEntry built them all)",
+    ids.join() === ["e_fix1", HAO.SELL_THB, HAO.SELL_USD, HAO.BUY_NOBASE, HAO.BUY_UNANS, HAO.DELETED].join() &&
+    JOURNAL.entries[2].ha.positionCurrency === "USD" && JOURNAL.entries[3].ha.amount === null && JOURNAL.entries[4].ha.amount === 20000 &&
+    typeof JOURNAL.entries[5].deletedAt === "string", ids);
+  t("…the page loaded window.HomeActionEngine (the Home box's engine) from decision-journal.html",
+    !!win.HomeActionEngine && typeof win.HomeActionEngine.summary === "function");
+  return freshLogPage().then(function () {
+    var oc = haoOutcomes();
+    Object.keys(oc).forEach(function (k) { S.outcomesById[k] = oc[k]; });
+    P.render();
+    var card = haoCard();
+    var all = haoSums(S.doc.entries, S.outcomesById, { allTime: true });
+
+    // 1) โครงการ์ด: หัว · บรรทัดรอง · 2 แถว × 3 คอลัมน์ · อยู่ในคอลัมน์ขวาต่อจากสถิติ
+    var h = html();
+    var heads = [], re = /<th scope="col" class="dj-num">([^<]*)<\/th>/g, m;
+    while ((m = re.exec(card)) !== null) heads.push(m[1]);
+    var rows = [], re2 = /<th scope="row">([^<]*)<\/th>/g;
+    while ((m = re2.exec(card)) !== null) rows.push(m[1]);
+    t("card renders with 2 rows × 3 columns and the fixed labels",
+      card.length > 0 && /<h2 id="djHaOutH">ผลของการทำตามกฎ \(จากกล่อง Action\)<\/h2>/.test(card) &&
+      textOf(card).indexOf("ทุกสัญญาณที่บันทึกไว้ · ผลต่อพอร์ตเฉลี่ยนับจากราคาปิดวันสัญญาณ") >= 0 &&
+      rows.join("|") === "ทำแล้ว|ไม่ทำ / ไม่ได้ตอบ (ถ้าทำจะได้)" && heads.join("|") === "1 สัปดาห์|1 เดือน|3 เดือน" &&
+      (card.match(/data-dj-hao="/g) || []).length === 6 &&
+      h.indexOf('<div class="dj-col dj-col-log">') < h.indexOf('id="djStats"') && h.indexOf('id="djStats"') < h.indexOf('id="djHaOut"') &&
+      h.indexOf('id="djHaOut"') < h.indexOf('id="djTrades"'), [rows, heads, textOf(card).slice(0, 200)]);
+
+    // 2) ทุกช่อง = summary(allTime) ของช่วงนั้น · ค่าคิดมือ (คุมว่า fixture ได้ตัวเลขที่คิดไว้จริง)
+    t("each cell equals HomeActionEngine.summary(allTime) for that horizon (avg % and n)",
+      all.every(function (s) { return s.allTime === true; }) && haoMismatch(card, all).length === 0, haoMismatch(card, all));
+    var hand = [["followed", 7, "+3.5%", "2 รายการ"], ["followed", 30, "+8.0%", "2 รายการ"], ["followed", 90, "+12.0%", "1 รายการ"],
+      ["missed", 7, "−3.0%", "2 รายการ"], ["missed", 30, "−2.0%", "1 รายการ"]];
+    var handOff = hand.filter(function (x) { var c = haoCell(x[0], x[1]); return haoPct(c) !== x[2] || haoN(c) !== x[3]; });
+    t("…hand-computed: ทำแล้ว +3.5% (2) · +8.0% (2) · +12.0% (1) · ไม่ทำ −3.0% (2) · −2.0% (1) · positive green, negative red",
+      handOff.length === 0 && /class="dj-hao-pct dj-up">\+3\.5%/.test(haoCell("followed", 7)) && /class="dj-hao-pct dj-down">−3\.0%/.test(haoCell("missed", 7)), handOff);
+
+    // 3) ช่วง 7/30 ของการ์ด = สรุปของกล่องบนหน้าแรก (กรอบ 90 วัน) เมื่อทุกรายการอยู่ใน 90 วัน
+    var home = [7, 30].map(function (d) { return HA.summary(S.doc.entries, S.outcomesById, { nowBangkok: "2026-10-25T12:00", horizonDays: d, D: E }); });
+    var homeOff = [];
+    [7, 30].forEach(function (d, k) {
+      HAO_GROUPS.forEach(function (g) {
+        var acc = home[k][g], c = haoCell(g, d);
+        if (!(acc.n > 0 && haoPct(c) === pct1(acc.avgPct) && haoN(c) === acc.n + " รายการ")) homeOff.push([g, d, acc.n, haoPct(c)]);
+      });
+    });
+    t("7 and 30 equal the Home box's windowed summary when every entry is within 90 days",
+      home[0].since === "2026-07-27" && home[0].counts.total === all[0].counts.total && home[1].counts.total === 4 &&
+      !("allTime" in home[0]) && homeOff.length === 0, [home[0].since, home[0].counts, homeOff]);
+
+    // 4) ช่องที่ยังไม่มีผลที่ครบ = รอผล · ท้ายการ์ดบอกจำนวนที่รอที่ 3 เดือน
+    //    final fix wave: นับเฉพาะแถวที่ช่วง 90 วัน status "pending" จริง — no-data (ยังไม่มีผล/ดึงราคาไม่ได้) ไม่ใช่ "ยังไม่ครบ"
+    //    (counts.pending ของ summary นับรวม no-data ด้วย จึงใช้ตรง ๆ ไม่ได้)
+    var foot = plain(card);
+    t("a horizon with no scored rows shows 'รอผล' · footer counts pending at 3 months",
+      haoWait(haoCell("missed", 90)) && all[2].missed.n === 0 && all[2].counts.pending === 3 &&
+      foot.indexOf("รอผล 3 รายการ (ยังไม่ครบ 3 เดือน)") >= 0 &&
+      foot.indexOf('ขาย = ราคาลงคือได้ · แถว "ไม่ทำ" อ่านว่าถ้าทำตามกฎจะได้เท่านี้') >= 0, [haoCell("missed", 90), foot.slice(-220)]);
+    var keepUnans = S.outcomesById[HAO.BUY_UNANS], keepNobase = S.outcomesById[HAO.BUY_NOBASE];
+    S.outcomesById[HAO.BUY_UNANS] = { horizons: { "7": keepUnans.horizons["7"], "30": keepUnans.horizons["30"], "90": { status: "no-data", pct: null } } };
+    P.render();
+    var footNoData = plain(haoCard());
+    var pendNoData = haoSums(S.doc.entries, S.outcomesById, { allTime: true })[2].counts.pending;
+    delete S.outcomesById[HAO.BUY_NOBASE];
+    P.render();
+    var footNoOc = plain(haoCard());
+    S.outcomesById[HAO.BUY_UNANS] = keepUnans;
+    S.outcomesById[HAO.BUY_NOBASE] = keepNobase;
+    P.render();
+    t("…the 3-month footer counts only rows whose 90-day status is 'pending' — a no-data row or a row with no outcome yet is not counted",
+      pendNoData === 3 && footNoData.indexOf("รอผล 2 รายการ (ยังไม่ครบ 3 เดือน)") >= 0 && footNoData.indexOf("รอผล 3 รายการ") < 0 &&
+      footNoOc.indexOf("รอผล 1 รายการ (ยังไม่ครบ 3 เดือน)") >= 0 && plain(haoCard()).indexOf("รอผล 3 รายการ (ยังไม่ครบ 3 เดือน)") >= 0,
+      [pendNoData, footNoData.slice(-160), footNoOc.slice(-160)]);
+
+    // 5) entry จากกล่องที่ถูกลบไม่นับ (Review Focus 2) — ถ้านับ ทำแล้ว 7 วันจะเป็น 3 รายการ เฉลี่ย +19.0%
+    var undeleted = S.doc.entries.map(function (x) { return x.id === HAO.DELETED ? Object.assign({}, x, { deletedAt: null }) : x; });
+    var withDel = haoSums(undeleted, S.outcomesById, { allTime: true });
+    t("deleted home-action entry is not counted (Review Focus 2)",
+      S.doc.entries.some(function (x) { return x.id === HAO.DELETED && typeof x.deletedAt === "string"; }) && withDel[0].followed.n === 3 &&
+      haoN(haoCell("followed", 7)) === "2 รายการ" && haoPct(haoCell("followed", 7)) === "+3.5%" && all[0].counts.total === 4 &&
+      haoMoney(card).every(function (x) { return x.amt.indexOf("25,000") < 0 && x.amt.indexOf("27,000") < 0; }) &&
+      logIds().indexOf(HAO.DELETED) < 0, [haoCell("followed", 7), withDel[0].followed]);
+
+    // 6) เงินรวมมาจากบางแถว → บอก "จาก k รายการที่มีฐานเงิน" (ซื้อทำแล้วไม่มีฐาน → ทำแล้ว THB มาจาก 1 ใน 2)
+    var f7 = haoMoney(haoCell("followed", 7)), f90 = haoMoney(haoCell("followed", 90)), m30 = haoMoney(haoCell("missed", 30));
+    t("partial money base says 'จาก k รายการที่มีฐานเงิน'",
+      all[0].followed.moneyN.THB === 1 && all[0].followed.n === 2 &&
+      f7.length === 1 && f7[0].ccy === "THB" && f7[0].amt === "+฿2,000" && f7[0].base === "จาก 1 รายการที่มีฐานเงิน" &&
+      f90.length === 1 && f90[0].amt === "+฿6,000" && f90[0].base === null &&
+      m30.length === 1 && m30[0].ccy === "USD" && m30[0].amt === "−$40.00" && m30[0].base === null, [f7, f90, m30]);
+
+    // 7) USD แยกจาก THB ในช่องเดียวกัน (ไม่ทำ 7 วัน: −฿200 + −$100.00 — ห้ามรวมเป็น 300)
+    var m7 = haoMoney(haoCell("missed", 7));
+    t("USD money is shown separately from THB (never added together)",
+      m7.length === 2 && m7[0].ccy === "THB" && m7[0].amt === "−฿200" && m7[0].base === "จาก 1 รายการที่มีฐานเงิน" &&
+      m7[1].ccy === "USD" && m7[1].amt === "−$100.00" && m7[1].base === "จาก 1 รายการที่มีฐานเงิน" &&
+      haoCell("missed", 7).indexOf("300") < 0 && HAO_HZ.every(function (d) { return haoCell("followed", d).indexOf("$") < 0; }), m7);
+    t("…money cells colour by sign (gain green · loss red) and no NaN/undefined/advisory words in the card",
+      /class="dj-hao-amt dj-up">\+฿2,000/.test(haoCell("followed", 7)) && /class="dj-hao-amt dj-down">−\$100\.00/.test(haoCell("missed", 7)) &&
+      !LEAK.test(card) && !ADVISORY_TH.test(card) && !ADVISORY_EN.test(card), (LEAK.exec(card) || [])[0]);
+    // ดึงราคาไม่สำเร็จ: ผลจากรอบก่อนยังอยู่ = ใช้ผลเดิม (ยังนับ) · ไม่มีผลเลย = ยังไม่นับ — ท้ายการ์ดต้องบอกตามจริง
+    S.priceErrBySymbol["PTT.BK"] = "HTTP 500";
+    P.render();
+    var errOld = plain(haoCard()), f7old = haoCell("followed", 7);
+    var keepOc = S.outcomesById[HAO.SELL_THB];
+    delete S.outcomesById[HAO.SELL_THB];
+    P.render();
+    var errNew = plain(haoCard()), f7new = haoCell("followed", 7);
+    S.outcomesById[HAO.SELL_THB] = keepOc;
+    delete S.priceErrBySymbol["PTT.BK"];
+    P.render();
+    t("…price fetch failure: kept outcomes still count ('ใช้ผลจากราคาที่ดึงได้ก่อนหน้า') · no outcome yet → 'ยังไม่นับในตาราง'",
+      errOld.indexOf("ดึงราคาใหม่ไม่สำเร็จ: PTT.BK — ใช้ผลจากราคาที่ดึงได้ก่อนหน้า") >= 0 && errOld.indexOf("ยังไม่นับ") < 0 && haoPct(f7old) === "+3.5%" &&
+      errNew.indexOf("ดึงราคาไม่สำเร็จ: PTT.BK — รายการของสัญลักษณ์นี้ที่ยังไม่มีผลยังไม่นับในตาราง") >= 0 &&
+      haoPct(f7new) === "+3.0%" && haoN(f7new) === "1 รายการ" && plain(haoCard()).indexOf("ดึงราคา") < 0,
+      [errOld.slice(-200), errNew.slice(-200), haoPct(f7new)]);
+
+    // 8) ล็อก Privacy: เงินทุกสกุลเป็น XXX · เงินไม่ลงสี · ไม่มีเงินใน title/aria-label (Review Focus 4)
+    //    % ไม่ใช่เงินและมีเครื่องหมายในข้อความอยู่แล้ว → ลงสีตามเครื่องหมายเหมือนตารางสถิติ ไม่ว่าล็อกหรือไม่ (fix round 1)
+    function pctClsAll(h) {
+      var out = {};
+      HAO_HZ.forEach(function (d) {
+        HAO_GROUPS.forEach(function (g) { var m = /class="(dj-hao-pct[^"]*)"/.exec(haoCellIn(h, g, d)); out[g + ":" + d] = m ? m[1] : null; });
+      });
+      return out;
+    }
+    var ul = haoCard();
+    privacyLocked = true;
+    P.render();
+    var lk = haoCard();
+    var lkMoney = HAO_HZ.map(function (d) { return haoMoney(haoCellIn(lk, "followed", d)).concat(haoMoney(haoCellIn(lk, "missed", d))); })
+      .reduce(function (a, b) { return a.concat(b); }, []);
+    privacyLocked = false;
+    P.render();
+    t("locked privacy: no ฿/USD amounts in the card ('XXX' instead) and no money in title/aria-label (Review Focus 4)",
+      lkMoney.length === 6 && lkMoney.every(function (x) { return x.amt === "XXX"; }) &&
+      lkMoney.some(function (x) { return x.ccy === "USD"; }) && lkMoney.some(function (x) { return x.ccy === "THB"; }) &&
+      lk.indexOf("฿") < 0 && !/\$\s?[\d,]/.test(lk) && !/(USD|THB)\s?[−+-]?[\d,]/.test(textOf(lk)) &&
+      !/2,000|5,000|6,000|100\.00|40\.00|฿200/.test(lk) && !/class="dj-hao-amt[^"]*dj-(up|down)/.test(lk) &&
+      !/(title|aria-label)="[^"]*([฿$\d]|XXX|USD|THB)/.test(lk) && haoPct(haoCellIn(lk, "followed", 7)) === "+3.5%", lkMoney);
+    var pcUl = pctClsAll(ul), pcLk = pctClsAll(lk);
+    t("…locked privacy keeps the % sign colour (same classes as unlocked: + green · − red) — only money loses its colour",
+      JSON.stringify(pcLk) === JSON.stringify(pcUl) &&
+      pcLk["followed:7"] === "dj-hao-pct dj-up" && pcLk["followed:30"] === "dj-hao-pct dj-up" && pcLk["followed:90"] === "dj-hao-pct dj-up" &&
+      pcLk["missed:7"] === "dj-hao-pct dj-down" && pcLk["missed:30"] === "dj-hao-pct dj-down" && pcLk["missed:90"] === null &&
+      /class="dj-hao-amt dj-up">\+฿2,000/.test(ul) && /class="dj-hao-amt">XXX</.test(lk), [pcUl, pcLk]);
+
+    // 9) ราคายังไม่มา → บอกว่ากำลังดึง · ทุกช่องรอผล · ไม่มี NaN/undefined (Review Focus 3)
+    S.outcomesById = {};
+    S.outcomesLoading = true;
+    P.render();
+    var ld = haoCard();
+    S.outcomesLoading = false;
+    // final fix wave: ระหว่างดึงราคา ยังไม่รู้ว่ารายการไหนยังไม่ครบ → ไม่แสดงบรรทัด "รอผล m รายการ (ยังไม่ครบ …)"
+    var loadingOk = textOf(ld).indexOf("กำลังดึงราคา… ตัวเลขอาจยังไม่ครบ") >= 0 && (ld.match(/<span class="dj-hao-wait">รอผล<\/span>/g) || []).length === 6 &&
+      !LEAK.test(ld) && !/รอผล \d+ รายการ \(ยังไม่ครบ/.test(plain(ld));
+    // …แล้วราคามาถึงระหว่างที่ผู้ใช้พิมพ์ในฟอร์ม → หน้าวาดเฉพาะบางส่วน (renderAroundForm) — การ์ดต้องวาดใหม่ด้วย ไม่ค้างที่ "รอผล"
+    var MARK = "<!--hao-typing-->";
+    doc.activeElement = doc.getElementById("djEvent");
+    els.djRoot.innerHTML = html() + MARK;
+    doc.getElementById("djHaOut").innerHTML = "<!--hao-stale-->";
+    return P._loadOutcomes().then(function () {
+      var inner = els.djHaOut.innerHTML;
+      var after = haoSums(S.doc.entries, S.outcomesById, { allTime: true });
+      var scored = after.reduce(function (n, s) { return n + s.followed.n + s.missed.n; }, 0);
+      var partial = html().indexOf(MARK) >= 0;
+      doc.activeElement = null;
+      t("outcomes loading → 'กำลังดึงราคา…' and no NaN/undefined; card redraws when outcomes arrive (Review Focus 3)",
+        loadingOk && partial && inner.indexOf("hao-stale") < 0 && !/<section/.test(inner) && /<h2 id="djHaOutH">/.test(inner) &&
+        scored > 0 && haoMismatch(inner, after).length === 0 && inner.indexOf("กำลังดึงราคา") < 0 && !LEAK.test(inner),
+        [loadingOk, partial, scored, haoMismatch(inner, after), textOf(inner).slice(0, 160)]);
+      // ทางวาดบางส่วนอีกสามทาง (พิมพ์บทเรียน · ค้นหา · ฟอร์มไม้จริง) วาดการ์ดด้วยเหมือนสถิติ
+      var paths = [["djLesson-e_fix1", "review"], ["djSearch", "search"], ["djTQty", "trade form"]];
+      var missed = [];
+      paths.forEach(function (p) {
+        doc.activeElement = doc.getElementById(p[0]);
+        els.djRoot.innerHTML = html() + MARK;
+        doc.getElementById("djHaOut").innerHTML = "<!--hao-stale-->";
+        doc.getElementById("djStats").innerHTML = "<!--stats-stale-->";
+        P.render();
+        var hi = els.djHaOut.innerHTML;
+        if (html().indexOf(MARK) < 0 || hi.indexOf("hao-stale") >= 0 || haoMismatch(hi, after).length !== 0 ||
+          els.djStats.innerHTML.indexOf("stats-stale") >= 0) missed.push(p[1]);
+        doc.activeElement = null;
+      });
+      t("…every partial re-render path that redraws djStats redraws djHaOut too (review lesson · search · trade form)", missed.length === 0, missed);
+      P.render();
+
+      // 10) ไม่มี entry จากกล่องเลย → ประโยคว่าง (สถิติยังวาดตามเดิม)
+      JOURNAL = freshJournal();
+      return freshLogPage();
+    }).then(null, function (e) { doc.activeElement = null; throw e; });
+  }).then(function () {
+    var card = haoCard();
+    t("no home-action entries → the empty-state sentence",
+      plain(card).indexOf('ยังไม่มีรายการจากกล่อง Action — ตอบในกล่อง "ต้องทำอะไรวันนี้" บนหน้าแรกแล้วผลจะสรุปที่นี่') >= 0 &&
+      !/data-dj-hao=/.test(card) && /<h2 id="djHaOutH">/.test(card) && /data-dj-stat="comp:against"/.test(sec("djStats")), textOf(card));
+    // โหลดเอกสารไม่ได้ (ยังไม่รู้ว่ามีอะไร) → ข้อความแบบเดียวกับสถิติ
+    S.doc = null;
+    failGet = "reject";
+    return P.load(true);
+  }).then(function () {
+    failGet = null;
+    var want = "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ด้านบนของหน้า";
+    t("…load failure → the same placeholder as สถิติ, no table", textOf(haoCard()).indexOf(want) >= 0 && textOf(sec("djStats")).indexOf(want) >= 0 &&
+      !/data-dj-hao=/.test(haoCard()), textOf(haoCard()));
+
+    // 10b) final fix wave: กลุ่มที่ไม่มีรายการเลย (ไม่เคยตอบ "ทำแล้ว") → "—" ไม่ใช่ "รอผล" (ไม่มีผลอะไรจะมา)
+    //      · กลุ่มที่มีรายการแต่ยังไม่มีที่ครบ → "รอผล" ตามเดิม · จำนวนรายการของกลุ่ม = counts ของ summary เดียวกัน
+    JOURNAL = journalWith([
+      haoEntry({ symbol: "NVDA", rule: 1, side: "sell", date: "2026-10-15", kind: "cross-down", response: "skipped", positionValue: 2000, currency: "USD" }),
+      haoEntry({ symbol: "NVDA", rule: 3, side: "buy", date: "2026-10-19", kind: "dip", response: "unanswered", amount: 20000 })
+    ]);
+    return freshLogPage();
+  }).then(function () {
+    var oc = haoOutcomes();
+    Object.keys(oc).forEach(function (k) { S.outcomesById[k] = oc[k]; });
+    P.render();
+    var s = haoSums(S.doc.entries, S.outcomesById, { allTime: true });
+    function none(c) { return /<span class="dj-hao-none">—<\/span>/.test(c) && haoPct(c) === null && c.indexOf("รอผล") < 0; }
+    t("a group with no entries at all shows '—' (not 'รอผล') · a group with entries but none due yet keeps 'รอผล'",
+      s[0].counts.done === 0 && s[0].counts.skipped + s[0].counts.unanswered === 2 &&
+      HAO_HZ.every(function (d) { return none(haoCell("followed", d)); }) &&
+      haoPct(haoCell("missed", 7)) === "−3.0%" && haoPct(haoCell("missed", 30)) === "−2.0%" && haoWait(haoCell("missed", 90)) &&
+      !LEAK.test(haoCard()), HAO_HZ.map(function (d) { return [haoCell("followed", d), haoCell("missed", d)]; }));
+
+    // 11) ไม่มีเอนจินของกล่อง → บอกตรง ๆ ในการ์ด · ส่วนอื่นของหน้ายังวาดครบ
+    JOURNAL = haoJournal();
+    return freshLogPage();
+  }).then(function () {
+    var savedHA = win.HomeActionEngine, thrown = null;
+    win.HomeActionEngine = undefined;
+    try { P.render(); } catch (e) { thrown = e; }
+    var card = haoCard();
+    var rest = countOf(/<section id="dj/g) === 8 && logCount() === 5 && /data-dj-stat="comp:against"/.test(sec("djStats")) &&
+      /id="djSymbol"/.test(sec("djNew")) && /id="djTrades"/.test(html()) && !LEAK.test(html());
+    win.HomeActionEngine = savedHA;
+    P.render();
+    t("HomeActionEngine missing → 'โหลดตัวคำนวณสรุปไม่สำเร็จ' and the rest of the page still renders",
+      !thrown && /โหลดตัวคำนวณสรุปไม่สำเร็จ/.test(card) && !/data-dj-hao=/.test(card) && rest && /data-dj-hao="followed:7"/.test(haoCard()),
+      [thrown && String(thrown), textOf(card), rest]);
+
+    // 12) CSS: คลาส dj-hao ที่การ์ดใช้มีกฎ · สีผ่าน var() เท่านั้น · จอ ≤600px ตารางเลื่อนในกล่องตัวเอง/ตัดบรรทัด
+    //     (ใส่ผลวัดที่รู้ค่าก่อน ให้การ์ดมีครบทุกแบบ: % · จำนวน · เงินสองสกุล · ฐานบางแถว · รอผล · ท้ายการ์ด)
+    var oc = haoOutcomes();
+    Object.keys(oc).forEach(function (k) { S.outcomesById[k] = oc[k]; });
+    P.render();
+    var css = readPub("decision-journal.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    var used = {};
+    (haoCard().match(/dj-hao-[a-z-]+/g) || []).forEach(function (c) { used[c] = 1; });
+    var noRule = Object.keys(used).filter(function (c) { return !new RegExp("\\." + c + "(?![\\w-])").test(css); });
+    var bodies = [];
+    css.replace(/([^{}]+)\{([^{}]*)\}/g, function (all, sel, body) { if (/\.dj-hao-/.test(sel)) bodies.push(body); return all; });
+    var colourDecls = [];
+    bodies.forEach(function (b) {
+      b.split(";").forEach(function (d) { if (/^\s*(color|background(-color)?|border(-[a-z]+)*|box-shadow|outline)\s*:/.test(d)) colourDecls.push(d.trim()); });
+    });
+    var badColour = colourDecls.filter(function (d) { return /#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|oklch|oklab|lab|lch)\(/.test(d) || (/^(color|background)/.test(d) && !/var\(--(dj|mc)-/.test(d)); });
+    var mob = mediaBlock(css, "@media (max-width: 600px)");
+    t("CSS: dj-hao classes exist, colours only via var(), card scrolls or stacks at ≤600px",
+      Object.keys(used).length >= 6 && noRule.length === 0 && bodies.length >= 6 && colourDecls.length >= 3 && badColour.length === 0 &&
+      /<div class="dj-table-wrap"><table class="dj-table dj-hao-table">/.test(haoCard()) &&
+      /\.dj-hao-table th,\s*\.dj-hao-table td\s*\{[^}]*white-space:\s*normal/.test(css) && /\.dj-hao-[\w-]+[^{]*\{/.test(mob) &&
+      /decision-journal\.css\?v=20261119-dj-7/.test(DJ_HTML), [Object.keys(used), noRule, badColour, mob.length]);
+    t("…decision-journal-page.js bumped to dj-7 and still ES5", /decision-journal-page\.js\?v=20261119-dj-7/.test(DJ_HTML) && es5ok("decision-journal-page.js"));
+    JOURNAL = freshJournal();
+    return freshLogPage();
+  }).then(null, function (e) { privacyLocked = false; failGet = null; doc.activeElement = null; JOURNAL = freshJournal(); throw e; });
+});
+
+// ============================================================
+// dj-7 items (Addendum A · 2026-11-19) — รายการรายตัวใต้ตารางสรุปในการ์ด djHaOut
+//   แถวเดียวกับที่ summary(allTime) นับ (ใหม่→เก่า · ไม่รวมที่ถูกลบ) · บรรทัด 1 = กล่องบอกอะไร · บรรทัด 2 = คุณทำอะไรจริง
+//   · ตารางเล็ก 3 ช่วง = ผลต่อพอร์ต % จาก HA.impactPct ตัวเดียวกับ summary (ค่าเฉลี่ยของรายการ = ช่องในตารางสรุป)
+//   · ประโยคสรุปจากช่วงยาวสุดที่มีผล (เกณฑ์ทรงตัว ±FLAT_BAND_PCT ของ Journal) · 10 รายการแรก + ปุ่มดูทั้งหมด/ย่อ
+// ============================================================
+function haoItemIds(h) {
+  var re = /data-dj-hao-item="([^"]*)"/g, m, out = [];
+  while ((m = re.exec(h)) !== null) out.push(m[1]);
+  return out;
+}
+// <li> ของรายการเดียว (ในรายการไม่มี <li> ซ้อน)
+function haoItemIn(h, id) {
+  var i = h.indexOf('data-dj-hao-item="' + id + '"');
+  if (i < 0) return "";
+  var s = h.lastIndexOf("<li", i);
+  return h.slice(s, h.indexOf("</li>", i) + 5);
+}
+function haoICellIn(h, id, days) {
+  var i = h.indexOf('data-dj-hao-icell="' + id + ":" + days + '"');
+  if (i < 0) return "";
+  var s = h.lastIndexOf("<td", i);
+  return h.slice(s, h.indexOf("</td>", i) + 5);
+}
+// ข้อความ 3 ช่องของรายการ (1 สัปดาห์ · 1 เดือน · 3 เดือน) · ไม่มีช่อง = null
+function haoICellTexts(h, id) {
+  return HAO_HZ.map(function (d) { var c = haoICellIn(h, id, d); return c ? plain(c).trim() : null; });
+}
+function haoIPctCls(cell) { var m = /class="(dj-hao-ipct[^"]*)"/.exec(cell); return m ? m[1] : null; }
+function haoLineIn(item, cls) {
+  var m = new RegExp('<p class="' + cls + '">([\\s\\S]*?)</p>').exec(item);
+  return m ? plain(m[1]).trim() : null;
+}
+function haoVerdictIn(item) {
+  var m = /<p class="dj-hao-verdict" data-tone="([a-z]+)">([\s\S]*?)<\/p>/.exec(item);
+  return m ? { tone: m[1], text: plain(m[2]).trim() } : null;
+}
+function haoILabelIn(item) { var m = /<th scope="row" class="dj-hao-ilabel">([^<]*)<\/th>/.exec(item); return m ? m[1] : null; }
+// เงินในประโยคสรุปของทุกรายการ ตามลำดับที่แสดง → ["−฿200", …]
+function haoIAmts(h) {
+  var re = /<span class="dj-hao-iamt[^"]*">([^<]*)<\/span>/g, m, out = [];
+  while ((m = re.exec(h)) !== null) out.push(m[1]);
+  return out;
+}
+function haoMoreIn(h) {
+  var m = /<button type="button" class="dj-btn dj-hao-more" data-dj-hao-more="1"[^>]*>([^<]*)<\/button>/.exec(h);
+  return m ? m[1] : null;
+}
+
+section("home-action items in the outcome card (dj-7 items)", function () {
+  var S = P._state;
+  var ORDER = [HAO.BUY_UNANS, HAO.BUY_NOBASE, HAO.SELL_USD, HAO.SELL_THB];
+  var GROUP = { done: "followed", skipped: "missed", unanswered: "missed" };
+  S.openEntries = {};
+  doc.activeElement = null;
+  S.haoShowAll = false;
+  JOURNAL = haoJournal();
+  function entryOf(id) { return (S.doc ? S.doc.entries : []).filter(function (x) { return x && x.id === id; })[0] || null; }
+  function setOcs(o) { S.outcomesById = {}; Object.keys(o).forEach(function (k) { S.outcomesById[k] = o[k]; }); }
+  function verdictOf(id) { return haoVerdictIn(haoItemIn(haoCard(), id)); }
+  function cleanup() { privacyLocked = false; doc.activeElement = null; S.haoShowAll = false; S.outcomesLoading = false; JOURNAL = freshJournal(); }
+  var many = [];
+  return freshLogPage().then(function () {
+    setOcs(haoOutcomes());
+    P.render();
+    var card = haoCard();
+    var ids = haoItemIds(card);
+    var rowIds = haoSums(S.doc.entries, S.outcomesById, { allTime: true })[0].rows.map(function (r) { return r.id; });
+
+    // 1) ชุดรายการ = rows ของ summary(allTime) · ใหม่→เก่า · ไม่มีตัวที่ถูกลบ · อยู่ใต้ตารางสรุป
+    t("items: 4 live entries newest first, deleted one absent",
+      ids.join() === ORDER.join() && rowIds.join() === ORDER.join() && card.indexOf(HAO.DELETED) < 0 &&
+      /<h3 class="dj-hao-ititle">รายตัว \(ใหม่สุดก่อน\)<\/h3>/.test(card) && /<ol class="dj-hao-items">/.test(card) &&
+      card.indexOf('<ol class="dj-hao-items">') > card.indexOf('<table class="dj-table dj-hao-table">') &&
+      ORDER.every(function (id) { return card.indexOf('<li class="dj-hao-item" data-dj-hao-item="' + id + '">') >= 0; }) &&
+      haoMoreIn(card) === null && !/data-dj-hao-more/.test(card), [ids, rowIds]);
+
+    // 2) บรรทัด 1 (กล่องบอกอะไร) + บรรทัด 2 (คุณทำอะไรจริง — actionKindOf)
+    var LINES = {};
+    LINES[HAO.BUY_UNANS] = ["2026-10-19 · NVDA · กฎ 3 ย่อ ≥20% · ระบบบอก: ซื้อ (ย่อถึง 20% จาก high 1 ปี)", "คุณ: ไม่ได้ตอบ (ไม่ทำอะไร)"];
+    LINES[HAO.BUY_NOBASE] = ["2026-10-16 · NVDA · กฎ 1 EMA12/26 · ระบบบอก: ซื้อ (EMA12 ตัดขึ้น EMA26)", "คุณ: ทำแล้ว (ซื้อ)"];
+    LINES[HAO.SELL_USD] = ["2026-10-15 · NVDA · กฎ 1 EMA12/26 · ระบบบอก: ขาย (EMA12 ตัดลง EMA26)", "คุณ: ไม่ทำ (ถือต่อ)"];
+    LINES[HAO.SELL_THB] = ["2026-10-14 · PTT.BK · กฎ 2 SMA200 · ระบบบอก: ขาย (หลุด SMA200 ยืนยัน)", "คุณ: ทำแล้ว (ขาย)"];
+    var lineOff = ORDER.map(function (id) {
+      var it = haoItemIn(card, id);
+      return [id, haoLineIn(it, "dj-hao-isig"), haoLineIn(it, "dj-hao-iyou")];
+    }).filter(function (x) { return x[1] !== LINES[x[0]][0] || x[2] !== LINES[x[0]][1]; });
+    t("item line 1 + line 2 text per entry (rule label · ระบบบอก · คุณ: … (สิ่งที่ทำจริง))", ids.length === 4 && lineOff.length === 0, lineOff);
+
+    // 3) ช่อง = fmtPct(HA.impactPct(entry, pct), 1) · ยังไม่ครบ = รอผล · ป้ายแถว ได้/เสีย (ทำแล้ว) · ถ้าทำจะได้ (ไม่ทำ/ไม่ได้ตอบ)
+    var CELLS = {}, LABEL = {};
+    CELLS[HAO.SELL_THB] = ["+4.0%", "+10.0%", "+12.0%"];
+    CELLS[HAO.SELL_USD] = ["−5.0%", "−2.0%", "รอผล"];
+    CELLS[HAO.BUY_NOBASE] = ["+3.0%", "+6.0%", "รอผล"];
+    CELLS[HAO.BUY_UNANS] = ["−1.0%", "รอผล", "รอผล"];
+    LABEL[HAO.SELL_THB] = "ได้/เสีย";
+    LABEL[HAO.SELL_USD] = "ถ้าทำจะได้";
+    LABEL[HAO.BUY_NOBASE] = "ได้/เสีย";
+    LABEL[HAO.BUY_UNANS] = "ถ้าทำจะได้";
+    var cellOff = [];
+    ORDER.forEach(function (id) {
+      var e = entryOf(id), got = haoICellTexts(card, id);
+      var want = HAO_HZ.map(function (d) {
+        var hz = S.outcomesById[id].horizons[String(d)];
+        return hz.status === "scored" ? pct1(HA.impactPct(e, hz.pct)) : "รอผล";
+      });
+      var lab = haoILabelIn(haoItemIn(card, id));
+      if (got.join("|") !== want.join("|") || want.join("|") !== CELLS[id].join("|") || lab !== LABEL[id]) cellOff.push([id, got, want, lab]);
+    });
+    t("item cells = fmtPct(HA.impactPct(entry, pct), 1) per horizon · รอผล for pending",
+      cellOff.length === 0 && (card.match(/data-dj-hao-icell="/g) || []).length === 12 &&
+      haoIPctCls(haoICellIn(card, HAO.SELL_THB, 90)) === "dj-hao-ipct dj-up" && haoIPctCls(haoICellIn(card, HAO.SELL_USD, 7)) === "dj-hao-ipct dj-down" &&
+      /<span class="dj-hao-wait">รอผล<\/span>/.test(haoICellIn(card, HAO.BUY_UNANS, 30)), cellOff);
+
+    // 4) ต้องตรงกัน: ค่าเฉลี่ยของรายการที่มีผลในแต่ละกลุ่ม/ช่วง = ช่องในตารางสรุปเดียวกัน (คิดในเทสต์ด้วย HA.impactPct)
+    var meanOff = [];
+    HAO_HZ.forEach(function (d) {
+      HAO_GROUPS.forEach(function (g) {
+        var vals = [];
+        ids.forEach(function (id) {
+          var e = entryOf(id), hz = S.outcomesById[id].horizons[String(d)];
+          if (GROUP[e.ha.response] !== g || hz.status !== "scored") return;
+          var ip = HA.impactPct(e, hz.pct);
+          if (plain(haoICellIn(card, id, d)).trim() !== pct1(ip)) meanOff.push(["item", id, d]);
+          vals.push(ip);
+        });
+        var c = haoCell(g, d);
+        if (vals.length) {
+          var mean = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+          if (haoPct(c) !== pct1(mean) || haoN(c) !== vals.length + " รายการ") meanOff.push([g, d, pct1(mean), haoPct(c), haoN(c)]);
+        } else if (!haoWait(c)) meanOff.push([g, d, "want รอผล", c]);
+      });
+    });
+    t("per group and horizon, the mean of the items' impacts equals the summary table cell", meanOff.length === 0, meanOff);
+
+    // 5) ประโยคสรุป: ช่วงยาวสุดที่มีผล · ทรงตัว ±2% · ราคาขยับจริง · เงินเมื่อมีฐาน
+    var V = {};
+    V[HAO.SELL_THB] = ["up", "ทำแล้วได้ +12.0% ใน 3 เดือน (ราคาลง 12.0%) · ≈ +฿6,000"];
+    V[HAO.SELL_USD] = ["flat", "ราคาแทบไม่ขยับ (±2%) ใน 1 เดือน — ทำหรือไม่ทำผลใกล้กัน (ราคาขึ้น 2.0%) · ≈ −$40.00"];
+    V[HAO.BUY_NOBASE] = ["up", "ทำแล้วได้ +6.0% ใน 1 เดือน (ราคาขึ้น 6.0%)"];
+    V[HAO.BUY_UNANS] = ["flat", "ราคาแทบไม่ขยับ (±2%) ใน 1 สัปดาห์ — ทำหรือไม่ทำผลใกล้กัน (ราคาลง 1.0%) · ≈ −฿200"];
+    var vOff = ORDER.map(function (id) { return [id, haoVerdictIn(haoItemIn(card, id))]; })
+      .filter(function (x) { return !x[1] || x[1].tone !== V[x[0]][0] || x[1].text !== V[x[0]][1]; });
+    t("verdict sentences match the 4 expected strings above (tone up/flat/up/flat)",
+      vOff.length === 0 && /<span class="dj-hao-iamt dj-up">\+฿6,000<\/span>/.test(haoItemIn(card, HAO.SELL_THB)) &&
+      /<span class="dj-hao-iamt dj-down">−\$40\.00<\/span>/.test(haoItemIn(card, HAO.SELL_USD)) &&
+      haoIAmts(haoItemIn(card, HAO.BUY_NOBASE)).length === 0 &&
+      !LEAK.test(card) && !ADVISORY_TH.test(card) && !ADVISORY_EN.test(card), vOff);
+
+    // 6) คำของแต่ละกรณี (แทนผลวัดในเทสต์) · ช่วงที่ใช้ = ยาวสุดที่มีผล (90 > 30 > 7)
+    S.outcomesById[HAO.SELL_USD] = haoOc(5, -9, null); P.render(); var miss = verdictOf(HAO.SELL_USD);
+    S.outcomesById[HAO.SELL_USD] = haoOc(5, 8, null); P.render(); var good = verdictOf(HAO.SELL_USD);
+    S.outcomesById[HAO.BUY_NOBASE] = haoOc(3, -5, null); P.render(); var loss = verdictOf(HAO.BUY_NOBASE);
+    S.outcomesById[HAO.BUY_UNANS] = haoOc(5, null, null); P.render(); var uMiss = verdictOf(HAO.BUY_UNANS);
+    S.outcomesById[HAO.BUY_UNANS] = haoOc(-6, null, null); P.render(); var uGood = verdictOf(HAO.BUY_UNANS);
+    S.outcomesById[HAO.SELL_THB] = haoOc(-10, 3, null); P.render(); var mid = verdictOf(HAO.SELL_THB);
+    S.outcomesById[HAO.BUY_NOBASE] = haoOc(3, 1234.5, null); P.render();
+    var big = verdictOf(HAO.BUY_NOBASE), bigCell = plain(haoICellIn(haoCard(), HAO.BUY_NOBASE, 30)).trim();
+    setOcs(haoOutcomes());
+    P.render();
+    // fix wave 6 (ruling): ตัวเลขในวงเล็บราคาขยับใช้รูปแบบเดียวกับช่องและ % ในประโยค (fmtPct — ไม่มีคอมมาหลักพัน)
+    var bigM = big ? /^ทำแล้วได้ \+([\d.,]+)% ใน 1 เดือน \(ราคาขึ้น ([\d.,]+)%\)$/.exec(big.text) : null;
+    t("…a move ≥ 1000%: the cell, the sentence's % and the price-move bracket all show the same digits '1234.5' (fix wave 6 ruling)",
+      !!big && big.tone === "up" && bigCell === "+1234.5%" && !!bigM && bigM[1] === "1234.5" && bigM[2] === "1234.5" &&
+      big.text.indexOf(",") < 0 && !LEAK.test(big.text), [big, bigCell]);
+    t("miss / good / loss wording: skipped sell pct −9 at 30 → 'ไม่ทำแล้วพลาด: ถ้าทำจะได้ +9.0% ใน 1 เดือน (ราคาลง 9.0%)' · skipped sell pct +8 → 'ไม่ทำแล้วดี: ถ้าทำจะเสีย −8.0% …' · done buy pct −5 → 'ทำแล้วเสีย −5.0% …' · unanswered uses 'ไม่ได้ตอบแล้ว…'",
+      !!miss && miss.tone === "down" && miss.text === "ไม่ทำแล้วพลาด: ถ้าทำจะได้ +9.0% ใน 1 เดือน (ราคาลง 9.0%) · ≈ +$180.00" &&
+      !!good && good.tone === "up" && good.text === "ไม่ทำแล้วดี: ถ้าทำจะเสีย −8.0% ใน 1 เดือน (ราคาขึ้น 8.0%) · ≈ −$160.00" &&
+      !!loss && loss.tone === "down" && loss.text === "ทำแล้วเสีย −5.0% ใน 1 เดือน (ราคาลง 5.0%)" &&
+      !!uMiss && uMiss.tone === "down" && uMiss.text === "ไม่ได้ตอบแล้วพลาด: ถ้าทำจะได้ +5.0% ใน 1 สัปดาห์ (ราคาขึ้น 5.0%) · ≈ +฿1,000" &&
+      !!uGood && uGood.tone === "up" && uGood.text === "ไม่ได้ตอบแล้วดี: ถ้าทำจะเสีย −6.0% ใน 1 สัปดาห์ (ราคาลง 6.0%) · ≈ −฿1,200",
+      [miss, good, loss, uMiss, uGood]);
+    t("…the sentence uses the longest scored horizon (7 scored +10% but 30 scored −3% → the 1-month sentence)",
+      !!mid && mid.tone === "down" && mid.text === "ทำแล้วเสีย −3.0% ใน 1 เดือน (ราคาขึ้น 3.0%) · ≈ −฿1,500", mid);
+
+    // 7) ขอบเกณฑ์ทรงตัว: ผลต่อพอร์ต +2.0 / −2.0 พอดี = ทรงตัว · 2.1 = ไม่ทรงตัว · ราคาไม่ขยับเลย = (ราคาไม่ขยับ)
+    S.outcomesById[HAO.SELL_THB] = haoOc(-4, -10, -2);
+    S.outcomesById[HAO.BUY_NOBASE] = haoOc(3, -2, null);
+    P.render();
+    var b1 = verdictOf(HAO.SELL_THB), b2 = verdictOf(HAO.BUY_NOBASE), b1c = haoIPctCls(haoICellIn(haoCard(), HAO.SELL_THB, 90));
+    S.outcomesById[HAO.SELL_THB] = haoOc(-4, -10, -2.1);
+    S.outcomesById[HAO.BUY_NOBASE] = haoOc(3, 0, null);
+    P.render();
+    var b3 = verdictOf(HAO.SELL_THB), b4 = verdictOf(HAO.BUY_NOBASE), b4cell = haoICellIn(haoCard(), HAO.BUY_NOBASE, 30);
+    setOcs(haoOutcomes());
+    P.render();
+    t("boundary: impact exactly +2.0 / −2.0 → flat sentence (Review Focus 2)",
+      !!b1 && b1.tone === "flat" && b1.text === "ราคาแทบไม่ขยับ (±2%) ใน 3 เดือน — ทำหรือไม่ทำผลใกล้กัน (ราคาลง 2.0%) · ≈ +฿1,000" &&
+      !!b2 && b2.tone === "flat" && b2.text === "ราคาแทบไม่ขยับ (±2%) ใน 1 เดือน — ทำหรือไม่ทำผลใกล้กัน (ราคาลง 2.0%)" &&
+      b1c === "dj-hao-ipct dj-up" &&
+      !!b3 && b3.tone === "up" && b3.text === "ทำแล้วได้ +2.1% ใน 3 เดือน (ราคาลง 2.1%) · ≈ +฿1,050" &&
+      !!b4 && b4.tone === "flat" && b4.text === "ราคาแทบไม่ขยับ (±2%) ใน 1 เดือน — ทำหรือไม่ทำผลใกล้กัน (ราคาไม่ขยับ)" &&
+      plain(b4cell).trim() === "0.0%" && haoIPctCls(b4cell) === "dj-hao-ipct", [b1, b2, b1c, b3, b4, b4cell]);
+
+    // 8) ไม่มีผล: ดึงราคาไม่สำเร็จ · กำลังดึง · ยังไม่ครบ · ครบแล้วแต่ไม่มีราคา (no-data ไม่ใช่ "ยังไม่ครบ")
+    S.priceErrBySymbol["PTT.BK"] = "HTTP 500";
+    P.render();
+    var keptV = verdictOf(HAO.SELL_THB);
+    delete S.outcomesById[HAO.SELL_THB];
+    P.render();
+    var errItem = haoItemIn(haoCard(), HAO.SELL_THB), errV = haoVerdictIn(errItem), errCells = haoICellTexts(haoCard(), HAO.SELL_THB);
+    delete S.priceErrBySymbol["PTT.BK"];
+    S.outcomesLoading = true;
+    P.render();
+    var ldItem = haoItemIn(haoCard(), HAO.SELL_THB), ldV = haoVerdictIn(ldItem), ldCells = haoICellTexts(haoCard(), HAO.SELL_THB);
+    S.outcomesLoading = false;
+    P.render();
+    // fix wave: ไม่มีผลเลย · ไม่ได้กำลังดึง · ไม่มี error → ยังไม่รู้ผล (สัญญาณเก่าก็ได้ — ห้ามเดาว่า "ยังไม่ครบ")
+    var noItem = haoItemIn(haoCard(), HAO.SELL_THB), noV = haoVerdictIn(noItem), noCells = haoICellTexts(haoCard(), HAO.SELL_THB);
+    S.outcomesById[HAO.SELL_THB] = haoOc(null, null, null);
+    P.render();
+    var pdV = verdictOf(HAO.SELL_THB), pdCells = haoICellTexts(haoCard(), HAO.SELL_THB);
+    S.outcomesById[HAO.SELL_THB] = { horizons: { "7": { status: "no-data", pct: null }, "30": { status: "pending", pct: null }, "90": { status: "pending", pct: null } } };
+    P.render();
+    var ndItem = haoItemIn(haoCard(), HAO.SELL_THB), ndV = haoVerdictIn(ndItem), ndCells = haoICellTexts(haoCard(), HAO.SELL_THB);
+    setOcs(haoOutcomes());
+    P.render();
+    t("no outcome + price error for the symbol → 'ดึงราคาไม่สำเร็จ — ยังไม่รู้ผล', cells '—', no NaN/undefined (Review Focus 1)",
+      !!keptV && keptV.text === "ทำแล้วได้ +12.0% ใน 3 เดือน (ราคาลง 12.0%) · ≈ +฿6,000" &&
+      !!errV && errV.tone === "bad" && errV.text === "ดึงราคาไม่สำเร็จ — ยังไม่รู้ผล" && errCells.join("|") === "—|—|—" &&
+      !LEAK.test(errItem) && haoIAmts(errItem).length === 0, [keptV, errV, errCells]);
+    t("…no outcome while fetching → 'กำลังดึงราคา…' (wait) · every horizon pending → 'ยังไม่ครบ 1 สัปดาห์ — รอผล' (wait) with รอผล cells",
+      !!ldV && ldV.tone === "wait" && ldV.text === "กำลังดึงราคา…" && ldCells.join("|") === "—|—|—" && !LEAK.test(ldItem) &&
+      !!pdV && pdV.tone === "wait" && pdV.text === "ยังไม่ครบ 1 สัปดาห์ — รอผล" && pdCells.join("|") === "รอผล|รอผล|รอผล", [ldV, ldCells, pdV, pdCells]);
+    t("…no outcome object, not fetching, no price error → 'ยังไม่รู้ผล — ยังไม่ได้ดึงราคา' (wait) · never 'ยังไม่ครบ' (fix wave 3)",
+      !!noV && noV.tone === "wait" && noV.text === "ยังไม่รู้ผล — ยังไม่ได้ดึงราคา" && noCells.join("|") === "—|—|—" &&
+      noItem.indexOf("ยังไม่ครบ") < 0 && !LEAK.test(noItem), [noV, noCells]);
+    t("…a due horizon with no price (no-data) is not called 'ยังไม่ครบ' → 'ไม่มีราคาที่ใช้คิดผล — ยังไม่รู้ผล' (bad) and '—' (fix wave 4)",
+      !!ndV && ndV.tone === "bad" && ndV.text === "ไม่มีราคาที่ใช้คิดผล — ยังไม่รู้ผล" && ndCells.join("|") === "—|รอผล|รอผล" &&
+      !LEAK.test(ndItem), [ndV, ndCells]);
+
+    // 9) ล็อก Privacy: เงินในทุกรายการ = XXX (THB และ USD) ไม่ลงสี · ไม่มีเงินใน title/aria-label · % ยังลงสีตามเครื่องหมาย
+    var ul = haoCard();
+    privacyLocked = true;
+    P.render();
+    var lk = haoCard();
+    privacyLocked = false;
+    P.render();
+    function iPctClasses(h) {
+      var out = [];
+      ORDER.forEach(function (id) { HAO_HZ.forEach(function (d) { out.push(haoIPctCls(haoICellIn(h, id, d))); }); });
+      return out;
+    }
+    var amUl = haoIAmts(ul), amLk = haoIAmts(lk);
+    var lkV = haoVerdictIn(haoItemIn(lk, HAO.SELL_THB));
+    t("locked: every item amount is XXX (THB and USD), no money in title/aria-label, % still coloured (Review Focus 4)",
+      amUl.join("|") === "−฿200|−$40.00|+฿6,000" && amLk.length === 3 && amLk.every(function (x) { return x === "XXX"; }) &&
+      lk.indexOf("฿") < 0 && !/\$\s?[\d,]/.test(lk) && !/(title|aria-label)="[^"]*([฿$\d]|XXX|USD|THB)/.test(lk) &&
+      !/class="dj-hao-iamt[^"]*dj-(up|down)/.test(lk) && /class="dj-hao-iamt dj-up"/.test(ul) &&
+      JSON.stringify(iPctClasses(lk)) === JSON.stringify(iPctClasses(ul)) && iPctClasses(lk).indexOf("dj-hao-ipct dj-up") >= 0 &&
+      iPctClasses(lk).indexOf("dj-hao-ipct dj-down") >= 0 &&
+      !!lkV && lkV.tone === "up" && lkV.text === "ทำแล้วได้ +12.0% ใน 3 เดือน (ราคาลง 12.0%) · ≈ XXX", [amUl, amLk, lkV]);
+    // fix wave 1: XXX ต้องไม่รับสีเขียว/แดงของประโยค — span ล็อกอยู่ไม่มีคลาสสี และกฎฐาน .dj-hao-iamt ตั้งสีกลางเอง (แบบ .dj-hao-amt)
+    var iamtCss = readPub("decision-journal.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    var lockedSpans = lk.match(/<span class="dj-hao-iamt[^"]*">XXX<\/span>/g) || [];
+    t("…locked 'XXX' is neutral: the span has no dj-up/dj-down and the base .dj-hao-iamt rule sets color: var(--mc-text) (fix wave 1)",
+      lockedSpans.length === 3 && lockedSpans.every(function (s) { return s === '<span class="dj-hao-iamt">XXX</span>'; }) &&
+      /(^|\})\s*\.dj-hao-iamt\s*\{[^}]*\bcolor:\s*var\(--mc-text\)/.test(iamtCss) &&
+      /\.dj-hao-iamt\.dj-up\s*\{[^}]*color:\s*var\(--dj-green-i\)/.test(iamtCss) && /\.dj-hao-iamt\.dj-down\s*\{[^}]*color:\s*var\(--dj-rose-i\)/.test(iamtCss),
+      [lockedSpans, (/\.dj-hao-iamt\s*\{[^}]*\}/.exec(iamtCss) || [])[0]]);
+
+    // 10) ไม่รู้ฝั่ง (ha.side หาย) — เตรียมเอกสารใหม่
+    var noSide = haoEntry({ symbol: "NVDA", rule: 1, side: "sell", date: "2026-10-15", kind: "cross-down", response: "skipped", positionValue: 2000, currency: "USD" });
+    delete noSide.ha.side;
+    var withPx = haoEntry({ symbol: "PTT.BK", rule: 2, side: "sell", date: "2026-10-14", kind: "break", response: "done", positionValue: 50000, currency: "THB" });
+    withPx.ha.execPrice = 1234.5;
+    withPx.ha.kind = "zzz";
+    // ข้อมูลเก่า/เสีย: คำตอบที่ไม่รู้จัก + กฎที่ไม่มีชื่อ (ไม่ใช่ 1/2/3)
+    var oddResp = haoEntry({ symbol: "NVDA", rule: 3, side: "buy", date: "2026-10-19", kind: "dip", response: "done", amount: 20000 });
+    oddResp.ha.response = "maybe";
+    oddResp.ha.rule = 9;
+    JOURNAL = journalWith([noSide, withPx, oddResp]);
+    return freshLogPage();
+  }).then(function () {
+    setOcs(haoOutcomes());
+    S.outcomesById[HAO.BUY_UNANS] = haoOc(5, null, null);
+    P.render();
+    var card = haoCard();
+    var odd = haoItemIn(card, HAO.BUY_UNANS), oddV = haoVerdictIn(odd);
+    t("…unknown answer → 'คุณ: ไม่รู้คำตอบ (stored action)' · label ผลต่อพอร์ต (in neither table group · fix wave 5) · neutral 'ถ้าทำตามกฎจะได้ …' (flat) · unnamed rule → 'กฎ <n>'",
+      haoLineIn(odd, "dj-hao-isig") === "2026-10-19 · NVDA · กฎ 9 · ระบบบอก: ซื้อ (ย่อถึง 20% จาก high 1 ปี)" &&
+      haoLineIn(odd, "dj-hao-iyou") === "คุณ: ไม่รู้คำตอบ (ซื้อ)" && haoILabelIn(odd) === "ผลต่อพอร์ต" &&
+      !!oddV && oddV.tone === "flat" && oddV.text === "ถ้าทำตามกฎจะได้ +5.0% ใน 1 สัปดาห์ (ราคาขึ้น 5.0%) · ≈ +฿1,000" &&
+      haoICellTexts(card, HAO.BUY_UNANS).join("|") === "+5.0%|รอผล|รอผล" && !LEAK.test(odd),
+      [haoLineIn(odd, "dj-hao-isig"), haoLineIn(odd, "dj-hao-iyou"), haoILabelIn(odd), oddV]);
+    var item = haoItemIn(card, HAO.SELL_USD), v = haoVerdictIn(item), cells = haoICellTexts(card, HAO.SELL_USD);
+    t("ha.side missing → cells '—' and 'ไม่รู้ฝั่งของสัญญาณ — คิดผลไม่ได้' (Review Focus 5)",
+      !!item && cells.join("|") === "—|—|—" && !!v && v.tone === "bad" && v.text === "ไม่รู้ฝั่งของสัญญาณ — คิดผลไม่ได้" &&
+      haoLineIn(item, "dj-hao-isig") === "2026-10-15 · NVDA · กฎ 1 EMA12/26 · ระบบบอก: ไม่รู้ฝั่ง (EMA12 ตัดลง EMA26)" &&
+      !LEAK.test(item) && haoIAmts(item).length === 0, [cells, v, haoLineIn(item, "dj-hao-isig")]);
+    var px = haoItemIn(card, HAO.SELL_THB);
+    t("…done with execPrice → 'คุณ: ทำแล้ว (ขาย ที่ 1,234.50)' · unknown event kind → no brackets after ระบบบอก",
+      haoLineIn(px, "dj-hao-iyou") === "คุณ: ทำแล้ว (ขาย ที่ 1,234.50)" &&
+      haoLineIn(px, "dj-hao-isig") === "2026-10-14 · PTT.BK · กฎ 2 SMA200 · ระบบบอก: ขาย" && !LEAK.test(px),
+      [haoLineIn(px, "dj-hao-iyou"), haoLineIn(px, "dj-hao-isig")]);
+
+    // 11) มากกว่า 10 รายการ: 10 แรก + ดูทั้งหมด (12) · กด → 12 + ย่อ · วาดบางส่วน (พิมพ์ในฟอร์ม) แล้วยังกางอยู่ · กดอีกที → 10
+    for (var i = 1; i <= 12; i++) {
+      many.push(haoEntry({ symbol: "NVDA", rule: 1, side: "buy", date: "2026-10-" + (i < 10 ? "0" + i : String(i)), kind: "cross-up", response: "done" }));
+    }
+    JOURNAL = journalWith(many);
+    return freshLogPage();
+  }).then(function () {
+    var card = haoCard(), ids = haoItemIds(card);
+    var want = [];
+    for (var i = 12; i >= 1; i--) want.push("ha_NVDA_1_buy_2026-10-" + (i < 10 ? "0" + i : String(i)));
+    var putsBefore = puts.length, fetchBefore = fetchCalls.length;
+    var outEl = doc.getElementById("djHaOut");
+    outEl.innerHTML = "";
+    var c1 = clickAttr("data-dj-hao-more", "1");
+    var opened = outEl.innerHTML, showAll1 = S.haoShowAll;
+    P.render();
+    var full = haoCard();
+    // fix wave 2: วาดบางส่วน (พิมพ์ในฟอร์ม) ต้องผูกปุ่มของการ์ดใหม่จริง — ลบ handler เดิมก่อน และให้ querySelectorAll ของทุก element
+    //   หาเฉพาะใน innerHTML ของตัวเอง (ปกติ fake DOM สแกนทั้ง root จึงได้ปุ่มเดิมกลับมาจากการผูกส่วนอื่น = ปุ่มตายก็ยังผ่าน)
+    var MARK = "<!--hao-items-typing-->";
+    doc.activeElement = doc.getElementById("djEvent");
+    els.djRoot.innerHTML = html() + MARK;
+    outEl.innerHTML = "<!--hao-items-stale-->";
+    var savedQsa = {};
+    Object.keys(els).forEach(function (k) {
+      if (k === "djRoot") return;
+      savedQsa[k] = els[k].querySelectorAll;
+      els[k].querySelectorAll = (function (el) {
+        return function (sel) {
+          var m = /^\[([a-z-]+)\]$/.exec(sel);
+          if (!m) return [];
+          var re = new RegExp(m[1] + '="([^"]*)"', "g"), mm, out = [], seen = {};
+          while ((mm = re.exec(String(el.innerHTML))) !== null) {
+            if (seen[mm[1]]) continue;
+            seen[mm[1]] = 1;
+            var n = mkEl("button");
+            n.attributes[m[1]] = mm[1];
+            n.addEventListener = (function (a, v) { return function (ev, fn) { handlers[a + "|" + v + "|" + ev] = fn; }; })(m[1], mm[1]);
+            nodes[m[1] + "|" + mm[1]] = n;
+            out.push(n);
+          }
+          return out;
+        };
+      })(els[k]);
+    });
+    delete handlers["data-dj-hao-more|1|click"];
+    var around, partial, rewired, c2, closed, showAll2, rootKept;
+    try {
+      P.render();   // renderAroundForm
+      around = outEl.innerHTML;
+      partial = html().indexOf(MARK) >= 0;
+      rewired = typeof handlers["data-dj-hao-more|1|click"] === "function";
+      c2 = clickAttr("data-dj-hao-more", "1");   // ปุ่มที่ผูกจากการวาดบางส่วน → ย่อ
+      closed = outEl.innerHTML;
+      showAll2 = S.haoShowAll;
+      rootKept = html().indexOf(MARK) >= 0;       // การกดวาดแค่การ์ด ไม่วาดทั้งหน้า
+    } finally {
+      Object.keys(savedQsa).forEach(function (k) { els[k].querySelectorAll = savedQsa[k]; });
+      doc.activeElement = null;
+    }
+    P.render();
+    var fullClosed = haoCard();
+    t(">10 items: shows 10 + 'ดูทั้งหมด (12)' · click → 12 items + 'ย่อ' · survives renderAroundForm · ≤10 → no button (Review Focus 3)",
+      ids.join() === want.slice(0, 10).join() && haoMoreIn(card) === "ดูทั้งหมด (12)" && /data-dj-hao-more="1" aria-expanded="false"/.test(card) &&
+      c1 && showAll1 === true && haoItemIds(opened).join() === want.join() && haoMoreIn(opened) === "ย่อ" &&
+      /data-dj-hao-more="1" aria-expanded="true"/.test(opened) &&
+      haoItemIds(full).join() === want.join() && haoMoreIn(full) === "ย่อ" &&
+      partial && haoItemIds(around).join() === want.join() && haoMoreIn(around) === "ย่อ" &&
+      haoItemIds(fullClosed).length === 10 && haoMoreIn(fullClosed) === "ดูทั้งหมด (12)" &&
+      puts.length === putsBefore && fetchCalls.length === fetchBefore,
+      [ids.length, haoMoreIn(card), c1, showAll1, haoItemIds(opened).length, haoItemIds(around).length, partial, haoItemIds(fullClosed).length,
+        puts.length - putsBefore, fetchCalls.length - fetchBefore]);
+    t("…after a partial render (handler deleted first, element-scoped lookup) the card's button is wired again and the click collapses it (fix wave 2)",
+      rewired === true && c2 === true && showAll2 === false && haoItemIds(closed).join() === want.slice(0, 10).join() &&
+      haoMoreIn(closed) === "ดูทั้งหมด (12)" && /data-dj-hao-more="1" aria-expanded="false"/.test(closed) && rootKept === true,
+      [rewired, c2, showAll2, closed ? haoItemIds(closed).length : null, rootKept]);
+    JOURNAL = journalWith(many.slice(2));
+    return freshLogPage();
+  }).then(function () {
+    var card = haoCard();
+    t("…exactly 10 items → all 10 shown and no button", haoItemIds(card).length === 10 && haoMoreIn(card) === null && !/data-dj-hao-more/.test(card),
+      [haoItemIds(card).length, haoMoreIn(card)]);
+
+    // 12) CSS: คลาสใหม่มีกฎ · สีผ่าน var() เท่านั้น · ประโยคลงสีตาม data-tone · จอ ≤600px มีกฎของตารางเล็กและปุ่ม
+    JOURNAL = haoJournal();
+    return freshLogPage();
+  }).then(function () {
+    setOcs(haoOutcomes());
+    P.render();
+    var css = readPub("decision-journal.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    var need = ["dj-hao-ititle", "dj-hao-items", "dj-hao-item", "dj-hao-isig", "dj-hao-iyou", "dj-hao-itable", "dj-hao-ilabel", "dj-hao-icell",
+      "dj-hao-ipct", "dj-hao-verdict", "dj-hao-iamt", "dj-hao-more"];
+    var noRule = need.filter(function (c) { return !new RegExp("\\." + c + "(?![\\w-])").test(css); });
+    var usedNoRule = [];
+    (haoCard().match(/dj-hao-[a-z-]+/g) || []).forEach(function (c) { if (!new RegExp("\\." + c + "(?![\\w-])").test(css) && usedNoRule.indexOf(c) < 0) usedNoRule.push(c); });
+    var tonesOff = ["up", "down", "flat", "wait", "bad"].filter(function (tn) {
+      return !new RegExp('\\.dj-hao-verdict\\[data-tone="' + tn + '"\\][^{]*\\{[^}]*color:\\s*var\\(--(dj|mc)-').test(css);
+    });
+    var bodies = [];
+    css.replace(/([^{}]+)\{([^{}]*)\}/g, function (all, sel, body) { if (/\.dj-hao-(i|verdict|more)/.test(sel)) bodies.push(body); return all; });
+    var badColour = [];
+    bodies.forEach(function (b) {
+      b.split(";").forEach(function (d) {
+        d = d.trim();
+        if (!/^(color|background(-color)?|border(-[a-z]+)*|box-shadow|outline)\s*:/.test(d)) return;
+        if (/#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|oklch|oklab|lab|lch)\(|gradient/.test(d) || (/^(color|background)/.test(d) && !/var\(--(dj|mc)-/.test(d))) badColour.push(d);
+      });
+    });
+    var mob = mediaBlock(css, "@media (max-width: 600px)");
+    t("CSS: dj-hao-item* classes exist, colours only via var(), ≤600px rules for the item table",
+      noRule.length === 0 && usedNoRule.length === 0 && tonesOff.length === 0 && bodies.length >= 8 && badColour.length === 0 &&
+      /\.dj-hao-itable[^{]*\{/.test(mob) && /\.dj-hao-more[^{]*\{/.test(mob) && !/font-family/.test(bodies.join(";")) &&
+      es5ok("decision-journal-page.js"), [noRule, usedNoRule, tonesOff, bodies.length, badColour, mob.length]);
+    cleanup();
+    return freshLogPage();
+  }).then(null, function (e) { cleanup(); throw e; });
+});
+
+// ============================================================
+// dj-7 final fix wave — คำค้นของ entry จากกล่อง Action รวมคำตอบ (ทำแล้ว · ไม่ทำ · ไม่ได้ตอบ)
+//   เดิมค้น "ไม่ทำ" เจอแค่ฝั่งซื้อที่ไม่ทำ (ผ่าน "ไม่ทำอะไร") แต่ไม่เจอฝั่งขายที่ไม่ทำ (แสดงเป็น "ถือต่อ")
+// ============================================================
+section("home-action search finds the answer text (dj-7 final fix)", function () {
+  var S = P._state;
+  var DONE_ID = "ha_NVDA_2_sell_2026-10-21";
+  S.openEntries = {};
+  doc.activeElement = null;
+  JOURNAL = journalWith([haEntryOf("skipped", null), haSellOn("2026-10-21", "done", 95), haBuyOf("skipped")]);
+  return freshLogPage().then(function () {
+    var all = sortedIds();
+    typeSearch("ไม่ทำ");
+    var q1 = sortedIds();
+    typeSearch("ทำแล้ว");
+    var q2 = sortedIds();
+    typeSearch("");
+    t("fixture: e_fix1 + skipped sell + done sell + skipped buy", all.join() === [DONE_ID, HA_ID, HA_BUY_ID, "e_fix1"].sort().join(), all);
+    t("search 'ไม่ทำ' finds both a skipped buy and a skipped sell, and not a done entry", q1.join() === [HA_ID, HA_BUY_ID].sort().join(), q1);
+    t("…search 'ทำแล้ว' finds only the done entry (the answer text is searchable)", q2.join() === DONE_ID, q2);
+    JOURNAL = freshJournal();
+    return freshLogPage();
+  }, function (e) { JOURNAL = freshJournal(); throw e; });
 });
 
 // ==== งานถัดไปต่อ section ใหม่เหนือบรรทัดนี้ ====

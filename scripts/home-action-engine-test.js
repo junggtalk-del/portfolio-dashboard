@@ -214,9 +214,10 @@ t("deleted entries are excluded · money is keyed per currency (USD never added 
 var sSince = HA.summary([mk("in", "2026-07-31", "sell", "done", 100), mk("out", "2026-07-30", "sell", "done", 100)], {}, { nowBangkok: NOW, horizonDays: 7, D: E });
 sumsEdge.push(sSince);
 t("since = today − SUMMARY_DAYS and is inclusive", S.since === "2026-07-31" && sSince.since === "2026-07-31" && sSince.rows.length === 1 && sSince.rows[0].id === "in", sSince);
-var sH = HA.summary(ents, ocs, { nowBangkok: NOW, horizonDays: 90, D: E });
+// ค่าทดสอบเดิมคือ 90 — ตั้งแต่ journal outcomes Task 1 ช่วง 90 อยู่ใน D.HORIZONS จึงรับได้ · เปลี่ยนเป็น 60 (นอกทั้งสองชุด) ค่าคาดหวังเท่าเดิม
+var sH = HA.summary(ents, ocs, { nowBangkok: NOW, horizonDays: 60, D: E });
 sumsEdge.push(sH);
-t("horizon outside HORIZONS falls back to 7 days (result reports the horizon actually used)", sH.horizonDays === 7 && S.horizonDays === 7 && sH.followed.n === S.followed.n && Math.abs(sH.followed.avgPct - S.followed.avgPct) < 1e-9);
+t("horizon outside HORIZONS and D.HORIZONS falls back to 7 days (result reports the horizon actually used)", sH.horizonDays === 7 && S.horizonDays === 7 && sH.followed.n === S.followed.n && Math.abs(sH.followed.avgPct - S.followed.avgPct) < 1e-9);
 var sBad = HA.summary(ents, ocs, { nowBangkok: "2026-10-29T05:00:00.000Z", horizonDays: 7, D: E });
 sumsEdge.push(sBad);
 t("unparseable now → since null · no rows · zero counts · null averages · empty money (no guessing the window)", sBad.since === null && sBad.rows.length === 0 && sBad.counts.total === 0 && sBad.followed.n === 0 && sBad.followed.avgPct === null && JSON.stringify(sBad.missed.money) === "{}" && sBad.byRule["1"].avgPct === null && sBad.byRule["3"].n === 0, sBad);
@@ -286,6 +287,38 @@ t("I3: moneyN is keyed per currency like money (USD row counted under USD only) 
   sEdge.missed.moneyN.USD === 1 && !Object.prototype.hasOwnProperty.call(sEdge.missed.moneyN, "THB") && sEdge.followed.moneyN.THB === 1 &&
   JSON.stringify(sBad.followed.moneyN) === "{}" && JSON.stringify(sUn.followed.moneyN) === "{}", [sEdge.missed, sEdge.followed]);
 t("ES5 check still clean after the fixes", es5Problems(stripComments(fs.readFileSync(path.join(__dirname, "..", "public", "home-action-engine.js"), "utf8"))).length === 0);
+
+console.log("== summary · 90 วัน + allTime (journal outcomes Task 1) ==");
+// สิ่งที่ล็อกไว้: summary() รับ horizonDays ที่อยู่ใน HORIZONS หรือ D.HORIZONS (7/30/90) · HORIZONS ของกล่อง Home ยัง [7, 30] ·
+//   allTime: true = ไม่กรองด้วย since (การ์ด Journal นับทุกสัญญาณที่บันทึกไว้) · ผลมี since null + allTime true ·
+//   เรียกแบบเดิม (ไม่มี allTime) ผลไม่มีคีย์ allTime — ตัวเลขของกล่อง Home ล็อกด้วยเทสต์ section summary ข้างบนที่ไม่แก้ค่า
+function oc3(p7, p30, p90) { var o = oc(p7, p30); o.horizons["90"] = { status: p90 === null ? "pending" : "scored", pct: p90 }; return o; }
+var e90 = [mk("old", "2026-06-01", "sell", "done", 100000), mk("new", "2026-10-20", "buy", "skipped", 20000)];
+var o90 = { old: oc3(-5, -8, -20), new: oc3(2, 4, null) };
+var s90 = HA.summary(e90, o90, { nowBangkok: "2026-10-29T12:00", horizonDays: 90, D: E, allTime: true });
+t("allTime + 90: counts the entry older than SUMMARY_DAYS · followed +20% (sell flips) · new still pending at 90",
+  s90.horizonDays === 90 && s90.allTime === true && s90.since === null && s90.counts.total === 2 &&
+  s90.followed.n === 1 && Math.abs(s90.followed.avgPct - 20) < 1e-9 && s90.followed.money.THB === 20000 &&
+  s90.missed.n === 0 && s90.counts.pending === 1, s90);
+t("90 without allTime keeps the 90-day signal window (old entry dropped)",
+  (function () { var s = HA.summary(e90, o90, { nowBangkok: "2026-10-29T12:00", horizonDays: 90, D: E }); return s.horizonDays === 90 && s.counts.total === 1 && s.since === "2026-07-31" && !("allTime" in s); })());
+t("allTime does not need a readable nowBangkok (it filters nothing by date)",
+  (function () { var s = HA.summary(e90, o90, { nowBangkok: "not-a-date", horizonDays: 90, D: E, allTime: true }); return s.counts.total === 2 && s.followed.n === 1; })());
+t("horizon not measured by D (60) → falls back to 7 · HORIZONS still [7, 30]",
+  HA.summary(ents, ocs, { nowBangkok: "2026-10-29T12:00", horizonDays: 60, D: E }).horizonDays === 7 && JSON.stringify(HA.HORIZONS) === "[7,30]");
+t("Home calls (7/30 without allTime) carry no allTime key — their numbers stay pinned by the unchanged tests above",
+  (function () { var a = HA.summary(ents, ocs, { nowBangkok: "2026-10-29T12:00", horizonDays: 7, D: E }); var b = HA.summary(ents, ocs, { nowBangkok: "2026-10-29T12:00", horizonDays: 30, D: E });
+    return !("allTime" in a) && !("allTime" in b); })());
+// e = ขายแล้ว 2026-07-01 ราคาขึ้น 1% → ผลต่อพอร์ต −1% · ทำแล้ว 7 วัน = (+10 + 6 + (−1)) / 3 (final fix wave: พิสูจน์ว่าแถวที่เพิ่มคือ e จริง)
+t("allTime 7 over the base fixture equals the windowed summary plus entry e (older than 90 days)",
+  (function () {
+    var s = HA.summary(ents, ocs, { nowBangkok: "2026-10-29T12:00", horizonDays: 7, D: E, allTime: true });
+    var w = HA.summary(ents, ocs, { nowBangkok: "2026-10-29T12:00", horizonDays: 7, D: E });
+    var ids = function (x) { return x.rows.map(function (r) { return r.id; }).sort().join(); };
+    return s.counts.total === 5 && s.followed.n === 3 && s.rows.some(function (r) { return r.id === "e"; }) &&
+      !w.rows.some(function (r) { return r.id === "e"; }) && ids(s) === ids({ rows: w.rows.concat([{ id: "e" }]) }) &&
+      Math.abs(s.followed.avgPct - (10 + 6 + (-1)) / 3) < 1e-9;
+  })());
 
 // ---- สรุป (ต้องอยู่ท้ายสุดเสมอ · section ใหม่ให้แทรกเหนือบรรทัดนี้) ----
 console.log("");

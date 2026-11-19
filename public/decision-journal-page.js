@@ -86,6 +86,7 @@
     lastImport: null,       // { text } การนำเข้าล่าสุดที่ส่งขึ้นเซิร์ฟเวอร์ — ใช้บอกสถานะข้างปุ่มนำเข้า
     methodOpen: false,      // ผู้ใช้เปิด <details> วิธีคิดอยู่ไหม (วาดใหม่แล้วไม่พับเอง)
     openEntries: {},        // id → true ของแถวใน "บันทึกทั้งหมด" ที่ผู้ใช้กางดูรายละเอียดอยู่
+    haoShowAll: false,      // การ์ดผลของการทำตามกฎ: กาง "รายตัว" ทุกรายการอยู่ไหม (false = 10 รายการแรก · จำในหน่วยความจำเท่านั้น)
     locked: false,
     loadError: null,        // เหตุผลที่โหลดเอกสารไม่สำเร็จ (ข้อความไทย) หรือ null
     serverLoaded: false,    // เคยได้สำเนาจากเซิร์ฟเวอร์แล้วหรือยัง (โหลดสำเร็จ / PUT สำเร็จ) — false = state.doc มีแค่ร่างในเครื่อง
@@ -1348,10 +1349,13 @@
     return ai < bi ? -1 : (ai > bi ? 1 : 0);
   }
   // ข้อความที่ค้นได้ของบันทึกหนึ่ง: สัญลักษณ์ · วันที่ · ข่าว · แผน · บทเรียน · เหตุผลของกฎ (มี EMA/SMA200) · ทำอะไร · ผลตัดสิน · คาดว่า · อารมณ์
+  //   entry จากกล่อง Action: + คำตอบบนชิป (ทำแล้ว · ไม่ทำ · ไม่ได้ตอบ) — ค้น "ไม่ทำ" ต้องเจอทั้งฝั่งซื้อ (ไม่ทำอะไร) และฝั่งขาย (ถือต่อ)
   function searchText(e) {
     var D = E(), ctx = obj(e.context), act = obj(e.action), v = obj(e.verdict), vw = obj(e.view);
     var bits = [D.canonicalSymbol(e.symbol) || String(e.symbol || ""), String(e.date || ""), ctx.event, act.plan, obj(e.review).lesson, v.why,
-      thaiOf(D.ACTIONS, act.kind), (VERDICT_VIEW[v.compliance] || {}).text, thaiOf(D.DIRECTIONS, vw.direction)];
+      thaiOf(D.ACTIONS, actionKindOf(e)), (VERDICT_VIEW[v.compliance] || {}).text, thaiOf(D.DIRECTIONS, vw.direction)];
+    var resp = obj(e.ha).response;
+    if (isHomeAction(e) && Object.prototype.hasOwnProperty.call(HA_RESPONSE_VIEW, resp)) bits.push(HA_RESPONSE_VIEW[resp].text);
     each(arr(ctx.feelings), function (k) { bits.push(thaiOf(D.FEELINGS, k)); });
     var out = [];
     each(bits, function (b) { if (typeof b === "string" && b) out.push(b); });
@@ -1369,7 +1373,7 @@
     if (f.symbol && D.canonicalSymbol(e.symbol) !== f.symbol) return false;
     if (f.feeling && arr(obj(e.context).feelings).indexOf(f.feeling) < 0) return false;
     if (f.compliance && obj(e.verdict).compliance !== f.compliance) return false;
-    if (f.action && obj(e.action).kind !== f.action) return false;
+    if (f.action && actionKindOf(e) !== f.action) return false;
     if (f.q && trimStr(f.q) && !matchesSearch(e, f.q)) return false;
     return true;
   }
@@ -1466,7 +1470,8 @@
   }
 
   // ผลที่ช่วงของตัวเอง: คาดถูก/ผิด/ทรงตัว + ผลของการซื้อ/ขาย (ค่าจาก outcomes ของเอนจิน)
-  function ownResult(o, view, act) {
+  //   kind = actionKindOf(e) (สิ่งที่ทำจริง) — ไม่ได้ซื้อ/ขายจริง = ไม่มีบรรทัด "ผลของการ…" แม้เอนจินตัดสินจากฝั่งที่เก็บไว้
+  function ownResult(o, view, kind) {
     var D = E();
     var own = view.horizonDays;
     if (!isNum(own)) return "";
@@ -1483,7 +1488,7 @@
     } else {
       bits += '<span class="dj-muted">ไม่ได้คาดทิศทาง — ไม่ตัดสินถูกผิด</span>';
     }
-    var kind = act.kind, ar = o.actionResult;
+    var ar = o.actionResult;
     if ((kind === "buy" || kind === "sell") && (ar === "good" || ar === "bad" || ar === "flat")) {
       var detail;
       if (ar === "flat") detail = flatNote();
@@ -1498,7 +1503,7 @@
 
   function outcomeBlock(e) {
     var D = E();
-    var view = obj(e.view), act = obj(e.action), rules = obj(e.rules);
+    var view = obj(e.view), rules = obj(e.rules);
     var sym = D.canonicalSymbol(e.symbol);
     var o = state.outcomesById[e.id];
     var err = sym ? state.priceErrBySymbol[sym] : null;
@@ -1527,7 +1532,7 @@
     }
     if (err) notes += '<p class="dj-warn">ดึงราคาใหม่ไม่สำเร็จ (' + esc(err) + ") — แสดงผลจากราคาที่ดึงได้ก่อนหน้า</p>";
     var own = isNum(view.horizonDays) ? String(view.horizonDays) : "";
-    return '<div class="dj-out">' + head + horizonCells(o, own) + ownResult(o, view, act) + notes + "</div>";
+    return '<div class="dj-out">' + head + horizonCells(o, own) + ownResult(o, view, actionKindOf(e)) + notes + "</div>";
   }
 
   // ขายแล้วซื้อกลับ (สเปก §5.4 ท้าย) — ราคาต่อหน่วยของไม้จริง (ราคาตลาด ไม่ใช่ยอดเงินส่วนตัว จึงไม่ซ่อนตอนล็อก)
@@ -1569,13 +1574,13 @@
   // ส่วนที่การ์ดไทม์ไลน์และการ์ดทบทวนใช้ร่วมกัน (ทุกค่ามาจากสิ่งที่แช่แข็งไว้ตอนบันทึก)
   function entryHeadHtml(e, extra) {
     var D = E();
-    var act = obj(e.action), verdict = obj(e.verdict);
+    var kind = actionKindOf(e), verdict = obj(e.verdict);
     var vv = VERDICT_VIEW[verdict.compliance] || VERDICT_VIEW["n/a"];
     var sym = D.canonicalSymbol(e.symbol) || String(e.symbol || "");
     return '<div class="dj-entry-head">' +
       '<span class="dj-entry-date">' + esc(e.date) + "</span>" +
       '<strong class="dj-entry-sym">' + esc(sym) + "</strong>" +
-      '<span class="dj-act" data-hue="' + (ACT_HUE[act.kind] || "slate") + '">' + esc(thaiOf(D.ACTIONS, act.kind) || "ไม่ระบุ") + "</span>" +
+      '<span class="dj-act" data-hue="' + (ACT_HUE[kind] || "slate") + '">' + esc(thaiOf(D.ACTIONS, kind) || "ไม่ระบุ") + "</span>" +
       (extra || "") + pill(vv.cls, vv.text) + "</div>";
   }
   function rulesSayHtml(rules, verdict) {
@@ -1606,7 +1611,8 @@
 
   // ---- entry จากกล่อง Action บนหน้าแรก (source "home-action") ----
   // ไม่มี view/verdict (ไม่ใช่คำทำนายของผู้ใช้) → แถวแสดงชิปที่มา + คำตอบ แทนป้ายตามกฎ/แหกกฎ · รายละเอียดมีแค่ผลจริง + ปุ่มลบ
-  //   ข้อความเหตุการณ์อ่านจาก context.event ที่กล่องเขียนเป็นภาษาไทยไว้แล้ว (หน้านี้ไม่โหลดเอนจินของกล่อง)
+  //   ข้อความเหตุการณ์อ่านจาก context.event ที่กล่องเขียนเป็นภาษาไทยไว้แล้ว — แถว/ตัวกรอง/ค้นหาไม่เรียกเอนจินของกล่อง
+  //   (dj-7: หน้านี้โหลด home-action-engine.js แล้ว แต่ใช้แค่ summary() ในการ์ด "ผลของการทำตามกฎ" — ดู renderHaOutcome)
   var HA_SOURCE = "home-action";
   var HA_RESPONSE_VIEW = {
     done: { hue: "green", text: "ทำแล้ว" },
@@ -1614,6 +1620,19 @@
     unanswered: { hue: "slate", text: "ไม่ได้ตอบ" }
   };
   function isHomeAction(e) { return !!e && typeof e === "object" && e.source === HA_SOURCE; }
+  // "ทำอะไร" ที่แสดง/กรอง/ค้นหา = สิ่งที่ทำจริง (dj-7 · 2026-11-19) — คิดตอนแสดงผลเท่านั้น ไม่แตะค่าที่เก็บ
+  //   entry จากกล่องเก็บ action.kind = ฝั่งของกฎเสมอ แม้ตอบ "ไม่ทำ" · บันทึกที่เขียนเอง → action.kind เดิม
+  //   ทำแล้ว → ha.side · ไม่ทำ/ไม่ได้ตอบ + ฝั่งซื้อ → none "ไม่ทำอะไร" · + ฝั่งขาย → hold "ถือต่อ"
+  //   ไม่รู้คำตอบหรือไม่รู้ฝั่ง (ข้อมูลเก่า/เสีย) → action.kind ที่เก็บไว้ (ไม่เดาฝั่ง)
+  function actionKindOf(e) {
+    var stored = obj(obj(e).action).kind;
+    if (!isHomeAction(e)) return stored;
+    var ha = obj(e.ha), side = ha.side;
+    if (side !== "buy" && side !== "sell") return stored;
+    if (ha.response === "done") return side;
+    if (ha.response === "skipped" || ha.response === "unanswered") return side === "buy" ? "none" : "hold";
+    return stored;
+  }
   function haChipHtml(e) {
     var ha = obj(e.ha);
     var rv = Object.prototype.hasOwnProperty.call(HA_RESPONSE_VIEW, ha.response) ? HA_RESPONSE_VIEW[ha.response] : null;
@@ -1658,7 +1677,7 @@
   }
   function entryRowHtml(e) {
     var D = E();
-    var act = obj(e.action), verdict = obj(e.verdict), view = obj(e.view), ctx = obj(e.context), rv = obj(e.review);
+    var kind = actionKindOf(e), verdict = obj(e.verdict), view = obj(e.view), ctx = obj(e.context), rv = obj(e.review);
     var vv = VERDICT_VIEW[verdict.compliance] || VERDICT_VIEW["n/a"];
     var sym = D.canonicalSymbol(e.symbol) || String(e.symbol || "");
     var feel = "";
@@ -1675,7 +1694,7 @@
     return '<span class="dj-row-top"><span class="dj-row-id">' +
       '<span class="dj-entry-date">' + esc(e.date) + "</span>" +
       '<strong class="dj-entry-sym">' + esc(sym) + "</strong>" +
-      '<span class="dj-act" data-hue="' + (ACT_HUE[act.kind] || "slate") + '">' + esc(thaiOf(D.ACTIONS, act.kind) || "ไม่ระบุ") + "</span>" +
+      '<span class="dj-act" data-hue="' + (ACT_HUE[kind] || "slate") + '">' + esc(thaiOf(D.ACTIONS, kind) || "ไม่ระบุ") + "</span>" +
       (feel ? '<span class="dj-row-feels">' + feel + "</span>" : "") +
       (rv.reviewedAt ? '<span class="dj-row-rv">ทบทวนแล้ว</span>' : "") +
       "</span>" +
@@ -1801,7 +1820,7 @@
       '<div class="dj-rv-then"><span class="dj-entry-k">ตอนนั้น</span>' + thoughtHtml(ctx, view, act) + "</div>" +
       rulesSayHtml(rules, verdict) +
       reviewPriceHtml(e, o, H) +
-      ownResult(o, view, act) +
+      ownResult(o, view, actionKindOf(e)) +
       notes +
       '<div class="dj-rv-ask"><span class="dj-field-l" id="' + esc("djRvAsk-" + e.id) + '">มองย้อนกลับไป การตัดสินใจครั้งนี้</span>' +
       '<div class="dj-rv-verdicts" role="group" aria-labelledby="' + esc("djRvAsk-" + e.id) + '">' + btns + "</div></div>" +
@@ -2254,7 +2273,7 @@
     if (typeof x.entryId !== "string" || x.entryId === "") return '<span class="dj-muted">—</span>';
     var en = liveEntryById(x.entryId);
     if (!en) return '<span class="dj-muted">บันทึกถูกลบ</span>';
-    return esc(String(en.date || "") + " · " + (thaiOf(D.ACTIONS, obj(en.action).kind) || "—"));
+    return esc(String(en.date || "") + " · " + (thaiOf(D.ACTIONS, actionKindOf(en)) || "—"));
   }
 
   function tradeActions(x, sym) {
@@ -2342,7 +2361,7 @@
       each(D.liveEntries(state.doc).slice().sort(entryCmp), function (e) {
         if (typeof e.id !== "string" || seen[e.id]) return;
         seen[e.id] = 1;
-        entOpts.push({ value: e.id, label: String(e.date || "") + " · " + (D.canonicalSymbol(e.symbol) || "—") + " · " + (thaiOf(D.ACTIONS, obj(e.action).kind) || "—") });
+        entOpts.push({ value: e.id, label: String(e.date || "") + " · " + (D.canonicalSymbol(e.symbol) || "—") + " · " + (thaiOf(D.ACTIONS, actionKindOf(e)) || "—") });
       });
     }
     if (f.entryId && !seen[f.entryId]) entOpts.push({ value: f.entryId, label: "บันทึกที่ถูกลบแล้ว" });
@@ -2511,6 +2530,280 @@
       feelRows ? groupTable(feelRows) : '<p class="dj-placeholder">ยังไม่มีบันทึกที่เลือกอารมณ์</p>');
     body += statCard("pink", "target", "ตามที่คาดไว้", "", predTable(st.byPrediction));
     return block("djStats", title, sub, body, look);
+  }
+
+  // ---------------- ผลของการทำตามกฎ (จากกล่อง Action) — dj-7 (2026-11-19) ----------------
+  // ทุกช่องมาจาก HomeActionEngine.summary() ตัวเดียวกับกล่อง "ต้องทำอะไรวันนี้" บนหน้าแรก (allTime = ทุกสัญญาณที่บันทึกไว้
+  //   ไม่ตัดที่ 90 วันแบบกล่อง) กับ state.outcomesById ชุดเดียวกับบันทึกทั้งหมด — หน้าแค่ปัดและใส่ป้าย ไม่คิดผลเอง
+  //   แถว: ทำแล้ว = followed · ไม่ทำ / ไม่ได้ตอบ = missed (อ่านว่า "ถ้าทำตามกฎจะได้") · คอลัมน์ = ช่วงของเอนจิน (D.HORIZONS)
+  //   ช่อง: ผลต่อพอร์ตเฉลี่ย % + จำนวนที่ครบช่วงแล้ว · มีรายการแต่ยังไม่มีที่ครบ = รอผล · กลุ่มไม่มีรายการเลย = —
+  //     เงินรวมแยกสกุล (ไม่บวกข้ามสกุล · ล็อกอยู่ = XXX ทุกสกุล) · เงินรวมมาจากบางแถว (moneyN < n) → "จาก k รายการที่มีฐานเงิน"
+  //   ใต้ตาราง (Addendum A): "รายตัว (ใหม่สุดก่อน)" — rows ของ summary เดียวกัน รายการละ กล่องบอกอะไร → คุณทำอะไร →
+  //     ผลต่อพอร์ต % ต่อช่วง (H.impactPct ตัวเดียวกับที่ตารางเฉลี่ย) → ประโยคสรุป · 10 รายการแรก + ดูทั้งหมด/ย่อ (ดู haoItemsHtml)
+  var HAO_TITLE = "ผลของการทำตามกฎ (จากกล่อง Action)";
+  var HAO_ROWS = [
+    { key: "followed", label: "ทำแล้ว" },
+    { key: "missed", label: "ไม่ทำ / ไม่ได้ตอบ (ถ้าทำจะได้)" }
+  ];
+  function haEngine() {
+    var H = window.HomeActionEngine;
+    return H && typeof H.summary === "function" ? H : null;
+  }
+  // สกุลที่มีเงินรวม: THB ก่อน แล้วเรียงตามรหัส (ลำดับเดียวกับกล่องบนหน้าแรก)
+  function haoCcys(money) {
+    var keys = [], k;
+    for (k in money) if (Object.prototype.hasOwnProperty.call(money, k) && isNum(money[k])) keys.push(k);
+    keys.sort(function (a, b) { return a === "THB" ? -1 : (b === "THB" ? 1 : (a < b ? -1 : (a > b ? 1 : 0))); });
+    return keys;
+  }
+  // total = จำนวนรายการของกลุ่ม (ทุกช่วง · จาก counts ของ summary เดียวกัน) — 0 = ไม่มีผลอะไรจะมา → "—" ไม่ใช่ "รอผล"
+  function haoCell(acc, key, days, total) {
+    var at = ' data-dj-hao="' + key + ":" + days + '"';
+    if (!(total > 0)) return '<td class="dj-num dj-hao-cell"' + at + '><span class="dj-hao-none">—</span></td>';
+    if (!acc || !(acc.n > 0) || !isNum(acc.avgPct)) {
+      return '<td class="dj-num dj-hao-cell"' + at + '><span class="dj-hao-wait">รอผล</span></td>';
+    }
+    // สีตามค่าที่แสดง (ปัดแล้ว) — 0.0% / ฿0 ไม่ลงสี
+    //   % ลงสีตามเครื่องหมายเสมอ แม้ล็อก Privacy (แบบ groupRow ของสถิติ) — % ไม่ใช่เงินและเครื่องหมายอยู่ในข้อความแล้ว
+    //   เงินใช้ pnlCls (ล็อกอยู่ = XXX ไม่ลงสี)
+    var shown = Number(acc.avgPct.toFixed(1));
+    var pctCls = shown > 0 ? " dj-up" : (shown < 0 ? " dj-down" : "");
+    var out = '<td class="dj-num dj-hao-cell"' + at + '><b class="dj-hao-pct' + pctCls + '">' +
+      esc(fmtPct(acc.avgPct, 1)) + '</b><span class="dj-hao-n">' + esc(acc.n + " รายการ") + "</span>";
+    var money = obj(acc.money), moneyN = obj(acc.moneyN);
+    each(haoCcys(money), function (c) {
+      var amt = money[c], k = moneyN[c];
+      out += '<span class="dj-hao-m"><span class="dj-hao-ccy">' + esc(c) + '</span> <span class="dj-hao-amt' +
+        pnlCls(Number(amt.toFixed(moneyDp(c)))) + '">' + esc(moneySigned(amt, c, true)) + "</span>" +
+        (isNum(k) && k < acc.n ? '<span class="dj-hao-base">' + esc("จาก " + k + " รายการที่มีฐานเงิน") + "</span>" : "") + "</span>";
+    });
+    return out + "</td>";
+  }
+
+  // ---- รายตัว (Addendum A · 2026-11-19) — ใต้ตารางสรุปในการ์ดเดียวกัน ----
+  //   ชุดรายการ = rows ของ summary(allTime) ชุดเดียวกับตาราง (ใหม่→เก่า · ไม่รวมที่ถูกลบ) · 10 รายการแรก + ปุ่มดูทั้งหมด/ย่อ
+  //   ช่อง = ผลต่อพอร์ต % ผ่าน H.impactPct(entry, ราคาขยับของช่วงนั้นใน state.outcomesById) — ฟังก์ชันเดียวกับที่ summary() เฉลี่ย
+  //     ค่าเฉลี่ยของรายการที่มีผลในกลุ่ม/ช่วงหนึ่งจึงเท่าช่องในตารางเสมอ · % ลงสีตามเครื่องหมายแม้ล็อก (แบบตาราง) · เงินอยู่ในประโยคเท่านั้น
+  //   ประโยคสรุป = ช่วงยาวสุดที่มีผล · |ผล| ≤ เกณฑ์ทรงตัวของ Journal (FLAT_BAND_PCT + EPS_PCT) = "ราคาแทบไม่ขยับ"
+  var HAO_ITEMS_MAX = 10;
+  // ผลวัดของช่วง h แบบ horizonOf ของเอนจินกล่อง → { status: scored | pending | no-data | none, pct }
+  //   none = ยังไม่มีผลของรายการนี้เลย · scored ที่ pct ไม่ใช่ตัวเลข / status ที่ไม่รู้จัก = no-data
+  function haoHz(oc, h) {
+    if (!oc) return { status: "none", pct: null };
+    var hz = obj(obj(oc.horizons)[String(h)]);
+    if (hz.status === "scored" && isNum(hz.pct)) return { status: "scored", pct: hz.pct };
+    return { status: hz.status === "pending" ? "pending" : "no-data", pct: null };
+  }
+  // ช่องของรายการ: ip = ผลต่อพอร์ต % (null = ไม่มีผล) · status = สถานะของช่วงนั้น ("none" เมื่อคิดผลไม่ได้เลย)
+  function haoItemCell(id, h, ip, status) {
+    var inner;
+    if (isNum(ip)) {
+      var shown = Number(ip.toFixed(1));   // สีตามค่าที่แสดง (ปัดแล้ว) — 0.0% ไม่ลงสี
+      inner = '<b class="dj-hao-ipct' + (shown > 0 ? " dj-up" : (shown < 0 ? " dj-down" : "")) + '">' + esc(fmtPct(ip, 1)) + "</b>";
+    } else if (status === "pending") {
+      inner = '<span class="dj-hao-wait">รอผล</span>';
+    } else {
+      inner = '<span class="dj-hao-none">—</span>';
+    }
+    return '<td class="dj-hao-icell" data-dj-hao-icell="' + esc(id + ":" + h) + '">' + inner + "</td>";
+  }
+  // ประโยคสรุปของรายการเดียว → { tone: up | down | flat | wait | bad, html (esc แล้ว) }
+  //   best = { h, pct, ip } ของช่วงยาวสุดที่มีผล หรือ null
+  //   ไม่ทำ/ไม่ได้ตอบ: ราคาไปทางที่กฎบอก = "พลาด" (down) · ไปทางตรงข้าม = "ดี" (up) · ไม่รู้คำตอบ = บอกแค่ผลถ้าทำตามกฎ (flat)
+  //   ไม่มีผล: ดึงราคาไม่สำเร็จ · กำลังดึง · ไม่รู้ฝั่ง · ยังไม่ได้ดึงราคา (ไม่มี outcome) · ไม่มีราคาที่ใช้คิด (no-data ไม่ใช่ "ยังไม่ครบ")
+  //     · ยังไม่ครบช่วงแรก (มี outcome และทุกช่วง pending เท่านั้น)
+  function haoVerdict(H, D, e, o) {
+    var resp = o.resp, best = o.best, text, tone;
+    if (best) {
+      var span = horizonLabel(best.h), ip = best.ip;
+      if (Math.abs(ip) <= D.FLAT_BAND_PCT + D.EPS_PCT) {
+        tone = "flat";
+        text = "ราคาแทบไม่ขยับ (±" + pctText(D.FLAT_BAND_PCT) + ") ใน " + span + " — ทำหรือไม่ทำผลใกล้กัน";
+      } else if (resp === "done") {
+        tone = ip > 0 ? "up" : "down";
+        text = (ip > 0 ? "ทำแล้วได้ " : "ทำแล้วเสีย ") + fmtPct(ip, 1) + " ใน " + span;
+      } else if (resp === "skipped" || resp === "unanswered") {
+        tone = ip > 0 ? "down" : "up";
+        text = HA_RESPONSE_VIEW[resp].text + (ip > 0 ? "แล้วพลาด: ถ้าทำจะได้ " : "แล้วดี: ถ้าทำจะเสีย ") + fmtPct(ip, 1) + " ใน " + span;
+      } else {
+        tone = "flat";
+        text = "ถ้าทำตามกฎจะ" + (ip > 0 ? "ได้ " : "เสีย ") + fmtPct(ip, 1) + " ใน " + span;
+      }
+      // ราคาขยับจริงของช่วงนั้น (ก่อนกลับเครื่องหมายฝั่งขาย) · ปัดแล้วเป็น 0 = ไม่ขยับ
+      //   ตัวเลขรูปแบบเดียวกับ fmtPct ของช่องและ % ในประโยค (toFixed — ไม่มีคอมมาหลักพัน)
+      text += Number(Math.abs(best.pct).toFixed(1)) === 0 ? " (ราคาไม่ขยับ)"
+        : " (ราคา" + (best.pct > 0 ? "ขึ้น " : "ลง ") + Math.abs(best.pct).toFixed(1) + "%)";
+      var html = esc(text);
+      var m = obj(H.impactMoney(e, best.pct));
+      if (isNum(m.amount) && typeof m.currency === "string") {
+        html += " · ≈ " + '<span class="dj-hao-iamt' + pnlCls(Number(m.amount.toFixed(moneyDp(m.currency)))) + '">' +
+          esc(moneySigned(m.amount, m.currency, true)) + "</span>";
+      }
+      return { tone: tone, html: html };
+    }
+    if (!o.oc && state.priceErrBySymbol[o.sym]) return { tone: "bad", html: esc("ดึงราคาไม่สำเร็จ — ยังไม่รู้ผล") };
+    if (!o.oc && state.outcomesLoading) return { tone: "wait", html: esc("กำลังดึงราคา…") };
+    if (!o.sideKnown) return { tone: "bad", html: esc("ไม่รู้ฝั่งของสัญญาณ — คิดผลไม่ได้") };
+    // ไม่มีผลเลย (ยังไม่ได้ดึง/คิด) — สัญญาณเก่าก็เป็นได้ จึงไม่บอกว่า "ยังไม่ครบ"
+    if (!o.oc) return { tone: "wait", html: esc("ยังไม่รู้ผล — ยังไม่ได้ดึงราคา") };
+    // no-data = ครบแล้วแต่ไม่มีราคาที่ใช้คิด (แท่งวันเป้าหมาย หรือราคาปิดวันสัญญาณ) — ไม่ใช่ "ยังไม่ครบ"
+    if (o.noData) return { tone: "bad", html: esc("ไม่มีราคาที่ใช้คิดผล — ยังไม่รู้ผล") };
+    // เหลือแต่ช่วงที่ pending จริง
+    return { tone: "wait", html: esc("ยังไม่ครบ " + horizonLabel(o.shortest) + " — รอผล") };
+  }
+  // ป้ายแถวของตารางเล็ก = กลุ่มเดียวกับตารางสรุป: ทำแล้ว → ได้/เสีย · ไม่ทำ/ไม่ได้ตอบ → ถ้าทำจะได้
+  //   คำตอบที่ไม่รู้จัก summary() ไม่นับในกลุ่มไหน → ผลต่อพอร์ต (ไม่ให้อ่านเหมือนอยู่แถว "ไม่ทำ")
+  function haoRowLabel(resp) {
+    if (resp === "done") return "ได้/เสีย";
+    return resp === "skipped" || resp === "unanswered" ? "ถ้าทำจะได้" : "ผลต่อพอร์ต";
+  }
+  // หนึ่งรายการ: บรรทัด 1 = กล่องบอกอะไร · บรรทัด 2 = คุณทำอะไรจริง (actionKindOf) · ตารางเล็กตามช่วง · ประโยคสรุป
+  //   ราคาที่ทำจริงเป็นราคาตลาดต่อหน่วย (ไม่ซ่อน) · เงินมีแค่ในประโยค (moneySigned personal → ล็อกอยู่ = XXX)
+  function haoItemHtml(H, D, row, e, hzs, shortest) {
+    var id = String(row.id), resp = row.response;
+    var sym = D.canonicalSymbol(e.symbol) || String(e.symbol || "");
+    var oc = state.outcomesById[id];
+    if (!oc || typeof oc !== "object") oc = null;
+    var sideKnown = row.side === "buy" || row.side === "sell";
+    // ชื่อกฎจากเอนจินกล่อง · กฎที่ไม่มีชื่อ → "กฎ <n>" / "กฎ ?" แบบชิปของแถวในบันทึก
+    var labels = obj(H.RULE_LABEL);
+    var ruleTxt = Object.prototype.hasOwnProperty.call(labels, String(row.rule)) ? labels[row.rule] : "กฎ " + (isNum(row.rule) ? row.rule : "?");
+    var kt = typeof H.kindThai === "function" ? H.kindThai(row.kind) : null;
+    var sig = '<span class="dj-nw">' + esc(row.date) + "</span> · <b>" + esc(sym) + "</b> · " +
+      esc(ruleTxt + " · ระบบบอก: " + (sideKnown ? thaiOf(D.ACTIONS, row.side) : "ไม่รู้ฝั่ง") + (kt ? " (" + kt + ")" : ""));
+    var rv = Object.prototype.hasOwnProperty.call(HA_RESPONSE_VIEW, resp) ? HA_RESPONSE_VIEW[resp] : null;
+    var did = thaiOf(D.ACTIONS, actionKindOf(e));
+    if (resp === "done" && isNum(row.execPrice)) did += (did ? " " : "") + "ที่ " + fmtNum(row.execPrice, 2);
+    var you = "คุณ: " + (rv ? rv.text : "ไม่รู้คำตอบ") + (did ? " (" + did + ")" : "");
+
+    var head = "<thead><tr><td></td>", cells = "", best = null, noData = false;
+    each(hzs, function (h) {
+      var hz = haoHz(oc, h);
+      var ip = sideKnown && hz.status === "scored" ? H.impactPct(e, hz.pct) : null;
+      if (isNum(ip) && (!best || h > best.h)) best = { h: h, pct: hz.pct, ip: ip };
+      if (hz.status === "no-data") noData = true;
+      head += '<th scope="col">' + esc(horizonLabel(h)) + "</th>";
+      cells += haoItemCell(id, h, ip, sideKnown ? hz.status : "none");
+    });
+    var v = haoVerdict(H, D, e, { resp: resp, best: best, oc: oc, sym: sym, sideKnown: sideKnown, noData: noData, shortest: shortest });
+    return '<li class="dj-hao-item" data-dj-hao-item="' + esc(id) + '">' +
+      '<p class="dj-hao-isig">' + sig + "</p>" +
+      '<p class="dj-hao-iyou">' + esc(you) + "</p>" +
+      '<table class="dj-hao-itable">' + head + "</tr></thead><tbody><tr>" +
+      '<th scope="row" class="dj-hao-ilabel">' + esc(haoRowLabel(resp)) + "</th>" + cells + "</tr></tbody></table>" +
+      '<p class="dj-hao-verdict" data-tone="' + v.tone + '">' + v.html + "</p></li>";
+  }
+  // หัวย่อย + รายการ (rows ของ summary · entry ตัวจริงจาก live ตาม id) + ปุ่มดูทั้งหมด/ย่อเมื่อเกิน HAO_ITEMS_MAX
+  function haoItemsHtml(H, D, live, rows, hzs) {
+    var byId = {}, list = [];
+    each(live, function (e) { if (e && typeof e.id === "string") byId[e.id] = e; });
+    each(rows, function (r) { if (r && typeof r.id === "string" && Object.prototype.hasOwnProperty.call(byId, r.id)) list.push(r); });
+    if (!list.length) return "";
+    var shortest = hzs[0];
+    each(hzs, function (h) { if (h < shortest) shortest = h; });
+    var all = state.haoShowAll === true;
+    var out = "";
+    each(all ? list : list.slice(0, HAO_ITEMS_MAX), function (r) { out += haoItemHtml(H, D, r, byId[r.id], hzs, shortest); });
+    var more = list.length <= HAO_ITEMS_MAX ? "" :
+      '<button type="button" class="dj-btn dj-hao-more" data-dj-hao-more="1" aria-expanded="' + (all ? "true" : "false") + '">' +
+      esc(all ? "ย่อ" : "ดูทั้งหมด (" + list.length + ")") + "</button>";
+    return '<h3 class="dj-hao-ititle">รายตัว (ใหม่สุดก่อน)</h3><ol class="dj-hao-items">' + out + "</ol>" + more;
+  }
+  // ปุ่มดูทั้งหมด/ย่อ: วาดใหม่เฉพาะการ์ดนี้ (ฟอร์ม/ส่วนอื่นไม่ถูกแตะ) แล้วคืนโฟกัสให้ปุ่ม
+  //   กางออก = ไม่เลื่อนจอ (อ่านรายการที่เพิ่งโผล่ต่อได้) · ย่อ = เลื่อนให้เห็นปุ่ม (ไม่ค้างอยู่ใต้การ์ดที่หดแล้ว)
+  function toggleHaoItems() {
+    state.haoShowAll = !state.haoShowAll;
+    state.locked = privacyLocked();
+    var el = setSection("djHaOut", renderHaOutcome());
+    if (!el) return;
+    wire(el);
+    var b = null;
+    try { b = el.querySelector("[data-dj-hao-more]"); } catch (e) { b = null; }
+    if (!b) return;
+    try {
+      if (typeof b.focus === "function") b.focus({ preventScroll: true });
+      if (!state.haoShowAll && typeof b.scrollIntoView === "function") b.scrollIntoView({ block: "nearest" });
+    } catch (e2) { /* ไม่เป็นไร — แค่โฟกัส/เลื่อนจอไม่ได้ */ }
+  }
+  function renderHaOutcome() {
+    var D = E();
+    var look = { ico: "activity", hue: "teal" };
+    var sub = '<span class="dj-block-note">ทุกสัญญาณที่บันทึกไว้ · ผลต่อพอร์ตเฉลี่ยนับจากราคาปิดวันสัญญาณ</span>';
+    function card(body) { return block("djHaOut", HAO_TITLE, sub, body, look); }
+    function note(text) { return card('<p class="dj-placeholder">' + esc(text) + "</p>"); }
+    function bad(text) { return card('<div class="dj-out-msg is-bad" role="status"><span><strong>' + esc(text) + "</strong> — ลองรีเฟรชหน้า</span></div>"); }
+    if (!(state.serverLoaded && !!state.doc)) {
+      return note(state.loading ? "กำลังโหลดบันทึก…" : "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ด้านบนของหน้า");
+    }
+    var live = D.liveEntries(state.doc);
+    var haSyms = [], seenSym = {}, noOutcome = {};
+    each(live, function (e) {
+      if (!isHomeAction(e)) return;
+      var sym = D.canonicalSymbol(e.symbol) || String(e.symbol);
+      if (!seenSym[sym]) { seenSym[sym] = 1; haSyms.push(sym); }
+      if (!state.outcomesById[e.id]) noOutcome[sym] = 1;
+    });
+    if (!haSyms.length) return note('ยังไม่มีรายการจากกล่อง Action — ตอบในกล่อง "ต้องทำอะไรวันนี้" บนหน้าแรกแล้วผลจะสรุปที่นี่');
+    var H = haEngine();
+    if (!H) return bad("โหลดตัวคำนวณสรุปไม่สำเร็จ");
+    var hzs = [], sums = [], now = nowBangkok();
+    each(D.HORIZONS, function (h) { if (isNum(h) && h > 0) hzs.push(h); });
+    try {
+      each(hzs, function (h) { sums.push(H.summary(live, state.outcomesById, { nowBangkok: now, horizonDays: h, D: D, allTime: true })); });
+    } catch (e) {
+      logError("คิดผลของการทำตามกฎ", e);
+      return bad("คิดผลของการทำตามกฎไม่สำเร็จ");
+    }
+    if (!hzs.length) return bad("คิดผลของการทำตามกฎไม่สำเร็จ");
+
+    var body = state.outcomesLoading ? '<p class="dj-stats-note" role="status">กำลังดึงราคา… ตัวเลขอาจยังไม่ครบ</p>' : "";
+    var head = '<thead><tr><th scope="col">กลุ่ม</th>';
+    each(hzs, function (h) { head += '<th scope="col" class="dj-num">' + esc(horizonLabel(h)) + "</th>"; });
+    var rows = "";
+    each(HAO_ROWS, function (r) {
+      rows += '<tr><th scope="row">' + esc(r.label) + "</th>";
+      each(hzs, function (h, i) {
+        var c = sums[i].counts;
+        var total = r.key === "followed" ? c.done : c.skipped + c.unanswered;
+        rows += haoCell(sums[i][r.key], r.key, h, total);
+      });
+      rows += "</tr>";
+    });
+    body += '<div class="dj-table-wrap"><table class="dj-table dj-hao-table">' + head + "</tr></thead><tbody>" + rows + "</tbody></table></div>";
+
+    // ท้ายการ์ด: ที่ยังรอที่ช่วงยาวสุด · สัญลักษณ์ที่ดึงราคาไม่สำเร็จ · วิธีอ่าน
+    //   รอผล = แถวที่การ์ดนับ (rows ของ summary) ที่ช่วงยาวสุด status "pending" จริงเท่านั้น — counts.pending ของ summary รวม no-data
+    //     (ยังไม่มีผล / ดึงราคาไม่ได้) ซึ่งไม่ใช่ "ยังไม่ครบ" · ระหว่างดึงราคายังไม่รู้ → ไม่แสดงบรรทัดนี้
+    //   ดึงราคาไม่สำเร็จ: มีรายการที่ยังไม่มีผลเลย = ยังไม่นับ (ไม่ใช่ "ยังไม่ครบ") · มีผลจากรอบก่อนครบ = ใช้ผลเดิม (loadOutcomes ไม่ลบผลเก่า)
+    var longest = hzs.length - 1;
+    for (var i = 0; i < hzs.length; i++) if (hzs[i] > hzs[longest]) longest = i;
+    var longKey = String(hzs[longest]), pend = 0;
+    each(sums[longest].rows, function (row) {
+      var oc = row && typeof row.id === "string" ? state.outcomesById[row.id] : null;
+      if (obj(obj(obj(oc).horizons)[longKey]).status === "pending") pend++;
+    });
+    if (!state.outcomesLoading && pend > 0) {
+      body += '<p class="dj-hao-foot">' + esc("รอผล " + pend + " รายการ (ยังไม่ครบ " + horizonLabel(hzs[longest]) + ")") + "</p>";
+    }
+    var errNew = [], errOld = [];
+    each(haSyms, function (s) { if (state.priceErrBySymbol[s]) (noOutcome[s] ? errNew : errOld).push(s); });
+    if (errNew.length) {
+      body += '<p class="dj-hao-foot is-bad">' + esc("ดึงราคาไม่สำเร็จ: " + errNew.join(", ") + " — รายการของสัญลักษณ์นี้ที่ยังไม่มีผลยังไม่นับในตาราง") + "</p>";
+    }
+    if (errOld.length) {
+      body += '<p class="dj-hao-foot is-bad">' + esc("ดึงราคาใหม่ไม่สำเร็จ: " + errOld.join(", ") + " — ใช้ผลจากราคาที่ดึงได้ก่อนหน้า") + "</p>";
+    }
+    body += '<p class="dj-hao-foot">' + esc('ขาย = ราคาลงคือได้ · แถว "ไม่ทำ" อ่านว่าถ้าทำตามกฎจะได้เท่านี้') + "</p>";
+
+    // รายตัว (Addendum A): rows ของ summary ชุดเดียวกับตาราง — rows เหมือนกันทุกช่วง (ต่างกันแค่ impactPct/money ของช่วงที่เลือก)
+    //   พังแค่ส่วนนี้ → บอกในการ์ด ตารางสรุปด้านบนยังอยู่
+    try {
+      body += haoItemsHtml(H, D, live, sums[0].rows, hzs);
+    } catch (e) {
+      logError("วาดรายการรายตัวของผลการทำตามกฎ", e);
+      body += '<p class="dj-hao-foot is-bad">' + esc("แสดงรายการรายตัวไม่สำเร็จ — ลองรีเฟรชหน้า") + "</p>";
+    }
+    return card(body);
   }
 
   // ---------------- บันทึกใหม่: ฟอร์ม ----------------
@@ -3111,7 +3404,7 @@
   function renderAroundForm() {
     var others = [
       ["djSummary", renderSummary], ["djReview", renderReview], ["djLog", renderLog],
-      ["djTrades", renderTrades], ["djStats", renderStats]
+      ["djTrades", renderTrades], ["djStats", renderStats], ["djHaOut", renderHaOutcome]
     ];   // djMethod: วาดใหม่เฉพาะกล่องสำรองข้อมูล (refreshBackup) — ตัวคำอธิบายมีแต่ค่าคงที่ของเอนจิน
     each(others, function (o) {
       var el = setSection(o[0], o[1]());
@@ -3143,7 +3436,7 @@
   function renderAroundReview() {
     var others = [
       ["djSummary", renderSummary], ["djNew", renderNew], ["djLog", renderLog],
-      ["djTrades", renderTrades], ["djStats", renderStats]
+      ["djTrades", renderTrades], ["djStats", renderStats], ["djHaOut", renderHaOutcome]
     ];
     each(others, function (o) {
       var el = setSection(o[0], o[1]());
@@ -3167,7 +3460,7 @@
   function renderAroundSearch() {
     var others = [
       ["djSummary", renderSummary], ["djReview", renderReview], ["djNew", renderNew], ["djLog", renderLog],
-      ["djTrades", renderTrades], ["djStats", renderStats]
+      ["djTrades", renderTrades], ["djStats", renderStats], ["djHaOut", renderHaOutcome]
     ];
     each(others, function (o) {
       var el = setSection(o[0], o[1]());
@@ -3186,7 +3479,7 @@
   function renderAroundTradeForm() {
     var others = [
       ["djSummary", renderSummary], ["djReview", renderReview], ["djNew", renderNew],
-      ["djLog", renderLog], ["djStats", renderStats]
+      ["djLog", renderLog], ["djStats", renderStats], ["djHaOut", renderHaOutcome]
     ];
     each(others, function (o) {
       var el = setSection(o[0], o[1]());
@@ -3236,10 +3529,10 @@
     }
     var activeId = null;
     try { activeId = document.activeElement && document.activeElement.id ? document.activeElement.id : null; } catch (e) { activeId = null; }
-    // จอกว้าง: ฟอร์มบันทึกใหม่ซ้าย · บันทึกทั้งหมด + สถิติขวา (CSS .dj-cols) — จอแคบเรียงคอลัมน์เดียวตามลำดับเดียวกัน
+    // จอกว้าง: ฟอร์มบันทึกใหม่ซ้าย · บันทึกทั้งหมด + สถิติ + ผลของการทำตามกฎ ขวา (CSS .dj-cols) — จอแคบเรียงคอลัมน์เดียวตามลำดับเดียวกัน
     root.innerHTML = renderHeader() + renderSummary() + renderReview() +
       '<div class="dj-cols"><div class="dj-col dj-col-form">' + renderNew() + "</div>" +
-      '<div class="dj-col dj-col-log">' + renderLog() + renderStats() + "</div></div>" +
+      '<div class="dj-col dj-col-log">' + renderLog() + renderStats() + renderHaOutcome() + "</div></div>" +
       renderTrades() + renderMethod();
     wire(root);
     if (activeId) {
@@ -3306,6 +3599,10 @@
     });
     each(root.querySelectorAll("[data-dj-outcomes-retry]"), function (el) {
       el.addEventListener("click", function () { loadOutcomes(); });
+    });
+    // ผลของการทำตามกฎ: รายตัว ดูทั้งหมด / ย่อ
+    each(root.querySelectorAll("[data-dj-hao-more]"), function (el) {
+      el.addEventListener("click", function () { toggleHaoItems(); });
     });
     // คิวทบทวน: เลือกถูก/ผิด/ก้ำกึ่ง ("<id>:<verdict>") · บันทึก (อ่านบทเรียนจากช่องตอนกด)
     each(root.querySelectorAll("[data-dj-review-verdict]"), function (el) {

@@ -657,6 +657,61 @@ html[data-theme="light"] .dj-stat-head > .dj-ico { background: var(--dj-i); }
 }
 .dj-feel .dj-svg { width: 15px; height: 15px; }
 
+/* -------------------------------------------------- dj-7: ผลของการทำตามกฎ (จากกล่อง Action) — ตาราง 2 แถว × 3 ช่วง
+   ช่อง = % เฉลี่ย (เขียว/แดงตามเครื่องหมายเสมอ แม้ล็อก Privacy — แบบตารางสถิติ) → จำนวน
+   → เงินรายสกุล (เขียว/แดงเฉพาะตอนไม่ล็อก · ล็อกอยู่ = XXX ไม่ลงสี · ฐานบางแถวบอกใต้ยอด) · ยังไม่ครบ = รอผล
+   ข้อความในตารางตัดบรรทัดได้ (ตารางสถิติอื่นไม่ตัด) · จอแคบเลื่อนในกล่องตัวเองเหมือนตารางอื่น */
+.dj-hao-table th, .dj-hao-table td { white-space: normal; }
+.dj-hao-table th[scope="row"] { min-width: 8.5em; font-size: 12.5px; font-weight: 700; line-height: 1.45; color: var(--mc-text); }
+.dj-hao-table thead th.dj-num { min-width: 6.5em; }
+.dj-hao-cell { line-height: 1.4; }
+.dj-hao-pct { display: block; font-size: 16px; font-weight: 800; color: var(--mc-text); }
+.dj-hao-pct.dj-up { color: var(--dj-green-i); }
+.dj-hao-pct.dj-down { color: var(--dj-rose-i); }
+.dj-hao-n { display: block; font-size: 11.5px; color: var(--dj-muted); }
+.dj-hao-m { display: block; margin-top: 5px; font-size: 12px; color: var(--mc-text-2); }
+.dj-hao-ccy { font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; color: var(--dj-muted); }
+.dj-hao-amt { font-weight: 700; white-space: nowrap; color: var(--mc-text); }
+.dj-hao-amt.dj-up { color: var(--dj-green-i); }
+.dj-hao-amt.dj-down { color: var(--dj-rose-i); }
+.dj-hao-base { display: block; font-size: 11px; color: var(--dj-muted); }
+.dj-hao-wait, .dj-hao-none { font-size: 12px; font-weight: 700; color: var(--dj-muted); }
+.dj-hao-foot { margin: 10px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--mc-text-2); }
+.dj-hao-foot.is-bad { color: var(--dj-rose-i); }
+/* dj-7 รายตัว (Addendum A): ใต้ตารางสรุป — กล่องบอกอะไร → คุณทำอะไร → ตารางเล็กตามช่วง → ประโยคสรุป
+   รายการคั่นเส้น (ไม่ซ้อนการ์ดในการ์ด) · % ลงสีตามเครื่องหมายเสมอ (แบบตาราง) · ประโยคลงสีตาม data-tone
+   · เงินในประโยคเขียว/แดงเฉพาะตอนไม่ล็อก (ล็อกอยู่ = XXX สีกลาง ไม่รับสีของประโยค) · ตารางเล็ก table-layout fixed: ป้ายแถว 30% ช่วงละเท่ากัน */
+.dj-hao-ititle { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--dj-line); font-size: 14px; font-weight: 800; color: var(--mc-text); }
+.dj-hao-items { margin: 0; padding: 0; list-style: none; }
+.dj-hao-item { padding: 12px 0 14px; border-bottom: 1px solid var(--dj-line); }
+.dj-hao-item:last-child { padding-bottom: 2px; border-bottom: 0; }
+.dj-hao-isig { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--dj-muted); overflow-wrap: anywhere; }
+.dj-hao-isig b { font-weight: 800; color: var(--mc-text); }
+.dj-hao-iyou { margin: 3px 0 0; font-size: 13px; font-weight: 700; line-height: 1.5; color: var(--mc-text); }
+.dj-hao-itable {
+  width: 100%; margin: 9px 0 0; border-collapse: separate; border-spacing: 0; table-layout: fixed;
+  border: 1px solid var(--dj-line); border-radius: 10px; background: var(--dj-sunk);
+  font-size: 12.5px; font-variant-numeric: tabular-nums;
+}
+.dj-hao-itable th, .dj-hao-itable td { padding: 5px 10px; text-align: right; vertical-align: middle; }
+.dj-hao-itable thead td { width: 30%; }
+.dj-hao-itable thead th { font-size: 11px; font-weight: 700; color: var(--dj-muted); }
+.dj-hao-itable tbody th, .dj-hao-itable tbody td { border-top: 1px solid var(--dj-line); }
+.dj-hao-itable .dj-hao-ilabel { text-align: left; font-size: 12px; font-weight: 700; line-height: 1.35; color: var(--mc-text-2); }
+.dj-hao-icell { white-space: nowrap; }
+.dj-hao-ipct { font-weight: 800; color: var(--mc-text); }
+.dj-hao-ipct.dj-up { color: var(--dj-green-i); }
+.dj-hao-ipct.dj-down { color: var(--dj-rose-i); }
+.dj-hao-verdict { margin: 8px 0 0; font-size: 13px; font-weight: 600; line-height: 1.55; color: var(--mc-text-2); }
+.dj-hao-verdict[data-tone="up"] { color: var(--dj-green-i); }
+.dj-hao-verdict[data-tone="down"], .dj-hao-verdict[data-tone="bad"] { color: var(--dj-rose-i); }
+.dj-hao-verdict[data-tone="flat"] { color: var(--mc-text-2); }
+.dj-hao-verdict[data-tone="wait"] { color: var(--dj-muted); }
+.dj-hao-iamt { font-weight: 800; white-space: nowrap; color: var(--mc-text); }
+.dj-hao-iamt.dj-up { color: var(--dj-green-i); }
+.dj-hao-iamt.dj-down { color: var(--dj-rose-i); }
+.dj-hao-more { margin-top: 12px; }
+
 /* -------------------------------------------------- สำรองข้อมูล (ในส่วนวิธีคิด) */
 .dj-backup {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 14px;
@@ -761,6 +816,16 @@ html[data-theme="light"] .dj-stat-head > .dj-ico { background: var(--dj-i); }
   .dj-trow-acts .dj-btn, .dj-tconfirm .dj-btn { min-height: 44px; padding: 8px 14px; }
   /* สถิติ · สำรองข้อมูล */
   .dj-stat-card { padding: 14px; }
+  /* ผลของการทำตามกฎ: ช่องแคบลงให้ 3 ช่วงพอดีจอ 390 (ยาวกว่านั้นตารางเลื่อนในกล่องตัวเอง หน้าไม่ล้น) */
+  .dj-hao-table th, .dj-hao-table td { padding: 8px 7px; }
+  .dj-hao-table th[scope="row"] { min-width: 6.5em; font-size: 12px; }
+  .dj-hao-table thead th.dj-num { min-width: 0; }
+  .dj-hao-pct { font-size: 15px; }
+  /* รายตัว: ตารางเล็กแคบลงให้ 3 ช่วงพอดีจอ 390 · ปุ่มดูทั้งหมด/ย่อเต็มแถว */
+  .dj-hao-itable { font-size: 12px; }
+  .dj-hao-itable th, .dj-hao-itable td { padding: 5px 6px; }
+  .dj-hao-itable thead td { width: 28%; }
+  .dj-hao-more { width: 100%; }
   .dj-backup { padding: 12px 14px; }
   .dj-backup-btns { width: 100%; }
   .dj-backup-btns .dj-btn { flex: 1 1 0; min-height: 44px; }
