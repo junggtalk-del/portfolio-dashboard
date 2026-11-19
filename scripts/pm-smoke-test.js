@@ -393,8 +393,15 @@ function allocSum(out) {
 // PM ต้องติดธงบอกว่าเทคนิคยังไม่ยืนยัน ไม่ใช่เงียบ
 (function () {
   var PMx = require("../public/portfolio-manager-engine.js");
-  var TEx = require("../public/thesis-engine.js");
+  var TEreal = require("../public/thesis-engine.js");
   var DATAx = require("../public/thesis-data.js");
+  // ตรึง Thesis ของเคสนี้ไว้ที่ 85 — คะแนนจริงของ NVDA ขยับทุกครั้งที่ /thesis-update (2026-11-18: 85 → 84 หลัง CEO ลาออก)
+  //   แล้ว Entry 1 (ต้อง Thesis ≥85) ไม่ trigger → action กลายเป็น maintain และเทสต์ธงเทคนิคจะไม่ได้ทดสอบอะไรเลย
+  //   เทสต์นี้ตรวจตรรกะธงเตือนเทคนิค ไม่ใช่คะแนนของ NVDA ในข้อมูลจริง
+  var TEx = {
+    compute: function (t, s, o) { var r = TEreal.compute(t, s, o); if (r && r.thesis && t === "NVDA") r.thesis.score = 85; return r; },
+    computeHistory: TEreal.computeHistory
+  };
   function runCase(e12, e26, close, sma) {
     var snap = {
       technicalSignals: { NVDA: { ema12: e12, ema26: e26, latestClose: close == null ? 214 : close, sma200: sma == null ? 203 : sma, volumeRatio: 1.25 } },
