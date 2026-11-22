@@ -85,7 +85,8 @@ ok("ไม่มี pm-tbar (แท่งเทียบเป้า)", htmlAll.
 });
 
 // ======== หัวหน้า: เหลือ 4 การ์ด ========
-var nStat = (htmlAll.match(/class="pm-stat"/g) || []).length;
+// tile แก้ว: class="pm-stat gc-card gc-tile <tone>" — นับคลาส pm-stat
+var nStat = (htmlAll.match(/class="pm-stat[ "]/g) || []).length;
 ok("หัวหน้าเหลือ 4 การ์ด", nStat === 4, nStat);
 ["Portfolio Value", "เงินสดพร้อมวาง", "Portfolio Thesis Score", "Portfolio Health"].forEach(function (k) {
   ok("การ์ดที่เก็บไว้: " + k, htmlAll.indexOf(k) >= 0);

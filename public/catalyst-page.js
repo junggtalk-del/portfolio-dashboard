@@ -628,6 +628,18 @@
   // UNKNOWN ต้องเป็นกลาง ห้ามเขียว
   function trapTone(k) { return { LOW: "green", MEDIUM: "amber", HIGH: "red", UNKNOWN: "grey" }[k] || "grey"; }
 
+  // ---------- การ์ดแก้ว (glass-cards.css) ----------
+  // สีการ์ด = โทนที่หน้าคำนวณไว้แล้ว (tone / finTone / recogTone / trapTone / whyTone) แปลงเป็นสีกลางของทั้งเว็บ
+  // เขียว → gc-calm (ดี) · ฟ้า/ม่วง (ข้อมูล ไม่ได้บอกดี/แย่) → gc-normal · อำพัน/ส้ม (ระวัง) → gc-warning ·
+  // แดง → gc-danger · เทา/ไม่มีสถานะ/นับได้ 0 → gc-neutral — ไม่มีสถานะใหม่ที่หน้านี้คิดเอง
+  var GC_TONE = { green: "gc-calm", blue: "gc-normal", violet: "gc-normal", amber: "gc-warning",
+    orange: "gc-warning", red: "gc-danger", grey: "gc-neutral" };
+  function gcTone(t) { return Object.prototype.hasOwnProperty.call(GC_TONE, t) ? GC_TONE[t] : "gc-neutral"; }
+  // โทนการ์ดของ "สถานะหลัก" — เหมือน gcTone(tone(k)) ยกเว้น EXIT_WATCH: ป้ายยังฟ้าตามเดิม แต่การ์ดเป็นระวัง
+  // เพราะหน้านี้ถือว่าเป็นความเสี่ยงจริง (ดู recogTone: OVERHEATED เป็นตัวขับ EXIT_WATCH) และอยู่ในรายการเหตุที่ยังไม่เข้าเกณฑ์
+  // PRICED_IN คงเป็น normal (ตลาดรับรู้เต็มแล้ว = ข้อมูล ไม่ใช่ความเสี่ยง)
+  function statusGc(k) { return k === "EXIT_WATCH" ? "gc-warning" : gcTone(tone(k)); }
+
   // ============================================================
   // SECTION 1 — HEADER
   // ============================================================
@@ -707,9 +719,9 @@
     var lead = sc ? esc(sc.lead)
       : "ศูนย์รวมตัวสแกนหุ้นไทยทั้งตลาด (SET + mai) — กดสแกนครั้งเดียว ได้ผลครบทุกตัวสแกน " +
         "แต่ละตัวตอบคนละคำถามและแยกกันชัดเจน";
-    return '<header class="ch-hero">' +
+    return '<header class="ch-hero gc-card gc-neutral">' +
       '<div class="ch-hero-main">' +
-      (detailMode ? '<button type="button" class="ch-btn ch-btn-ghost" data-ch-home="1">← กลับไปที่รายการ</button>' : "") +
+      (detailMode ? '<button type="button" class="ch-btn ch-btn-ghost gc-btn gc-btn-ghost" data-ch-home="1">← กลับไปที่รายการ</button>' : "") +
       "<h1>" + esc(h1) + "</h1>" +
       '<p class="ch-hero-sub">' + sub + "</p>" +
       '<p class="ch-hero-lead">' + lead + "</p></div>" +
@@ -735,9 +747,9 @@
       // ค้างกลางทาง → ปุ่มหลักต้องเป็น "สแกนต่อ" ไม่ใช่ "สแกนใหม่"
       // เพราะเริ่มใหม่ทั้งหมดคือสิ่งที่ผู้ใช้เสียเวลาไปกับมันอยู่แล้ว
       (!state.loading && state.partial
-        ? '<button type="button" class="ch-btn" data-ch-resume="1">สแกนต่อ</button>' +
-          '<button type="button" class="ch-btn ch-btn-ghost ch-btn-inline" data-ch-rescan="1">เริ่มใหม่ทั้งหมด</button>'
-        : '<button type="button" class="ch-btn" data-ch-rescan="1">' +
+        ? '<button type="button" class="ch-btn gc-btn" data-ch-resume="1">สแกนต่อ</button>' +
+          '<button type="button" class="ch-btn ch-btn-ghost ch-btn-inline gc-btn gc-btn-ghost" data-ch-rescan="1">เริ่มใหม่ทั้งหมด</button>'
+        : '<button type="button" class="ch-btn gc-btn" data-ch-rescan="1">' +
           (state.loading ? "กำลังสแกน…" : "สแกนใหม่") + "</button>") +
       "</div></header>" +
       // แท็บอยู่ใต้หัวเสมอ ทั้งหน้ารายการและหน้าเจาะลึก — ย้ายไปตัวสแกนอื่นได้ตลอด
@@ -778,9 +790,10 @@
       '<div class="ch-brief-grid">' + cards.map(function (x) {
         var clickable = x[2] && x[1] > 0;
         return "<" + (clickable ? "button type=\"button\"" : "div") +
-          ' class="ch-brief-card ch-tone-' + x[3] + (x[1] === 0 ? " is-zero" : "") + '"' +
+          ' class="ch-brief-card ch-tone-' + x[3] + (x[1] === 0 ? " is-zero" : "") +
+          " gc-card gc-tile " + gcTone(x[3]) + '"' +
           (clickable ? ' data-ch-filter-status="' + esc(x[2]) + '"' : "") + ">" +
-          "<small>" + esc(x[0]) + "</small><b>" + x[1] + "</b>" +
+          "<small>" + esc(x[0]) + '</small><b class="gc-num">' + x[1] + "</b>" +
           "<em>" + esc(x[4]) + "</em>" +
           "</" + (clickable ? "button" : "div") + ">";
       }).join("") + "</div>" +
@@ -813,9 +826,10 @@
       var on = state.filter.status === k;
       var v = c[k] || 0;
       return '<button type="button" class="ch-sum-card' + (on ? " is-on" : "") +
-        (v === 0 ? " is-zero" : "") + " ch-tone-" + tone(k) + '"' +
+        (v === 0 ? " is-zero" : "") + " ch-tone-" + tone(k) +
+        " gc-card gc-tile " + (v === 0 ? "gc-neutral" : statusGc(k)) + '"' +
         ' data-ch-filter-status="' + esc(k) + '" title="' + esc(def.thai || "") + '">' +
-        "<small>" + esc(def.icon || "") + " " + esc(def.label || k) + "</small><b>" + v + "</b>" +
+        "<small>" + esc(def.icon || "") + " " + esc(def.label || k) + '</small><b class="gc-num">' + v + "</b>" +
         (v === 0 ? "<em>ไม่มีในรอบนี้</em>" : "") + "</button>";
     }).join("");
     return '<div class="ch-sum-grid">' + cards + "</div>" +
@@ -927,7 +941,7 @@
     // ครอบทั้งการตัดของ storyLimit และการตัด POS_N ⇒ ตรงกับจำนวนในหน้า Detail
     var posMore = Math.max(0, (pos.total || pos.length) - Math.min(POS_N, pos.length));
     var riskMore = Math.max(0, risk.length - RISK_N);
-    return '<article class="ch-rare">' +
+    return '<article class="ch-rare gc-card ' + statusGc(statusKey(r)) + '">' +
       '<div class="ch-rare-top"><div><h3>' + esc(r.ticker) + "<small>" + esc(r.market) + "</small></h3>" +
       '<p class="ch-rare-name">' + esc(clip(r.name, 52)) + "</p></div>" +
       '<span class="ch-badge ch-tone-' + tone(statusKey(r)) + '">' + esc(statusLabel(r)) + "</span></div>" +
@@ -947,14 +961,14 @@
       }).join("") + "</ul>" +
         (riskMore ? '<p class="ch-more">+ ' + riskMore + " more evidence — ดูครบในหน้า Detail</p>" : "")
         : '<p class="ch-na">ไม่มีหลักฐานความเสี่ยงที่บันทึกไว้</p>') + "</div></div>" +
-      '<button type="button" class="ch-btn ch-btn-wide" data-ch-ticker="' + esc(r.ticker) + '">' +
+      '<button type="button" class="ch-btn ch-btn-wide gc-btn" data-ch-ticker="' + esc(r.ticker) + '">' +
       "ดูหลักฐานทั้งหมด →</button></article>";
   }
 
   // เมื่อไม่มีตัวผ่านเกณฑ์ครบ ต้องอธิบาย "เกณฑ์" ไม่ใช่ปล่อยกริดว่าง
   // และต้องไม่พูดว่า "ไม่มีโอกาส" เพราะระบบยังมี CATALYST_EXISTS / EMERGING / FUNDAMENTAL RECOVERY อยู่
   function rareEmptyState() {
-    return '<div class="ch-zero">' +
+    return '<div class="ch-zero gc-card gc-neutral">' +
       '<p class="ch-zero-lead"><b>ยังไม่พบหุ้นที่ผ่านเกณฑ์ Rare Opportunity ครบทุกข้อ</b><br>' +
       '<span class="ch-en">No qualifying setup detected in the current scan.</span></p>' +
       // พับไว้ — เกณฑ์เดียวกันถูกแสดงต่อหุ้นใน Today's Targets ด้านล่างแล้ว
@@ -973,7 +987,7 @@
     var body = list.length
       ? '<div class="ch-rare-grid">' + list.map(rareCard).join("") + "</div>"
       : rareEmptyState();
-    return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head">' +
+    return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head gc-section-h">' +
       '<h2>Rare Opportunities <span class="ch-count">' + list.length + " / " + state.rows.length +
       " scanned</span></h2>" +
       "<p>Deep drawdown + <strong>genuine business/event catalyst</strong> + " +
@@ -1020,7 +1034,7 @@
     var sp = rareGateSplit(r);
     var why = whyLine(r, 132);
     var waiting = sp.notYet.map(function (x) { return x.gate.req; });
-    return '<article class="ch-target">' +
+    return '<article class="gc-card ' + statusGc(statusKey(r)) + ' ch-target">' +
       '<div class="ch-target-top"><div><h4>' + esc(r.ticker) +
       "<small>" + esc(r.market) + "</small></h4>" +
       '<p class="ch-target-name">' + esc(clip(r.name || "", 40)) + "</p></div>" +
@@ -1037,7 +1051,7 @@
         waiting.map(esc).join(" · ") + "</b></p>" : "") +
       // ไม่มีบรรทัด SMA200 ที่นี่โดยตั้งใจ — การ์ดนี้ตอบเรื่อง catalyst อย่างเดียว
       // สัญญาณเชิงเทคนิคอยู่ในแท็บของตัวเอง และในหน้าเจาะลึกรายตัว
-      '<button type="button" class="ch-btn ch-btn-wide" data-ch-ticker="' + esc(r.ticker) + '">' +
+      '<button type="button" class="ch-btn ch-btn-wide gc-btn" data-ch-ticker="' + esc(r.ticker) + '">' +
       "เปิดดูหลักฐานทั้งหมด →</button></article>";
   }
 
@@ -1048,7 +1062,7 @@
     });
     var totalAll = groups.reduce(function (a, x) { return a + x.all.length; }, 0);
     if (!totalAll) {
-      return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head">' +
+      return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head gc-section-h">' +
         "<h2>Today's Targets</h2>" +
         "<p>ไม่มีตัวที่เข้ากลุ่มเป้าหมายในรอบสแกนนี้ — ดูภาพรวมทั้งตลาดได้ที่ตารางด้านล่าง<br>" +
         "คิวนี้<strong>ไม่ใช่การจัดอันดับและไม่ใช่คำแนะนำ</strong> " +
@@ -1065,7 +1079,7 @@
             "ที่เหลือดูได้ในตาราง All Candidates</p>" : "") +
         "</div>";
     }).join("");
-    return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head">' +
+    return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head gc-section-h">' +
       "<h2>Today's Targets</h2>" +
       "<p>คิวสำหรับเปิดดูก่อน — <strong>ไม่ใช่การจัดอันดับและไม่ใช่คำแนะนำ</strong> " +
       "การ์ดทุกใบมีน้ำหนักเท่ากัน ไม่มีคะแนนและไม่มีเลขลำดับ<br>" +
@@ -1087,7 +1101,8 @@
 
   function nearCard(r, miss) {
     var sp = rareGateSplit(r);
-    return '<button type="button" class="ch-near" data-ch-ticker="' + esc(r.ticker) + '">' +
+    return '<button type="button" class="ch-near gc-card ' + statusGc(statusKey(r)) + '"' +
+      ' data-ch-ticker="' + esc(r.ticker) + '">' +
       '<div class="ch-near-top"><b>' + esc(r.ticker) + "</b>" +
       '<span class="ch-pill ch-tone-' + tone(statusKey(r)) + '">' + esc(statusLabel(r)) + "</span>" +
       "</div>" +
@@ -1133,7 +1148,7 @@
           return nearCard(x.r, x.miss);
         }).join("") + "</div></div>"
       : "";
-    return '<section class="ch-sec"><div class="ch-sec-head">' +
+    return '<section class="ch-sec"><div class="ch-sec-head gc-section-h">' +
       '<h2>Near-Miss — รออะไรอยู่ <span class="ch-count">' + cand.length + " / " +
       state.rows.length + " scanned</span></h2>" +
       "<p>ตกเกณฑ์ Rare Opportunity <strong>เพียงข้อเดียว</strong> จากห้าข้อ · " +
@@ -1166,7 +1181,7 @@
         .sort(byEnginePriority);
       if (!list.length) return "";
       var shown = list.slice(0, 8);
-      return '<div class="ch-watch ' + g.cls + '">' +
+      return '<div class="ch-watch ' + g.cls + " gc-card " + statusGc(g.keys[0]) + '">' +
         '<div class="ch-watch-head"><h3>' + esc(g.title) +
         '<span class="ch-count">' + list.length + "</span></h3>" +
         "<p>" + esc(g.thai) + "</p></div>" +
@@ -1184,7 +1199,7 @@
         "</div>";
     }).join("");
     if (!blocks) return "";
-    return '<section class="ch-sec"><div class="ch-sec-head">' +
+    return '<section class="ch-sec"><div class="ch-sec-head gc-section-h">' +
       "<h2>Catalyst Watch</h2>" +
       "<p>สองกลุ่มนี้<strong>ต่างกัน</strong>: Catalyst Exists คือมีเหตุการณ์ธุรกิจยืนยันแล้ว · " +
       "Emerging คือเรื่องกำลังก่อตัวและยังไม่ยืนยัน — ไม่ใช่สิ่งเดียวกันและไม่ใช่คำแนะนำ<br>" +
@@ -1209,14 +1224,15 @@
       var def = q[k] || { label: k, thai: "" };
       var w = n ? Math.max(4, Math.round((n / max) * 100)) : 0;
       var on = state.filter.status === k;
-      return '<button type="button" class="ch-lscape' + (on ? " is-on" : "") + " ch-tone-" + tone(k) + '"' +
+      return '<button type="button" class="ch-lscape' + (on ? " is-on" : "") + " ch-tone-" + tone(k) +
+        " gc-card gc-tile " + (n === 0 ? "gc-neutral" : statusGc(k)) + '"' +
         ' data-ch-filter-status="' + esc(k) + '" title="' + esc(def.thai || "") + '">' +
         '<span class="ch-lscape-label">' + esc(def.label || k) + "</span>" +
         '<span class="ch-lscape-bar"><i class="ch-bg-' + tone(k) + '" style="width:' + w + '%"></i></span>' +
-        '<span class="ch-lscape-n">' + n + "</span>" +
+        '<span class="gc-num ch-lscape-n">' + n + "</span>" +
         '<span class="ch-lscape-thai">' + esc(def.thai || "") + "</span></button>";
     }).join("");
-    return '<section class="ch-sec"><div class="ch-sec-head"><h2>Qualification Landscape</h2>' +
+    return '<section class="ch-sec"><div class="ch-sec-head gc-section-h"><h2>Qualification Landscape</h2>' +
       "<p>การจัดกลุ่มตามหลักฐานปัจจุบัน ไม่ใช่ลำดับที่หุ้นต้องพัฒนาไปตามขั้น<br>" +
       '<span class="ch-en">Current evidence classifications — not a required progression.</span></p></div>' +
       '<div class="ch-lscape-grid">' + rows + "</div>" +
@@ -1263,12 +1279,13 @@
           (list.length > 6 ? '<span class="ch-mx-more">+' + (list.length - 6) + "</span>" : "") + "</div></td>";
       }).join("") + "</tr>";
     }).join("");
-    return '<section class="ch-sec"><div class="ch-sec-head">' +
+    return '<section class="ch-sec gc-card gc-neutral"><div class="ch-sec-head">' +
       '<h2>Deep Drawdown × Market Recognition <span class="ch-tagline">แผนที่บรรยาย ไม่ใช่การจัดอันดับ</span></h2>' +
       "<p>ใช้ค่าที่มีอยู่จริงของแต่ละมิติ — ไม่ได้แปลงเป็นคะแนน ไม่มีช่องไหนเป็น “โซนที่ดีกว่า” และ" +
       "ไม่ได้บอกว่าช่องไหนน่าเข้าซื้อ · กดที่ ticker เพื่อดูรายละเอียด<br>" +
       '<span class="ch-en">Descriptive map — not a ranking.</span></p></div>' +
-      '<div class="ch-tablewrap"><table class="ch-matrix"><thead>' + head + "</thead><tbody>" + body +
+      '<div class="ch-tablewrap gc-table-wrap" tabindex="0" aria-label="Deep Drawdown × Market Recognition">' +
+      '<table class="ch-matrix"><thead>' + head + "</thead><tbody>" + body +
       "</tbody></table></div>" +
       '<p class="ch-note">แกนตั้ง = ระดับการย่อจาก high 52 สัปดาห์ · แกนนอน = ระดับการรับรู้ของตลาด · ' +
       "ย่อลึกไม่ได้แปลว่าเป็นโอกาส · ช่วงบนแกนตั้งเป็น<strong>ช่วงสำหรับแสดงผล</strong> " +
@@ -1337,7 +1354,7 @@
   }
   function selectFilter(name, label, values, cur) {
     return '<label class="ch-fld"><small>' + esc(label) + "</small>" +
-      '<select data-ch-filter="' + esc(name) + '"><option value="">ทั้งหมด</option>' +
+      '<select class="gc-field" data-ch-filter="' + esc(name) + '"><option value="">ทั้งหมด</option>' +
       values.map(function (v) {
         return '<option value="' + esc(v) + '"' + (cur === v ? " selected" : "") + ">" + esc(v) + "</option>";
       }).join("") + "</select></label>";
@@ -1349,7 +1366,7 @@
     var f = state.filter;
     var controls = '<div class="ch-filters">' +
       '<label class="ch-fld ch-fld-wide"><small>ค้นหา</small>' +
-      '<input type="search" placeholder="ticker หรือชื่อบริษัท" data-ch-search="1" value="' +
+      '<input type="search" class="gc-field" placeholder="ticker หรือชื่อบริษัท" data-ch-search="1" value="' +
       esc(f.q || "") + '" /></label>' +
       selectFilter("status", "Status", uniq(statusKey), f.status) +
       selectFilter("maturity", "Catalyst", uniq(matShort), f.maturity) +
@@ -1360,7 +1377,8 @@
 
     var head = "<tr>" + COLS.map(function (c) {
       var on = state.sort.key === c.key;
-      return '<th><button type="button" class="ch-sortbtn' + (on ? " is-on" : "") + '" data-ch-sort="' +
+      return '<th class="ch-th-sort' + (c.num ? " gc-cell-num" : "") + '">' +
+        '<button type="button" class="ch-sortbtn' + (on ? " is-on" : "") + '" data-ch-sort="' +
         esc(c.key) + '">' + esc(c.label) + (on ? (state.sort.dir > 0 ? " ▲" : " ▼") : "") + "</button></th>";
     }).join("") + "</tr>";
 
@@ -1372,7 +1390,7 @@
           ? ' <span class="ch-flag" title="' +
             esc("ตัวเลขงบกำลังฟื้น — เป็นข้อเท็จจริงคนละเรื่องกับ catalyst") + '">+ งบฟื้น</span>' : "") +
         "</td>" +
-        '<td class="ch-num">' + pct(ddPct(r)) + "</td>" +
+        '<td class="ch-num gc-cell-num">' + pct(ddPct(r)) + "</td>" +
         "<td>" + esc(matShort(r)) + "</td>" +
         '<td class="ch-txt-' + finTone(finState(r)) + '">' + esc(finShort(r)) + "</td>" +
         "<td>" + esc(recogKey(r)) + "</td>" +
@@ -1382,7 +1400,7 @@
         "<td><small>" + esc(r.lifecycle || "—") + "</small></td></tr>";
     }).join("");
 
-    return '<section class="ch-sec"><div class="ch-sec-head">' +
+    return '<section class="ch-sec gc-card gc-neutral"><div class="ch-sec-head">' +
       '<h2>All Candidates <span class="ch-count">' + list.length +
       " จาก " + state.rows.length + "</span></h2>" +
       "<p>จักรวาลทั้งหมด — ใช้สำหรับสำรวจและเจาะลึกหลังดู Today's Targets แล้ว · " +
@@ -1392,7 +1410,8 @@
       (state.sort.key !== "priority"
         ? ' · <button type="button" class="ch-link" data-ch-sort="priority">กลับค่าเริ่มต้น</button>' : "") +
       "</p></div>" + controls +
-      '<div class="ch-tablewrap"><table class="ch-table"><thead>' + head + "</thead><tbody>" + body +
+      '<div class="ch-tablewrap gc-table-wrap" tabindex="0" aria-label="All Candidates">' +
+      '<table class="ch-table gc-table"><thead>' + head + "</thead><tbody>" + body +
       "</tbody></table></div>" +
       '<p class="ch-note">' + esc(scanContext()) +
       (scanGapDetail() ? " · " + scanGapDetail() : "") +
@@ -1427,7 +1446,7 @@
     // UNEXPLAINED_MARKET_MOVE ปรากฏทั้งใน Landscape และในกล่องนี้ — ต้องบอกตรง ๆ ว่าเป็นตัวเดียวกัน
     var alsoInLandscape = rejected.filter(function (x) { return LANDSCAPE.indexOf(x[0]) >= 0; })
       .map(function (x) { return ((CQ() ? CQ().QUAL[x[0]] : null) || { label: x[0] }).label; });
-    return '<section class="ch-sec ch-sec-reject"><div class="ch-sec-head">' +
+    return '<section class="ch-sec ch-sec-reject"><div class="ch-sec-head gc-section-h">' +
       "<h2>ทำไมหุ้นส่วนใหญ่ไม่ใช่เป้า</h2>" +
       "<p>Catalyst Hunter <strong>ตั้งใจ</strong>ปฏิเสธหุ้นที่ราคาตกหนักจำนวนมาก เมื่อหลักฐานไม่พอหรือ" +
       "ความเสี่ยงสูงเกินไป — หุ้นที่ตกไม่ได้เป็นโอกาสทุกตัว · ยังไม่เข้าเกณฑ์โอกาส " + totalRejected +
@@ -1438,8 +1457,9 @@
         var on = state.filter.status === x[0];
         var def = (CQ() ? CQ().QUAL[x[0]] : null) || { label: x[0] };
         return '<button type="button" class="ch-reject' + (on ? " is-on" : "") +
-          (x[0] === "VALUE_TRAP_RISK" ? " is-danger" : "") + '" data-ch-filter-status="' +
-          esc(x[0]) + '"><div class="ch-reject-top"><b>' + c[x[0]] + "</b><span>" + esc(def.label) +
+          (x[0] === "VALUE_TRAP_RISK" ? " is-danger" : "") +
+          " gc-card gc-tile " + (x[0] === "VALUE_TRAP_RISK" ? "gc-danger" : "gc-neutral") + '" data-ch-filter-status="' +
+          esc(x[0]) + '"><div class="ch-reject-top"><b class="gc-num">' + c[x[0]] + "</b><span>" + esc(def.label) +
           "</span></div><p>" + esc(x[1]) + "</p></button>";
       }).join("") + "</div>" +
       // 12 สถานะครบชุดย้ายมาอยู่ที่นี่ — ไม่ได้ลบข้อมูล เพียงย้ายออกจากพื้นที่ตัดสินใจ
@@ -1485,7 +1505,7 @@
       "ผลประกอบการฟื้นเป็นข้อเท็จจริงที่มีค่า แต่ยังไม่ใช่เรื่องใหม่ที่ทำให้ตลาดต้องตีมูลค่าใหม่"],
   ];
   function semantics() {
-    return '<section class="ch-sec ch-sec-quiet"><details class="ch-semantics"><summary>' +
+    return '<section class="ch-sec ch-sec-quiet gc-card gc-neutral"><details class="ch-semantics"><summary>' +
       "อ่านให้ตรงกัน: สิ่งที่หน้านี้บอก และสิ่งที่ไม่ได้บอก</summary>" +
       '<div class="ch-sem-grid">' + SEMANTICS.map(function (s) {
         return '<div class="ch-sem"><b>' + esc(s[0]) + ' <span class="ch-neq">≠</span> ' + esc(s[1]) +
@@ -1503,7 +1523,7 @@
     var anyShort = state.rows.filter(function (r) {
       return r.drawdown && r.drawdown.available && r.drawdown.bars < CE().CONFIG.bars.threeYear;
     }).length;
-    return '<section class="ch-sec ch-sec-quiet"><div class="ch-sec-head"><h2>แหล่งข้อมูลและความครบถ้วน</h2>' +
+    return '<section class="ch-sec ch-sec-quiet gc-card gc-neutral"><div class="ch-sec-head"><h2>แหล่งข้อมูลและความครบถ้วน</h2>' +
       "<p>แหล่งที่ยังไม่ได้ต่อ = ยังไม่ได้ตรวจ ไม่ได้แปลว่าไม่มีข้อมูล</p></div>" +
       (cards ? '<div class="ch-adapters">' + cards + "</div>" : "") +
       '<p class="ch-note">' + esc(scanContext()) +
@@ -1535,7 +1555,7 @@
     var p = state.partial;
     var done = state.rows.length;
     var tot = p.total || null;
-    return '<div class="ch-partial">' +
+    return '<div class="ch-partial gc-card gc-warning">' +
       "<b>ผลสแกนนี้ยังไม่ครบทั้งตลาด</b> — สแกนไปแล้ว " + done +
       (tot ? " จาก " + tot : "") + " ตัว แล้วหยุดกลางคัน " +
       "(เน็ตหลุด ปิดหน้า หรือกดออกไปก่อน)<br>" +
@@ -1645,11 +1665,11 @@
   function hubCards() {
     return '<div class="ch-hub-cards">' + SCANNERS.map(function (s) {
       var n = s.hits(state.rows).length;
-      return '<button type="button" class="ch-hub-card' + (n === 0 ? " is-zero" : "") + '"' +
+      return '<button type="button" class="ch-hub-card' + (n === 0 ? " is-zero" : "") + ' gc-card gc-neutral"' +
         ' data-ch-view="' + esc(s.key) + '">' +
         '<div class="ch-hub-card-top"><span class="ch-hub-ic">' + esc(s.icon) + "</span>" +
         "<h3>" + esc(s.title) + "</h3></div>" +
-        '<b class="ch-hub-n">' + n + '<em>ตัวเข้าเงื่อนไข</em></b>' +
+        '<b class="ch-hub-n gc-num">' + n + '<em>ตัวเข้าเงื่อนไข</em></b>' +
         '<p class="ch-hub-cond"><small>เงื่อนไข</small>' + esc(s.cond) + "</p>" +
         '<span class="ch-hub-go">ดูทั้งหมด →</span></button>';
     }).join("") + "</div>";
@@ -1679,12 +1699,13 @@
           var ln = s.line(r);
           return ln ? '<div class="ch-hub-line"><small>' + esc(s.tab) + "</small>" + esc(ln) + "</div>" : "";
         }).join("") + "</td>" +
-        '<td class="ch-num">' + pct(ddPct(r)) + "</td>" +
+        '<td class="ch-num gc-cell-num">' + pct(ddPct(r)) + "</td>" +
         "<td>" + trapPill(r, true) + "</td></tr>";
     }).join("");
 
-    return '<div class="ch-tablewrap"><table class="ch-table ch-hub-table"><thead><tr>' +
-      "<th>หุ้น</th><th>เข้าเงื่อนไขของ</th><th>รายละเอียด</th><th>52W Drawdown</th><th>Value Trap</th>" +
+    return '<div class="ch-tablewrap gc-table-wrap" tabindex="0" aria-label="หุ้นที่เข้าเงื่อนไข">' +
+      '<table class="ch-table gc-table ch-hub-table"><thead><tr>' +
+      '<th>หุ้น</th><th>เข้าเงื่อนไขของ</th><th>รายละเอียด</th><th class="gc-cell-num">52W Drawdown</th><th>Value Trap</th>' +
       "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
       '<p class="ch-note">' +
       (multi > 0
@@ -1697,12 +1718,12 @@
   }
 
   function hubPage() {
-    return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head">' +
+    return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head gc-section-h">' +
       "<h2>ตัวสแกนทั้งหมด</h2>" +
       "<p>กด “สแกนใหม่” ครั้งเดียวได้ผลครบทุกตัวสแกน — ทุกตัวอ่านจากข้อมูลรอบเดียวกัน<br>" +
       "แต่ละตัวสแกนตอบคนละคำถาม จึงไม่ถูกรวมเป็นคะแนนเดียว และไม่มีตัวไหน “สำคัญกว่า” ตัวอื่น</p>" +
       "</div>" + hubCards() + "</section>" +
-      '<section class="ch-sec"><div class="ch-sec-head">' +
+      '<section class="ch-sec gc-card gc-neutral"><div class="ch-sec-head">' +
       '<h2>หุ้นที่เข้าเงื่อนไข <span class="ch-count">' + hubHits().length + " / " +
       state.rows.length + " scanned</span></h2>" +
       "<p>รวมทุกตัวที่เข้าเงื่อนไขของตัวสแกนอย่างน้อยหนึ่งข้อ · กดที่แถวเพื่อเปิดดูหลักฐานทั้งหมดของหุ้นตัวนั้น<br>" +
@@ -1769,10 +1790,10 @@
         "<td>" + esc(x.signalDate || "—") +
         '<br><small class="ch-dim">' + (x.barsSinceSignal == null ? "" : x.barsSinceSignal + " วันทำการก่อน") +
         "</small></td>" +
-        '<td class="ch-num">' + pct(x.previousDistancePct) + "</td>" +
-        '<td class="ch-num">' + pct(x.currentDistancePct) + "</td>" +
-        '<td class="ch-num">' + pp(x.reclaimStrengthPct) + "</td>" +
-        '<td class="ch-num">' +
+        '<td class="ch-num gc-cell-num">' + pct(x.previousDistancePct) + "</td>" +
+        '<td class="ch-num gc-cell-num">' + pct(x.currentDistancePct) + "</td>" +
+        '<td class="ch-num gc-cell-num">' + pp(x.reclaimStrengthPct) + "</td>" +
+        '<td class="ch-num gc-cell-num">' +
         (x.volumeVsAvgPct == null
           ? '<span class="ch-na" title="' + esc(x.volumeNote || "") + '">ตรวจไม่ได้</span>'
           : (x.volumeConfirmed
@@ -1788,9 +1809,12 @@
     }).join("") : "";
 
     var table = list.length
-      ? '<div class="ch-tablewrap"><table class="ch-table"><thead><tr>' +
-        "<th>หุ้น</th><th>วันที่เกิดสัญญาณ</th><th>ระยะห่างก่อนหน้า</th><th>ระยะห่างวันที่ข้าม</th>" +
-        "<th>แรงของการกลับขึ้น</th><th>วอลุ่ม vs เฉลี่ย 10 วัน</th><th>ตอนนี้</th><th>Value Trap</th>" +
+      ? '<div class="ch-tablewrap gc-table-wrap" tabindex="0" aria-label="SMA200 Reclaim">' +
+        '<table class="ch-table gc-table"><thead><tr>' +
+        '<th>หุ้น</th><th>วันที่เกิดสัญญาณ</th><th class="gc-cell-num">ระยะห่างก่อนหน้า</th>' +
+        '<th class="gc-cell-num">ระยะห่างวันที่ข้าม</th>' +
+        '<th class="gc-cell-num">แรงของการกลับขึ้น</th><th class="gc-cell-num">วอลุ่ม vs เฉลี่ย 10 วัน</th>' +
+        "<th>ตอนนี้</th><th>Value Trap</th>" +
         "</tr></thead><tbody>" + body + "</tbody></table></div>"
       : '<div class="ch-zero"><p class="ch-zero-lead"><b>ไม่มีตัวไหนตรงตัวกรองนี้ในรอบสแกน</b><br>' +
         "เป็นผลลัพธ์ที่ถูกต้อง ไม่ใช่ข้อมูลหาย</p></div>";
@@ -1813,7 +1837,7 @@
       "<br>“ข้อมูลไม่พอ” กับ “ตรวจแล้วไม่พบ” เป็นคนละเรื่อง — ตัวที่ข้อมูลไม่พอไม่ได้แปลว่าไม่มีสัญญาณ" +
       "</p>";
 
-    return '<section class="ch-sec ch-sec-primary"><div class="ch-sec-head">' +
+    return '<section class="ch-sec ch-sec-primary gc-card gc-neutral"><div class="ch-sec-head">' +
       '<h2>SMA200 Reclaim <span class="ch-count">' + all.length + " / " +
       state.rows.length + " scanned</span></h2>" +
       "<p>ต้องเข้า<strong>ทั้งสองเงื่อนไข</strong>: " +
@@ -1830,8 +1854,10 @@
   // ============================================================
   // DETAIL PAGE — พื้นที่สืบหลักฐานของหุ้นตัวเดียว
   // ============================================================
-  function sec(n, title, body, sub, cls) {
-    return '<section class="ch-blk ' + (cls || "") + '"><h3><span>' + n + "</span>" + esc(title) + "</h3>" +
+  // gc = โทนการ์ดแก้วของหัวข้อ (ค่าเริ่มต้น gc-neutral — หัวข้อที่ไม่มีสถานะ)
+  function sec(n, title, body, sub, cls, gc) {
+    return '<section class="ch-blk' + (cls ? " " + cls : "") + " gc-card " + (gc || "gc-neutral") + '">' +
+      "<h3><span>" + n + "</span>" + esc(title) + "</h3>" +
       (sub ? '<p class="ch-sub">' + sub + "</p>" : "") + body + "</section>";
   }
   function unavailable(msg) {
@@ -2052,7 +2078,7 @@
   function detail(ticker) {
     var r = state.rows.filter(function (x) { return x.ticker === ticker; })[0];
     if (!r) {
-      return header(true) + '<div class="ch-empty"><b>ยังไม่มีข้อมูลของ ' + esc(ticker) + "</b><br>" +
+      return header(true) + '<div class="ch-empty gc-card gc-neutral"><b>ยังไม่มีข้อมูลของ ' + esc(ticker) + "</b><br>" +
         "กด “สแกนใหม่” หรือกลับไปหน้า Radar</div>";
     }
     var q = Qof(r);
@@ -2073,7 +2099,7 @@
         trapTone(trapKey(r))],
       ["Lifecycle", r.lifecycle || "—", "", "grey"],
     ];
-    h += '<section class="ch-dhead"><div class="ch-dhead-id">' +
+    h += '<section class="ch-dhead gc-card ' + statusGc(statusKey(r)) + '"><div class="ch-dhead-id">' +
       "<h2>" + esc(r.ticker) + "<small>" + esc(r.market) + "</small></h2>" +
       '<p class="ch-dname">' + esc(r.name || "") + "</p>" +
       '<span class="ch-badge ch-badge-lg ch-tone-' + tone(statusKey(r)) + '">' + esc(statusLabel(r)) + "</span>" +
@@ -2110,16 +2136,18 @@
     var dwait = dsp.notYet.map(function (x) { return x.gate.req; });
     var drisk = riskEvidence(r).slice(0, 4);
     h += '<section class="ch-dsum">' +
-      '<div class="ch-dsum-col"><h4>ผ่านแล้ว (PASSED)</h4>' +
+      '<div class="ch-dsum-col gc-card gc-tile gc-neutral"><h4>ผ่านแล้ว (PASSED)</h4>' +
       (dsp.passed.length ? gateChips(dsp.passed, "✓", "ch-gates-ok")
         : '<p class="ch-na">ยังไม่ผ่านเกณฑ์ข้อใด</p>') + "</div>" +
-      '<div class="ch-dsum-col"><h4>ยังไม่ผ่าน (NOT YET)</h4>' +
+      '<div class="ch-dsum-col gc-card gc-tile gc-neutral"><h4>ยังไม่ผ่าน (NOT YET)</h4>' +
       (dsp.notYet.length ? gateChips(dsp.notYet, "○", "ch-gates-no")
         : '<p class="ch-na">ผ่านครบทุกข้อ</p>') + "</div>" +
-      '<div class="ch-dsum-col ch-dsum-wait"><h4>รออะไร (WAITING FOR)</h4>' +
+      '<div class="ch-dsum-col ch-dsum-wait gc-card gc-tile gc-neutral"><h4>รออะไร (WAITING FOR)</h4>' +
       (dwait.length ? "<b>→ " + dwait.map(esc).join("<br>→ ") + "</b>"
         : '<p class="ch-na">ไม่มีเงื่อนไขค้าง</p>') + "</div>" +
-      '<div class="ch-dsum-col ch-dsum-risk"><h4>ความเสี่ยง (RISK)</h4>' +
+      // มีหลักฐานความเสี่ยงที่ engine จัดไว้ → แดง · ไม่มี → กลาง (ไม่ระบายแดงให้ช่องว่าง)
+      '<div class="ch-dsum-col ch-dsum-risk gc-card gc-tile ' + (drisk.length ? "gc-danger" : "gc-neutral") + '">' +
+      "<h4>ความเสี่ยง (RISK)</h4>" +
       (drisk.length
         ? "<ul>" + drisk.map(function (e) { return "<li>⚠ " + esc(clip(e.text, 88)) + "</li>"; }).join("") +
           "</ul>" + (riskEvidence(r).length > drisk.length
@@ -2208,7 +2236,7 @@
           (wf.gapVsIndexPp != null ? " (ต่างจากดัชนี " + pp(wf.gapVsIndexPp) + ")" : "") + "</p>" : "") +
       (wf.note ? '<p class="ch-note">' + esc(wf.note) + "</p>" : ""),
       "ราคาที่ลงไม่ได้แปลว่าธุรกิจแย่ — ระบบแยกข้อเท็จจริงเชิงราคาออกจากหลักฐานเชิงธุรกิจ " +
-      "และไม่สร้างเรื่องเล่าเชิงสาเหตุจากราคาเพียงอย่างเดียว");
+      "และไม่สร้างเรื่องเล่าเชิงสาเหตุจากราคาเพียงอย่างเดียว", "", gcTone(whyTone(whyKey(r))));
 
     // ---------- 7.5 WHAT CHANGED ----------
     h += sec(4, "อะไรเปลี่ยนในตัวเลข",
@@ -2227,7 +2255,7 @@
         : unavailable(fi && fi.note ? fi.note : "ยังไม่มีตัวเลขงบรายไตรมาส"),
       "ทิศทางและหลักฐาน ไม่ใช่คะแนน · Before = งวดเดียวกันปีก่อน (มาร์จิ้นใช้ฐานที่ engine ใช้เทียบ) · " +
       "ช่องที่ไม่มีข้อมูลขึ้น UNAVAILABLE ไม่ใช่ 0 · <strong>งบพลิก ≠ catalyst</strong> — " +
-      "ตัวเลขที่ดีขึ้นเป็นผลลัพธ์ ไม่ใช่เหตุการณ์ที่ทำให้ธุรกิจเปลี่ยน");
+      "ตัวเลขที่ดีขึ้นเป็นผลลัพธ์ ไม่ใช่เหตุการณ์ที่ทำให้ธุรกิจเปลี่ยน", "", gcTone(finTone(finState(r))));
 
     // ---------- 7.6 VALUE TRAP CHECK ----------
     var vt = r.valueTrap || {};
@@ -2264,7 +2292,7 @@
     h += sec(5, vtTitle, vtBanner + vtBody +
       '<p class="ch-note">' + esc(vt.note || "") + srcTag(vt.source) + "</p>",
       "ต้องแสดงเสมอ — และ UNKNOWN ไม่ได้แปลว่าปลอดภัย · ตัวเลขคือ<strong>จำนวนสัญญาณ</strong> ไม่ใช่คะแนน",
-      vtKey === "HIGH" ? "ch-blk-danger" : "");
+      vtKey === "HIGH" ? "ch-blk-danger" : "", gcTone(trapTone(vtKey)));
 
     // ---------- 7.7 EVIDENCE TENSION ----------
     // หน้า Detail ต้องได้หลักฐานครบ (storyLimit = null) และตัดชื่อยาวขึ้นเพื่อให้แยกรายการออกจากกันได้
@@ -2367,7 +2395,8 @@
           "การกลับขึ้นเหนือเส้นค่าเฉลี่ยไม่ได้เลื่อนขั้นนี้ให้</p>"
         : "") +
       '<p class="ch-note">' + esc(rg.note || "") + "</p>",
-      "เป็นตัวชี้เชิงราคา ไม่ใช่ตัวบอกว่ามี catalyst · ตัวเลขทั้งหมดมาจาก engine ไม่ได้แปลงเป็นคะแนน");
+      "เป็นตัวชี้เชิงราคา ไม่ใช่ตัวบอกว่ามี catalyst · ตัวเลขทั้งหมดมาจาก engine ไม่ได้แปลงเป็นคะแนน",
+      "", gcTone(recogTone(recogKey(r))));
 
     // ---------- 7.9b TECHNICAL EVIDENCE — SMA200 RECLAIM (§13B) ----------
     h += sec("T", "หลักฐานเชิงเทคนิค — SMA200 Reclaim", techBlock(r),
@@ -2474,16 +2503,16 @@
     state.lastView = view;
     var body;
     if (state.error) {
-      body = header(false, view) + '<div class="ch-empty"><b>เกิดข้อผิดพลาด</b><br>' + esc(state.error) +
-        '<br><button type="button" class="ch-btn" data-ch-rescan="1">ลองอีกครั้ง</button></div>';
+      body = header(false, view) + '<div class="ch-empty gc-card gc-neutral"><b>เกิดข้อผิดพลาด</b><br>' + esc(state.error) +
+        '<br><button type="button" class="ch-btn gc-btn" data-ch-rescan="1">ลองอีกครั้ง</button></div>';
     } else if (state.loading && !state.rows.length) {
       var p = state.progress;
-      body = header(false, view) + '<div class="ch-empty">กำลังสแกนหุ้นไทยทั้งตลาด' +
+      body = header(false, view) + '<div class="ch-empty gc-card gc-neutral">กำลังสแกนหุ้นไทยทั้งตลาด' +
         (p && p.total ? " · " + p.done + "/" + p.total : "") + "…</div>";
     } else if (state.cacheChecking && !state.rows.length) {
-      body = header(false, view) + '<div class="ch-empty">กำลังเรียกผลสแกนที่จำไว้…</div>';
+      body = header(false, view) + '<div class="ch-empty gc-card gc-neutral">กำลังเรียกผลสแกนที่จำไว้…</div>';
     } else if (!state.rows.length) {
-      body = header(false, view) + '<div class="ch-empty"><b>ยังไม่ได้สแกน</b><br>' +
+      body = header(false, view) + '<div class="ch-empty gc-card gc-neutral"><b>ยังไม่ได้สแกน</b><br>' +
         "สแกนหุ้นไทยทั้งตลาด (SET + mai) ซึ่งใช้เวลาราวหนึ่งนาทีครึ่ง จึงไม่เริ่มเองอัตโนมัติ — " +
         "กด “เริ่มสแกน” เพื่อเริ่ม<br>" +
         "<strong>กดครั้งเดียวได้ผลครบทุกตัวสแกน</strong> (" +
@@ -2491,7 +2520,7 @@
         "เพราะทุกตัวอ่านจากข้อมูลรอบเดียวกัน<br>" +
         "<strong>สแกนครั้งเดียวพอ</strong> — ผลจะถูกจำไว้ในเบราว์เซอร์ " +
         "เปิดหน้านี้ครั้งต่อไปจะขึ้นทันทีโดยไม่สแกนใหม่<br>" +
-        '<button type="button" class="ch-btn ch-btn-wide" data-ch-rescan="1">เริ่มสแกน</button></div>';
+        '<button type="button" class="ch-btn ch-btn-wide gc-btn" data-ch-rescan="1">เริ่มสแกน</button></div>';
     } else if (ticker) {
       body = detail(ticker);
     } else if (view === "hub") {

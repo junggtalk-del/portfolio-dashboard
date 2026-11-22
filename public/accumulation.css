@@ -1,68 +1,96 @@
 /* ============================================================
    Accumulation Center — "จังหวะย่อตัวไหนควรค่าแก่การสะสม"
-   Reuses mission-control theme tokens (--mc-*). Ranking-first layout.
+   Ranking-first layout. Glass cards (glass-cards.css gc-2, loaded before this file): every card on the page is
+   a .gc-card with ONE tone from a status the page already computes — the ranked card's pullback class
+   (accumulation-page.js GC_DIP_TONE: healthy → calm · macro → normal · wait → warning · review → danger, the
+   same 4 classes the header strip counts); the strip, the uncovered-chips box and empty notes are gc-neutral.
+   This file lays the cards out and styles what sits ON the glass — it never paints a card face. Coloured text
+   on the glass is lifted to luminance >= 0.70 (>= 4.5:1 on the brightest pixel of every tone); secondary
+   text uses --gc-ink-2 through the --mc-* token map below. Headings sit on the page (gc-section-h).
    ============================================================ */
 .acc-page { padding: 22px 26px 60px; max-width: 1150px; margin: 0 auto; color: var(--mc-text); }
 .acc-page * { box-sizing: border-box; }
 
-.acc-header { margin-bottom: 18px; }
+/* inside a glass card the shared --mc-* tokens (this file + mission-control.css .mc-empty) become glass ink — both themes */
+#accRoot .gc-card {
+  --mc-text: var(--gc-ink);
+  --mc-text-2: var(--gc-ink);
+  --mc-muted: var(--gc-ink-2);
+  --mc-dim: var(--gc-ink-2);
+  --mc-faint: var(--gc-ink-2);
+  --mc-border: var(--gc-line);
+  --mc-border-active: var(--gc-rim-strong);
+  --mc-card: var(--gc-well);
+}
+/* a card whose content mixes text runs and inline tags stays block (gc-card is a flex column) */
+#accRoot .mc-empty.gc-card { display: block; }
+
+.acc-header { margin-bottom: 22px; }
 .acc-header h1 { margin: 0; font-size: 25px; font-weight: 800; letter-spacing: -0.01em; }
 .acc-header p { margin: 6px 0 0; color: var(--mc-text-2); font-size: 13px; line-height: 1.6; max-width: 860px; }
-.acc-strip { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-.acc-pill { font-size: 12px; font-weight: 700; border: 1px solid var(--mc-border); border-radius: 999px; padding: 4px 12px; background: var(--mc-card); }
-.acc-pill b { font-variant-numeric: tabular-nums; }
+/* count strip: one gc-neutral strip of ghost pills — each class's colour is its icon */
+.acc-strip { margin-top: 14px; }
+.acc-pill { gap: 5px; }
 
-.acc-sec { border: 1px solid var(--mc-border); border-radius: 16px; background: var(--mc-card); padding: 16px 18px; margin-bottom: 18px; }
-.acc-sec h2 { margin: 0 0 4px; font-size: 16px; font-weight: 800; }
-.acc-sec > p { margin: 0 0 12px; font-size: 12px; color: var(--mc-muted); line-height: 1.6; }
+/* sections: heading block on the page, cards on the glass */
+.acc-sec { margin-bottom: 26px; }
 
-.acc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 12px; }
-.acc-card { border: 1px solid var(--mc-border); border-radius: 14px; background: var(--mc-card); padding: 13px 15px; display: flex; flex-direction: column; gap: 8px; }
-.acc-card-top { border-color: rgba(52, 211, 153, 0.45); box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.12) inset; }
+.acc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr)); gap: 12px; }
+
+/* ranked card (gc-card, tone = pullback class) */
+.acc-card { gap: 10px; }
+/* top 3 by score: a brighter rim + a solid rank pill (no colour — the tone stays the pullback class) */
+.acc-card-top.gc-card { border-color: rgba(255, 255, 255, 0.42); }
 .acc-head { display: flex; align-items: center; gap: 10px; }
-.acc-rank { font-size: 13px; font-weight: 800; color: var(--mc-muted); flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.acc-rank { flex: 0 0 auto; font-variant-numeric: tabular-nums; }
 .acc-title { min-width: 0; flex: 1; display: flex; flex-direction: column; }
-.acc-sym { font-size: 17px; font-weight: 800; color: var(--mc-text); text-decoration: none; }
+.acc-sym { font-size: 17px; font-weight: 800; color: var(--gc-ink); text-decoration: none; }
 .acc-sym:hover { text-decoration: underline; }
-.acc-title small { font-size: 11px; color: var(--mc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.acc-score { text-align: right; font-variant-numeric: tabular-nums; }
-.acc-score b { font-size: 24px; font-weight: 800; }
-.acc-score span { font-size: 11px; color: var(--mc-muted); }
+.acc-title small { font-size: 11.5px; color: var(--gc-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc-score { flex: 0 0 auto; text-align: right; white-space: nowrap; }
+.acc-score span { margin-left: 3px; font-size: 11px; color: var(--gc-ink-2); }
 
-.acc-line { font-size: 12.5px; line-height: 1.55; color: var(--mc-text-2); }
-.acc-line b { color: var(--mc-text); }
+.acc-line { font-size: 12.5px; line-height: 1.55; color: var(--gc-ink-2); }
+.acc-line b { color: var(--gc-ink); }
 
-.acc-rec { border-radius: 11px; padding: 9px 12px; font-size: 14px; font-weight: 800; display: flex; flex-direction: column; gap: 2px; }
-.acc-rec small { font-size: 11px; font-weight: 500; color: var(--mc-text-2); line-height: 1.5; }
-.acc-rec-bull { background: rgba(52, 211, 153, 0.10); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; }
-.acc-rec-watch { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4); color: #f59e0b; }
-.acc-rec-bear { background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.4); color: #f43f5e; }
+/* recommendation (Aggressive / Gradual / Wait / Review Thesis): dark well + ring + lifted ink keep its own meaning on any tone */
+.acc-rec {
+  display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; border-radius: 14px;
+  background: rgba(0, 0, 0, 0.3); box-shadow: inset 0 0 0 1px var(--acc-rec-ring, rgba(255, 255, 255, 0.3));
+  color: var(--acc-rec-ink, var(--gc-ink)); font-size: 14px; font-weight: 800;
+}
+.acc-rec small { font-size: 11.5px; font-weight: 500; color: var(--gc-ink-2); line-height: 1.5; }
+.acc-rec-bull { --acc-rec-ink: #7cf5c6; --acc-rec-ring: rgba(52, 211, 153, 0.6); }
+.acc-rec-watch { --acc-rec-ink: #ffd98a; --acc-rec-ring: rgba(245, 158, 11, 0.6); }
+.acc-rec-bear { --acc-rec-ink: #ffcfdb; --acc-rec-ring: rgba(244, 63, 94, 0.65); }
 
-.acc-details summary { font-size: 11.5px; color: var(--mc-muted); cursor: pointer; }
+.acc-details summary { font-size: 12px; color: var(--gc-ink-2); cursor: pointer; }
 .acc-whywrap { margin: 8px 0; display: flex; flex-direction: column; gap: 3px; }
 .acc-why { font-size: 12px; line-height: 1.5; }
-.acc-ok { color: #34d399; }
-.acc-no { color: #f43f5e; }
-.acc-parts { display: flex; flex-direction: column; gap: 5px; border-top: 1px dashed var(--mc-border); padding-top: 8px; }
-.acc-part { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(90px, 1.1fr) 34px; gap: 8px; align-items: center; font-size: 11px; }
-.acc-part span { color: var(--mc-muted); }
-.acc-part span em { font-style: normal; opacity: 0.7; }
+.acc-ok { color: #a7f3d0; }
+.acc-no { color: #ffcfdb; }
+.acc-parts { display: flex; flex-direction: column; gap: 5px; border-top: 1px dashed var(--gc-line-strong); padding-top: 8px; }
+.acc-part { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(80px, 1.1fr) 34px; gap: 8px; align-items: center; font-size: 11.5px; }
+.acc-part span { color: var(--gc-ink-2); }
+.acc-part span em { font-style: normal; }
 .acc-part b { text-align: right; font-variant-numeric: tabular-nums; }
-.acc-bar { height: 6px; border-radius: 4px; background: rgba(148, 163, 184, 0.18); overflow: hidden; }
+/* bar colours = the page's value bands (>= 70 · >= 40 · < 40) — kept; only the track turns white-tinted */
+.acc-bar { height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
 .acc-bar i { display: block; height: 100%; border-radius: 4px; }
-.acc-exp { margin-top: 8px; font-size: 11px; color: var(--mc-muted); }
-.acc-exp a { color: var(--mc-text-2); }
-.acc-stale { font-size: 11px; color: #f59e0b; border: 1px dashed rgba(245, 158, 11, 0.45); border-radius: 9px; padding: 5px 9px; }
+.acc-exp { margin-top: 8px; font-size: 11.5px; color: var(--gc-ink-2); }
+.acc-exp a { color: var(--gc-ink); }
+.acc-stale { font-size: 11.5px; color: #ffd98a; background: rgba(0, 0, 0, 0.24); border: 1px dashed rgba(245, 158, 11, 0.6); border-radius: 10px; padding: 5px 9px; }
 
+/* Intelligence evidence chips (Health / Divergence / Readiness) — translucent like gc-chip-flat */
+.acc-intel { display: flex; flex-wrap: wrap; gap: 6px; }
+.acc-intel span { padding: 2px 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); color: var(--gc-ink); font-size: 11px; font-weight: 700; }
+
+/* uncovered tickers: heading on the page · chips = gc-pill-ghost links in one gc-neutral strip */
 .acc-uncovered p code { font-family: ui-monospace, monospace; font-size: 11px; background: rgba(148, 163, 184, 0.15); border-radius: 5px; padding: 1px 6px; }
-.acc-chips { display: flex; flex-wrap: wrap; gap: 7px; }
-.acc-chip { font-size: 11.5px; font-weight: 700; border: 1px solid var(--mc-border); border-radius: 999px; padding: 4px 11px; color: var(--mc-text-2); text-decoration: none; background: rgba(148, 163, 184, 0.08); }
-.acc-chip:hover { border-color: var(--mc-border-active); }
+.acc-chips:empty { display: none; }
+.acc-chip { text-decoration: none; }
+.acc-chip:hover { box-shadow: inset 0 0 0 1px var(--gc-rim-strong); }
 
 .acc-foot { font-size: 11px; color: var(--mc-muted); line-height: 1.6; padding: 0 4px; }
 
 @media (max-width: 720px) { .acc-page { padding: 16px 12px 48px; } .acc-grid { grid-template-columns: 1fr; } }
-
-/* Intelligence evidence chips (Health / Divergence / Readiness) */
-.acc-intel { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
-.acc-intel span { background: rgba(148, 163, 184, .08); border: 1px solid var(--mc-border, #1f2a3d); border-radius: 999px; padding: 1px 9px; font-size: 10.5px; font-weight: 700; }

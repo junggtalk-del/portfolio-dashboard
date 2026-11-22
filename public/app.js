@@ -9,7 +9,8 @@ const TYPE_LABELS = {
   custom: "อื่นๆ"
 };
 
-const CHART_COLORS = ["#0f8b8d", "#c8902d", "#17324d", "#12805c", "#9b5de5", "#ef476f", "#3a86ff", "#6c778c"];
+// สีประจำลำดับสินทรัพย์ (ลำดับเดิม = สีเดิมทุกไตรมาส) · ช่องที่ 3 เดิมน้ำเงินเข้ม #17324d มองไม่เห็นบนการ์ดแก้วมืด → ส้มสว่าง
+const CHART_COLORS = ["#0f8b8d", "#c8902d", "#ff9f43", "#12805c", "#9b5de5", "#ef476f", "#3a86ff", "#6c778c"];
 
 // หุ้นต่างประเทศของไตรมาสปัจจุบันตามหน้า AI Portfolio Manager (spec 2026-11-09-pm-foreign-sleeve-design.md · Addendum)
 const PM_SYNC_STATUS_TH = "หุ้นต่างประเทศอัปเดตจาก AI Portfolio Manager แล้ว — จะบันทึกพร้อมการแก้ครั้งถัดไป";
@@ -456,6 +457,13 @@ function renderQuarterOptions() {
   elements.quarterInput.value = state.data.currentQuarter;
 }
 
+// การ์ดแก้ว (glass-cards.css): สีการ์ด "เติบโตจากไตรมาสก่อน" จากสถานะที่ renderSummary คิดอยู่แล้ว (ไม่ประดิษฐ์สถานะใหม่)
+//   ไม่มีไตรมาสก่อนหน้า (null) → gc-neutral · ≥ 0 (positive) → gc-calm · < 0 (negative) → gc-danger — กติกาเดียวกับ QoQ ใน /portfolio
+function growthToneOf(qGrowth) {
+  if (qGrowth === null || !isFinite(qGrowth)) return "gc-neutral";
+  return qGrowth >= 0 ? "gc-calm" : "gc-danger";
+}
+
 function renderSummary() {
   const totals = getTotals();
   const investedPercent = totals.wealth > 0 ? (totals.invested / totals.wealth) * 100 : 0;
@@ -471,7 +479,14 @@ function renderSummary() {
   elements.cashValue.textContent = formatMoney(totals.cash);
   elements.cashPercent.textContent = `${formatPercent(cashPercent)} ของพอร์ต`;
   elements.quarterGrowth.textContent = qGrowth === null ? "0.00%" : formatPercent(qGrowth, true);
-  elements.quarterGrowth.className = qGrowth === null || qGrowth >= 0 ? "positive" : "negative";
+  elements.quarterGrowth.className = (qGrowth === null || qGrowth >= 0 ? "positive" : "negative") + " gc-num gc-num-s";
+  // การ์ดแก้ว: สีการ์ด "เติบโตจากไตรมาสก่อน" = สถานะบรรทัดบน (growthToneOf) · เหลือ tone เดียวเสมอ
+  var growthCard = elements.quarterGrowth.parentNode;
+  if (growthCard && growthCard.classList) {
+    var growthTone = growthToneOf(qGrowth);
+    var growthTones = ["gc-neutral", "gc-calm", "gc-danger"];
+    for (var gi = 0; gi < growthTones.length; gi += 1) growthCard.classList.toggle(growthTones[gi], growthTones[gi] === growthTone);
+  }
   elements.quarterGrowthNote.textContent = previousQuarter ? `เทียบกับ ${previousQuarter.key}` : "ยังไม่มีไตรมาสก่อนหน้า";
   elements.currencyNote.textContent = "THB";
   elements.allocationInvested.style.width = `${investedPercent}%`;
@@ -498,7 +513,7 @@ function renderRows() {
     const name = asset.name || TYPE_LABELS[asset.type] || "Asset";
     // แถวหุ้นต่างประเทศที่ซิงก์จากหน้า PM: ป้ายบอกที่มา + ลิงก์ · ลบไม่ได้ (title ไม่มีตัวเงิน)
     const fromPM = isPMSyncedAsset(asset);
-    const badge = fromPM ? '<a class="pm-source-badge" href="/portfolio-manager">จาก AI Portfolio Manager</a>' : "";
+    const badge = fromPM ? '<a class="pm-source-badge gc-chip gc-chip-flat" href="/portfolio-manager">จาก AI Portfolio Manager</a>' : "";
     const deleteLock = fromPM ? ` disabled title="${escapeHtml(PM_DELETE_TITLE_TH)}"` : "";
     const row = document.createElement("tr");
     row.innerHTML = `
@@ -509,7 +524,7 @@ function renderRows() {
       <td>${asset.type === "cash" ? "-" : formatPercent(metrics.investedPercent)}</td>
       <td>${formatMoney(metrics.invested)}</td>
       <td>${formatMoney(metrics.cash)}</td>
-      <td class="row-actions"><button class="icon-button edit-button" type="button" data-edit-id="${asset.id}">แก้ไข</button><button class="delete-button" type="button" data-delete-id="${asset.id}"${deleteLock}>×</button></td>`;
+      <td class="row-actions"><button class="icon-button edit-button gc-btn gc-btn-ghost" type="button" data-edit-id="${asset.id}">แก้ไข</button><button class="delete-button gc-btn gc-btn-ghost" type="button" data-delete-id="${asset.id}"${deleteLock}>×</button></td>`;
     elements.rows.appendChild(row);
   }
 }
@@ -531,7 +546,7 @@ function renderPieChart() {
     .filter((slice) => slice.value > 0)
     .sort((a, b) => b.value - a.value);
   if (!slices.length || totals.wealth <= 0) {
-    ctx.beginPath(); ctx.arc(center, center, radius, 0, Math.PI * 2); ctx.fillStyle = "#e7edf5"; ctx.fill(); drawDonutHole(ctx, center, radius);
+    ctx.beginPath(); ctx.arc(center, center, radius, 0, Math.PI * 2); ctx.fillStyle = "rgba(255, 255, 255, 0.16)"; ctx.fill(); drawDonutHole(ctx, center, radius);
     renderLegendItem("ยังไม่มีข้อมูล", 0, "#dfe6f1");
     return;
   }
@@ -545,8 +560,11 @@ function renderPieChart() {
   drawDonutHole(ctx, center, radius);
 }
 
+// รูกลางโดนัท = เจาะโปร่ง (เห็นการ์ดแก้วด้านหลัง) แทนวงขาวทึบ
 function drawDonutHole(ctx, center, radius) {
-  ctx.beginPath(); ctx.arc(center, center, radius * 0.58, 0, Math.PI * 2); ctx.fillStyle = "#ffffff"; ctx.fill();
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath(); ctx.arc(center, center, radius * 0.58, 0, Math.PI * 2); ctx.fillStyle = "#000000"; ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
 }
 
 function renderLegendItem(label, percent, color) {
@@ -566,7 +584,7 @@ function renderGrowthTables() {
     const previous = summaries[index - 1];
     const growth = previous ? growthPercent(summary.totals.wealth, previous.totals.wealth) : null;
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${summary.key}</td><td>${formatMoney(summary.totals.wealth)}</td><td class="${growth === null || growth >= 0 ? "positive" : "negative"}">${growth === null ? "-" : formatPercent(growth, true)}</td><td>${summary.assets.length}</td><td class="row-actions"><button class="delete-button" type="button" data-delete-quarter="${summary.key}">×</button></td>`;
+    row.innerHTML = `<td>${summary.key}</td><td>${formatMoney(summary.totals.wealth)}</td><td class="${growth === null || growth >= 0 ? "positive" : "negative"}">${growth === null ? "-" : formatPercent(growth, true)}</td><td>${summary.assets.length}</td><td class="row-actions"><button class="delete-button gc-btn gc-btn-ghost" type="button" data-delete-quarter="${summary.key}">×</button></td>`;
     elements.quarterRows.appendChild(row);
   }
   // อิง "ไตรมาสที่เลือก" (ไม่ใช่ไตรมาสสุดท้ายเสมอไป) → ตารางนี้ refresh ตาม dropdown
@@ -638,7 +656,8 @@ function growthChartSeries() {
     values: perQuarterMaps.map((m) => (m.get(kk) ? m.get(kk).value : null))
   }));
   assets.sort((a, b) => (b.values[b.values.length - 1] || 0) - (a.values[a.values.length - 1] || 0));
-  return { keys, series: [{ name: "พอร์ตรวม", color: "#17324d", values: totals, total: true }, ...assets] };
+  // เส้นพอร์ตรวม = ขาว (แบบ Macro บนการ์ดแก้ว · สีเดิมน้ำเงินเข้มไม่ได้มีความหมาย และมองไม่เห็นบนพื้นมืด)
+  return { keys, series: [{ name: "พอร์ตรวม", color: "#ffffff", values: totals, total: true }, ...assets] };
 }
 
 function indexifySeries(s) {
@@ -699,7 +718,7 @@ function renderContribChart(host, legend, keys, rawSeries) {
     svg += `<line x1="${L}" y1="${Y(val).toFixed(1)}" x2="${W - R}" y2="${Y(val).toFixed(1)}" class="gc-grid" />`;
     svg += `<text x="${L - 8}" y="${(Y(val) + 4).toFixed(1)}" text-anchor="end" class="gc-axis">${val.toFixed(1)}%</text>`;
   }
-  svg += `<line x1="${L}" y1="${Y(0).toFixed(1)}" x2="${W - R}" y2="${Y(0).toFixed(1)}" stroke="#17324d" stroke-width="1.4" />`;
+  svg += `<line x1="${L}" y1="${Y(0).toFixed(1)}" x2="${W - R}" y2="${Y(0).toFixed(1)}" stroke="rgba(255, 255, 255, 0.55)" stroke-width="1.4" />`;
 
   cols.forEach((c, ci) => {
     const cx = L + slot * ci + slot / 2;
@@ -821,6 +840,38 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
 }
 
+// ---------------------------------------------------------------- การ์ดแก้ว: สีของข้อความสถานะ
+// สถานะอยู่ในคำที่หน้านี้เขียนอยู่แล้ว → สีที่ตัวข้อความ ไม่ใช่ทั้งการ์ด (ไม่สร้างสถานะใหม่)
+//   ไม่สำเร็จ / กรุณากรอก… → qe-st-bad · ไตรมาสจบแล้ว / แก้มูลค่าที่หน้า PM → qe-st-warn
+//   บันทึก…แล้ว / โหลดข้อมูล…แล้ว → qe-st-ok · อื่น ๆ (กำลัง… · ข้อมูลทั่วไป) = สีรองปกติ
+function statusToneOf(text) {
+  var s = String(text == null ? "" : text);
+  if (/ไม่สำเร็จ|^กรุณากรอก/.test(s)) return "qe-st-bad";
+  if (s.indexOf(PM_QUARTER_ENDED_TH) >= 0 || s === PM_FOREIGN_LOCKED_TH) return "qe-st-warn";
+  if (/^(บันทึก|โหลดข้อมูล)[^·]*แล้ว/.test(s)) return "qe-st-ok";
+  return "";
+}
+
+function paintStatusTone(el) {
+  if (!el || !el.classList) return;
+  var tone = statusToneOf(el.textContent);
+  var tones = ["qe-st-ok", "qe-st-bad", "qe-st-warn"];
+  for (var i = 0; i < tones.length; i += 1) el.classList.toggle(tones[i], tones[i] === tone);
+}
+
+// ข้อความสถานะถูกเขียนจากหลายที่ (textContent) → ทาสีใหม่ทุกครั้งที่ข้อความเปลี่ยน
+function watchStatusTone() {
+  var targets = [elements.statusText, elements.quarterStatus];
+  for (var i = 0; i < targets.length; i += 1) paintStatusTone(targets[i]);
+  if (typeof MutationObserver === "undefined") return;
+  var observer = new MutationObserver(function () {
+    for (var j = 0; j < targets.length; j += 1) paintStatusTone(targets[j]);
+  });
+  for (var k = 0; k < targets.length; k += 1) {
+    if (targets[k] && targets[k].nodeType === 1) observer.observe(targets[k], { childList: true, characterData: true, subtree: true });
+  }
+}
+
 function refreshQuotes() {
   // ยังโหลดเอกสารไม่สำเร็จ → ปุ่มรีเฟรช = ลองโหลดใหม่ทั้งเอกสาร (ข้อความสถานะมาจากรอบโหลด)
   if (!state.loaded) {
@@ -834,15 +885,62 @@ function refreshQuotes() {
   refreshForeignFromPM({ adoptServer: true });
 }
 
+// ---------------------------------------------------------------- Privacy Lock กับช่องเงินของฟอร์ม
+// privacy.js ซ่อน ฿ เฉพาะในข้อความ — ไม่แตะค่าใน <input> (กติกาเดียวกับหน้า AI Portfolio Manager)
+//   แก้รายการเดิม + ล็อก → ช่องมูลค่า / เงินเติม-ถอน วาดว่าง + placeholder ล็อก (applyMoneyPrivacy)
+//   บันทึกตอนล็อกแล้วช่องยังว่าง = ค่าที่บันทึกไว้ เหมือนไม่ได้แตะช่อง (formMoneyText · ไม่บันทึก 0 ทับ) · พิมพ์ค่าใหม่ = บันทึกตามปกติ
+//   ปลดล็อกระหว่างแก้ → ช่องที่ยังว่างได้ค่าที่บันทึกไว้คืน (ค่าที่พิมพ์ใหม่คงไว้) · ฟอร์มปิด → placeholder เดิม
+function privacyLocked() {
+  try { return Boolean(window.PortfolioPrivacy && typeof window.PortfolioPrivacy.isLocked === "function" && window.PortfolioPrivacy.isLocked()); }
+  catch (error) { return false; }
+}
+
+// ข้อความในช่องเงินของรายการ — ตัวเดียวกับที่ editAsset ใส่ในช่อง (field "value" = มูลค่า · "netFlow" = เงินเติม/ถอน)
+function moneyFieldText(asset, field) {
+  if (field === "value") return String(asset.manualValue || "");
+  return isFinite(Number(asset.netFlow)) && asset.netFlow !== null && asset.netFlow !== "" ? String(asset.netFlow) : "0";
+}
+
+// ค่าในช่องเงินตอนอ่านฟอร์ม: ล็อกอยู่ + กำลังแก้รายการเดิม + ช่องยังว่าง → ค่าที่บันทึกไว้ (ช่องว่างเพราะล็อก ไม่ใช่เพราะผู้ใช้ลบ)
+function formMoneyText(input, field) {
+  var raw = String(input.value);
+  if (raw.trim() !== "" || !state.editingId || !privacyLocked()) return raw;
+  var assets = currentQuarter().assets;
+  for (var i = 0; i < assets.length; i += 1) if (assets[i] && assets[i].id === state.editingId) return moneyFieldText(assets[i], field);
+  return raw;
+}
+
+// ช่องเงินของฟอร์มตามล็อก (เรียกจาก editAsset · resetForm · ตอนล็อก/ปลดล็อก) · ฟอร์มเพิ่มรายการใหม่ = ไม่แตะค่า แค่ placeholder เดิม
+function applyMoneyPrivacy() {
+  var asset = null;
+  var assets = state.editingId ? currentQuarter().assets : [];
+  for (var i = 0; i < assets.length; i += 1) if (assets[i] && assets[i].id === state.editingId) asset = assets[i];
+  var hide = Boolean(asset) && privacyLocked();
+  var fields = [[elements.valueInput, "value", "250000"], [elements.netFlowInput, "netFlow", "0"]];
+  for (var j = 0; j < fields.length; j += 1) {
+    var input = fields[j][0];
+    if (!input) continue;
+    if (hide) input.value = "";
+    else if (asset && String(input.value).trim() === "") input.value = moneyFieldText(asset, fields[j][1]);
+    // ช่องที่ถูกปิด (มูลค่าของแถวที่ล็อกตาม PM — setFormPMLock ทำก่อน) แก้ไม่ได้ → ไม่บอกว่า "ใส่ค่าใหม่ได้"
+    input.placeholder = hide ? (input.disabled ? "ล็อกอยู่" : "ล็อกอยู่ — ใส่ค่าใหม่ได้") : fields[j][2];
+  }
+}
+
+// privacy.js ยิง "portfolio-privacy-changed" บน document ตอนล็อก/ปลดล็อก
+function onEditorPrivacyChanged() {
+  applyMoneyPrivacy();
+}
+
 function readAssetFromForm() {
   const type = elements.typeInput.value;
-  const manualValue = Number(elements.valueInput.value);
+  const manualValue = Number(formMoneyText(elements.valueInput, "value"));
   const investedPercent = clamp(Number(elements.investedPercentInput.value), 0, 100);
   if (!Number.isFinite(manualValue) || manualValue < 0) {
     elements.statusText.textContent = "กรุณากรอกมูลค่าปัจจุบันเป็นบาทให้ถูกต้อง";
     return null;
   }
-  const rawFlow = elements.netFlowInput ? elements.netFlowInput.value.trim() : "";
+  const rawFlow = elements.netFlowInput ? formMoneyText(elements.netFlowInput, "netFlow").trim() : "";
   const netFlow = rawFlow === "" ? 0 : Number(rawFlow);
   if (!Number.isFinite(netFlow)) {
     elements.statusText.textContent = "กรุณากรอกเงินเติม/ถอนเป็นตัวเลข (ติดลบได้ เว้นว่าง = 0)";
@@ -890,7 +988,7 @@ function editAsset(id) {
   elements.formTitle.textContent = "แก้ไขรายการพอร์ต";
   elements.submitButton.textContent = "บันทึกการแก้ไข";
   elements.cancelEditButton.classList.remove("is-hidden");
-  updateFormMode(); setFormPMLock(isPMSyncedAsset(asset)); setActiveView("manage");
+  updateFormMode(); setFormPMLock(isPMSyncedAsset(asset)); applyMoneyPrivacy(); setActiveView("manage");
   // แถวหุ้นต่างประเทศของไตรมาสที่จบแล้ว: แก้เองได้ตามปกติ แต่บอกว่าทำไมไม่ตาม AI Portfolio Manager
   if (asset.type === "foreign-stock" && state.pmReason === "quarter-ended") elements.statusText.textContent = PM_QUARTER_ENDED_TH;
 }
@@ -914,6 +1012,7 @@ function resetForm() {
   elements.submitButton.textContent = "เพิ่มเข้าพอร์ต";
   elements.cancelEditButton.classList.add("is-hidden");
   setFormPMLock(false);
+  applyMoneyPrivacy();
   updateFormMode();
   // ฟอร์มปิดแล้ว → ทำซิงก์ที่ค้างไว้ (+ วาดใหม่) ก่อนผู้เรียกบันทึก
   runPendingPMSync();
@@ -1062,8 +1161,12 @@ if (growthModeBox) growthModeBox.addEventListener("click", (event) => {
   renderGrowthChart();
 });
 
+// privacy.js ยิง "portfolio-privacy-changed" บน document → ช่องเงินของฟอร์มแก้ไขตามล็อก
+document.addEventListener("portfolio-privacy-changed", onEditorPrivacyChanged);
+
 setDefaultNewQuarterInputs();
 updateFormMode();
+watchStatusTone();
 render();
 // รายการหุ้นของหน้า PM โหลดคู่ขนานกับเอกสารพอร์ต → ซิงก์แถวหุ้นต่างประเทศหลังเอกสารมาแล้ว (ไม่บันทึกเองตอนเปิดหน้า)
 //   โหลดเอกสารไม่สำเร็จ → ไม่ซิงก์ (ข้อความผิดพลาดคงอยู่) · กลับมาที่แท็บ / กดรีเฟรช = โหลดใหม่

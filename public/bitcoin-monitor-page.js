@@ -502,8 +502,17 @@
   // ---------------------------------------------------------------- render
   function toneColor(t) { return t === "bull" ? "var(--mc-emerald)" : t === "bear" ? "var(--mc-red)" : t === "warn" || t === "watch-bull" ? "var(--mc-amber)" : t === "neutral" ? "var(--mc-blue)" : "var(--mc-muted)"; }
 
+  // Glass cards (glass-cards.css): a card's tone is a status this page ALREADY computes — never a new one.
+  // Each map follows the colour the page already paints for that status:
+  //   emerald → gc-calm (ดี) · blue → gc-normal (ปกติ) · amber → gc-warning (ระวัง) · red → gc-danger (แย่) · none → gc-neutral
+  var GC_TONE = { bull: "gc-calm", neutral: "gc-normal", warn: "gc-warning", "watch-bull": "gc-warning", bear: "gc-danger" }; // toneColor (watch-bull is amber here)
+  var GC_ZONE_TONE = { under: "gc-calm", fair: "gc-normal", expensive: "gc-warning", over: "gc-danger" };               // zoneTag (na = no data)
+  var GC_RISK_TONE = { low: "gc-calm", medium: "gc-warning", high: "gc-danger" };                                       // hero BTC Risk colours
+  var GC_DD_TONE = { green: "gc-calm", gray: "gc-normal", amber: "gc-warning", red: "gc-danger" };                      // DD tag (blue = baseline, not a zone)
+  function gcTone(map, key) { return (key != null && Object.prototype.hasOwnProperty.call(map, key)) ? map[key] : "gc-neutral"; }
+
   function providerChip(name, status, tone) { return `<span class="btc-prov btc-prov-${tone}"><b>${esc(name)}</b> ${esc(status)}</span>`; }
-  function modeBar(ind) {
+  function modeBar(ind, nested) {
     const p = (apiData && apiData.providers) || {};
     const onc = ind._hasOnchain;
     const csvAt = readOnchain().lastImported;
@@ -517,7 +526,8 @@
     const cm = freeStatus(p.coinMetrics), fut = freeStatus(p.binanceFutures), bc = freeStatus(p.blockchain), ll = freeStatus(p.defillama), fng = freeStatus(p.fearGreed);
     const gl = provStatus(p.glassnode), cq = provStatus(p.cryptoquant);
     const fetched = apiData && apiData.fetchedAt ? fmtWhen(apiData.fetchedAt) : "—";
-    return `<section class="mc-card mc-panel mc-fade btc-modebar">
+    // on its own (no-price state) it is a glass card; inside the Data & Sources card it stays a well
+    return `<section class="mc-card mc-panel mc-fade btc-modebar${nested ? "" : " gc-card gc-neutral"}">
       <div class="btc-mode">
         <span class="btc-mode-badge ${onc ? "btc-mode-full" : "btc-mode-tech"}">${onc ? "Free data — full coverage" : "Free data — technical only"}</span>
         <span class="mc-sub">ใช้ข้อมูลฟรีทั้งหมด (ไม่ต้องใช้ API key)</span>
@@ -538,22 +548,22 @@
   // slim top bar: freshness + refresh (moved out of modeBar so provider status doesn't block the top)
   function slimBar(ind) {
     const fetched = apiData && apiData.fetchedAt ? fmtWhen(apiData.fetchedAt) : ((readSnapshot() && readSnapshot().loadedAt) ? fmtWhen(readSnapshot().loadedAt) : "—");
-    return `<section class="mc-card mc-panel mc-fade btc-slimbar">
+    return `<section class="mc-card mc-panel mc-fade btc-slimbar gc-card gc-strip gc-neutral">
       <span class="mc-sub">${apiState === "loading" ? "กำลังดึงข้อมูล…" : apiState === "error" ? ("ดึงไม่สำเร็จ: " + esc(apiError || "")) : "Free data · อัปเดตล่าสุด " + esc(fetched)}</span>
-      <button class="mc-btn mc-btn-primary" id="btcRefresh" type="button"${apiState === "loading" ? " disabled" : ""}>↻ ดึงข้อมูลล่าสุด</button>
+      <button class="mc-btn mc-btn-primary gc-btn" id="btcRefresh" type="button"${apiState === "loading" ? " disabled" : ""}>↻ ดึงข้อมูลล่าสุด</button>
     </section>`;
   }
   // 6-signal strip (shared with the Intelligence tab; falls back to a hint when Intelligence not built yet)
   function signalStripSection(snap) {
     const strip = (window.BitcoinIntelligenceUI && window.BitcoinIntelligenceUI.signalStrip) ? window.BitcoinIntelligenceUI.signalStrip(snap) : "";
     if (!strip) return "";
-    return `<section class="mc-card mc-panel mc-fade btc-sigwrap"><div class="mc-panel-head"><div><h2>📡 6 สัญญาณเทคนิค</h2><span class="mc-sub">EMA12×26 · SMA50 · SMA200 · RSI(30/70) · Bull/Bear Divergence — ดูรายละเอียด+คาดการณ์ที่แท็บ 🧠 Intelligence</span></div></div>${strip}</section>`;
+    return `<section class="mc-card mc-panel mc-fade btc-sigwrap gc-card gc-neutral"><div class="mc-panel-head"><div><h2>📡 6 สัญญาณเทคนิค</h2><span class="mc-sub">EMA12×26 · SMA50 · SMA200 · RSI(30/70) · Bull/Bear Divergence — ดูรายละเอียด+คาดการณ์ที่แท็บ 🧠 Intelligence</span></div></div>${strip}</section>`;
   }
   // Data & Sources — provider status + coverage + paid note + CSV import folded into one accordion
   function dataSourcesAccordion(ind, bz) {
-    return `<details class="mc-card mc-panel mc-fade btc-datasrc">
+    return `<details class="mc-card mc-panel mc-fade btc-datasrc gc-card gc-neutral">
       <summary><h2 style="display:inline">🔌 ข้อมูล & แหล่งที่มา (Data & Sources)</h2><span class="mc-sub"> · สถานะ provider · Data Coverage · นำเข้า CSV</span></summary>
-      <div class="btc-datasrc-body">${modeBar(ind)}${coveragePanel(ind, bz)}${paidNote()}${importSection()}</div>
+      <div class="btc-datasrc-body">${modeBar(ind, true)}${coveragePanel(ind, bz)}${paidNote()}${importSection()}</div>
     </details>`;
   }
 
@@ -607,7 +617,7 @@
     if (activeTab === "liquidity") {
       const glBody = (window.GlobalLiquidityUI && window.GlobalLiquidityUI.html)
         ? window.GlobalLiquidityUI.html()
-        : `<div class="mc-empty"><strong>กำลังโหลดโมดูลสภาพคล่อง…</strong></div>`;
+        : `<div class="mc-empty gc-card gc-neutral"><strong>กำลังโหลดโมดูลสภาพคล่อง…</strong></div>`;
       root.innerHTML = tabBar() + `<div id="btcTabBody">${glBody}</div>`;
       wire();
       if (window.GlobalLiquidityUI) {
@@ -620,7 +630,7 @@
     if (activeTab === "intelligence") {
       const body = (window.BitcoinIntelligenceUI && window.BitcoinIntelligenceUI.html)
         ? window.BitcoinIntelligenceUI.html(snap)
-        : `<div class="mc-empty"><strong>กำลังโหลด Bitcoin Intelligence…</strong>โมดูลกำลังเริ่มต้น</div>`;
+        : `<div class="mc-empty gc-card gc-neutral"><strong>กำลังโหลด Bitcoin Intelligence…</strong>โมดูลกำลังเริ่มต้น</div>`;
       root.innerHTML = tabBar() + `<div id="btcTabBody">${body}</div>`;
       wire();
       if (window.BitcoinIntelligenceUI && window.BitcoinIntelligenceUI.wire) window.BitcoinIntelligenceUI.wire(document.getElementById("btcTabBody"));
@@ -663,10 +673,11 @@
     const risk = bz ? bz.riskLevel : null;
     const cy = biCycle(snap), hv = cy && cy.halving;
     const halvingLine = hv ? `<p class="mc-hero-sub btc-hero-halving">⛏️ วัฏจักร 4 ปี: <b>${cy.current ? esc(cy.current.state) : ""}</b>${hv.daysSince != null ? ` · ${hv.daysSince} วันหลัง halving` : ""}${hv.daysTo != null ? ` · อีก ${hv.daysTo} วันถึงครั้งถัดไป` : ""}${hv.bucket ? ` · ${esc(hv.bucket)}` : ""}</p>` : "";
-    const m = (label, thai, value, valueColor, sub) => `<div class="mc-card mc-metric mc-glow"><div class="mc-label"><span>${esc(label)}</span></div>
+    // tile tone = the status whose colour the tile already paints (price has none → neutral)
+    const m = (label, thai, value, valueColor, sub, tone) => `<div class="mc-card mc-metric mc-glow gc-card gc-tile ${tone || "gc-neutral"}"><div class="mc-label"><span>${esc(label)}</span></div>
       <div class="mc-value" style="font-size:${String(value).length > 12 ? "20px" : "26px"};color:${valueColor || "var(--mc-text)"}">${value}</div>
       <div class="mc-delta" style="color:var(--mc-muted)">${esc(sub || thai)}</div></div>`;
-    return `<section class="mc-page-hero mc-fade">
+    return `<section class="mc-page-hero mc-fade gc-card gc-neutral">
       <div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:flex-start;">
         <div style="position:relative;z-index:1;">
           <p class="mc-eyebrow">Bitcoin Monitor · ถูกหรือแพง?</p>
@@ -676,9 +687,9 @@
         </div>
         <div class="a360-hero-cards" style="position:relative;z-index:1;min-width:min(640px,100%);display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
           ${m("BTC Price", "ราคา Bitcoin", price, "var(--mc-text)", change == null ? "ราคา Bitcoin" : `${change >= 0 ? "▲" : "▼"} ${signedPct(change)} วันนี้`)}
-          ${m("BTC Action", "คำแนะนำ", act ? esc(act.thaiAction) : "—", toneColor(act && act.tone), act ? esc(act.action) : "ยังไม่มีข้อมูล")}
-          ${m("Valuation Zone", "โซนมูลค่า", zone ? esc(zone.thaiLabel) : "—", toneColor(zone && zone.tone), zone ? esc(zone.label) : "")}
-          ${m("BTC Risk", "ความเสี่ยง", risk ? esc(risk.thaiLabel) : "—", risk && risk.key === "high" ? "var(--mc-red)" : risk && risk.key === "low" ? "var(--mc-emerald)" : "var(--mc-amber)", risk ? esc(risk.label) : "")}
+          ${m("BTC Action", "คำแนะนำ", act ? esc(act.thaiAction) : "—", toneColor(act && act.tone), act ? esc(act.action) : "ยังไม่มีข้อมูล", gcTone(GC_TONE, act && act.tone))}
+          ${m("Valuation Zone", "โซนมูลค่า", zone ? esc(zone.thaiLabel) : "—", toneColor(zone && zone.tone), zone ? esc(zone.label) : "", gcTone(GC_TONE, zone && zone.tone))}
+          ${m("BTC Risk", "ความเสี่ยง", risk ? esc(risk.thaiLabel) : "—", risk && risk.key === "high" ? "var(--mc-red)" : risk && risk.key === "low" ? "var(--mc-emerald)" : "var(--mc-amber)", risk ? esc(risk.label) : "", gcTone(GC_RISK_TONE, risk && risk.key))}
         </div>
       </div>
     </section>`;
@@ -686,7 +697,7 @@
 
   function chartSection(hist, ind) {
     const ranges = ["1M", "3M", "6M", "1Y", "3Y", "5Y", "MAX"];
-    return `<section class="mc-card mc-panel mc-fade">
+    return `<section class="mc-card mc-panel mc-fade gc-card gc-neutral">
       <div class="mc-panel-head">
         <div><h2>BTC Price Chart</h2><span class="mc-sub">ราคา + EMA12 / EMA26 / SMA50 / SMA200${dn(ind.realizedPriceProxy) || dn(ind.sthRealizedPrice) || dn(ind.lthRealizedPrice) ? " + Realized Price" : ""}</span></div>
         <div class="btc-range" id="btcRange">${ranges.map((r) => `<button type="button" class="${r === range ? "is-active" : ""}" data-range="${r}">${r}</button>`).join("")}</div>
@@ -722,7 +733,7 @@
     const cs = bz.componentScores;
     const reasons = bz.reasons.slice(0, 6).map((r) => `<li>${esc(r)}</li>`).join("");
     const warns = bz.warnings.slice(0, 6).map((w) => `<li>⚠️ ${esc(w)}</li>`).join("");
-    return `<section class="mc-card mc-panel mc-fade btc-acc-${bz.tone}">
+    return `<section class="mc-card mc-panel mc-fade btc-acc-${bz.tone} gc-card ${gcTone(GC_TONE, bz.tone)}">
       <div class="mc-panel-head"><div><h2>BTC Buy Zone Score</h2><span class="mc-sub">Technical 35 · Cycle 30 · Holder/Sentiment 20 · Free Stress 15 (ข้อมูลฟรีทั้งหมด)</span></div>
         <span class="btc-cov-chip">ครอบคลุมข้อมูล ${bz.coveragePct}% · โหมด: ${esc(bz.modeLabel)}</span></div>
       <div class="btc-bz">
@@ -798,7 +809,8 @@
       }
       body = `<div class="btc-ind-val btc-ind-val-na">—</div><div class="btc-ind-interp">${esc(links.length ? "ยังไม่มีข้อมูลอัตโนมัติ — ดูกราฟอ้างอิงภายนอกได้" : "ยังไม่มีข้อมูล")}</div>`;
     }
-    return `<div class="mc-card btc-ind-card${hasValue ? "" : " btc-ind-empty"}">
+    // tone = the zone chip the card shows (no value → no status)
+    return `<div class="mc-card btc-ind-card${hasValue ? "" : " btc-ind-empty"} gc-card gc-tile ${hasValue ? gcTone(GC_ZONE_TONE, zoneKey) : "gc-neutral"}">
       <div class="btc-ind-top"><span class="btc-ind-title">${esc(title)}</span>${zoneTag(zoneKey)}</div>
       ${body}
       ${footer}
@@ -807,7 +819,7 @@
   // ---------------------------------------------------------------- on-chain deep dive
   // 6 exact on-chain cards (BGeometrics free API) with full Thai explanations:
   // คืออะไร / อ่านยังไง / วันนี้ / ข้อจำกัด + gauge bar + link to the full chart.
-  const DD_COL = { green: "var(--mc-emerald)", gray: "#64748b", amber: "var(--mc-amber)", red: "var(--mc-red)", blue: "var(--mc-blue)" };
+  const DD_COL = { green: "var(--mc-emerald)", gray: "var(--btc-dd-gray, #64748b)", amber: "var(--mc-amber)", red: "var(--mc-red)", blue: "var(--mc-blue)" }; // gray lifts on the glass (bitcoin-monitor.css)
   function ddFmtM(v) { return dn(v) ? Number((v / 1e6).toFixed(2)) + "M" : "—"; }
   const DD_CARDS = [
     {
@@ -904,7 +916,8 @@
     const src = has && M.source
       ? `ที่มา: <b>${esc(M.source)}</b> ${freshBadge(M.freshness)}${M.date ? ` · ${esc(fmtDate(M.date))}` : ""}${M.proxy ? ' · <em>proxy</em>' : ""}`
       : `${freshBadge("missing")} · ยังไม่มีข้อมูลอัตโนมัติ — ดูกราฟที่ BGeometrics`;
-    return `<div class="mc-card btc-dd-card${has ? "" : " btc-ind-empty"}">
+    // tone = the tag colour the card shows (no value / baseline tag → no status)
+    return `<div class="mc-card btc-dd-card${has ? "" : " btc-ind-empty"} gc-card gc-tile ${tag ? gcTone(GC_DD_TONE, tag[1]) : "gc-neutral"}">
       <div class="btc-dd-kicker">${esc(cfg.group)}</div>
       <div class="btc-dd-top"><span class="btc-dd-title">${esc(cfg.title)}</span>
         <span class="btc-dd-right"><b class="btc-dd-value">${has ? cfg.fmt(v) : "—"}</b>${tag ? `<span class="btc-dd-tag" style="color:${DD_COL[tag[1]]};border-color:${DD_COL[tag[1]]}">${esc(tag[0])}</span>` : ""}</span></div>
@@ -918,7 +931,7 @@
     // one continuous grid (3 cols on wide screens) — the group name renders as a
     // kicker chip on each card instead of separate half-empty group rows
     const body = `<div class="btc-dd-grid">${DD_CARDS.map((c) => ddCard(c, ind)).join("")}</div>`;
-    return `<section class="mc-card mc-panel mc-fade">
+    return `<section class="mc-card mc-panel mc-fade gc-card gc-neutral">
       <div class="mc-panel-head"><div><h2>🧬 On-chain Deep Dive</h2><span class="mc-sub">ค่า exact จาก BGeometrics (bitcoin-data.com · ฟรี · อัปเดตรายวัน D-1/D-2) — MVRV-Z · Realized Price · NUPL · SOPR · SSR · LTH Supply</span></div></div>
       ${body}
     </section>`;
@@ -937,7 +950,7 @@
         !dn(pu) ? "na" : pu < 0.5 ? "under" : pu < 1.5 ? "fair" : pu < 4 ? "expensive" : "over",
         !dn(pu) ? "ยังไม่มีข้อมูล" : pu < 0.5 ? "รายได้นักขุดต่ำ มัก = bottom" : "ปกติ–สูง", M.puellMultiple, "puellMultiple")
     ];
-    return `<section class="mc-card mc-panel mc-fade">
+    return `<section class="mc-card mc-panel mc-fade gc-card gc-neutral">
       <div class="mc-panel-head"><div><h2>Cycle Valuation</h2><span class="mc-sub">มูลค่าตามวัฏจักร on-chain — MVRV-Z / NUPL ดูที่ 🧬 Deep Dive</span></div></div>
       <div class="btc-ind-grid">${cards.join("")}</div>
     </section>`;
@@ -953,7 +966,7 @@
       metricCard("LTH Realized Price", dn(ind.lthRealizedPrice) ? money(ind.lthRealizedPrice) : "—", !dn(ind.lthRealizedPrice) ? "na" : "fair", dn(ind.lthRealizedPrice) ? "ทุนเฉลี่ยผู้ถือยาว (exact)" : "exact ต้องใช้ Glassnode (เสียเงิน)", M.lthRealizedPrice),
       metricCard("STH-SOPR", dn(ind.sthSopr) ? num(ind.sthSopr, 3) : "—", !dn(ind.sthSopr) ? "na" : ind.sthSopr >= 1 ? "under" : "expensive", dn(ind.sthSopr) ? (ind.sthSopr >= 1 ? "≥1 ขายมีกำไร" : "<1 ขายขาดทุน (สะสม)") : "exact ต้องใช้ Glassnode/CryptoQuant", M.sthSopr)
     ];
-    return `<section class="mc-card mc-panel mc-fade">
+    return `<section class="mc-card mc-panel mc-fade gc-card gc-neutral">
       <div class="mc-panel-head"><div><h2>พฤติกรรมผู้ถือ / Sentiment</h2><span class="mc-sub">Fear & Greed (ฟรี) · Realized Price / NUPL / SOPR รวมดูที่ 🧬 Deep Dive · STH/LTH exact ต้องใช้ผู้ให้บริการเสียเงิน</span></div></div>
       <div class="btc-ind-grid">${cards.join("")}</div>
     </section>`;
@@ -973,7 +986,7 @@
     const hist50 = chartHist(readSnapshot()); const closes50 = (hist50 && Array.isArray(hist50.closes)) ? hist50.closes.map(Number) : [];
     let sma50 = null; if (closes50.length >= 50) { let s = 0; for (let i = closes50.length - 50; i < closes50.length; i++) s += closes50[i]; sma50 = s / 50; }
     const above50 = dn(ind.price) && dn(sma50) ? ind.price >= sma50 : null;
-    return `<section class="mc-card mc-panel mc-fade">
+    return `<section class="mc-card mc-panel mc-fade gc-card gc-neutral">
       <div class="mc-panel-head"><div><h2>Technical Timing</h2><span class="mc-sub">EMA12/26 · SMA50/200 · RSI(30/70) · Volume — สัญญาณครบ 6 ตัวดูที่ Intelligence</span></div></div>
       ${row("EMA Gate", gateChip(gates && gates.ema ? gates.ema.status : (bz.emaBull ? "PASS" : "FAIL")), bz.emaBull ? "EMA12 > EMA26" : "EMA12 < EMA26")}
       ${row("SMA50 Gate", gateChip(above50 == null ? "MISSING" : above50 ? "PASS" : "FAIL"), above50 == null ? "" : above50 ? "ราคาเหนือ SMA50" : "ราคาใต้ SMA50")}
@@ -998,7 +1011,7 @@
       metricCard("Hashrate (TH/s)", dn(hr) ? compact(hr) : "—", !dn(hr) ? "na" : "fair", dn(hr) ? "ความปลอดภัยเครือข่าย" : "ยังไม่มีข้อมูล", M.hashRate),
       metricCard("Difficulty", dn(df) ? compact(df) : "—", !dn(df) ? "na" : "fair", dn(df) ? "ความยากในการขุด" : "ยังไม่มีข้อมูล", M.difficulty)
     ];
-    return `<section class="mc-card mc-panel mc-fade">
+    return `<section class="mc-card mc-panel mc-fade gc-card gc-neutral">
       <div class="mc-panel-head"><div><h2>ความเสี่ยงตลาดจากข้อมูลฟรี</h2><span class="mc-sub">Binance Futures · Blockchain.com — funding · OI · taker · miner proxy · network (SSR ดูที่ 🧬 Deep Dive)</span></div></div>
       <div class="btc-ind-grid">${cards.join("")}</div>
     </section>`;
@@ -1010,7 +1023,7 @@
     </section>`;
   }
   function explainSection() {
-    return `<details class="mc-card mc-panel mc-fade btc-explain">
+    return `<details class="mc-card mc-panel mc-fade btc-explain gc-card gc-neutral">
       <summary><h2 style="display:inline">📖 อธิบาย Indicators (สำหรับมือใหม่)</h2></summary>
       <div class="btc-explain-grid">${EXPLAIN.map(([t, d]) => `<div class="btc-explain-item"><h4>${esc(t)}</h4><p>${esc(d)}</p></div>`).join("")}</div>
     </details>`;
@@ -1019,37 +1032,37 @@
     const oc = readOnchain();
     const v = oc.values || {};
     const grp = (g, title) => `<div class="btc-imp-group"><h4>${esc(title)}</h4><div class="btc-imp-fields">${ONCHAIN_FIELDS.filter((f) => f.group === g).map((f) =>
-      `<label class="btc-imp-field"><span>${esc(f.label)}</span><input type="number" step="${f.step}" data-oc="${f.key}" value="${v[f.key] != null ? esc(v[f.key]) : ""}" placeholder="—" /></label>`).join("")}</div></div>`;
+      `<label class="btc-imp-field"><span>${esc(f.label)}</span><input type="number" class="gc-field" step="${f.step}" data-oc="${f.key}" value="${v[f.key] != null ? esc(v[f.key]) : ""}" placeholder="—" /></label>`).join("")}</div></div>`;
     return `<section class="mc-card mc-panel mc-fade">
       <div class="mc-panel-head"><div><h2>Data Source / Import</h2><span class="mc-sub">ดึงข้อมูลออนไลน์อัตโนมัติ — ไม่ต้องใช้ CSV สำหรับ MVRV/NUPL แล้ว · CSV/กรอกเองเป็น fallback</span></div>
         <span class="btc-last">${oc.lastImported ? "นำเข้า CSV/manual ล่าสุด: " + new Date(oc.lastImported).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) : "ยังไม่ได้นำเข้า CSV/manual"}</span></div>
       <p class="btc-note"><b>อัตโนมัติ:</b> ราคา/เทคนิคจาก <b>Binance</b> (near real-time) · MVRV Ratio + MVRV Z-Score + NUPL จาก <b>Coin Metrics Community</b> (รายวัน D-1/D-2, ไม่ต้องใช้ key) · ถ้าตั้ง <code>GLASSNODE_API_KEY</code>/<code>CRYPTOQUANT_API_KEY</code> ฝั่งเซิร์ฟเวอร์ จะได้ Puell, STH/LTH Realized, SOPR, OI, funding เพิ่ม (ไม่เก็บใน frontend) · metric ที่ยังดึงไม่ได้จะมีปุ่ม "ดูกราฟอ้างอิงภายนอก" ให้ · กรอก/อัปโหลด CSV ด้านล่างเป็น fallback ได้</p>
       <div class="btc-imp-csv">
-        <label class="mc-btn" style="cursor:pointer;">📄 อัปโหลด CSV<input type="file" id="btcCsv" accept=".csv,text/csv" style="display:none;" /></label>
+        <label class="mc-btn gc-btn gc-btn-ghost" style="cursor:pointer;">📄 อัปโหลด CSV<input type="file" id="btcCsv" accept=".csv,text/csv" style="display:none;" /></label>
         <span id="btcCsvMsg" class="mc-sub"></span>
       </div>
       ${grp("cycle", "Cycle Valuation")}
       ${grp("holder", "Holder Behavior")}
       ${grp("stress", "Market Stress / Derivatives")}
       <div class="btc-imp-actions">
-        <button class="mc-btn mc-btn-primary" id="btcSave" type="button">บันทึก</button>
-        <button class="mc-btn" id="btcClear" type="button">ล้างข้อมูล on-chain</button>
+        <button class="mc-btn mc-btn-primary gc-btn" id="btcSave" type="button">บันทึก</button>
+        <button class="mc-btn gc-btn gc-btn-ghost" id="btcClear" type="button">ล้างข้อมูล on-chain</button>
       </div>
     </section>`;
   }
 
   function emptyNoSnapshot() {
-    return `<section class="mc-card mc-panel mc-fade" style="text-align:center;padding:40px 22px;">
+    return `<section class="mc-card mc-panel mc-fade btc-empty gc-card gc-neutral" style="text-align:center;padding:40px 22px;">
       <div style="font-size:42px;">₿</div><h2 style="margin:12px 0 6px;">กรุณาโหลดข้อมูลล่าสุดก่อน</h2>
       <p style="color:var(--mc-muted);max-width:560px;margin:0 auto 18px;">Bitcoin Monitor ใช้ข้อมูลจาก Data Snapshot — กดเพื่อโหลดราคา BTC ล่าสุด</p>
-      <button class="mc-btn mc-btn-primary" id="btcLoad" type="button" style="padding:10px 22px;">Load Latest Data</button>
+      <button class="mc-btn mc-btn-primary gc-btn" id="btcLoad" type="button" style="padding:10px 22px;">Load Latest Data</button>
     </section>`;
   }
   function emptyNoBtc() {
-    return `<section class="mc-card mc-panel mc-fade" style="text-align:center;padding:40px 22px;">
+    return `<section class="mc-card mc-panel mc-fade btc-empty gc-card gc-neutral" style="text-align:center;padding:40px 22px;">
       <div style="font-size:42px;">₿</div><h2 style="margin:12px 0 6px;">ยังไม่พบข้อมูลราคา Bitcoin</h2>
       <p style="color:var(--mc-muted);max-width:560px;margin:0 auto 18px;">กด Load Latest Data เพื่อดึงราคา BTC-USD (ระบบเพิ่ม BTC เข้ารายการที่โหลดอัตโนมัติแล้ว)</p>
-      <button class="mc-btn mc-btn-primary" id="btcLoad" type="button" style="padding:10px 22px;">Load Latest Data</button>
+      <button class="mc-btn mc-btn-primary gc-btn" id="btcLoad" type="button" style="padding:10px 22px;">Load Latest Data</button>
     </section>`;
   }
 

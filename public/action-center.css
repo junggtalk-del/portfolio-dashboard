@@ -1,3 +1,14 @@
+/* ============================================================
+   Action Center — glass cards (glass-cards.css gc-2, loaded before this file).
+   Every card is a .gc-card with ONE tone from a status the page already computes
+   (action-center-page.js GC_POS_TONE · GC_SIDE_TONE · GC_DECISION_TONE · gcSummaryTone);
+   no status → gc-neutral. Zones and decision sections are page-level groups:
+   their headings sit on the page (gc-section-h) and follow the theme.
+   Inside a card the page tokens (--ink, --muted, --green …) and the theme
+   tokens the shared chips read (--app-text, --app-up …) become glass ink —
+   token map in the "glass" block at the end. Status colours on the glass are
+   lifted to luminance >= 0.70 (>= 4.5:1 on every tone).
+   ============================================================ */
 :root {
   color-scheme: light dark;
   --ink: var(--app-text);
@@ -88,7 +99,6 @@ h1 {
 
 .action-subtitle,
 .action-toolbar p,
-.section-heading p,
 .card-name,
 .card-date,
 .card-explain,
@@ -258,23 +268,13 @@ html[data-theme="light"] .scope-tabs button.is-active {
   gap: 6px;
 }
 
+/* summary counters = glass tiles (gc-card gc-tile · tone from gcSummaryTone) */
 .summary-card {
-  border: 1px solid var(--line);
-  background: var(--app-card);
-  border-radius: 16px;
-  padding: 14px;
+  padding: 14px 16px;
   text-align: left;
   cursor: pointer;
   min-height: 132px;
-  display: flex;
-  flex-direction: column;
   gap: 6px;
-  box-shadow: var(--app-shadow);
-}
-
-.summary-card strong {
-  font-size: 2.1rem;
-  line-height: 1;
 }
 
 .summary-card span {
@@ -288,12 +288,13 @@ html[data-theme="light"] .scope-tabs button.is-active {
   line-height: 1.35;
 }
 
-.summary-card.is-active {
-  border-color: var(--app-accent);
-  box-shadow: 0 0 0 1px var(--app-accent), var(--app-shadow);
-}
+.summary-card.gc-card:hover { box-shadow: inset 0 0 0 1px var(--gc-rim-strong), inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--gc-shadow); }
+.summary-card.gc-card:focus-visible { outline: 2px solid #fff; outline-offset: -5px; } /* inside the tile: white on every tone, both themes */
+/* active filter tile: white ring (the tone stays the category's) — kept while hovered (beats the hover rim above) */
+.summary-card.gc-card.is-active,
+.summary-card.gc-card.is-active:hover { box-shadow: inset 0 0 0 2px #fff, var(--gc-shadow); }
 .summary-card.is-active p:last-child {
-  color: var(--app-accent);
+  color: var(--gc-ink);
   font-weight: 700;
 }
 
@@ -315,13 +316,9 @@ html[data-theme="light"] .scope-tabs button.is-active {
   margin-bottom: 12px;
 }
 
-.section-heading h2 {
+/* heading on the page (gc-section-h on the inner block) — theme text */
+.section-heading .gc-section-h {
   margin: 0;
-  font-size: 1.25rem;
-}
-
-.section-heading p {
-  margin: 3px 0 0;
 }
 
 .count-badge {
@@ -537,43 +534,8 @@ html[data-theme="light"] .scope-tabs button.is-active {
   font-weight: 800;
 }
 
-.tone-buy,
-.summary-buy {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-up) 40%);
-  background: var(--green-bg);
-}
-
-.tone-watch-buy,
-.summary-watch-buy {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
-  background: var(--amber-bg);
-}
-
-.tone-hold,
-.summary-hold {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-accent) 40%);
-  background: color-mix(in srgb, var(--app-card), var(--app-accent) 12%);
-}
-
-.tone-watch-sell,
-.summary-watch-sell {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
-  background: var(--orange-bg);
-}
-
-.tone-sell,
-.summary-sell {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-down) 40%);
-  background: var(--red-bg);
-}
-
-.tone-neutral,
-.summary-neutral,
-.tone-insufficient,
-.summary-insufficient {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-text) 16%);
-  background: var(--gray-bg);
-}
+/* (card tints .tone-* / .summary-* removed — decision cards and summary tiles are glass cards;
+   the tone comes from GC_DECISION_TONE / gcSummaryTone in action-center-page.js) */
 
 .badge-buy,
 .badge-bull,
@@ -628,12 +590,9 @@ html[data-theme="light"] .scope-tabs button.is-active {
   margin: 0;
 }
 
+/* filter panel = glass card (gc-card gc-neutral in action-center.html) · selects = gc-field */
 .action-filter-panel {
-  background: var(--app-card);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 16px;
-  box-shadow: var(--app-shadow);
+  padding: 16px 18px;
 }
 
 .filter-heading {
@@ -669,22 +628,13 @@ html[data-theme="light"] .scope-tabs button.is-active {
 
 .filter-field select {
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--app-elevated);
-  color: var(--ink);
-  padding: 10px 11px;
-  font: inherit;
-  font-weight: 800;
+  font-weight: 700;
 }
 
+/* a decision section is a page-level group: heading on the page, glass cards in the grid */
 .decision-section {
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 16px;
-  background: var(--app-card);
-  box-shadow: var(--app-shadow);
+  scroll-margin-top: 16px;
 }
 
 .decision-card-grid {
@@ -694,16 +644,10 @@ html[data-theme="light"] .scope-tabs button.is-active {
   align-items: stretch;
 }
 
+/* decision card = glass card (gc-card · tone from GC_DECISION_TONE) */
 .decision-card {
   min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 14px;
-  background: var(--app-card);
-  display: flex;
-  flex-direction: column;
   gap: 10px;
-  overflow: hidden;
 }
 
 .decision-card-top,
@@ -864,31 +808,7 @@ html[data-theme="light"] .scope-tabs button.is-active {
   overflow-wrap: anywhere;
 }
 
-.decision-urgent {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-down) 40%);
-}
-
-.decision-buy {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-up) 40%);
-}
-
-.decision-watch {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
-}
-
-.decision-none {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-text) 16%);
-}
-
-.tone-review {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-down) 40%);
-  background: color-mix(in srgb, var(--app-card), var(--app-down) 12%);
-}
-
-.tone-watch {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
-  background: color-mix(in srgb, var(--app-card), var(--app-warn) 12%);
-}
+/* (section borders .decision-urgent … and card tints .tone-review / .tone-watch removed — glass tones) */
 
 .score-high {
   color: var(--app-up);
@@ -915,31 +835,7 @@ html[data-theme="light"] .scope-tabs button.is-active {
   background: color-mix(in srgb, var(--app-card), var(--app-text) 10%);
 }
 
-.decision-summary-urgent {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-down) 40%);
-  background: var(--red-bg);
-}
-
-.decision-summary-buy {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-up) 40%);
-  background: var(--green-bg);
-}
-
-.decision-summary-watch,
-.decision-summary-conflicts {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-warn) 40%);
-  background: var(--amber-bg);
-}
-
-.decision-summary-none {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-text) 16%);
-  background: var(--gray-bg);
-}
-
-.decision-summary-high {
-  border-color: color-mix(in srgb, var(--app-border), var(--app-accent) 40%);
-  background: color-mix(in srgb, var(--app-card), var(--app-accent) 12%);
-}
+/* (summary tints .decision-summary-* removed — tiles take gcSummaryTone) */
 
 @media (max-width: 900px) {
   .action-topbar,
@@ -980,36 +876,29 @@ html[data-theme="light"] .scope-tabs button.is-active {
 
 /* ---- merged list management (add modal + remove buttons) ---- */
 .ac-modal-back { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.7); backdrop-filter: blur(3px); z-index: 1000; display: flex; align-items: flex-start; justify-content: center; padding: 60px 16px; }
-.ac-modal { width: 100%; max-width: 420px; background: var(--panel, #0f172a); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 16px; padding: 20px 22px; color: inherit; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); }
+/* add-asset dialog = glass card (gc-card gc-neutral) · inputs gc-field · buttons gc-btn / gc-btn-ghost */
+.ac-modal { width: 100%; max-width: 420px; padding: 20px 22px; }
 .ac-modal h3 { margin: 0 0 12px; font-size: 17px; }
-.ac-modal label { display: block; font-size: 12px; margin-bottom: 10px; color: inherit; opacity: 0.85; }
-.ac-modal input { width: 100%; margin-top: 4px; font-family: inherit; font-size: 14px; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(148, 163, 184, 0.08); color: inherit; box-sizing: border-box; }
-.ac-modal input:focus { outline: none; border-color: rgba(45, 212, 191, 0.6); }
-.ac-modal-note { font-size: 11px; opacity: 0.6; margin: 4px 0 12px; }
+.ac-modal label { display: block; font-size: 12px; margin-bottom: 10px; color: var(--gc-ink); }
+.ac-modal input { width: 100%; margin-top: 4px; font-size: 14px; }
+.ac-modal-note { font-size: 11.5px; color: var(--gc-ink-2); margin: 4px 0 12px; }
 .ac-modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
-.ac-modal-actions button { font-family: inherit; font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.3); background: transparent; color: inherit; cursor: pointer; }
-.ac-modal-actions button.ac-primary { background: linear-gradient(135deg, #10b981, #0ea5e9); color: #04121f; border: 0; }
 .ac-modal-msg { font-size: 12px; margin: 10px 0 0; min-height: 16px; }
-.ac-modal-msg.ok { color: #34d399; }
-.ac-modal-msg.err { color: #f87171; }
+.ac-modal-msg.ok { color: #7cf5c6; }
+.ac-modal-msg.err { color: #ffcfdb; }
 .asset-remove-btn { margin-top: 10px; font-family: inherit; font-size: 11.5px; color: #f87171; background: transparent; border: 1px dashed rgba(248, 113, 113, 0.4); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
 .asset-remove-btn:hover { background: rgba(248, 113, 113, 0.08); }
 
 /* ============================================================
    Fresh Technical Signals — new signals within the last 3 trading days
    ============================================================ */
+/* the inbox is a page-level group: heading on the page (gc-section-h), glass cards inside */
 .fresh-signals {
-  border: 1px solid var(--line);
-  background: var(--panel);
-  border-radius: 18px;
-  padding: 18px;
-  box-shadow: var(--app-shadow);
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-.fresh-head h2 { margin: 0; font-size: 1.15rem; }
-.fresh-head p { margin: 4px 0 0; color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
+.fresh-head.gc-section-h { margin-bottom: 0; }
 
 .fresh-summary {
   display: grid;
@@ -1069,20 +958,12 @@ html[data-theme="light"] .scope-tabs button.is-active {
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 10px;
 }
+/* fresh signal card = glass card (gc-card · buy → gc-calm · sell → gc-danger) */
 .fresh-card {
-  border: 1px solid var(--line);
-  border-left-width: 3px;
-  border-radius: 12px;
-  padding: 12px;
-  background: var(--app-card);
-  display: flex;
-  flex-direction: column;
   gap: 7px;
 }
-.fresh-card.fresh-buy { border-left-color: var(--green); }
-.fresh-card.fresh-sell { border-left-color: var(--red); }
-.fresh-card.fresh-buy.fresh-strong { background: var(--green-bg); }
-.fresh-card.fresh-sell.fresh-strong { background: var(--red-bg); }
+/* Strong Setup (both signals fresh) keeps its emphasis as a brighter rim — same tone */
+.fresh-card.fresh-strong.gc-card { box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--gc-shadow); }
 
 .fresh-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .fresh-symbol { font-weight: 900; font-size: 1.02rem; text-decoration: none; color: var(--ink); }
@@ -1098,9 +979,7 @@ html[data-theme="light"] .scope-tabs button.is-active {
 }
 .fresh-age-chip.fresh-age-0 { background: var(--green-bg); border-color: color-mix(in srgb, var(--green), transparent 55%); color: var(--green); }
 
-.fresh-title { font-weight: 800; font-size: 0.9rem; }
-.fresh-card.fresh-buy .fresh-title { color: var(--green); }
-.fresh-card.fresh-sell .fresh-title { color: var(--red); }
+.fresh-title { font-weight: 800; font-size: 0.9rem; } /* white on the glass — the card tone carries buy/sell */
 .fresh-lines { display: flex; flex-direction: column; gap: 3px; }
 .fresh-line { font-size: 0.8rem; line-height: 1.35; }
 .fresh-line-age { color: var(--muted); }
@@ -1131,25 +1010,20 @@ html[data-theme="light"] .scope-tabs button.is-active {
 /* ============================================================
    Action Center V2 — priority zones (inbox: positions → watch → market)
    ============================================================ */
-.zone-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
-.zone-sum { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: 12px 14px; text-align: left; cursor: pointer; font-family: inherit; color: var(--ink); display: flex; flex-direction: column; gap: 2px; transition: transform .15s, border-color .15s; }
-.zone-sum:hover { transform: translateY(-1px); border-color: var(--muted); }
+/* zone counters = glass tiles (gc-card gc-tile gc-neutral — counters, no status) */
+.zone-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 4px; }
+.zone-sum { padding: 12px 14px; text-align: left; cursor: pointer; gap: 4px; }
+.zone-sum.gc-card:hover { box-shadow: inset 0 0 0 1px var(--gc-rim-strong), inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--gc-shadow); }
+.zone-sum.gc-card:focus-visible { outline: 2px solid #fff; outline-offset: -5px; }
 .zone-sum span { font-size: 12.5px; font-weight: 800; }
-.zone-sum strong { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.zone-sum em { font-style: normal; font-size: 11px; color: var(--muted); }
-.zone-sum-pos { border-color: color-mix(in srgb, var(--line), var(--amber) 55%); box-shadow: 0 0 0 1px color-mix(in srgb, transparent, var(--amber) 18%) inset; }
-.zone-sum-pos strong { color: var(--amber); }
-.zone-sum-watch strong { color: var(--blue); }
-.zone-sum-mkt strong { color: var(--muted); }
+.zone-sum em { font-style: normal; font-size: 11.5px; color: var(--muted); }
 
-.zone { border: 1px solid var(--line); border-radius: 16px; background: var(--panel); padding: 14px 16px; margin-top: 14px; }
-.zone-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.zone-head h3 { margin: 0; font-size: 16px; }
-.zone-count { font-size: 12px; font-weight: 800; border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.zone-head p { margin: 0; flex-basis: 100%; font-size: 11.5px; color: var(--muted); }
-
-/* Zone 1 — highest visibility */
-.zone-positions { border-color: color-mix(in srgb, var(--line), var(--amber) 55%); box-shadow: 0 0 0 1px color-mix(in srgb, transparent, var(--amber) 14%) inset; }
+/* a zone is a page-level group: heading on the page (gc-section-h), glass cards inside */
+.zone { margin-top: 18px; scroll-margin-top: 16px; }
+.zone-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.zone-head h3 { margin: 0; }
+.zone-count { font-size: 12px; font-weight: 800; border: 1px solid var(--app-border); border-radius: 999px; padding: 1px 9px; color: var(--app-text-2); font-variant-numeric: tabular-nums; }
+.zone-head p { flex-basis: 100%; }
 .zone-grid-pos { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 .zone-card-big { padding: 18px; }
 .zone-card-big .fresh-symbol { font-size: 20px; }
@@ -1175,8 +1049,8 @@ html[data-theme="light"] .scope-tabs button.is-active {
 .zone-grid-watch { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .zone-card-mid { padding: 13px; }
 
-/* Zone 3 — compact list */
-.zone-mkt-list { display: flex; flex-direction: column; }
+/* Zone 3 — compact list: one glass card (gc-neutral), rows inside */
+.zone-mkt-list { display: flex; flex-direction: column; padding: 8px 16px; }
 .zone-mkt-row { display: grid; grid-template-columns: 18px minmax(64px, .7fr) minmax(150px, 1.4fr) 90px 80px 76px; gap: 10px; align-items: center; padding: 7px 4px; border-bottom: 1px dashed color-mix(in srgb, var(--line), transparent 40%); font-size: 12.5px; }
 .zone-mkt-row:last-child { border-bottom: none; }
 .zone-mkt-side { font-weight: 800; text-align: center; }
@@ -1189,11 +1063,12 @@ html[data-theme="light"] .scope-tabs button.is-active {
 .zone-mkt-age { font-size: 11px; color: var(--muted); white-space: nowrap; }
 .zone-mkt-conf { font-size: 11px; color: var(--muted); text-align: right; white-space: nowrap; }
 
-/* Empty states */
-.zone-empty { border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; font-size: 12.5px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+/* Empty states — on the page (dashed, theme text) · "No action required" = glass card gc-calm */
+.zone-empty { padding: 12px 14px; font-size: 12.5px; display: flex; flex-direction: column; gap: 2px; }
+.zone-empty:not(.gc-card) { border: 1px dashed var(--app-border); border-radius: 12px; color: var(--app-text-2); }
 .zone-empty span { font-size: 11.5px; }
-.zone-empty-ok { color: var(--green); border-color: color-mix(in srgb, var(--line), var(--green) 45%); }
-.zone-empty-ok span { color: var(--muted); }
+.zone-empty-ok.gc-card { padding: 14px 18px; font-weight: 700; }
+.zone-empty-ok span { color: var(--gc-ink-2); font-weight: 400; }
 
 @media (max-width: 900px) {
   .zone-summary { grid-template-columns: 1fr; }
@@ -1231,6 +1106,11 @@ html[data-theme="light"] .scope-tabs button.is-active {
   .zone-mkt-row { grid-template-columns: 16px minmax(56px, .8fr) 1fr 74px 64px; }
   .zone-quiet-row { grid-template-columns: minmax(60px, .8fr) 1fr 70px 64px; }
 }
+/* phones: the market card's inset + the age / flag columns gave the title ~55px (3-line wrap) — tighter inset and columns */
+@media (max-width: 600px) {
+  .zone-mkt-list { padding: 6px 10px; }
+  .zone-mkt-row { grid-template-columns: 16px minmax(48px, .6fr) 1fr 56px 34px; }
+}
 
 /* ---- V2.2: Investment Thesis chip on decision/fresh cards ---- */
 .thesis-chip { text-decoration: none; cursor: pointer; }
@@ -1238,21 +1118,15 @@ html[data-theme="light"] .scope-tabs button.is-active {
 .fresh-conf .thesis-chip { font-size: 10.5px; padding: 1px 8px; }
 
 /* ---- V3: My Positions — verdict-first position cards ---- */
-.pos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 12px; margin-top: 10px; }
-.pos-card { border: 1px solid var(--line); border-radius: 16px; background: var(--panel); padding: 15px 16px; display: flex; flex-direction: column; gap: 8px; }
-.pos-sell { border-color: color-mix(in srgb, var(--line), var(--red) 55%); box-shadow: 0 0 0 1px color-mix(in srgb, transparent, var(--red) 12%) inset; }
-.pos-buy { border-color: color-mix(in srgb, var(--line), var(--green) 55%); box-shadow: 0 0 0 1px color-mix(in srgb, transparent, var(--green) 12%) inset; }
-.pos-watch { border-color: color-mix(in srgb, var(--line), var(--amber) 55%); }
-.pos-none { opacity: .92; }
+.pos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; margin-top: 10px; }
+/* position card = glass card (gc-card · tone from GC_POS_TONE: sell → danger · buy → calm · watch → warning · none → neutral) */
+.pos-card { gap: 8px; }
 .pos-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .pos-head-l { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .pos-head-l .card-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pos-head-r { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .pos-verdict { font-size: 16px; line-height: 1.45; }
-.pos-verdict strong { font-weight: 800; }
-.pos-sell .pos-verdict strong { color: var(--red); }
-.pos-buy .pos-verdict strong { color: var(--green); }
-.pos-watch .pos-verdict strong { color: var(--amber); }
+.pos-verdict strong { font-weight: 800; } /* white on the glass — the card tone carries the verdict */
 .pos-none .pos-verdict strong { color: var(--muted); }
 .pos-reason { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.55; }
 .pos-conflict { font-size: 11.5px; color: var(--amber); border: 1px dashed color-mix(in srgb, var(--line), var(--amber) 50%); border-radius: 10px; padding: 6px 10px; line-height: 1.5; }
@@ -1269,3 +1143,52 @@ html[data-theme="light"] .scope-tabs button.is-active {
 .pos-muted { font-size: 11.5px; color: var(--muted); }
 .pos-fact .thesis-chip { align-self: flex-start; }
 @media (max-width: 720px) { .pos-grid { grid-template-columns: 1fr; } .pos-facts { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   Glass (glass-cards.css) — inside a card the page tokens and the theme tokens
+   the shared chips read (theme.css .signal-state-chip / .ts-chip, .badge) become
+   glass ink in BOTH site themes. Status colours lifted to luminance >= 0.70:
+   green #7cf5c6 · rose #ffcfdb · amber #ffd98a · blue #d0e6ff · teal #a7f3e9.
+   ============================================================ */
+.action-shell .gc-card,
+.ac-modal-back .gc-card {
+  --ink: var(--gc-ink);
+  --muted: var(--gc-ink-2);
+  --line: var(--gc-line);
+  --panel: var(--gc-well);
+  --green: #7cf5c6;
+  --red: #ffcfdb;
+  --amber: #ffd98a;
+  --orange: #ffd98a;
+  --blue: #d0e6ff;
+  --teal: #a7f3e9;
+  --gray: var(--gc-ink-2);
+  --green-bg: rgba(124, 245, 198, 0.14);
+  --red-bg: rgba(255, 207, 219, 0.14);
+  --amber-bg: rgba(255, 217, 138, 0.14);
+  --orange-bg: rgba(255, 217, 138, 0.14);
+  --blue-bg: rgba(208, 230, 255, 0.14);
+  --gray-bg: rgba(255, 255, 255, 0.08);
+  --app-text: var(--gc-ink);
+  --app-text-2: var(--gc-ink-2);
+  --app-muted: var(--gc-ink-2);
+  --app-border: var(--gc-line);
+  --app-card: var(--gc-well);
+  --app-elevated: var(--gc-well);
+  --app-up: #7cf5c6;
+  --app-down: #ffcfdb;
+  --app-warn: #ffd98a;
+  --app-info: #d0e6ff;
+  --app-accent: #a7f3e9;
+}
+/* timing chip: band colour (--ts, inline from scoring.js) stays on the rim; the text is a light tint of it */
+.action-shell .gc-card .ts-chip { color: color-mix(in srgb, var(--ts, #14b8a6) 30%, #fff); }
+/* secondary details stay readable on the glass (no extra fading under --gc-ink-2) */
+.action-shell .gc-card .score-pill-secondary,
+.action-shell .gc-card .score-pill span { opacity: 1; }
+.ac-quality-note { color: var(--muted); font-weight: 400; }
+.action-shell .gc-card .ac-flagbtn { opacity: 0.8; }
+.action-shell .gc-card .ac-flagbtn:hover,
+.action-shell .gc-card .ac-flagbtn.is-on { opacity: 1; }
+.action-shell .gc-card .asset-remove-btn { color: var(--red); border-color: rgba(255, 207, 219, 0.5); }
+.action-shell .gc-card .asset-remove-btn:hover { background: rgba(255, 207, 219, 0.1); }

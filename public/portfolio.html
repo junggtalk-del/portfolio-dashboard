@@ -9,9 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/mission-control.css?v=20260929-mc-9" />
-    <link rel="stylesheet" href="/portfolio-position.css?v=20261109-pp-14" />
-    <link rel="stylesheet" href="/asset-allocation.css?v=20261025-aa-10" />
+    <link rel="stylesheet" href="/mission-control.css?v=20261122-mc-11" />
+    <link rel="stylesheet" href="/glass-cards.css?v=20261121-gc-2" />
+    <link rel="stylesheet" href="/portfolio-position.css?v=20261122-pp-15" />
+    <link rel="stylesheet" href="/asset-allocation.css?v=20261122-aa-11" />
     <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
     <script src="/api-auth.js?v=20260620-auth-1"></script>
     <script src="/privacy.js?v=20261025-pv-2"></script>
@@ -21,24 +22,24 @@
   </head>
   <body>
     <main id="ppRoot" class="pp-page">
-      <div class="mc-empty"><strong>กำลังโหลด Portfolio Position…</strong></div>
+      <div class="mc-empty gc-card gc-neutral"><strong>กำลังโหลด Portfolio Position…</strong></div>
     </main>
     <!-- การ์ด Asset allocation (allocation-card-page.js) — พี่น้องของ #ppRoot ด้วยเหตุผลเดียวกับ #aaRoot ข้างล่าง -->
-    <div id="acRoot" class="ac-embedded"><div class="mc-empty"><strong>กำลังโหลด Asset allocation…</strong></div></div>
+    <div id="acRoot" class="ac-embedded"><div class="mc-empty gc-card gc-neutral"><strong>กำลังโหลด Asset allocation…</strong></div></div>
     <!-- Asset Allocation ต่อท้ายบนหน้าเดียวกัน — ต้องเป็น "พี่น้อง" ของ #ppRoot ไม่ใช่ลูก
          เพราะ portfolio-position-page.js เขียนทับ innerHTML ของ #ppRoot ทุกครั้งที่เรนเดอร์ -->
     <div id="aaRoot" class="aa-page aa-embedded">
-      <div class="mc-empty"><strong>กำลังโหลด Asset Allocation…</strong></div>
+      <div class="mc-empty gc-card gc-neutral"><strong>กำลังโหลด Asset Allocation…</strong></div>
     </div>
     <script src="/portfolio-core.js?v=20261110-core-4"></script>
     <script src="/foreign-sleeve.js?v=20261109-fs-4"></script>
     <script src="/ai-boom-universe-data.js?v=20260524-summary-1"></script>
     <script src="/portfolio-position-engine.js?v=20260718-pp-4"></script>
-    <script src="/portfolio-position-page.js?v=20261109-pp-16"></script>
+    <script src="/portfolio-position-page.js?v=20261122-pp-17"></script>
     <script src="/allocation-card-engine.js?v=20261107-ac-1"></script>
-    <script src="/allocation-card-page.js?v=20261109-ac-2"></script>
+    <script src="/allocation-card-page.js?v=20261122-ac-3"></script>
     <script src="/asset-allocation-engine.js?v=20261025-aa-10"></script>
-    <script src="/asset-allocation-page.js?v=20261109-aa-13"></script>
-    <script src="/app-navigation.js?v=20261111-nav-32"></script>
+    <script src="/asset-allocation-page.js?v=20261122-aa-14"></script>
+    <script src="/app-navigation.js?v=20261122-nav-35"></script>
   </body>
 </html>

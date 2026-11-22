@@ -9,7 +9,12 @@
 
   // 7 สีที่แยกออกจากกันบนพื้นเข้ม — index ตรงกับลำดับที่ผู้ใช้เลือก (ชิป/หัวคอลัมน์/เรดาร์ ใช้ชุดเดียวกัน)
   var TCOLORS = ["#38bdf8", "#34d399", "#f59e0b", "#f472b6", "#a78bfa", "#fb7185", "#22d3ee"];
+  // ตัวอักษรบนการ์ดแก้ว (ชื่อ ticker บนหัวการ์ด/หัวตาราง) ใช้เฉดสว่างของสีเดียวกัน — สีเดิมคงไว้ที่ขอบบนการ์ด เรดาร์ และจุดบนชิป
+  var TINK = ["#7dd3fc", "#6ee7b7", "#fcd34d", "#f9a8d4", "#c4b5fd", "#fda4af", "#67e8f9"];
   var MAXSEL = 7;
+  // การ์ดหัวรายตัว tone = สถานะ thesis (ชุดเดียวกับ §2 ของหน้ารายตัว): Very Strong / Strong calm · Neutral normal · Weak warning · Broken danger
+  var GC_THESIS = { "very-strong": "gc-calm", strong: "gc-calm", neutral: "gc-normal", weak: "gc-warning", broken: "gc-danger" };
+  function gcTone(map, key) { return key != null && Object.prototype.hasOwnProperty.call(map, key) ? map[key] : "gc-neutral"; }
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
   function fin(v) { v = Number(v); return isFinite(v) ? v : null; }
@@ -45,6 +50,7 @@
     p.thesis = R.thesis ? fin(R.thesis.score) : null;
     p.statusTh = R.thesis && R.thesis.status ? R.thesis.status.thai : null;
     p.statusTone = R.thesis && R.thesis.status ? R.thesis.status.tone : "neutral";
+    p.statusKey = R.thesis && R.thesis.status ? R.thesis.status.key : null;
     p.decisionTh = R.decision && R.decision.action ? (R.decision.action.thai || R.decision.action.label) : null;
     p.confidence = R.confidence ? fin(R.confidence.score) : null;
     p.riskCount = cfg && cfg.risks ? cfg.risks.length : null;
@@ -184,10 +190,10 @@
 
   function render(tickers, snapshot, deps) {
     var dp = getDeps(deps);
-    if (!dp.TE || !dp.D) return '<div class="mc-empty"><strong>Compare ไม่พร้อม</strong> — โหลดสคริปต์ไม่ครบ</div>';
+    if (!dp.TE || !dp.D) return '<div class="mc-empty gc-card gc-neutral"><strong>Compare ไม่พร้อม</strong> — โหลดสคริปต์ไม่ครบ</div>';
     var list = (tickers || []).slice(0, MAXSEL);
     if (list.length < 2) {
-      return '<div class="thc-empty mc-empty"><strong>โหมดเทียบหุ้น</strong><br>เลือกบริษัทจากแถบด้านบน 2-' + MAXSEL + " ตัว (กดชิปเพื่อเลือก/เอาออก) แล้วตารางเทียบจะขึ้นที่นี่</div>";
+      return '<div class="thc-empty mc-empty gc-card gc-neutral"><strong>โหมดเทียบหุ้น</strong><br>เลือกบริษัทจากแถบด้านบน 2-' + MAXSEL + " ตัว (กดชิปเพื่อเลือก/เอาออก) แล้วตารางเทียบจะขึ้นที่นี่</div>";
     }
     // ตารางกว้างขึ้นเมื่อเลือกหลายตัว — ให้เลื่อนแนวนอนแทนการบีบคอลัมน์จนอ่านไม่ออก
     var manyCls = list.length >= 5 ? " thc-many" : "";
@@ -195,17 +201,17 @@
     var bad = packs.filter(function (p) { return !p.ok; });
     packs = packs.filter(function (p) { return p.ok; });
     if (packs.length < 2) {
-      return '<div class="thc-empty mc-empty"><strong>เทียบไม่ได้</strong><br>' +
+      return '<div class="thc-empty mc-empty gc-card gc-neutral"><strong>เทียบไม่ได้</strong><br>' +
         esc(bad.map(function (b) { return b.ticker; }).join(", ")) + " ยังคำนวณไม่ได้ (ไม่มีข้อมูล thesis) — เลือกตัวอื่นเพิ่ม</div>";
     }
     var n = packs.length;
 
-    // ---- การ์ดหัว ต่อ ticker ----
+    // ---- การ์ดหัว ต่อ ticker (แก้ว tone = สถานะ thesis · ขอบบน = สีประจำตัว ticker ชุดเดียวกับเรดาร์ · เลขคะแนน gc-num สีขาว) ----
     var heads = packs.map(function (p, i) {
       var col = TCOLORS[i % TCOLORS.length];
-      return '<div class="thc-head" style="border-top:3px solid ' + col + '">' +
-        '<div class="thc-head-t"><b style="color:' + col + '">' + esc(p.ticker) + "</b><span>" + esc(p.name) + "</span></div>" +
-        '<div class="thc-head-score" style="color:' + scoreColor(p.thesis) + '">' + fmt(p.thesis) + "<small>/100</small></div>" +
+      return '<div class="thc-head gc-card ' + gcTone(GC_THESIS, p.statusKey) + '" style="border-top:3px solid ' + col + '">' +
+        '<div class="thc-head-t"><b style="color:' + TINK[i % TINK.length] + '">' + esc(p.ticker) + "</b><span>" + esc(p.name) + "</span></div>" +
+        '<div class="thc-head-score"><b class="gc-num">' + fmt(p.thesis) + "</b><small>/100</small></div>" +
         '<div class="thc-head-sub">' + esc(p.statusTh || "—") + (p.layer ? " · " + esc(p.layer) : "") + "</div>" +
         (p.decisionTh ? '<div class="thc-head-dec">' + esc(p.decisionTh) + "</div>" : "") +
         "</div>";
@@ -213,7 +219,7 @@
 
     // ---- ตารางเทียบ ----
     var TH = "<tr><th></th>" + packs.map(function (p, i) {
-      return '<th class="thc-col" style="color:' + TCOLORS[i % TCOLORS.length] + '">' + esc(p.ticker) + "</th>";
+      return '<th class="thc-col" style="color:' + TINK[i % TINK.length] + '">' + esc(p.ticker) + "</th>";
     }).join("") + "</tr>";
     var rows = "";
 
@@ -302,19 +308,22 @@
           : "<td>—</td>";
       }).join(""));
     });
-    var fundDetail = '<details class="th-fw-src thc-funds"><summary>เจาะพื้นฐานรายด้าน — 10 ด้าน (คะแนน curated + ค่าปัจจุบัน)</summary>' +
-      '<div class="th-table-wrap"><table class="th-table thc-table' + manyCls + '">' + TH + fundRows + "</table></div></details>";
+    // ตารางบนการ์ด: เลื่อนในกล่องของตัวเอง (5-7 ตัวกว้าง 900px) · คีย์บอร์ดเข้าถึงได้
+    var wrap = function (label, table) { return '<div class="th-table-wrap gc-table-wrap" tabindex="0" role="region" aria-label="' + esc(label) + '">' + table + "</div>"; };
+    var fundDetail = '<details class="th-fw-src thc-funds gc-card gc-neutral"><summary>เจาะพื้นฐานรายด้าน — 10 ด้าน (คะแนน curated + ค่าปัจจุบัน)</summary>' +
+      wrap("ตารางเทียบพื้นฐาน 10 ด้าน — เลื่อนซ้ายขวาได้", '<table class="th-table thc-table' + manyCls + ' gc-table">' + TH + fundRows + "</table>") + "</details>";
 
+    // หัวข้ออยู่บนหน้า · การ์ดหัวรายตัว (tone ตามสถานะ thesis) · เรดาร์ / ตาราง / ลิ้นชักพื้นฐาน ไม่มีสถานะ = gc-neutral
     return '<section class="th-sec thc-wrap">' +
-      '<div class="th-sec-head"><span class="th-sec-n">⇄</span><div><h2>เทียบหุ้น (' + packs.map(function (p) { return esc(p.ticker); }).join(" vs ") + ")</h2>" +
+      '<div class="th-sec-head gc-section-h"><span class="th-sec-n">⇄</span><div><h2>เทียบหุ้น (' + packs.map(function (p) { return esc(p.ticker); }).join(" vs ") + ")</h2>" +
       "<p>ทุกตัวเลขมาจาก engine เดิม — วงแหวนไฮไลต์ = เด่นสุดในแถวนั้น (เสมอกัน = ไม่ไฮไลต์) · ไม่ใช่คำแนะนำซื้อขาย</p></div></div>" +
       '<div class="thc-heads">' + heads + "</div>" +
-      '<div class="thc-radarwrap">' + radar(packs) +
+      '<div class="thc-radarwrap gc-card gc-neutral">' + radar(packs) +
       '<div class="thc-radar-legend">' + packs.map(function (p, i) { return '<span><i style="background:' + TCOLORS[i % TCOLORS.length] + '"></i>' + esc(p.ticker) + "</span>"; }).join("") +
       '<div class="th-hint">เรดาร์ 6 แกน (0-100): Thesis · พื้นฐานเฉลี่ย · AI Execution · คุณภาพรายได้ · Capital Allocation · Valuation curated</div></div></div>' +
-      '<div class="th-table-wrap"><table class="th-table thc-table' + manyCls + '">' + TH + rows + "</table></div>" +
+      '<div class="thc-tablecard gc-card gc-neutral">' + wrap("ตารางเทียบหุ้น — เลื่อนซ้ายขวาได้", '<table class="th-table thc-table' + manyCls + ' gc-table">' + TH + rows + "</table>") +
+      (bad.length ? '<div class="th-hint">ไม่ได้เทียบ: ' + esc(bad.map(function (b) { return b.ticker; }).join(", ")) + " (คำนวณไม่ได้)</div>" : "") + "</div>" +
       fundDetail +
-      (bad.length ? '<div class="th-hint">ไม่ได้เทียบ: ' + esc(bad.map(function (b) { return b.ticker; }).join(", ")) + " (คำนวณไม่ได้)</div>" : "") +
       "</section>";
   }
 

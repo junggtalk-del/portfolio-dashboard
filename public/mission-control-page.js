@@ -170,7 +170,16 @@
     </svg>`;
   }
   function trendChip(t) { const m = { up: ["bull", "▲"], down: ["bear", "▼"], flat: ["muted", "→"] }[t] || ["muted", "→"]; return `<span class="mcx-tr mcx-tr-${m[0]}">${m[1]}</span>`; }
-  function toneColor(t) { return t === "bull" ? "var(--mc-emerald)" : t === "bear" ? "var(--mc-red)" : t === "warn" ? "var(--mc-amber)" : t === "watch-bull" ? "var(--mc-amber)" : t === "neutral" ? "var(--mc-blue)" : "var(--mc-muted)"; }
+
+  // ---------------------------------------------------------------- glass cards (glass-cards.css)
+  // สีการ์ด = สถานะที่หน้านี้คำนวณอยู่แล้ว (ไม่ประดิษฐ์สถานะใหม่) · ไม่มีสถานะ = gc-neutral
+  //   แนวทางหลัก (R.action.tone ของ MarketRegime): เพิ่มเสี่ยง / ถือ+ทยอยเพิ่ม = ดี · ถือคงน้ำหนัก = ปกติ · ลดเสี่ยง = ระวัง · ลดเสี่ยง/รอ = แย่
+  //   ตลาด (R.band — สีเดียวกับเกจ / ชิป Regime บนหัวหน้า): เขียว/เขียวอ่อน = ดี · เหลือง = ปกติ · ส้ม = ระวัง · แดง = แย่
+  var GC_ACTION_TONE = { bull: "gc-calm", "watch-bull": "gc-calm", neutral: "gc-normal", warn: "gc-warning", bear: "gc-danger" };
+  var GC_BAND_TONE = { green: "gc-calm", lightgreen: "gc-calm", yellow: "gc-normal", orange: "gc-warning", red: "gc-danger" };
+  function gcTone(map, key) { return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : "gc-neutral"; }
+  // คำอธิบายสีของแท่ง: จุดสีเดิม (ความหมายเดิม) + ข้อความหมึกของการ์ด — ข้อความสีแดง/เหลืองบนแก้วอ่านไม่ออก
+  function scaleKey(color, label) { return '<span class="mcx-sc"><i style="background:' + color + '"></i>' + esc(label) + "</span>"; }
 
   // ============================================================ SECTIONS
 
@@ -202,7 +211,7 @@
     return `<section class="mc-card mc-panel mc-fade">
       <div class="mc-panel-head"><div><h2>🌐 Market Regime</h2><span class="mc-sub">คะแนน · ความเชื่อมั่น · ส่วนประกอบที่ถ่วงน้ำหนัก</span></div></div>
       <div class="mcx-regime">
-        <div class="mcx-regime-gauge">${gauge(R.score, R.color, 180)}<div class="mcx-hero-band" style="color:${R.color}">${esc(R.regime.label)}</div>
+        <div class="mcx-regime-gauge">${gauge(R.score, R.color, 180)}<div class="mcx-hero-band"><i class="mcx-band-dot" style="background:${R.color}"></i>${esc(R.regime.label)}</div>
           <div class="mcx-ds-conf">Confidence <b class="mcx-conf-${R.confidence.key}">${esc(R.confidence.label)}</b></div></div>
         <div class="mcx-contrib">${contribRows}</div>
       </div>
@@ -378,18 +387,18 @@
     const cell = (label, val) => {
       const d = (val != null && now != null) ? now - val : null;
       const arr = d == null ? "" : d > 0 ? `<span class="mcx-arr-up">▲ +${d}</span>` : d < 0 ? `<span class="mcx-arr-down">▼ ${d}</span>` : `<span class="mcx-arr-flat">→ 0</span>`;
-      return `<div class="mcx-trend-cell"><small>${esc(label)}</small><strong>${val == null ? "—" : val}</strong>${arr}</div>`;
+      return `<div class="mcx-trend-cell"><small>${esc(label)}</small><strong class="gc-num">${val == null ? "—" : val}</strong>${arr}</div>`;
     };
     return `<div class="mcx-trend">
-      <div class="mcx-trend-cell mcx-trend-now"><small>วันนี้</small><strong style="color:${R ? R.color : "var(--mc-text)"}">${now == null ? "—" : now}</strong></div>
+      <div class="mcx-trend-cell mcx-trend-now"><small>วันนี้</small><strong class="gc-num">${now == null ? "—" : now}</strong></div>
       ${cell("เมื่อวาน", yesterday)}${cell("สัปดาห์ก่อน", wk)}${cell("เดือนก่อน", mo)}
     </div>`;
   }
   function emptyState() {
-    return `<section class="mcx-hero mc-fade"><div class="mcx-hero-body" style="text-align:center;width:100%">
+    return `<section class="mcx-hero gc-card gc-neutral mc-fade"><div class="mcx-hero-body" style="text-align:center;width:100%">
       <div style="font-size:48px">🛰️</div><h1 class="mcx-hero-title">Mission Control</h1>
       <p class="mcx-hero-sub">กด <b>Load Latest Data</b> เพื่อประเมิน Global Market Regime จากสภาพคล่อง ดอลลาร์ ผลตอบแทน และโครงสร้างตลาด</p>
-      <button class="mc-btn mc-btn-primary" id="mcxLoad" type="button" style="margin-top:14px;padding:11px 26px">Load Latest Data</button>
+      <button class="mc-btn mc-btn-primary gc-btn" id="mcxLoad" type="button" style="margin-top:14px;padding:11px 26px">Load Latest Data</button>
     </div></section>`;
   }
 
@@ -417,11 +426,11 @@
       ${it.score != null ? `<span class="mcx-q-score" title="${it.scoreKind === "acc" ? "Accumulation Score (Thesis 40 / Business Growth 25 / Timing 20 / Valuation 15) — เดียวกับหน้า AI Portfolio Manager" : "Timing Score (เทคนิคล้วน) — คนละสูตรกับ Acc เทียบข้ามแถวไม่ได้"}">${it.scoreKind === "acc" ? "Acc" : "Tech"} ${Math.round(it.score)}</span>` : '<span class="mcx-q-score"></span>'}
     </div>`;
     }).join("") : `<div class="mcx-q-none">ไม่มีรายการเร่งด่วนรายตัววันนี้ — ทำตามแนวทางหลักด้านบนพอ</div>`;
-    const note = hasCounterBuy ? `<div class="mcx-q-note">💡 แนวทางหลักมาจาก "ภาพรวมตลาด" (macro) แต่รายการด้านล่างมาจาก "สัญญาณรายตัว" (timing) — สองมุมนี้ขัดกันได้ เมื่อตลาดโหมดลดเสี่ยง รายการ BUY = หุ้นที่แข็งกว่าตลาด ควรรอจังหวะ/ใช้ไม้เล็กเท่านั้น</div>` : "";
-    return `<section class="mcx-decision mcx-acc-${a.tone} mc-fade">
+    const note = hasCounterBuy ? `<div class="mcx-q-note gc-callout gc-callout-dashed">💡 แนวทางหลักมาจาก "ภาพรวมตลาด" (macro) แต่รายการด้านล่างมาจาก "สัญญาณรายตัว" (timing) — สองมุมนี้ขัดกันได้ เมื่อตลาดโหมดลดเสี่ยง รายการ BUY = หุ้นที่แข็งกว่าตลาด ควรรอจังหวะ/ใช้ไม้เล็กเท่านั้น</div>` : "";
+    return `<section class="mcx-decision mcx-acc-${a.tone} gc-card ${gcTone(GC_ACTION_TONE, a.tone)} mc-fade">
       <p class="mc-eyebrow">1 · วันนี้ต้องทำอะไร</p>
       <div class="mcx-decision-top">
-        <div class="mcx-decision-action" style="color:${toneColor(a.tone)}">
+        <div class="mcx-decision-action">
           <small>แนวทางหลักวันนี้ (จากภาพรวมตลาด)</small>
           <strong>${esc(a.thai)}</strong>
           <span>${esc(a.label)} · Confidence <b class="mcx-conf-${conf.key}">${esc(conf.label)}</b></span>
@@ -437,7 +446,7 @@
   // ---- 2 · 💼 พอร์ตเป็นไง (quarterly holdings, single portfolio card) ----
   function portfolioSection() {
     const P = quarterlyPortfolio();
-    if (!P) return `<section class="mc-card mc-panel mc-fade">
+    if (!P) return `<section class="mc-card mc-panel gc-card gc-neutral mc-fade">
       <div class="mc-panel-head"><div><h2>💼 2 · พอร์ตเป็นไง</h2><span class="mc-sub">สินทรัพย์จริงจาก Quarterly Editor</span></div></div>
       <div class="mc-empty"><strong>ยังไม่มีข้อมูลพอร์ต</strong>กด Load Latest Data — หรือเพิ่มสินทรัพย์ที่หน้า Quarterly Editor ก่อน</div></section>`;
     const money = (v) => "฿" + Math.round(v).toLocaleString();
@@ -456,13 +465,14 @@
       <span class="mcx-pf-pct">${g.pct.toFixed(1)}%</span>
       <span class="mcx-pf-val">${money(g.gross)}</span>
     </div>`).join("");
-    return `<section class="mc-card mc-panel mc-fade mcx-pf">
+    // การ์ดแก้ว: สถานะเดียวของการ์ดนี้ = ⚠ กระจุกตัว → ระวัง · ไม่มี = ไม่มีสถานะ (gc-neutral — ไม่ใช่ "ดี")
+    return `<section class="mc-card mc-panel gc-card ${topWarn ? "gc-warning" : "gc-neutral"} mc-fade mcx-pf">
       <div class="mc-panel-head"><div><h2>💼 2 · พอร์ตเป็นไง</h2><span class="mc-sub">สินทรัพย์จริง · ไตรมาส ${esc(P.key)} · แก้ไขได้ที่ Quarterly Editor${P.foreignFromPM ? " · " + esc("หุ้นต่างประเทศจาก AI Portfolio Manager") : ""}</span></div>
-        ${topWarn ? `<span class="mcx-pf-warn">⚠ กระจุกตัว: ${esc(top.name)} ${top.pct.toFixed(0)}%</span>` : ""}</div>
+        ${topWarn ? `<span class="mcx-pf-warn gc-chip gc-chip-risk">⚠ กระจุกตัว: ${esc(top.name)} ${top.pct.toFixed(0)}%</span>` : ""}</div>
       <div class="mcx-pf-hero">
-        <div><small>มูลค่ารวม</small><strong>${money(P.total)}</strong></div>
-        <div><small>สินทรัพย์</small><strong>${P.count} รายการ</strong></div>
-        <div><small>ลงทุน / เงินสด</small><strong>${investedPct.toFixed(0)}% / ${cashPct.toFixed(0)}%</strong></div>
+        <div><small>มูลค่ารวม</small><strong class="gc-num">${money(P.total)}</strong></div>
+        <div><small>สินทรัพย์</small><strong class="gc-num">${P.count} รายการ</strong></div>
+        <div><small>ลงทุน / เงินสด</small><strong class="gc-num">${investedPct.toFixed(0)}% / ${cashPct.toFixed(0)}%</strong></div>
       </div>
       <div class="mcx-pf-splitbar" title="ลงทุน ${investedPct.toFixed(0)}% · เงินสด ${cashPct.toFixed(0)}%"><i style="width:${investedPct.toFixed(1)}%"></i></div>
       ${fourAssetStrip(P)}
@@ -509,8 +519,9 @@
     const reasons = (R.reasons || []).slice(0, 3).map((x) => `<li>✓ ${esc(x)}</li>`).join("");
     const warns = (R.warnings || []).slice(0, 2).map((x) => `<li>⚠ ${esc(x)}</li>`).join("");
     // BTC one-liner from the intelligence snapshot (already computed; links to the BTC page)
+    // the whole text sits in ONE span: gc-btn is inline-flex, so loose text runs + <b> would each become a flex column
     const bi = snapshot() && snapshot().bitcoinIntelligence;
-    const btcChip = bi && bi.available ? `<a class="mcx-mkt-btc" href="/bitcoin-monitor">₿ Bitcoin: <b>${esc(bi.cycleState || "-")}</b>${bi.forecastBias ? ` · คาดการณ์ 90D <b class="${bi.forecastBias === "bullish" ? "mcx-pos" : bi.forecastBias === "bearish" ? "mcx-neg" : ""}">${bi.forecastBias === "bullish" ? "เอนขึ้น" : bi.forecastBias === "bearish" ? "เอนลง" : "ก้ำกึ่ง"}${bi.forecast90Median != null ? " (median " + (bi.forecast90Median > 0 ? "+" : "") + bi.forecast90Median + "%)" : ""}</b>` : ""} →</a>` : "";
+    const btcChip = bi && bi.available ? `<a class="mcx-mkt-btc gc-btn gc-btn-ghost" href="/bitcoin-monitor"><span class="mcx-mkt-btc-txt">₿ Bitcoin: <b>${esc(bi.cycleState || "-")}</b>${bi.forecastBias ? ` · คาดการณ์ 90D <b class="${bi.forecastBias === "bullish" ? "mcx-pos" : bi.forecastBias === "bearish" ? "mcx-neg" : ""}">${bi.forecastBias === "bullish" ? "เอนขึ้น" : bi.forecastBias === "bearish" ? "เอนลง" : "ก้ำกึ่ง"}${bi.forecast90Median != null ? " (median " + (bi.forecast90Median > 0 ? "+" : "") + bi.forecast90Median + "%)" : ""}</b>` : ""} →</span></a>` : "";
     // history bars (reuse existing renderer internals)
     let histHtml = "";
     if (hist.length) {
@@ -520,9 +531,10 @@
       const n = view.length;
       const bars = view.map((h, i) => `<span class="mcx-hist-bar" style="left:${(i / Math.max(1, n) * 100).toFixed(2)}%;width:${(100 / n).toFixed(2)}%;height:${Math.max(8, h.score).toFixed(0)}%;background:${col(h.score)}" title="${esc(h.date)} · ${h.score}"></span>`).join("");
       const ranges = ["3M", "6M", "1Y", "2Y"];
-      histHtml = `<div class="mcx-mkt-histhead"><span>ย้อนหลัง</span><div class="mcx-hist-ranges" id="mcxHistRanges">${ranges.map((r) => `<button type="button" class="${r === histRange ? "is-active" : ""}" data-r="${r}">${r}</button>`).join("")}</div></div>
+      // ปุ่มช่วง = gc-btn (ช่วงที่เลือก = ขาว is-active · ที่เหลือ ghost) · คำอธิบายแกน = จุดสีเดียวกับแท่ง
+      histHtml = `<div class="mcx-mkt-histhead"><span>ย้อนหลัง</span><div class="mcx-hist-ranges" id="mcxHistRanges">${ranges.map((r) => `<button type="button" class="${r === histRange ? "gc-btn is-active" : "gc-btn gc-btn-ghost"}" data-r="${r}">${r}</button>`).join("")}</div></div>
         <div class="mcx-hist"><div class="mcx-hist-track">${bars}</div>
-        <div class="mcx-hist-axis"><span style="color:#22c55e">Risk-On</span><span style="color:#eab308">Neutral</span><span style="color:#ef4444">Risk-Off</span></div></div>`;
+        <div class="mcx-hist-axis">${scaleKey("#22c55e", "Risk-On")}${scaleKey("#eab308", "Neutral")}${scaleKey("#ef4444", "Risk-Off")}</div></div>`;
     }
     // one-sentence Thai interpretation of the score (what it MEANS, not just the number)
     const meaning = R.score >= 60
@@ -530,13 +542,14 @@
       : R.score >= 40
         ? "ตลาดก้ำกึ่ง — สัญญาณผสม เลือกเฉพาะตัวที่แข็งแรง และถือเงินสดบางส่วน"
         : "ตลาดโหมดระวังตัว — สภาพแวดล้อมกดดันสินทรัพย์เสี่ยง เน้นรักษาเงินต้น ถือเงินสดมากขึ้น รอจังหวะ";
-    return `<section class="mc-card mc-panel mc-fade">
+    // การ์ดแก้ว: tone = R.band (สีเดียวกับเกจ) · ประโยคสรุปเป็น callout มีจุดสีของ band แทนตัวหนังสือสี
+    return `<section class="mc-card mc-panel gc-card ${gcTone(GC_BAND_TONE, R.band)} mc-fade">
       <div class="mc-panel-head"><div><h2>🌍 3 · ตลาดเป็นไง</h2><span class="mc-sub">คะแนนสภาพตลาดโลก 0–100 · คำนวณจาก ดอลลาร์ (DXY) · ดอกเบี้ย 10Y · BTC เทียบ MA200 · Nasdaq</span></div></div>
-      <div class="mcx-mkt-verdict" style="border-left-color:${R.color}"><b style="color:${R.color}">${esc(R.regime.label)} · ${R.score}/100</b> — ${esc(meaning)}</div>
+      <div class="mcx-mkt-verdict gc-callout"><i class="mcx-band-dot" style="background:${R.color}"></i><b>${esc(R.regime.label)} · ${R.score}/100</b> — ${esc(meaning)}</div>
       <div class="mcx-mkt">
         <div class="mcx-regime-gauge">${gauge(R.score, R.color, 170)}
           <div class="mcx-ds-conf">Confidence <b class="mcx-conf-${R.confidence.key}">${esc(R.confidence.label)}</b></div>
-          <div class="mcx-mkt-scale"><span style="color:#ef4444">0–39 ลดเสี่ยง</span><span style="color:#eab308">40–59 กลาง</span><span style="color:#22c55e">60+ ลงทุนได้</span></div></div>
+          <div class="mcx-mkt-scale">${scaleKey("#ef4444", "0–39 ลดเสี่ยง")}${scaleKey("#eab308", "40–59 กลาง")}${scaleKey("#22c55e", "60+ ลงทุนได้")}</div></div>
         <div class="mcx-mkt-side">
           <div class="mcx-mkt-sub">คะแนนเทียบช่วงก่อนหน้า (คะแนนขึ้น = ตลาดดีขึ้น)</div>
           ${regimeTrendStrip(R, hist)}
@@ -550,7 +563,8 @@
 
   // ---- รายละเอียดเพิ่มเติม (everything else, collapsed — no duplication in the main view) ----
   function moreAccordion(R) {
-    return `<details class="mc-card mc-panel mc-fade mcx-more">
+    // การ์ดแก้วไม่มีสถานะ (gc-neutral) · แผงข้างใน (Money Flow · Lead–Lag · Regime) เป็นช่องในการ์ด ไม่ซ้อนแก้ว
+    return `<details class="mc-card mc-panel gc-card gc-neutral mc-fade mcx-more">
       <summary><h2 style="display:inline">🔬 เจาะลึกตลาด</h2><span class="mc-sub"> · Money Flow (เงินไหลจากไหนไปไหน) · Lead–Lag (ใครนำใครตาม) · Regime components</span></summary>
       <div class="mcx-more-body">
         <div class="mcx-grid2">${moneyFlowSection(R)}${leadLagSection(R)}</div>
@@ -583,12 +597,15 @@
       const when = x.es.state === "overdue" ? "งบออกแล้ว ~" + Math.abs(d) + " วัน"
         : x.es.state === "stale" ? "ข้อมูล " + x.es.staleMonths + " เดือน" + (x.es.hasDate && d > 0 ? " · งบอีก ~" + d + " วัน" : "")
         : "อีก ~" + d + " วัน";
-      return '<a class="mcx-reload-chip mcx-reload-' + (x.es.state === "due-soon" ? "soon" : "reload") + '" href="/thesis?ticker=' + encodeURIComponent(x.t) + '" data-th-ticker="' + esc(x.t) + '">' + esc(x.t) + ' <em>' + esc(when) + "</em></a>";
+      // ชิป = ลิงก์ปุ่มแก้ว: ควรโหลดใหม่ = gc-btn ขาว · ใกล้ออกงบ = gc-btn-ghost
+      var soonChip = x.es.state === "due-soon";
+      return '<a class="mcx-reload-chip mcx-reload-' + (soonChip ? "soon gc-btn gc-btn-ghost" : "reload gc-btn") + '" href="/thesis?ticker=' + encodeURIComponent(x.t) + '" data-th-ticker="' + esc(x.t) + '">' + esc(x.t) + ' <em>' + esc(when) + "</em></a>";
     };
     let parts = "";
     if (reload.length) parts += '<div class="mcx-reload-line"><b class="mcx-reload-lbl is-reload">⚠ ควรโหลดใหม่</b>' + reload.map(chip).join("") + "</div>";
     if (soon.length) parts += '<div class="mcx-reload-line"><b class="mcx-reload-lbl is-soon">🔔 ใกล้ออกงบ</b>' + soon.map(chip).join("") + "</div>";
-    return '<section class="mcx-reload mc-fade"><div class="mcx-reload-head">🧾 Investment Thesis · ความสดของข้อมูล curated</div>' + parts +
+    // การ์ดแก้ว: มีตัวที่ "ควรโหลดใหม่" (งบออกแล้ว / ข้อมูลเก่า — ป้ายแดงเดิม) → gc-danger · ใกล้ออกงบอย่างเดียว (ป้ายส้มเดิม) → gc-warning
+    return '<section class="mcx-reload gc-card ' + (reload.length ? "gc-danger" : "gc-warning") + ' mc-fade"><div class="mcx-reload-head">🧾 Investment Thesis · ความสดของข้อมูล curated</div>' + parts +
       '<div class="mcx-reload-foot">อัปเดตด้วย <code>/thesis-update TICKER</code> ใน Claude Code หลังบริษัทออกงบ · คลิกชื่อเพื่อดูรายตัว</div></section>';
   }
 

@@ -1,4 +1,9 @@
-/* Bitcoin Monitor — builds on mission-control.css tokens (dark premium) */
+/* Bitcoin Monitor — builds on mission-control.css tokens (dark premium)
+   Glass cards (glass-cards.css gc-2, loaded before this file): every card of the three tabs (Monitor · Intelligence ·
+   สภาพคล่อง) is a .gc-card whose tone comes from a status the page already computes (bitcoin-monitor-page.js GC_*,
+   bitcoin-intelligence-page.js GC_TONE, global-liquidity-page.js gcSignTone). Inside a card the shared --mc-* tokens
+   become glass ink (section "Glass" at the end), so the existing rules read on the glass in both site themes.
+   Status colours on the glass are lifted to luminance >= 0.70 (>= 4.7:1 on the brightest pixel of every tone). */
 .btc-page { display: block; }
 
 /* ---- chart ---- */
@@ -10,14 +15,13 @@
 .btc-chart-inner svg { width: 100%; height: 100%; display: block; overflow: visible; }
 .btc-yl { position: absolute; right: 0; transform: translateY(-50%); font-size: 10.5px; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
 .btc-xl { position: absolute; bottom: 0; transform: translateX(-50%); font-size: 10px; color: var(--mc-faint, #64748b); white-space: nowrap; }
+/* the first / last date sit at the chart's edges: anchor them inward so the glass card never cuts them */
+.btc-chart-inner > .btc-yl + .btc-xl { transform: none; }
+.btc-chart-inner > .btc-xl:last-child { transform: translateX(-100%); }
 .btc-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 11.5px; color: var(--mc-text-2); }
 .btc-legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
 
-/* ---- buy zone ---- */
-.btc-acc-bull { border-top: 2px solid var(--mc-emerald); }
-.btc-acc-bear { border-top: 2px solid var(--mc-red); }
-.btc-acc-warn { border-top: 2px solid var(--mc-amber); }
-.btc-acc-neutral { border-top: 2px solid var(--mc-blue); }
+/* ---- buy zone (the card's glass tone = bz.tone; the old .btc-acc-* top stripe is gone) ---- */
 .btc-bz { display: flex; gap: 26px; align-items: center; flex-wrap: wrap; }
 .btc-bz-gauge { text-align: center; min-width: 160px; }
 .btc-bz-label { font-size: 15px; font-weight: 800; margin-top: 2px; }
@@ -70,9 +74,9 @@
 .btc-imp-group h4 { font-size: 12.5px; margin: 0 0 8px; color: var(--mc-text-2); }
 .btc-imp-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
 .btc-imp-field { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--mc-muted); }
-.btc-imp-field input { background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 10px; padding: 8px 11px; color: var(--mc-text); font-size: 13px; font-family: inherit; }
-.btc-imp-actions { display: flex; gap: 10px; margin-top: 16px; }
-.btc-imp-field input::placeholder { color: var(--mc-muted); opacity: 0.6; }
+/* the inputs are gc-field (glass-cards.css) — well, rim, focus ring and a >= 4.5:1 placeholder come from there */
+.btc-imp-field input { width: 100%; }
+.btc-imp-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .btc-note code, .btc-note b { font-weight: 700; }
 .btc-note code { background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 6px; padding: 1px 6px; font-size: 11px; color: var(--mc-cyan); }
 
@@ -206,10 +210,8 @@
 .gl-head p { margin: 5px 0 0; color: var(--mc-dim, #94a3b8); font-size: 12.5px; line-height: 1.65; max-width: 780px; }
 
 .gl-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
-.gl-card {
-  border: 1px solid var(--mc-border, #1f2a3d); border-radius: 12px; padding: 13px 15px;
-  background: rgba(148, 163, 184, .04); min-width: 0;
-}
+/* each stat is a glass tile (gc-card gc-tile + tone) — face, rim and radius come from glass-cards.css */
+.gl-card { padding: 13px 15px; min-width: 0; }
 .gl-card small {
   display: block; font-size: 10px; font-weight: 700; letter-spacing: .05em;
   text-transform: uppercase; color: var(--mc-dim, #94a3b8); margin-bottom: 5px;
@@ -306,3 +308,100 @@
   .gl-tr-head { flex-direction: column; }
   .gl-tr-cards { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
 }
+
+/* ============================================================
+   Glass (glass-cards.css gc-2 · 2026-11-22) — all three tabs render into #btcRoot
+   ============================================================ */
+/* inside a glass card the shared --mc-* tokens are the glass ink in BOTH site themes (the /home #mcRoot map);
+   status hues are lifted to luminance >= 0.70 so they read on every tone */
+#btcRoot .gc-card {
+  --mc-text: var(--gc-ink);
+  --mc-text-2: var(--gc-ink-2);
+  --mc-muted: var(--gc-ink-2);
+  --mc-faint: var(--gc-ink-2);
+  --mc-dim: var(--gc-ink-2);
+  --mc-text-dim: var(--gc-ink-2);
+  --mc-border: var(--gc-line);
+  --mc-border-active: rgba(255, 255, 255, 0.45);
+  --mc-elevated: var(--gc-well);
+  --mc-card: var(--gc-well);
+  --mc-surface-2: var(--gc-well);
+  --mc-bg: #0b0b12;
+  --mc-shadow: none;
+  --mc-card-glow: none;
+  --mc-emerald: #7cf5c6;
+  --mc-red: #ffcfdb;
+  --mc-amber: #ffd98a;
+  --mc-cyan: #a5f3fc;
+  --mc-teal: #99f6e4;
+  --mc-blue: #bae6fd;
+  --mc-violet: #ddd6fe;
+  --btc-dd-gray: var(--gc-ink-2);   /* Deep Dive "middle" tag + gauge segment (bitcoin-monitor-page.js DD_COL) */
+}
+/* panels inside a glass card are wells (token map above); mission-control.css switches their blur off under glass */
+/* gc-card is a flex column: cards that mix text runs, centred buttons or a <summary> stay block */
+#btcRoot details.gc-card,
+#btcRoot .mc-empty.gc-card,
+#btcRoot .btc-empty.gc-card,
+#btcRoot .bi-empty.gc-card { display: block; }
+/* tiles keep their own vertical rhythm (margins), not the gc-tile gap on top of it */
+#btcRoot .mc-metric.gc-card,
+#btcRoot .btc-ind-card.gc-card,
+#btcRoot .gl-card.gc-card { gap: 0; }
+/* a dimmed (no data) tile would let the page show through and drop the ink below 4.5:1 */
+#btcRoot .btc-ind-empty.gc-card,
+#btcRoot .gc-card .btc-cov-off { opacity: 1; }
+
+/* hero: one neutral glass card + 4 toned tiles (their light-theme white face in mission-control.css skips .gc-card) */
+#btcRoot .mc-page-hero.gc-card { display: block; padding: 24px 26px; }
+#btcRoot .mc-metric.gc-card .mc-value { font-family: var(--gc-num-font); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+@media (max-width: 720px) {
+  /* 4 tiles in a row (inline grid) are too narrow on a phone */
+  #btcRoot .mc-page-hero .a360-hero-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  /* the glass clips overflow: a long head chip (Buy Zone coverage) wraps under the title instead of running off */
+  #btcRoot .gc-card .mc-panel-head { flex-wrap: wrap; }
+  #btcRoot .gc-card .btc-cov-chip { white-space: normal; }
+}
+
+/* buttons keep mc-btn (ids / hooks) + wear gc-btn: switch off the old lift and cyan glow */
+#btcRoot .mc-btn.gc-btn:hover,
+#btcRoot .mc-btn.gc-btn-ghost:hover { transform: none; }
+#btcRoot .mc-btn-primary.gc-btn:not(.gc-btn-ghost):hover { box-shadow: inset 0 0 0 1px var(--gc-btn-rim, var(--app-muted)); }
+
+/* numbers on the glass: Inter 700 tabular */
+#btcRoot .gc-card .btc-ind-val,
+#btcRoot .gc-card .btc-dd-value,
+#btcRoot .gc-card .btc-comp-head strong,
+#btcRoot .gc-card .btc-tech-row strong { font-family: var(--gc-num-font); font-weight: 700; font-variant-numeric: tabular-nums; }
+#btcRoot .gc-card .btc-bz-gauge svg text { font-family: var(--gc-num-font); font-weight: 700; }
+
+/* reference-link pills wrap inside a narrow tile instead of running past it (the glass clips overflow) */
+#btcRoot .gc-card .btc-ref-btn { max-width: 100%; white-space: normal; }
+
+/* chips with a coloured ring get a dark backing so the lifted hue reads on every tone */
+#btcRoot .gc-card .btc-zone,
+#btcRoot .gc-card .btc-dd-tag,
+#btcRoot .gc-card .btc-cov-chip { background: rgba(0, 0, 0, 0.3); }
+
+/* chart range + buy-zone component bars: the Bitcoin orange had no meaning → white like the Macro bars */
+#btcRoot .gc-card .btc-range button.is-active { background: #fff; color: #0b0b12; }
+#btcRoot .gc-card .btc-comp-bar { background: rgba(255, 255, 255, 0.14); }
+#btcRoot .gc-card .btc-comp-bar i { background: #fff; box-shadow: 0 0 10px rgba(255, 255, 255, 0.35); }
+
+/* liquidity tab (global-liquidity-page.js): one neutral card, stat tiles toned by gl-pos / gl-neg */
+#btcRoot .gl-sec.gc-card { padding: 20px 22px; }
+#btcRoot .gl-card.gc-card em { color: var(--gc-ink-2); }
+#btcRoot .gl-card.gc-card b.gl-pos,
+#btcRoot .gl-card.gc-card b.gl-neg { color: #fff; }   /* the tile's tone carries the sign */
+#btcRoot .gc-card .gl-chartwrap { background: var(--gc-well); }
+#btcRoot .gc-card .gl-zone { fill: rgba(255, 255, 255, 0.08); }
+#btcRoot .gc-card .gl-zero { stroke: rgba(255, 255, 255, 0.3); }
+#btcRoot .gc-card .gl-tick { fill: var(--gc-ink-2); }
+#btcRoot .gc-card .gl-band:hover { fill: rgba(255, 255, 255, 0.08); }
+#btcRoot .gc-card .gl-honest { background: var(--gc-well); border-color: rgba(255, 217, 138, 0.5); }
+#btcRoot .gc-card .gl-honest code { background: rgba(255, 255, 255, 0.12); }
+#btcRoot .gc-card .gl-data summary,
+#btcRoot .gc-card .gl-src a { color: #bae6fd; }
+#btcRoot .gc-card .gl-src,
+#btcRoot .gc-card .gl-foot,
+#btcRoot .gc-card .gl-tr-table td small { color: var(--gc-ink-2); }

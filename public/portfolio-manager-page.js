@@ -813,6 +813,17 @@
     if (!it || !it.gate || !it.gate.overridden || !window.PMEngine || !window.PMEngine.ZONES) return { zone: r.zone, gated: false, why: null };
     return { zone: window.PMEngine.ZONES[it.gate.zoneKey] || r.zone, gated: true, why: it.gate.why };
   }
+  // ---------------- การ์ดแก้ว (glass-cards.css) — สีการ์ด = สถานะที่หน้าคำนวณอยู่แล้ว (ไม่สร้างสถานะใหม่) ----------------
+  //   Zone หลัง safety gate (การ์ด Accumulation + Position Manager): 💎A 🟢B → gc-calm · 🟡C → gc-normal · 🟠D → gc-warning · 🔴E → gc-danger
+  //   Overall Recommendation (ACTIONS.tone): bull → calm · neutral → normal · watch → warning · bear → danger
+  //   Portfolio Health: strong → calm · moderate → normal · weak → danger · ยังประเมินไม่ได้ → neutral
+  //   Cash Deployment: มีเงินก้อนถัดไป → calm (ตัวแรกโดน safety gate → warning) · ยังไม่มี entry trigger → neutral (เดิมกล่องเทา)
+  //   Risk rule: active → danger (เดิมขอบ/ป้ายชมพู) · pass → calm (เดิมป้ายเขียว)
+  //   ไม่มีสถานะ (Current Portfolio · แถบนับ Zone · tile ตัวเลข · tier · วิธีคิด · ข้อความว่าง) → gc-neutral
+  var GC_ZONE_TONE = { A: "gc-calm", B: "gc-calm", C: "gc-normal", D: "gc-warning", E: "gc-danger" };
+  var GC_ACTION_TONE = { bull: "gc-calm", neutral: "gc-normal", watch: "gc-warning", bear: "gc-danger" };
+  var GC_HEALTH_TONE = { strong: "gc-calm", moderate: "gc-normal", weak: "gc-danger" };
+  function gcTone(map, key) { return key != null && Object.prototype.hasOwnProperty.call(map, key) ? map[key] : "gc-neutral"; }
   // ---------------- UI helpers ----------------
   function toneClass(tone) { return tone === "bull" ? "pm-bull" : tone === "bear" ? "pm-bear" : tone === "watch" ? "pm-watch" : "pm-neutral"; }
   function zoneChip(zone) { return '<span class="pm-zone pm-zone-' + zone.key.toLowerCase() + '">' + zone.icon + " " + esc(zone.label) + "</span>"; }
@@ -835,28 +846,34 @@
   function assetLink(t) { return '<a class="pm-sym" href="/asset/' + encodeURIComponent(t) + '">' + esc(t) + "</a>"; }
 
   // ---------------- S1: Portfolio Overview ----------------
+  // ปุ่มสลับ (มุมมอง AI Megatrend / มุมตาราง): ที่เลือก = gc-btn ขาว · ที่เหลือ = gc-btn-ghost
+  //   คลาสที่เลือกคง "pm-stance-btn is-on pm-xxx" ติดกัน (เทสต์ pm-view / pm-settings-sync อ่านรูปนี้)
+  function switchCls(on, tone) { return "pm-stance-btn" + (on ? " is-on " + tone + " gc-btn" : " gc-btn gc-btn-ghost"); }
   function sectionOverview(out, inp) {
     var ov = out.overview;
+    // .pm-hero = ที่จัดวางเท่านั้น: การ์ดคำตอบหลัก (tone = Overall Recommendation) + 4 tile แก้ว (ไม่ซ้อนแก้วในแก้ว)
     return '<section class="pm-sec"><div class="pm-hero">' +
-      '<div class="pm-hero-main">' +
+      '<div class="pm-hero-main gc-card ' + gcTone(GC_ACTION_TONE, ov.recommendation.tone) + '">' +
       '<div class="pm-hero-q">"ถ้ามีเงินสดวันนี้ ควรวางเงินก้อนถัดไปที่ตำแหน่งไหน"</div>' +
       '<div class="pm-stance"><small>🧠 AI Megatrend — คุณตัดสินใจเอง (ระบบไม่คำนวณให้):</small>' +
-      '<button type="button" class="pm-stance-btn' + (out.megaStance === "bullish" ? " is-on pm-bull" : "") + '" data-pm-stance="bullish">🐂 Bullish</button>' +
-      '<button type="button" class="pm-stance-btn' + (out.megaStance === "bearish" ? " is-on pm-bear" : "") + '" data-pm-stance="bearish">🐻 Bearish</button>' +
+      '<button type="button" class="' + switchCls(out.megaStance === "bullish", "pm-bull") + '" data-pm-stance="bullish">🐂 Bullish</button>' +
+      '<button type="button" class="' + switchCls(out.megaStance === "bearish", "pm-bear") + '" data-pm-stance="bearish">🐻 Bearish</button>' +
       "<span>" + (out.megaStance === "bearish" ? "Bearish = งดสะสมใหม่ทุกตัว (Rule 1) จนกว่าจะสลับกลับ" : "Bullish = เปิดสะสมตามเงื่อนไข Zone/Entry ปกติ") + "</span></div>" +
       '<div class="pm-hero-rec ' + toneClass(ov.recommendation.tone) + '"><small>Overall Recommendation</small><b>' + esc(ov.recommendation.label) + "</b><span>" + esc(ov.recommendationWhy) + "</span></div>" +
       "</div>" +
       '<div class="pm-hero-grid">' +
       (inp.cashSource === "pm"
-        ? stat("Portfolio Value (หุ้นต่างประเทศ)", baht(inp.gross != null ? inp.gross : 0), esc(CASH_PM_TH))
-        : stat("Portfolio Value (หุ้นต่างประเทศ)", inp.gross != null ? baht(inp.gross) : (inp.flagSum != null ? baht(inp.flagSum) : "ยังไม่ตั้งค่า"), inp.gross != null ? "จาก Portfolio Position → หุ้นต่างประเทศ (Quarterly Editor)" : "ตั้งค่าที่ Portfolio Position → หุ้นต่างประเทศ หรือกรอกเงินสดในการ์ดถัดไป (ตอนนี้ใช้ผลรวมหุ้นธงแดงชั่วคราว)")) +
+        ? stat("Portfolio Value (หุ้นต่างประเทศ)", baht(inp.gross != null ? inp.gross : 0), esc(CASH_PM_TH), "", "", "gc-neutral", true)
+        : stat("Portfolio Value (หุ้นต่างประเทศ)", inp.gross != null ? baht(inp.gross) : (inp.flagSum != null ? baht(inp.flagSum) : "ยังไม่ตั้งค่า"), inp.gross != null ? "จาก Portfolio Position → หุ้นต่างประเทศ (Quarterly Editor)" : "ตั้งค่าที่ Portfolio Position → หุ้นต่างประเทศ หรือกรอกเงินสดในการ์ดถัดไป (ตอนนี้ใช้ผลรวมหุ้นธงแดงชั่วคราว)", "", "",
+          "gc-neutral", inp.gross != null || inp.flagSum != null)) +   // gc-num เฉพาะเมื่อเป็นตัวเลข (ไม่ใช่ข้อความ "ยังไม่ตั้งค่า")
       cashStat(inp) +
-      stat("Portfolio Thesis Score", ov.score == null ? "—" : ov.score + "/100", "ค่าเฉลี่ย Investment Thesis ถ่วงน้ำหนักตามสัดส่วนถือจริง (คนละตัวกับ Accumulation Score)") +
-      stat("Portfolio Health", esc(ov.health.label), esc(ov.health.why)) +
+      stat("Portfolio Thesis Score", ov.score == null ? "—" : ov.score + "/100", "ค่าเฉลี่ย Investment Thesis ถ่วงน้ำหนักตามสัดส่วนถือจริง (คนละตัวกับ Accumulation Score)", "", "", "gc-neutral", true) +
+      stat("Portfolio Health", esc(ov.health.label), esc(ov.health.why), "", "", gcTone(GC_HEALTH_TONE, ov.health.key), false) +
       "</div></div></section>";
   }
-  function stat(t, v, sub, extra, attr) {
-    return '<div class="pm-stat"' + (attr || "") + "><small>" + t + "</small><b>" + v + "</b><span>" + sub + "</span>" + (extra || "") + "</div>";
+  // tile แก้ว: tone = สถานะของ tile เอง (ไม่มี = gc-neutral) · ค่าที่เป็นตัวเลข = gc-num (Inter 700 tabular)
+  function stat(t, v, sub, extra, attr, tone, numeric) {
+    return '<div class="pm-stat gc-card gc-tile ' + (tone || "gc-neutral") + '"' + (attr || "") + "><small>" + t + "</small><b" + (numeric ? ' class="gc-num"' : "") + ">" + v + "</b><span>" + sub + "</span>" + (extra || "") + "</div>";
   }
   // การ์ด "ลงทุนแล้ว · เงินสดพร้อมวาง" + ช่องเงินสดรอซื้อหุ้นต่างประเทศ (บันทึกเมื่อ Enter / ปุ่มบันทึก)
   function cashStat(inp) {
@@ -867,7 +884,7 @@
     else sub = "กรอกเงินสดด้านล่าง หรือตั้งมูลค่า sleeve ที่ Portfolio Position ก่อน จึงจะคำนวณส่วนเงินสดได้";
     return stat("ลงทุนแล้ว · เงินสดพร้อมวาง",
       inp.investedPct != null ? pct(inp.investedPct, 1) + " · " + pct(inp.cashPct, 1) : "—",
-      sub, cashBoxHtml(inp), ' data-pm-cash-card="1"');
+      sub, cashBoxHtml(inp), ' data-pm-cash-card="1"', "gc-neutral", true);
   }
   // ช่องกรอก: ล็อกอยู่ = วาดว่าง + placeholder (เว้นว่างตอนบันทึก = ใช้ค่าเดิม) · พิมพ์ค้าง = คงข้อความที่พิมพ์
   // เงินที่แสดงเป็น ฿ ในข้อความ (privacy.js ซ่อนได้) · ไม่มีเงินใน title / aria-label
@@ -885,9 +902,9 @@
     return '<div class="pm-cashbox" data-pm-cashbox="1">' +
       '<label class="pm-cash-lbl" for="pmCashInp">' + esc(CASH_LABEL_TH) + " (บาท)</label>" +
       '<div class="pm-cash-row">' +
-      '<input id="pmCashInp" class="pm-cash-inp" type="number" min="0" step="any" inputmode="decimal" value="' + esc(val) + '" data-pm-cash="1"' +
+      '<input id="pmCashInp" class="pm-cash-inp gc-field" type="number" min="0" step="any" inputmode="decimal" value="' + esc(val) + '" data-pm-cash="1"' +
         (locked ? ' placeholder="' + esc(CASH_LOCKED_PH) + '"' : "") + dis + ">" +
-      '<button type="button" class="pm-cash-btn" data-pm-cash-save="1"' + dis + ">บันทึก</button>" +
+      '<button type="button" class="pm-cash-btn gc-btn" data-pm-cash-save="1"' + dis + ">บันทึก</button>" +
       "</div>" +
       '<small class="pm-cash-src">' + esc(src) + "</small>" +
       cashStatusHtml() + "</div>";
@@ -903,7 +920,7 @@
     else if (s === "superseded") parts.push("<span>" + esc(CASH_SUPERSEDED_TH) + "</span>");
     if (cashUi.draft && cashUi.draftNotice) {
       parts.push('<span class="pm-cash-draft">' + esc(cashUi.draftNotice + (s === "error" ? " (เก็บไว้ในเครื่องนี้)" : "")) + "</span>");
-      if (s === "error") parts.push('<button type="button" class="pm-cash-btn" data-pm-cash-retry="1">ลองบันทึกอีกครั้ง</button>');
+      if (s === "error") parts.push('<button type="button" class="pm-cash-btn gc-btn gc-btn-ghost" data-pm-cash-retry="1">ลองบันทึกอีกครั้ง</button>');
     }
     // เขียนแถวหุ้นต่างประเทศหลังแก้มูลค่าหุ้นไม่สำเร็จ — แจ้งสั้น ๆ (ไม่มีร่าง: บันทึกครั้งถัดไปเขียนแถวนี้ใหม่เอง)
     if (rowSync.failed) parts.push('<span class="pm-cash-rownote" data-pm-rowsync="failed">' + esc(ROW_SYNC_FAIL_TH) + "</span>");
@@ -1003,21 +1020,25 @@
   // ---------------- S2: Current Portfolio (ธงแดง + index core + เงินสด) ----------------
   function sectionCurrent(out, inp) {
     var rows = out.allocationRows;
-    if (!rows.length) return '<section class="pm-sec"><h2>💼 Current Portfolio</h2><div class="mc-empty">ยังไม่มีหุ้นธงแดงในกลุ่มหุ้นต่างประเทศ — ปักธงแดง + ใส่มูลค่าได้ที่ Action Center</div></section>';
+    if (!rows.length) return '<section class="pm-sec"><h2 class="gc-section-h">💼 Current Portfolio</h2><div class="mc-empty gc-card gc-neutral">ยังไม่มีหุ้นธงแดงในกลุ่มหุ้นต่างประเทศ — ปักธงแดง + ใส่มูลค่าได้ที่ Action Center</div></section>';
     var tierSel = function (r) {
       if (r.isIndex) return '<span class="pm-idxtag">Index</span>';
-      return '<select class="pm-tier-sel" data-pm-tier="' + esc(r.ticker) + '">' +
+      return '<select class="pm-tier-sel gc-field" data-pm-tier="' + esc(r.ticker) + '">' +
         ["A", "B", "C"].map(function (k) { return '<option value="' + k + '"' + (r.tier.key === k ? " selected" : "") + ">" + k + "</option>"; }).join("") + "</select>";
     };
     // map มูลค่า/dual จาก positions (engine ไม่ pass-through marketValue)
     var posByTicker = {};
     ((inp && inp.positions) || []).forEach(function (p) { posByTicker[p.ticker] = p; });
+    var mvLocked = privacyLocked();
     var mvCell = function (r) {
       var p = posByTicker[r.ticker];
-      if (!r.held || !p) return '<td class="pm-num"><button type="button" class="pm-addquick" data-pm-addquick="' + esc(r.ticker) + '" title="เพิ่ม ' + esc(r.ticker) + ' เข้าพอร์ต">➕ เพิ่ม</button></td>';
-      if (p.dual) return '<td class="pm-num" title="ถือสองคลาส (GOOG+GOOGL) — มูลค่ารวม แก้แยกคลาสที่หน้า Portfolio">' + baht(p.marketValue) + ' <span class="pm-dim">🔒</span></td>';
-      return '<td class="pm-num" data-pv-skip="1"><input class="pm-mv-inp" type="number" min="0" step="any" inputmode="decimal" value="' + (p.marketValue || 0) + '" data-pm-mv="' + esc(r.ticker) + '" title="แก้มูลค่า (บาท) แล้ว Enter/คลิกออก เพื่อบันทึก">' +
-        '<button type="button" class="pm-rm-btn" data-pm-remove="' + esc(r.ticker) + '" title="เอาออกจากพอร์ต (เก็บเป็น watchlist)">✕</button></td>';
+      if (!r.held || !p) return '<td class="pm-num gc-cell-num"><button type="button" class="pm-addquick gc-btn gc-btn-ghost" data-pm-addquick="' + esc(r.ticker) + '" title="เพิ่ม ' + esc(r.ticker) + ' เข้าพอร์ต">➕ เพิ่ม</button></td>';
+      if (p.dual) return '<td class="pm-num gc-cell-num" title="ถือสองคลาส (GOOG+GOOGL) — มูลค่ารวม แก้แยกคลาสที่หน้า Portfolio">' + baht(p.marketValue) + ' <span class="pm-dim">🔒</span></td>';
+      // Privacy Lock ไม่แตะค่าใน <input> → ตอนล็อกวาดช่องว่าง + placeholder เดียวกับช่องเงินสด
+      //   (เว้นว่างตอนล็อก = ไม่บันทึก · พิมพ์ค่าใหม่ = บันทึกตามปกติ — ดู bind [data-pm-mv]) · ปลดล็อก → onPrivacyChanged วาดค่าคืน
+      return '<td class="pm-num gc-cell-num" data-pv-skip="1"><input class="pm-mv-inp gc-field" type="number" min="0" step="any" inputmode="decimal" value="' + (mvLocked ? "" : (p.marketValue || 0)) + '" data-pm-mv="' + esc(r.ticker) + '"' +
+        (mvLocked ? ' placeholder="' + esc(CASH_LOCKED_PH) + '"' : "") + ' title="แก้มูลค่า (บาท) แล้ว Enter/คลิกออก เพื่อบันทึก">' +
+        '<button type="button" class="pm-rm-btn gc-btn gc-btn-ghost" data-pm-remove="' + esc(r.ticker) + '" title="เอาออกจากพอร์ต (เก็บเป็น watchlist)">✕</button></td>';
     };
     // ---- 2 มุม: ทั้งพอร์ต vs เฉพาะหุ้นรายตัว ----
     // มุมที่ 2 = กรองรายชื่อออกมาเฉพาะหุ้นรายตัว — น้ำหนักทุกช่องยังอิงฐาน
@@ -1048,7 +1069,7 @@
         "<td>" + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">core</span>' : "") + '<small class="pm-dim"> ' + esc(r.name) + (r.held ? "" : " · ยังไม่ถือ") + "</small></td>" +
         "<td>" + tierSel(r) + "</td>" +
         mvCell(r) +
-        '<td class="pm-num">' + wcell + "</td>" +
+        '<td class="pm-num gc-cell-num">' + wcell + "</td>" +
         "<td>" + (r.covered ? (function () { var gz = gatedZone(r); return zoneChip(gz.zone) + (gz.gated ? ' <span class="pm-ii-gate" title="' + esc(gz.why) + '">⛔ gated</span>' : "") + healthChip(r.ticker); })() : '<span class="pm-dim">ไม่มี thesis</span>') + "</td>" +
         "<td>" + (r.covered ? actionChip((function () { var gz2 = gatedZone(r); return gz2.gated && gz2.zone.key === "E" && window.PMEngine ? window.PMEngine.ACTIONS.review : r.action; })(), r) : '<a class="pm-dim" href="/thesis">/thesis-update ' + esc(r.ticker) + "</a>") + "</td></tr>";
     }).join("");
@@ -1059,17 +1080,17 @@
       tr += '<tr class="pm-row-cash">' +
         '<td>💵 <b>เงินสดใน sleeve</b><small class="pm-dim"> ' + cashWhy + "</small></td>" +
         "<td><span class='pm-idxtag'>Cash</span></td>" +
-        '<td class="pm-num">' + baht(inp.cashBaht) + "</td>" +
-        '<td class="pm-num"><b>' + (cashW == null ? "—" : pct(cashW)) + "</b></td>" +
+        '<td class="pm-num gc-cell-num">' + baht(inp.cashBaht) + "</td>" +
+        '<td class="pm-num gc-cell-num"><b>' + (cashW == null ? "—" : pct(cashW)) + "</b></td>" +
         '<td><span class="pm-dim">รอ deploy ตาม Cash Deployment Plan ด้านล่าง</span></td>' +
         '<td><span class="pm-action pm-neutral">Reserve</span></td></tr>';
     }
     // ฟอร์มเพิ่มหุ้นเข้าพอร์ต (ย้ายมาจาก Action Center) — เขียนลง store เดียวกับทั้งแอป
     var dl = kbTickersNotHeld(rows).map(function (t) { return '<option value="' + esc(t) + '">'; }).join("");
     var addForm = '<div class="pm-addform" data-pv-skip="1">➕ <b>เพิ่มหุ้นเข้าพอร์ต:</b> ' +
-      '<input id="pmAddTicker" list="pmKbList" placeholder="TICKER เช่น MSFT" maxlength="12" autocomplete="off"><datalist id="pmKbList">' + dl + "</datalist>" +
-      '<input id="pmAddAmount" type="number" min="0" step="any" inputmode="decimal" placeholder="มูลค่า (฿)">' +
-      '<button type="button" id="pmAddBtn" class="pm-add-btn">เพิ่ม</button>' +
+      '<input id="pmAddTicker" class="gc-field" list="pmKbList" placeholder="TICKER เช่น MSFT" maxlength="12" autocomplete="off"><datalist id="pmKbList">' + dl + "</datalist>" +
+      '<input id="pmAddAmount" class="gc-field" type="number" min="0" step="any" inputmode="decimal" placeholder="มูลค่า (฿)">' +
+      '<button type="button" id="pmAddBtn" class="pm-add-btn gc-btn">เพิ่ม</button>' +
       '<small class="pm-dim">bucket: หุ้นต่างประเทศ · บันทึกชุดข้อมูลเดียวกับหน้า Portfolio/ทั้งแอป · พิมพ์ ticker นอก list ได้</small></div>';
     var cashMv = inp && inp.cashBaht != null ? inp.cashBaht : null;
     var wholeBase = stocksBase + (idxMv || 0) + (cashMv || 0);
@@ -1078,18 +1099,20 @@
       ? "กรองเฉพาะรายชื่อหุ้นรายตัว (ซ่อน " + esc(pol.indexTicker || "index") + " + เงินสด) — ตัวเลขทุกช่องยังอิงฐานทั้งพอร์ต"
       : "ฐาน 100% = Portfolio Value หุ้นต่างประเทศ (index core + หุ้นรายตัว + เงินสด)";
     var vsw = '<div class="pm-viewsw"><small>มุมมอง:</small>' +
-      '<button type="button" class="pm-stance-btn' + (stocksOnly ? "" : " is-on pm-bull") + '" data-pm-cview="all">🥧 ทั้งพอร์ต</button>' +
-      '<button type="button" class="pm-stance-btn' + (stocksOnly ? " is-on pm-bull" : "") + '" data-pm-cview="stocks">📊 เฉพาะหุ้นรายตัว</button>' +
+      '<button type="button" class="' + switchCls(!stocksOnly, "pm-bull") + '" data-pm-cview="all">🥧 ทั้งพอร์ต</button>' +
+      '<button type="button" class="' + switchCls(stocksOnly, "pm-bull") + '" data-pm-cview="stocks">📊 เฉพาะหุ้นรายตัว</button>' +
       "<span>" + vnote + "</span></div>";
-    return '<section class="pm-sec"><h2>💼 Current Portfolio <small>(' + (stocksOnly ? "เฉพาะหุ้นรายตัว — ตัด index core + เงินสดออก เพื่อดูสัดส่วนภายในกลุ่มหุ้น" : "หุ้นธงแดง + index core + เงินสด — เห็นทั้งพอร์ตรวม") + ' · แก้มูลค่า/เพิ่ม/เอาออก ได้ที่นี่)</small></h2>' + vsw + pieBlock(rows, posByTicker, pol, idxMv, cashMv, wholeBase, stocksSharePct, stocksOnly) +
-      '<div class="pm-tablewrap"><table class="pm-table"><thead><tr><th>Ticker</th><th>Tier</th><th>มูลค่า (฿)</th><th>น้ำหนักปัจจุบัน</th><th>Accumulation Zone</th><th>Position Status</th></tr></thead><tbody>' +
-      tr + "</tbody></table></div>" + addForm + allocEditor(pol) + "</section>";
+    // การ์ดเดียว gc-neutral (ทั้งตารางไม่มีสถานะเดียว — สีอยู่ที่ชิป zone/action ของแต่ละแถว) · ตารางเลื่อนในกล่องของตัวเอง
+    return '<section class="pm-sec"><h2 class="gc-section-h">💼 Current Portfolio <small>(' + (stocksOnly ? "เฉพาะหุ้นรายตัว — ตัด index core + เงินสดออก เพื่อดูสัดส่วนภายในกลุ่มหุ้น" : "หุ้นธงแดง + index core + เงินสด — เห็นทั้งพอร์ตรวม") + ' · แก้มูลค่า/เพิ่ม/เอาออก ได้ที่นี่)</small></h2>' +
+      '<div class="pm-current gc-card gc-neutral">' + vsw + pieBlock(rows, posByTicker, pol, idxMv, cashMv, wholeBase, stocksSharePct, stocksOnly) +
+      '<div class="pm-tablewrap gc-table-wrap" tabindex="0" role="region" aria-label="ตาราง Current Portfolio เลื่อนซ้ายขวาได้"><table class="pm-table gc-table"><thead><tr><th>Ticker</th><th>Tier</th><th>มูลค่า (฿)</th><th>น้ำหนักปัจจุบัน</th><th>Accumulation Zone</th><th>Position Status</th></tr></thead><tbody>' +
+      tr + "</tbody></table></div>" + addForm + allocEditor(pol) + "</div></section>";
   }
 
   // ตัวระบุ index core (ต้องรู้ว่าแถวไหนคือ index — ไม่ใช่เรื่องเป้า) · %/เพดาน/วิธีแบ่ง ถอดออกแล้ว
   function allocEditor(p) {
     return '<details class="pm-details pm-alloccfg" data-pv-skip="1"><summary>⚙️ ตั้งค่า index core</summary>' +
-      '<div class="pm-allocrow"><label>Index ticker <input class="pm-alloc-inp" type="text" value="' + esc(p.indexTicker) + '" data-pm-alloc="indexTicker"></label></div>' +
+      '<div class="pm-allocrow"><label>Index ticker <input class="pm-alloc-inp gc-field" type="text" value="' + esc(p.indexTicker) + '" data-pm-alloc="indexTicker"></label></div>' +
       '<small>ตัวที่ถือเป็นแกน index ของพอร์ต — ใช้แยกแถว index ออกจากหุ้นรายตัว (บันทึกบน server — ใช้ร่วมกันทุกเครื่อง)</small></details>';
   }
   // ---------------- S4: Accumulation Opportunities (Zone นำ Score รอง) ----------------
@@ -1132,10 +1155,10 @@
           return (p.status === "crit" ? "✗ " : "⚠ ") + esc(p.label) + ": " + esc(p.evidence);
         }).join("<br>") + "</div>";
       }
-      return '<article class="pm-card pm-card-' + gz.zone.key.toLowerCase() + '">' +
+      return '<article class="pm-card pm-card-' + gz.zone.key.toLowerCase() + " gc-card " + gcTone(GC_ZONE_TONE, gz.zone.key) + '">' +
         '<div class="pm-card-head">' + assetLink(r.ticker) +
         (r.held ? "" : '<span class="pm-newpos">ยังไม่ได้ถือ — ตัวเลือกตำแหน่งใหม่</span>') +
-        '<span class="pm-score"><b>' + (r.accScore == null ? "—" : r.accScore) + "</b>/100</span></div>" +
+        '<span class="pm-score"><b class="gc-num">' + (r.accScore == null ? "—" : r.accScore) + "</b>/100</span></div>" +
         '<div class="pm-card-zone">' + zoneChip(gz.zone) + "<small>" + esc(gz.zone.thai) + "</small>" + healthChip(r.ticker) + "</div>" + gateLine +
         '<div class="pm-card-zonewhy">' + r.zoneWhy.map(function (w) { return esc(w); }).join(" · ") + "</div>" +
         '<div class="pm-scoreline">📊 ' + scoreFormula(r.acc.parts, r.accScore) + "</div>" +
@@ -1151,11 +1174,11 @@
     all.forEach(function (r) { var zk = gatedZone(r).zone.key; counts[zk] = (counts[zk] || 0) + 1; }); // นับ zone หลัง safety gate ให้ตรงกับ card
     var strip = ["A", "B", "C", "D", "E"].map(function (k) {
       var z = window.PMEngine.ZONES[k];
-      return '<span class="pm-pill">' + z.icon + " " + k + " <b>" + (counts[k] || 0) + "</b></span>";
+      return '<span class="pm-pill gc-pill gc-pill-ghost">' + z.icon + " " + k + ' <b class="gc-num">' + (counts[k] || 0) + "</b></span>";
     }).join("");
-    return '<section class="pm-sec"><h2>🧲 Accumulation Opportunities</h2>' +
-      "<p>ตำแหน่งไหน \"ควรค่าแก่เงินก้อนถัดไป\" — Zone คือตัวตัดสินหลัก คะแนนเป็นรอง · น้ำหนัก: Thesis 40 · Business Growth vs ราคา (ถ่วงน้ำหนัก 2-5 ปี · ปีล่าสุดมากกว่า) 25 · Timing 20 · Valuation 15 (ถอด Macro/ดอกเบี้ยออกจากคะแนนแล้ว · มุมมอง AI Megatrend คุณตั้งเองเป็นเกต · EMA/SMA200/RSI เป็นแค่เครื่องมือจับจังหวะ)</p>" +
-      '<div class="pm-strip">' + strip + "</div>" +
+    return '<section class="pm-sec"><div class="pm-sec-h gc-section-h"><h2>🧲 Accumulation Opportunities</h2>' +
+      "<p>ตำแหน่งไหน \"ควรค่าแก่เงินก้อนถัดไป\" — Zone คือตัวตัดสินหลัก คะแนนเป็นรอง · น้ำหนัก: Thesis 40 · Business Growth vs ราคา (ถ่วงน้ำหนัก 2-5 ปี · ปีล่าสุดมากกว่า) 25 · Timing 20 · Valuation 15 (ถอด Macro/ดอกเบี้ยออกจากคะแนนแล้ว · มุมมอง AI Megatrend คุณตั้งเองเป็นเกต · EMA/SMA200/RSI เป็นแค่เครื่องมือจับจังหวะ)</p></div>" +
+      '<div class="pm-strip gc-card gc-strip gc-neutral">' + strip + "</div>" +
       '<div class="pm-grid">' + cards + "</div></section>";
   }
 
@@ -1189,7 +1212,10 @@
         (inp.cashBaht != null ? " (เงินสดใน sleeve " + baht(inp.cashBaht) + " · " + pct(inp.cashPct, 1) + ")" : "") +
         " · ตัวถัดไปดูจาก Zone ที่ดีสุดในตาราง Accumulation ด้านบน</div>";
     }
-    return '<section class="pm-sec"><h2>💵 Cash Deployment Plan <small>(เงินสดที่พร้อมวาง = 100%)</small></h2>' +
+    // การ์ดเดียว: tone = สถานะของบรรทัดหัว (มีเงินก้อนถัดไป → calm · ตัวแรกโดน safety gate → warning · ยังไม่มี entry → neutral)
+    var depTone = top ? (topGated ? "gc-warning" : "gc-calm") : "gc-neutral";
+    return '<section class="pm-sec"><h2 class="gc-section-h">💵 Cash Deployment Plan <small>(เงินสดที่พร้อมวาง = 100%)</small></h2>' +
+      '<div class="pm-dep gc-card ' + depTone + '">' +
       headline +
       (inp.cashPct != null ? "<p>เงินสดจริงใน sleeve ตอนนี้ " + pct(inp.cashPct, 1) + " (" + baht(inp.cashBaht) + ") ของ sleeve — แผนด้านล่างคิดเป็นสัดส่วนของเงินสดก้อนนี้</p>"
         : "<p>ยังไม่มีข้อมูลเงินสด (กรอกเงินสดรอซื้อด้านบน หรือตั้ง Quarterly Editor) — แผนแสดงเป็นสัดส่วนสมมติของเงินก้อนที่จะวาง</p>") +
@@ -1197,7 +1223,7 @@
       '<div class="pm-dep-row pm-dep-reserve"><div class="pm-dep-head">🛡️ Cash Reserve<b>' + d.cashReserveFinal.toFixed(1) + "%</b></div>" +
       '<div class="pm-depbar pm-depbar-res"><i style="width:' + Math.min(100, d.cashReserveFinal) + '%"></i></div>' +
       "<small>" + d.reserveWhy.map(esc).join(" · ") + (d.scaled ? " · แผนถูกสเกลลงให้พอดีเพดาน deploy " + d.deployable + "%" : "") + "</small></div>" +
-      "</section>";
+      "</div></section>";
   }
 
   // ---------------- S6: Position Manager (+ Entry Ladder + tier editor) ----------------
@@ -1215,44 +1241,47 @@
       }).join("");
       var gzM = gatedZone(r);
       var mgrGate = gzM.gated ? '<div class="pm-ii-gateline">⛔ ' + esc(gzM.why) + " — entry ladder ด้านล่างคิดจาก zone เดิมของ engine อย่าใช้จนกว่าหลักฐานจะเคลียร์</div>" : "";
-      return '<article class="pm-mgr">' +
+      // tone = zone หลัง safety gate (ชิป zone ตัวเดียวกันในหัวการ์ด · ตรงกับการ์ด Accumulation ของ ticker เดียวกัน)
+      return '<article class="pm-mgr gc-card ' + gcTone(GC_ZONE_TONE, gzM.zone.key) + '">' +
         '<div class="pm-mgr-head">' + assetLink(r.ticker) + (r.isIndex ? ' <span class="pm-idxtag">Index core</span>' : "") + zoneChip(gatedZone(r).zone) + actionChip(gatedZone(r).gated && gatedZone(r).zone.key === "E" && window.PMEngine ? window.PMEngine.ACTIONS.review : r.action, r) + healthChip(r.ticker) + "</div>" +
         '<div class="pm-mgr-nums">' +
         mnum("น้ำหนักปัจจุบัน", pct(r.weightPct)) + mnum(r.isIndex ? "ประเภท" : "Tier", r.isIndex ? "Index" : r.tier.key) +
         "</div>" + mgrGate +
         '<div class="pm-entries">' + lad + "</div></article>";
     }).join("");
-    return '<section class="pm-sec"><h2>🧰 Position Manager <small>(Entry Ladder — ระบบจำว่า deploy ไปแล้วขั้นไหน)</small></h2>' +
-      "<p>ติ๊ก ✓ เมื่อวางเงินจริงของ entry นั้นแล้ว — ระบบจะจำไว้ข้ามวัน และหักออกจากแผน Cash Deployment ด้านบน (บันทึกบน server — ใช้ร่วมกันทุกเครื่อง)</p>" +
-      (cards || '<div class="mc-empty">ยังไม่มีตำแหน่งที่มี Investment Thesis</div>') +
+    return '<section class="pm-sec"><div class="pm-sec-h gc-section-h"><h2>🧰 Position Manager <small>(Entry Ladder — ระบบจำว่า deploy ไปแล้วขั้นไหน)</small></h2>' +
+      "<p>ติ๊ก ✓ เมื่อวางเงินจริงของ entry นั้นแล้ว — ระบบจะจำไว้ข้ามวัน และหักออกจากแผน Cash Deployment ด้านบน (บันทึกบน server — ใช้ร่วมกันทุกเครื่อง)</p></div>" +
+      (cards || '<div class="mc-empty gc-card gc-neutral">ยังไม่มีตำแหน่งที่มี Investment Thesis</div>') +
       tierEditor(out) + "</section>";
   }
-  function mnum(t, v) { return '<div class="pm-mnum"><small>' + t + "</small><b>" + v + "</b></div>"; }
+  function mnum(t, v) { return '<div class="pm-mnum"><small>' + t + '</small><b class="gc-num">' + v + "</b></div>"; }
   function tierEditor(out) {
     var defs = out.tierDefs;
     var rows = ["A", "B", "C"].map(function (k) {
       var d = defs[k];
-      var inp = function (f) { return '<input class="pm-tier-inp" type="number" min="0" max="100" step="0.5" value="' + d[f] + '" data-pm-tierdef="' + k + '" data-f="' + f + '">'; };
+      var inp = function (f) { return '<input class="pm-tier-inp gc-field" type="number" min="0" max="100" step="0.5" value="' + d[f] + '" data-pm-tierdef="' + k + '" data-f="' + f + '">'; };
       return "<tr><td>" + esc(d.label) + "</td><td>" + inp("min") + "</td><td>" + inp("max") + "</td></tr>";
     }).join("");
-    return '<details class="pm-details pm-tiercfg"><summary>⚙️ Master Position Size — ปรับกรอบ Tier ได้ (Min / Max % ของ sleeve)</summary>' +
-      '<table class="pm-table"><thead><tr><th>Tier</th><th>Min</th><th>Max</th></tr></thead><tbody>' + rows + "</tbody></table>" +
-      "<small>เปลี่ยน Tier รายตัวได้ที่ตาราง Current Portfolio — บันทึกบน server (ใช้ร่วมกันทุกเครื่อง)</small></details>";
+    // <details> ห่อด้วย div แก้ว (ไม่ใส่ gc-card บน <details> ตรง ๆ — flex บน <details> ไม่เสถียร)
+    return '<div class="pm-tiercard gc-card gc-neutral"><details class="pm-details pm-tiercfg"><summary>⚙️ Master Position Size — ปรับกรอบ Tier ได้ (Min / Max % ของ sleeve)</summary>' +
+      '<table class="pm-table gc-table"><thead><tr><th>Tier</th><th>Min</th><th>Max</th></tr></thead><tbody>' + rows + "</tbody></table>" +
+      "<small>เปลี่ยน Tier รายตัวได้ที่ตาราง Current Portfolio — บันทึกบน server (ใช้ร่วมกันทุกเครื่อง)</small></details></div>";
   }
 
   // ---------------- S7: Risk Management ----------------
+  // tone: active (ป้าย ACTIVE · เดิมขอบ/ป้ายชมพู) → gc-danger · pass (ป้าย PASS · เดิมป้ายเขียว) → gc-calm
   function sectionRisk(out) {
     var rows = out.risk.map(function (r) {
-      return '<div class="pm-rule ' + (r.active ? "pm-rule-on" : "pm-rule-off") + '">' +
-        '<span class="pm-rule-badge">' + (r.active ? "ACTIVE" : "PASS") + "</span>" +
+      return '<div class="pm-rule ' + (r.active ? "pm-rule-on gc-card gc-tile gc-danger" : "pm-rule-off gc-card gc-tile gc-calm") + '">' +
+        '<span class="pm-rule-badge gc-pill">' + (r.active ? "ACTIVE" : "PASS") + "</span>" +
         "<b>Rule " + r.n + " — " + esc(r.rule) + "</b><small>" + esc(r.detail) + "</small></div>";
     }).join("");
-    return '<section class="pm-sec"><h2>🛡️ Risk Management <small>(hard rules — บังคับทั้งพอร์ต)</small></h2>' + rows + "</section>";
+    return '<section class="pm-sec"><h2 class="gc-section-h">🛡️ Risk Management <small>(hard rules — บังคับทั้งพอร์ต)</small></h2><div class="pm-rules">' + rows + "</div></section>";
   }
 
   // ---------------- S8: Explainability / methodology ----------------
   function sectionMethod() {
-    return '<footer class="pm-foot">🧠 <b>วิธีคิดทั้งหมดเปิดเผย:</b> Zone/คะแนน/แผนเงิน มาจาก Investment Thesis Engine + Market Regime + Rate Monitor + เทคนิคจาก snapshot · มุมมอง AI Megatrend <b>คุณตัดสินใจเอง</b> (สวิตช์ Bullish/Bearish ด้านบน — เป็นเกต Rule 1 ไม่ใช่คะแนนคำนวณ) — สูตร Accumulation Score ชุดเดียวกับ Accumulation Center (engine กลางตัวเดียวกัน) · deterministic ไม่มี AI-generated opinion · กดดู "ทำไม" ได้ทุกการ์ด · ไม่ใช่คำแนะนำการลงทุน</footer>';
+    return '<footer class="pm-foot gc-card gc-neutral">🧠 <b>วิธีคิดทั้งหมดเปิดเผย:</b> Zone/คะแนน/แผนเงิน มาจาก Investment Thesis Engine + Market Regime + Rate Monitor + เทคนิคจาก snapshot · มุมมอง AI Megatrend <b>คุณตัดสินใจเอง</b> (สวิตช์ Bullish/Bearish ด้านบน — เป็นเกต Rule 1 ไม่ใช่คะแนนคำนวณ) — สูตร Accumulation Score ชุดเดียวกับ Accumulation Center (engine กลางตัวเดียวกัน) · deterministic ไม่มี AI-generated opinion · กดดู "ทำไม" ได้ทุกการ์ด · ไม่ใช่คำแนะนำการลงทุน</footer>';
   }
 
   // ---------------- เงินสดรอซื้อหุ้นต่างประเทศ: บันทึกลงเอกสารพอร์ต (โครงเดียวกับ allocation-card-page.js persistPlan) ----------------
@@ -1612,10 +1641,10 @@
     try { refocus = !!(cashEl && document.activeElement === cashEl); } catch (e) { refocus = false; }
     cashEl = null;   // ช่องของรอบก่อนหายไปพร้อม innerHTML — bind() ตั้งใหม่
     var PM = window.PMEngine, TE = window.ThesisEngine, TD = window.ThesisData;
-    if (!PM || !TE || !TD) { root.innerHTML = '<div class="mc-empty"><strong>Engine ไม่พร้อม</strong> — refresh หน้านี้</div>'; return; }
+    if (!PM || !TE || !TD) { root.innerHTML = '<div class="mc-empty gc-card gc-neutral"><strong>Engine ไม่พร้อม</strong> — refresh หน้านี้</div>'; return; }
     var snapshot = readSnapshot();
     if (!snapshot) {
-      root.innerHTML = headerHtml() + pmSyncNoteHtml() + '<div class="mc-empty"><strong>ยังไม่มี Data Snapshot</strong><br>กด Load Latest Data ก่อน — น้ำหนักพอร์ต/เทคนิค/Mega Trend ต้องใช้ข้อมูลจริง</div>';
+      root.innerHTML = headerHtml() + pmSyncNoteHtml() + '<div class="mc-empty gc-card gc-neutral"><strong>ยังไม่มี Data Snapshot</strong><br>กด Load Latest Data ก่อน — น้ำหนักพอร์ต/เทคนิค/Mega Trend ต้องใช้ข้อมูลจริง</div>';
       return;
     }
     snapshot = effectiveSnapshot(snapshot);
@@ -1628,7 +1657,7 @@
       megaStance: megaStance(),
       indexTicker: ap.indexTicker, indexPct: ap.indexPct, splitMethod: ap.splitMethod, maxSinglePct: ap.maxSinglePct
     });
-    if (!out.available) { root.innerHTML = pmSyncNoteHtml() + '<div class="mc-empty">' + esc(out.reason || "ประเมินไม่ได้") + "</div>"; return; }
+    if (!out.available) { root.innerHTML = pmSyncNoteHtml() + '<div class="mc-empty gc-card gc-neutral">' + esc(out.reason || "ประเมินไม่ได้") + "</div>"; return; }
     state.out = out;
     intelMap = computeIntelMap(out, snapshot);
     root.innerHTML = headerHtml() + pmSyncNoteHtml() +
@@ -1653,7 +1682,11 @@
     });
     // จัดการพอร์ต: แก้มูลค่า / เอาออก / เพิ่มหุ้น (path เขียนเดียวกับทั้งแอป)
     root.querySelectorAll("[data-pm-mv]").forEach(function (el) {
-      el.addEventListener("change", function () { saveHoldingAmount(el.getAttribute("data-pm-mv"), el.value, true); });
+      el.addEventListener("change", function () {
+        // ล็อกอยู่ ช่องวาดว่าง: เว้นว่าง = ใช้ค่าเดิม (ไม่บันทึก 0 ทับ) · พิมพ์ค่าใหม่ = บันทึกตามปกติ (แบบช่องเงินสด)
+        if (privacyLocked() && String(el.value == null ? "" : el.value).replace(/^\s+|\s+$/g, "") === "") return;
+        saveHoldingAmount(el.getAttribute("data-pm-mv"), el.value, true);
+      });
       el.addEventListener("keydown", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); el.blur(); } });
     });
     root.querySelectorAll("[data-pm-remove]").forEach(function (el) {

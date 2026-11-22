@@ -80,6 +80,35 @@
     ]
   };
 
+  // การ์ดแก้ว (glass-cards.css): สีการ์ด = สถานะที่หน้านี้คิดอยู่แล้ว · ไม่มีสถานะ → gc-neutral (ไม่ประดิษฐ์สถานะใหม่)
+  //   การ์ดหุ้นที่ถือ  positionVerdict().tone  sell → danger · buy → calm · watch → warning · none (ถือเฉย ๆ / รอข้อมูล) → neutral
+  //   การ์ดสัญญาณใหม่ (Watchlist)  ฝั่ง  buy → calm · sell → danger
+  //   การ์ดตัดสินใจ  decisionTone()  tone-review → danger · tone-buy → calm · tone-watch → warning ·
+  //                  tone-hold (DATA_WAITING = รอข้อมูล) / tone-neutral → neutral
+  //   "ถือต่อ" ของทางสำรอง (ไม่มี Scoring / Scoring ล้ม · action hold ที่ไม่ใช่ DATA_WAITING = แนวโน้มหลักยังดี) → normal
+  //                  ทั้งการ์ดตัดสินใจและการ์ดหุ้นที่ถือ — สีเดียวกับ "ถือ คงน้ำหนัก" ของ /home และ Maintain ของ /portfolio-manager
+  //   ตัวนับสรุป  หมวด urgent → danger · buy → calm · watch / conflicts → warning เมื่อมีรายการ · ไม่มีรายการ / none / high → neutral
+  var GC_POS_TONE = { sell: "gc-danger", buy: "gc-calm", watch: "gc-warning", none: "gc-neutral" };
+  var GC_SIDE_TONE = { buy: "gc-calm", sell: "gc-danger" };
+  var GC_DECISION_TONE = { "tone-review": "gc-danger", "tone-buy": "gc-calm", "tone-watch": "gc-warning", "tone-hold": "gc-neutral", "tone-neutral": "gc-neutral" };
+  var GC_SUMMARY_TONE = { urgent: "gc-danger", buy: "gc-calm", watch: "gc-warning", conflicts: "gc-warning" };
+  function gcTone(map, key) {
+    return (Object.prototype.hasOwnProperty.call(map, key) && map[key]) || "gc-neutral";
+  }
+  function gcSummaryTone(key, count) {
+    return count > 0 ? gcTone(GC_SUMMARY_TONE, key) : "gc-neutral";
+  }
+  // ทางหลัก (Scoring) ให้ action "hold" เฉพาะ DATA_WAITING · ทางสำรองให้ "hold" = ถือต่อ (actionKey สังเคราะห์ AVOID_WAIT)
+  function isFallbackHold(d) {
+    return !!d && d.action === "hold" && d.actionKey !== "DATA_WAITING";
+  }
+  function gcDecisionTone(row, toneClass) {
+    return isFallbackHold(row.decision) ? "gc-normal" : gcTone(GC_DECISION_TONE, toneClass);
+  }
+  function gcPosTone(row, verdict) {
+    return verdict.tone === "none" && isFallbackHold(row.decision) ? "gc-normal" : gcTone(GC_POS_TONE, verdict.tone);
+  }
+
   const actionStatus = document.querySelector("#actionStatus");
   const marketRiskText = document.querySelector("#marketRiskText");
   const summaryRoot = document.querySelector("#actionSummaryCards");
@@ -1141,7 +1170,7 @@
       ? `<div class="zone-pos-row"><span>Position · สัดส่วนพอร์ต</span><strong>${escapeHtml(formatHolding(row))}</strong></div>`
       : "";
     return `
-      <article class="fresh-card fresh-${card.side}${card.combined ? " fresh-strong" : ""}${sizeClass ? " " + sizeClass : ""}">
+      <article class="fresh-card fresh-${card.side}${card.combined ? " fresh-strong" : ""}${sizeClass ? " " + sizeClass : ""} gc-card ${gcTone(GC_SIDE_TONE, card.side)}">
         <div class="fresh-card-top">
           <a class="fresh-symbol asset-link" href="${detailHref}">${escapeHtml(row.displaySymbol || row.symbol)}</a>
           <span class="fresh-card-top-right">
@@ -1221,7 +1250,7 @@
     const conflict = (row.conflicts || []).find((c) => c.label === "THESIS") || (row.conflicts || [])[0];
     const conflictNote = conflict ? `<div class="pos-conflict">⚠ ${escapeHtml(conflict.reason)}</div>` : "";
     return `
-      <article class="pos-card pos-${v.tone}">
+      <article class="pos-card pos-${v.tone} gc-card ${gcPosTone(row, v)}">
         <div class="pos-head">
           <div class="pos-head-l">
             <a class="fresh-symbol asset-link" href="${detailHref}">${escapeHtml(row.displaySymbol || row.symbol)}</a>
@@ -1259,16 +1288,16 @@
         || (b.row.portfolio?.weight || 0) - (a.row.portfolio?.weight || 0));
     const actionCount = posEntries.filter((e) => e.verdict.rank <= 1).length;
     const summary = `
-      <div class="fresh-head">
+      <div class="fresh-head gc-section-h">
         <div>
           <h2>Action Inbox</h2>
           <p>เรียงตามความสำคัญของคุณ — พอร์ตก่อน ตามด้วย watchlist แล้วค่อยทั้งตลาด · ทุกตัวที่ถือแสดงข้อสรุปเดียวที่ชั่งเทคนิค × Investment Thesis แล้ว</p>
         </div>
       </div>
       <div class="zone-summary">
-        <button type="button" class="zone-sum zone-sum-pos" data-fresh-jump="zone-positions"><span>🔥 My Positions</span><strong>${actionCount}</strong><em>${actionCount === 1 ? "Action" : "Actions"} · ถืออยู่ ${posEntries.length} ตัว</em></button>
-        <button type="button" class="zone-sum zone-sum-watch" data-fresh-jump="zone-watch"><span>⭐ Watchlist</span><strong>${zones.watch.length}</strong><em>${zones.watch.length === 1 ? "New Opportunity" : "New Opportunities"} · ตัวที่เฝ้าอยู่</em></button>
-        <button type="button" class="zone-sum zone-sum-mkt" data-fresh-jump="zone-market"><span>📈 Market</span><strong>${zones.market.length}</strong><em>${zones.market.length === 1 ? "Signal" : "Signals"} · ทั้งตลาด</em></button>
+        <button type="button" class="zone-sum zone-sum-pos gc-card gc-tile gc-neutral" data-fresh-jump="zone-positions"><span>🔥 My Positions</span><strong class="gc-num gc-num-s">${actionCount}</strong><em>${actionCount === 1 ? "Action" : "Actions"} · ถืออยู่ ${posEntries.length} ตัว</em></button>
+        <button type="button" class="zone-sum zone-sum-watch gc-card gc-tile gc-neutral" data-fresh-jump="zone-watch"><span>⭐ Watchlist</span><strong class="gc-num gc-num-s">${zones.watch.length}</strong><em>${zones.watch.length === 1 ? "New Opportunity" : "New Opportunities"} · ตัวที่เฝ้าอยู่</em></button>
+        <button type="button" class="zone-sum zone-sum-mkt gc-card gc-tile gc-neutral" data-fresh-jump="zone-market"><span>📈 Market</span><strong class="gc-num gc-num-s">${zones.market.length}</strong><em>${zones.market.length === 1 ? "Signal" : "Signals"} · ทั้งตลาด</em></button>
       </div>`;
 
     // Zone 1 — every held asset, verdict-first, always on while held
@@ -1277,12 +1306,12 @@
       posBody = '<div class="zone-empty">ยังไม่มีตำแหน่งในพอร์ต — ปักธงแดง ⚑ บนสินทรัพย์ตัวไหนก็ได้เพื่อบันทึกว่าถืออยู่</div>';
     } else {
       const okLine = actionCount === 0
-        ? '<div class="zone-empty zone-empty-ok">No action required for your current holdings.<span>ไม่มีตัวไหนต้องลงมือ — ถือตามแผนต่อ</span></div>' : "";
+        ? '<div class="zone-empty zone-empty-ok gc-card gc-calm">No action required for your current holdings.<span>ไม่มีตัวไหนต้องลงมือ — ถือตามแผนต่อ</span></div>' : "";
       posBody = okLine + `<div class="pos-grid">${posEntries.map(renderPositionCard).join("")}</div>`;
     }
     const zone1 = `
       <section class="zone zone-positions" id="zone-positions">
-        <div class="zone-head"><h3>🔥 My Positions</h3><span class="zone-count">${posEntries.length}</span><p>ทุกตัวที่ถือ — หัวการ์ดคือข้อสรุปเดียว (เทคนิค × Thesis) · สัญญาณเทคนิคและ Thesis เป็นข้อมูลประกอบด้านล่าง</p></div>
+        <div class="zone-head gc-section-h"><h3>🔥 My Positions</h3><span class="zone-count">${posEntries.length}</span><p>ทุกตัวที่ถือ — หัวการ์ดคือข้อสรุปเดียว (เทคนิค × Thesis) · สัญญาณเทคนิคและ Thesis เป็นข้อมูลประกอบด้านล่าง</p></div>
         ${posBody}
       </section>`;
 
@@ -1292,17 +1321,17 @@
       : '<div class="zone-empty">No new watchlist opportunities.<span>ไม่มีโอกาสใหม่จากตัวที่เฝ้าอยู่ — เลือกตัวเฝ้าด้วยธงเหลือง ⚑ บนการ์ดไหนก็ได้</span></div>';
     const zone2 = `
       <section class="zone zone-watch" id="zone-watch">
-        <div class="zone-head"><h3>⭐ Watchlist</h3><span class="zone-count">${zones.watch.length}</span><p>ตัวที่ปักธงเหลือง ⚑ ว่าตั้งใจเฝ้า (ยังไม่ได้ถือ) — แสดงเฉพาะเมื่อมีสัญญาณใหม่</p></div>
+        <div class="zone-head gc-section-h"><h3>⭐ Watchlist</h3><span class="zone-count">${zones.watch.length}</span><p>ตัวที่ปักธงเหลือง ⚑ ว่าตั้งใจเฝ้า (ยังไม่ได้ถือ) — แสดงเฉพาะเมื่อมีสัญญาณใหม่</p></div>
         ${watchBody}
       </section>`;
 
     // Zone 3 — compact list, fresh signals only
     const mktBody = zones.market.length
-      ? `<div class="zone-mkt-list">${zones.market.map(renderMarketRow).join("")}</div>`
+      ? `<div class="zone-mkt-list gc-card gc-neutral">${zones.market.map(renderMarketRow).join("")}</div>`
       : '<div class="zone-empty">No fresh market signals within the last 3 trading days.<span>ไม่มีสัญญาณใหม่จากตลาดใน 3 วันทำการ</span></div>';
     const zone3 = `
       <section class="zone zone-market" id="zone-market">
-        <div class="zone-head"><h3>📈 Market Opportunities</h3><span class="zone-count">${zones.market.length}</span><p>AI Boom · Thailand · Crypto · US — เฉพาะสัญญาณใหม่ใน ${FRESH_WINDOW} วันทำการ</p></div>
+        <div class="zone-head gc-section-h"><h3>📈 Market Opportunities</h3><span class="zone-count">${zones.market.length}</span><p>AI Boom · Thailand · Crypto · US — เฉพาะสัญญาณใหม่ใน ${FRESH_WINDOW} วันทำการ</p></div>
         ${mktBody}
       </section>`;
 
@@ -1369,7 +1398,7 @@
     filtersRoot.innerHTML = Object.entries(FILTERS).map(([key, options]) => `
       <label class="filter-field">
         <span>${filterLabel(key)}</span>
-        <select data-filter="${key}">
+        <select class="gc-field" data-filter="${key}">
           ${options.map(([value, label]) => `<option value="${value}" ${state.filters[key] === value ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}
         </select>
       </label>
@@ -1394,9 +1423,9 @@
         ? (active ? "✓ กำลังกรอง · กดเพื่อยกเลิก" : "คลิกเพื่อกรอง")
         : "คลิกเพื่อดูรายการ";
       return `
-      <button class="summary-card decision-summary-${key}${active ? " is-active" : ""}" type="button" data-summary="${key}">
+      <button class="summary-card decision-summary-${key}${active ? " is-active" : ""} gc-card gc-tile ${gcSummaryTone(key, counts[key] || 0)}" type="button" data-summary="${key}">
         <span>${escapeHtml(title)}</span>
-        <strong>${counts[key] || 0}</strong>
+        <strong class="gc-num gc-num-m">${counts[key] || 0}</strong>
         <p>${escapeHtml(thai)}</p>
         <p>${escapeHtml(hint)}</p>
       </button>`;
@@ -1413,7 +1442,7 @@
     sectionsRoot.innerHTML = SECTION_DEFS.map((section) => `
       <section id="decision-${section.key}" class="decision-section ${section.tone}">
         <div class="section-heading">
-          <div>
+          <div class="gc-section-h">
             <h2>${escapeHtml(section.title)} · ${escapeHtml(section.thai)}</h2>
             <p>${escapeHtml(section.description)}</p>
           </div>
@@ -1453,8 +1482,9 @@
     const detailHref = `/asset/${encodeURIComponent(row.providerSymbol || row.symbol)}`;
     const scoreTone = row.scoreLabel.tone;
     const signals = row.decision.keySignals.length ? row.decision.keySignals : ["No clear signal"];
+    var toneClass = decisionTone(row);
     return `
-      <article class="decision-card ${decisionTone(row)}">
+      <article class="decision-card ${toneClass} gc-card ${gcDecisionTone(row, toneClass)}">
         <div class="decision-card-top">
           <div>
             <a class="decision-symbol asset-link" href="${detailHref}">${escapeHtml(row.displaySymbol || row.symbol)}</a>
@@ -1483,7 +1513,7 @@
             <span>/100</span>
           </div>
         </div>
-        <div class="quality-line">Signal Score · ${escapeHtml(row.scoreLabel.label)} · ${escapeHtml(row.scoreLabel.thai)} <small style="opacity:.7">(เทคนิค — คนละสูตรกับ Accumulation Score)</small></div>
+        <div class="quality-line">Signal Score · ${escapeHtml(row.scoreLabel.label)} · ${escapeHtml(row.scoreLabel.thai)} <small class="ac-quality-note">(เทคนิค — คนละสูตรกับ Accumulation Score)</small></div>
         <p class="decision-reason">${escapeHtml(row.decision.reason)}</p>
         <div class="badge-row">
           ${signals.map((signal) => `<span class="badge ${badgeTone(signal)}">${escapeHtml(signal)}</span>`).join("")}
@@ -1805,14 +1835,14 @@
     back.id = "acAddModal";
     back.className = "ac-modal-back";
     back.innerHTML = `
-      <div class="ac-modal" role="dialog" aria-modal="true">
+      <div class="ac-modal gc-card gc-neutral" role="dialog" aria-modal="true">
         <h3>เพิ่มสินทรัพย์เข้า list</h3>
-        <label>Ticker <input id="acAddTicker" type="text" placeholder="เช่น PLTR, GULF.BK, ETH-USD" autocomplete="off" /></label>
-        <label>ชื่อ (ไม่บังคับ) <input id="acAddName" type="text" placeholder="ชื่อที่อยากให้แสดง" /></label>
+        <label>Ticker <input id="acAddTicker" class="gc-field" type="text" placeholder="เช่น PLTR, GULF.BK, ETH-USD" autocomplete="off" /></label>
+        <label>ชื่อ (ไม่บังคับ) <input id="acAddName" class="gc-field" type="text" placeholder="ชื่อที่อยากให้แสดง" /></label>
         <p class="ac-modal-note">เพิ่มแล้วรายการจะเข้า list ทันที และถูกดึงสัญญาณเมื่อกด Load Latest Data ครั้งถัดไป</p>
         <div class="ac-modal-actions">
-          <button type="button" id="acAddCancel">ยกเลิก</button>
-          <button type="button" id="acAddSave" class="ac-primary">เพิ่ม</button>
+          <button type="button" id="acAddCancel" class="gc-btn gc-btn-ghost">ยกเลิก</button>
+          <button type="button" id="acAddSave" class="ac-primary gc-btn">เพิ่ม</button>
         </div>
         <p class="ac-modal-msg" id="acAddMsg"></p>
       </div>`;

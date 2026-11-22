@@ -137,7 +137,7 @@ t("pm: มูลค่ารวม = 25,000,000 − 4,000,000 + 4,800,000 = 25,8
   P1 && [P1.total, f1 && [f1.gross, f1.invested, f1.investedPct], P1.foreignFromPM]);
 var H1 = mcPm.portfolioSection();
 t("pm: การ์ด 💼 พอร์ตเป็นไง แสดง ฿25,800,000 และบอกว่าหุ้นต่างประเทศมาจาก AI Portfolio Manager (ข้อความไม่มีคำแนะนำซื้อขาย)",
-  digits((/<small>มูลค่ารวม<\/small><strong>([^<]*)<\/strong>/.exec(H1) || ["", ""])[1]) === "25800000" &&
+  digits((/<small>มูลค่ารวม<\/small><strong[^>]*>([^<]*)<\/strong>/.exec(H1) || ["", ""])[1]) === "25800000" &&
   /<span class="mc-sub">[^<]*· หุ้นต่างประเทศจาก AI Portfolio Manager<\/span>/.test(H1) && !ADVISORY.test(H1),
   (/<span class="mc-sub">[^<]*<\/span>/.exec(H1) || [""])[0]);
 t("pm: เอกสารจาก GET สดไม่ถูกแก้ (สำเนาเท่านั้น)", JSON.stringify(mcQp) === mcQpJson);
@@ -154,7 +154,7 @@ var P4 = mcE.quarterlyPortfolio(), H4 = mcE.portfolioSection();
 t("editor: ไม่มี foreignSleeve.cash → 25,000,000 · หุ้นต่างประเทศ 4.0 ล้าน (2 แถวใน Editor) · ไม่มีธง",
   !!P3 && P3.total === 25000000 && byType(P3, "foreign-stock").gross === 4000000 && P3.foreignFromPM === false, P3 && P3.total);
 t("editor: มี cash แต่ holdings ว่าง → 25,000,000 · การ์ดไม่มีป้าย AI Portfolio Manager",
-  !!P4 && P4.total === 25000000 && P4.foreignFromPM === false && H4.indexOf("AI Portfolio Manager") < 0 && digits((/<small>มูลค่ารวม<\/small><strong>([^<]*)<\/strong>/.exec(H4) || ["", ""])[1]) === "25000000",
+  !!P4 && P4.total === 25000000 && P4.foreignFromPM === false && H4.indexOf("AI Portfolio Manager") < 0 && digits((/<small>มูลค่ารวม<\/small><strong[^>]*>([^<]*)<\/strong>/.exec(H4) || ["", ""])[1]) === "25000000",
   P4 && P4.total);
 // ไม่มีโมดูล ForeignSleeve บนหน้า (โหลดไม่สำเร็จ) → พฤติกรรมเดิม ไม่ throw
 var mcNo = sandbox({ qpCache: { data: docOf(600000) }, snapshot: function () { return { portfolioHoldings: { data: clone(HOLD) } }; } });
@@ -164,7 +164,7 @@ t("ไม่มี window.ForeignSleeve → 25,000,000 ตาม Editor (ไม�
 
 // ---------- final fix wave [3]: จำนวนรายการ + คำเตือนกระจุกตัว · [2]: ไม่มีเงินใน title ----------
 // จำนวนรายการ = แถวของ Editor เอง (9 — แบบ editorCount ของ /portfolio) ไม่ใช่ 8 แถวที่วาด (หุ้นต่างประเทศ 2 แถวรวมเป็น 1)
-function countOf(H) { return (/<small>สินทรัพย์<\/small><strong>([^<]*)<\/strong>/.exec(H) || ["", ""])[1]; }
+function countOf(H) { return (/<small>สินทรัพย์<\/small><strong[^>]*>([^<]*)<\/strong>/.exec(H) || ["", ""])[1]; }
 t("pm: สินทรัพย์ 9 รายการ (แถวของ Editor) แม้วาด 8 แถว · editor: 9 รายการเหมือนเดิม",
   P1.count === 9 && P1.rows.length === 8 && countOf(H1) === "9 รายการ" && P3.count === 9 && P3.rows.length === 9 && countOf(H4) === "9 รายการ",
   [P1.count, P1.rows.length, countOf(H1), P3.count, countOf(H4)]);
@@ -228,7 +228,7 @@ t("editor: ไม่มี cash / holdings ว่าง / ไม่มีโม�
 console.log("== ซอร์ส ==");
 t("โค้ดที่เพิ่มไม่มีคำแนะนำซื้อขาย (รวมคอมเมนต์ในฟังก์ชันที่แก้)",
   !ADVISORY.test(grab(MC_SRC, fnRe("quarterlyPortfolio"), "q") + grab(MC_SRC, fnRe("portfolioSection"), "p") + grab(AC_SRC, fnRe("computeQuarterlyBuckets"), "c")));
-t("home.html โหลด mission-control-page.js?v=20261110-mc2-20 (mc2-19: หัวหน้าบอกเมื่อ snapshot บันทึกไม่ลง) · action-center.html โหลด action-center-page.js?v=20261109-zones-15",
-  /\/mission-control-page\.js\?v=20261110-mc2-20"/.test(read("home.html")) && /\/action-center-page\.js\?v=20261109-zones-15"/.test(read("action-center.html")));
+t("home.html โหลด mission-control-page.js?v=20261122-mc2-21 (mc2-21: การ์ดแก้ว glass-cards.css) · action-center.html โหลด action-center-page.js?v=20261122-zones-17 (zones-16: การ์ดแก้ว · zones-17: ถือต่อทางสำรอง = normal)",
+  /\/mission-control-page\.js\?v=20261122-mc2-21"/.test(read("home.html")) && /\/action-center-page\.js\?v=20261122-zones-17"/.test(read("action-center.html")));
 
 finish();

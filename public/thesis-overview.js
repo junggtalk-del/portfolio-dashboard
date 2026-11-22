@@ -39,6 +39,17 @@
     LOW: { key: "LOW", label: "LOW", cls: "tho-p-low" },
   };
   var HEALTH_RANK = { BROKEN: 0, DETERIORATING: 1, WATCH: 2, INSUFFICIENT: 3, INTACT: 4 };
+  // การ์ดแก้ว (glass-cards.css): การ์ด Highlight tone = สุขภาพ thesis ของ IntelligenceEngine (สีไอคอนของสถานะนั้นเอง)
+  //   🟢 INTACT calm · 🟡 WATCH normal · 🟠 DETERIORATING warning · 🔴 BROKEN danger · ⚪ ข้อมูลไม่พอ neutral
+  //   ส่วนอื่น (หัว Overview · Read Next · Top Opportunities · Strong Business · ตารางทั้งหมด) ไม่มีสถานะเดียว → gc-neutral
+  var GC_HEALTH = { INTACT: "gc-calm", WATCH: "gc-normal", DETERIORATING: "gc-warning", BROKEN: "gc-danger" };
+  function gcTone(map, key) { return key != null && Object.prototype.hasOwnProperty.call(map, key) ? map[key] : "gc-neutral"; }
+  // ตารางบนการ์ด: เลื่อนในกล่องของตัวเอง · คีย์บอร์ดเข้าถึงได้
+  function tableWrap(label, tableHtml) {
+    return '<div class="th-table-wrap gc-table-wrap" tabindex="0" role="region" aria-label="' + esc(label) + '">' + tableHtml + "</div>";
+  }
+  // หัวข้อ section อยู่บนหน้า (gc-section-h ตามธีม) + เนื้อหาบนการ์ด
+  function secHead(h2, p) { return '<div class="tho-sec-h gc-section-h"><h2>' + h2 + "</h2><p>" + p + "</p></div>"; }
 
   // ---------------- model ----------------
   function deps(opts) {
@@ -290,18 +301,18 @@
   // ชื่อโซนแบบไทยสั้น ๆ สำหรับตาราง — ล้อคำ thai ที่ PMEngine นิยามไว้
   var ZONE_TH = { A: "โอกาสหายาก", B: "สะสมมีน้ำหนัก", C: "ทยอยสะสม", D: "ยังไม่ใช่จังหวะ", E: "ทบทวนก่อน" };
   function zoneThai(m) { return "โซน " + m.zone + " — " + (ZONE_TH[m.zone] || m.zoneLabel); }
-  function openBtn(t, label) { return '<button type="button" class="tho-open" data-th-ticker="' + esc(t) + '">' + esc(label || "READ THESIS →") + "</button>"; }
+  function openBtn(t, label) { return '<button type="button" class="tho-open gc-btn gc-btn-ghost" data-th-ticker="' + esc(t) + '">' + esc(label || "READ THESIS →") + "</button>"; }
   function healthTxt(m) { return m.healthIcon + " " + esc(m.health); }
 
   // ---------------- render ----------------
   function render(snapshot, opts) {
     var M = computeModel(snapshot, opts);
-    if (!M.available) return '<div class="mc-empty"><strong>ยังแสดง Overview ไม่ได้</strong><br>' + esc(M.reason || "") + "</div>";
+    if (!M.available) return '<div class="mc-empty gc-card gc-neutral"><strong>ยังแสดง Overview ไม่ได้</strong><br>' + esc(M.reason || "") + "</div>";
     var sort = (opts && opts.sort) || null;
 
     // 1) EXECUTIVE HEADER
     var dateTxt = M.loadedAt ? "ณ ข้อมูล " + esc(String(M.loadedAt).slice(0, 10)) : "ยังไม่โหลดราคาสด — กด Load Latest Data เพื่อให้ครบทุกมุม";
-    var h = '<section class="tho-head"><div class="tho-head-main">' +
+    var h = '<section class="tho-head gc-card gc-neutral"><div class="tho-head-main">' +
       "<h1>Investment Thesis Overview</h1>" +
       '<p>AI Stock Intelligence · ' + M.total + " Assets (ไม่รวม QQQM — ETF) · " + dateTxt + "</p></div>" +
       '<div class="tho-counters">' +
@@ -310,12 +321,12 @@
       '<span class="tho-c tho-c-wait">🟠 <b>' + M.counts.wait + "</b> Wait</span>" +
       '<span class="tho-c tho-c-review">🔴 <b>' + M.counts.review + "</b> ต้องทบทวน</span>" +
       "</div>" +
-      '<div class="tho-tools"><button type="button" class="tho-open" data-th-cmp-toggle="1">⇄ เทียบหุ้น</button></div>' +
+      '<div class="tho-tools"><button type="button" class="tho-open gc-btn gc-btn-ghost" data-th-cmp-toggle="1">⇄ เทียบหุ้น</button></div>' +
       "</section>";
 
     // 2) TODAY'S HIGHLIGHTS ⭐ (hero)
     var cards = M.highlights.map(function (m) {
-      return '<article class="tho-card tho-card-' + m.prio.key.toLowerCase() + '">' +
+      return '<article class="tho-card tho-card-' + m.prio.key.toLowerCase() + " gc-card " + gcTone(GC_HEALTH, m.health) + '">' +
         '<div class="tho-card-head"><b class="tho-tk" >' + esc(m.t) + "</b><small>" + esc(m.name) + "</small>" +
         '<span class="tho-score" title="Investment Thesis Score (คนละตัวกับ Accumulation Score)">Thesis ' + (m.thesis == null ? "—" : m.thesis) + '<small>/100</small></span></div>' +
         '<div class="tho-acc">Accumulation Score: <b>' + (m.acc == null ? "—" : m.acc) + "</b> (ตัวเดียวกับหน้า AI Portfolio Manager)</div>" +
@@ -331,7 +342,7 @@
         '<p class="tho-reason">"' + esc(m.reason) + '"</p>' +
         openBtn(m.t) + "</article>";
     }).join("");
-    h += '<section class="tho-sec tho-hero"><h2>⭐ Today’s Highlights</h2><p>ตัวที่สำคัญที่สุดวันนี้ — ทั้งโอกาสและความเสี่ยง (ไม่ใช่แค่คะแนนสูงสุด)</p><div class="tho-cards">' + cards + "</div></section>";
+    h += '<section class="tho-sec tho-hero">' + secHead("⭐ Today’s Highlights", "ตัวที่สำคัญที่สุดวันนี้ — ทั้งโอกาสและความเสี่ยง (ไม่ใช่แค่คะแนนสูงสุด)") + '<div class="tho-cards">' + cards + "</div></section>";
 
     // 3) READ NEXT 📖
     var rn = M.readNext.map(function (m, i) {
@@ -342,7 +353,7 @@
         '<span class="tho-why">"' + esc(m.reason) + '"</span>' +
         '<span class="tho-cta">อ่าน →</span></div>';
     }).join("");
-    h += '<section class="tho-sec"><h2>📖 Read Next</h2><p>ลำดับที่ควรอ่านก่อน — จากพัฒนาการที่สำคัญที่สุด (ไม่ใช่การจัดอันดับซื้อขาย)</p>' + rn + "</section>";
+    h += '<section class="tho-sec">' + secHead("📖 Read Next", "ลำดับที่ควรอ่านก่อน — จากพัฒนาการที่สำคัญที่สุด (ไม่ใช่การจัดอันดับซื้อขาย)") + '<div class="tho-body gc-card gc-neutral">' + rn + "</div></section>";
 
     // 4) TOP OPPORTUNITIES 🔥 — checklist 6 ข้อ เทียบตัวเองล้วน · 10 แถว
     var scHead = SELF_CHECKS.map(function (c) { return "<th>" + esc(c.head) + "</th>"; }).join("");
@@ -372,10 +383,10 @@
       "<li><b>Acc Score / Zone</b> — มุมมองของ AI Portfolio Manager (คงไว้ให้เทียบ — บางตัวผ่านหลายข้อแต่ PM ให้รอ ให้อ่านประกอบกัน)</li>" +
       "<li>✓ = ผ่าน · ○ = ยังไม่ผ่าน · — = วัดไม่ได้ (ไม่นับเป็นตก แต่ทำให้ตัวหารน้อยลง)</li>" +
       "</ul></details>";
-    h += '<section class="tho-sec"><h2>🔥 Top Opportunities</h2><p>ทุกตัวที่ติดตาม · <b>เทียบกับตัวเองล้วน ไม่เทียบกับหุ้นตัวอื่น</b> — ราคาย่อลึกเทียบรอบย่อของตัวเอง · P/E ต่ำกว่าค่ากลางตัวเอง · พื้นฐานไม่เปลี่ยน · รายได้โตดี · story ยังดี · PEG ดี → เรียงตามจำนวนข้อที่ผ่าน · ตัด DETERIORATING/BROKEN ออก — บริบท ไม่ใช่คำแนะนำซื้อขาย</p>' +
-      opStale + opLegend +
-      '<div class="th-table-wrap"><table class="th-table tho-table tho-vr"><thead><tr><th>#</th><th>Ticker</th><th>ผ่าน</th>' + scHead + "<th>Acc Score</th><th>Zone</th></tr></thead><tbody>" +
-      (opRows || '<tr><td colspan="' + (SELF_CHECKS.length + 4) + '">—</td></tr>') + "</tbody></table></div></section>";
+    h += '<section class="tho-sec">' + secHead("🔥 Top Opportunities", "ทุกตัวที่ติดตาม · <b>เทียบกับตัวเองล้วน ไม่เทียบกับหุ้นตัวอื่น</b> — ราคาย่อลึกเทียบรอบย่อของตัวเอง · P/E ต่ำกว่าค่ากลางตัวเอง · พื้นฐานไม่เปลี่ยน · รายได้โตดี · story ยังดี · PEG ดี → เรียงตามจำนวนข้อที่ผ่าน · ตัด DETERIORATING/BROKEN ออก — บริบท ไม่ใช่คำแนะนำซื้อขาย") +
+      '<div class="tho-body gc-card gc-neutral">' + opStale + opLegend +
+      tableWrap("ตาราง Top Opportunities — เลื่อนซ้ายขวาได้", '<table class="th-table tho-table tho-vr gc-table"><thead><tr><th>#</th><th>Ticker</th><th>ผ่าน</th>' + scHead + "<th>Acc Score</th><th>Zone</th></tr></thead><tbody>" +
+      (opRows || '<tr><td colspan="' + (SELF_CHECKS.length + 4) + '">—</td></tr>') + "</tbody></table>") + "</div></section>";
 
     // 6) STRONG BUSINESS · WAIT 💎
     var swRows = M.strongWait.map(function (m) {
@@ -384,8 +395,8 @@
         '<span class="tho-why">ธุรกิจแข็งแรง แต่' + (m.summary === "PRICE_RISK" ? "ราคาตึง (" + veTxt(m) + ")" : "ยังไม่มีจังหวะย่อที่มีนัย" + (m.veClass ? " · " + veTxt(m) : "")) + " — รอได้</span>" +
         '<span class="tho-cta">อ่าน →</span></div>';
     }).join("");
-    h += '<section class="tho-sec"><h2>💎 Strong Business · Wait</h2><p>WAIT ไม่ได้แปลว่าบริษัทแย่ — thesis แข็งแรง แต่จังหวะ/ราคายังไม่เข้าเงื่อนไข</p>' +
-      (swRows || '<div class="th-muted">—</div>') + "</section>";
+    h += '<section class="tho-sec">' + secHead("💎 Strong Business · Wait", "WAIT ไม่ได้แปลว่าบริษัทแย่ — thesis แข็งแรง แต่จังหวะ/ราคายังไม่เข้าเงื่อนไข") +
+      '<div class="tho-body gc-card gc-neutral">' + (swRows || '<div class="th-muted">—</div>') + "</div></section>";
 
     // 8) ALL AI ASSETS (ท้ายสุด + sort ได้)
     // tip = คำอธิบายไทย ใช้เป็น tooltip บนหัวคอลัมน์ และประกอบเป็น legend ใต้ตาราง
@@ -471,9 +482,10 @@
     var allLegend = '<details class="tho-legend"><summary>แต่ละคอลัมน์หมายถึงอะไร</summary><ul>' +
       cols.map(function (c) { return "<li><b>" + esc(c.label) + "</b> — " + esc(c.tip) + "</li>"; }).join("") +
       "</ul></details>";
-    h += '<section class="tho-sec"><h2>📋 หุ้นทั้งหมดที่ติดตาม</h2><p>เรียงตาม<b>ความน่าสนใจในการซื้อ</b> (จำนวนข้อที่ผ่าน checklist 6 ข้อที่วัดเทียบกับตัวหุ้นเอง — เกณฑ์เดียวกับ Top Opportunities) · คลิกหัวคอลัมน์เพื่อเรียงแบบอื่น · คลิกแถวเพื่อเปิด thesis รายตัว · ชี้เมาส์ที่หัวคอลัมน์เพื่อดูคำอธิบาย — บริบท ไม่ใช่คำแนะนำซื้อขาย</p>' + allLegend +
-      '<div class="th-table-wrap"><table class="th-table tho-table"><thead><tr>' + thead + "</tr></thead><tbody>" + tbody + "</tbody></table></div>" +
-      '<div class="th-muted">ที่มา: ThesisEngine · PMEngine (Zone/Acc) · ValuationEngine · IntelligenceEngine — ไม่มีคะแนนใหม่ · ข้อมูลไม่มี = "—" · ไม่ใช่คำแนะนำซื้อขาย</div></section>';
+    h += '<section class="tho-sec">' + secHead("📋 หุ้นทั้งหมดที่ติดตาม", "เรียงตาม<b>ความน่าสนใจในการซื้อ</b> (จำนวนข้อที่ผ่าน checklist 6 ข้อที่วัดเทียบกับตัวหุ้นเอง — เกณฑ์เดียวกับ Top Opportunities) · คลิกหัวคอลัมน์เพื่อเรียงแบบอื่น · คลิกแถวเพื่อเปิด thesis รายตัว · ชี้เมาส์ที่หัวคอลัมน์เพื่อดูคำอธิบาย — บริบท ไม่ใช่คำแนะนำซื้อขาย") +
+      '<div class="tho-body gc-card gc-neutral">' + allLegend +
+      tableWrap("ตารางหุ้นทั้งหมดที่ติดตาม — เลื่อนซ้ายขวาได้", '<table class="th-table tho-table gc-table"><thead><tr>' + thead + "</tr></thead><tbody>" + tbody + "</tbody></table>") +
+      '<div class="th-muted">ที่มา: ThesisEngine · PMEngine (Zone/Acc) · ValuationEngine · IntelligenceEngine — ไม่มีคะแนนใหม่ · ข้อมูลไม่มี = "—" · ไม่ใช่คำแนะนำซื้อขาย</div></div></section>';
 
     return '<div class="tho">' + h + "</div>";
   }

@@ -332,7 +332,8 @@ function sec(id) {
   return h.slice(start, end < 0 ? h.length : end + 10);
 }
 function tileValue(label) {
-  var re = new RegExp('<div class="dj-tile-n">([^<]*)</div><div class="dj-tile-l">' + label + "</div>");
+  // dj-8 (2026-11-22): ตัวเลขกล่องสรุปเป็น gc-num (การ์ดแก้ว) — ยังตรวจเฉพาะตัวเลขที่ไม่ลงสีเหมือนเดิม
+  var re = new RegExp('<div class="dj-tile-n gc-num">([^<]*)</div><div class="dj-tile-l">' + label + "</div>");
   var m = re.exec(sec("djSummary"));
   return m ? m[1] : null;
 }
@@ -632,18 +633,20 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
   // dj-4 (2026-10-29): บันทึกทั้งหมดเป็นรายการแถวย่อ แตะแล้วกางรายละเอียด
   // dj-6 (2026-11-06): รู้จัก entry จากกล่อง Action บนหน้าแรก (ชิปที่มา · ไม่นับในสถิติ · คง haLaunchedAt)
   // dj-7 (2026-11-19): ช่อง "ทำอะไร" = สิ่งที่ทำจริง + การ์ดผลของการทำตามกฎ (โหลด home-action-engine.js เพิ่ม)
-  var want = headRefs(dr).map(function (r) { return r.indexOf("/thai-dr-monitor.css") === 0 ? "/decision-journal.css?v=20261119-dj-7" : r; });
-  t("head = thai-dr-monitor head with the page CSS swapped", headRefs(dj).join("|") === want.join("|"), headRefs(dj));
+  // dj-8 (2026-11-22): journal โหลด glass-cards.css เหมือน thai-dr-monitor → เทียบหัวเข้มเต็มที่ (บังคับด้วยว่าต้องมีไฟล์นั้นในหัว)
+  var djHasGlass = headRefs(dj).some(function (r) { return r.indexOf("/glass-cards.css") === 0; });
+  var want = headRefs(dr).map(function (r) { return r.indexOf("/thai-dr-monitor.css") === 0 ? "/decision-journal.css?v=20261122-dj-8" : r; });
+  t("head = thai-dr-monitor head with the page CSS swapped", djHasGlass && headRefs(dj).join("|") === want.join("|"), headRefs(dj));
   t("title", /<title>Decision Journal · AI Investment Mission Control<\/title>/.test(dj));
   t("nothing after privacy.js in head", /privacy\.js\?v=[^"]+"><\/script>\s*<\/head>/.test(dj));
-  t("body root + loading text", dj.indexOf('<main id="djRoot" class="dj-page"><div class="dj-empty"><strong>กำลังโหลด Decision Journal…</strong></div></main>') >= 0);
+  t("body root + loading text", dj.indexOf('<main id="djRoot" class="dj-page"><div class="dj-empty gc-card gc-neutral"><strong>กำลังโหลด Decision Journal…</strong></div></main>') >= 0);
   t("body scripts exact order and versions", (function () {
     var body = dj.slice(dj.indexOf("<body"));
     var re = /<script src="([^"]+)"/g, m, out = [];
     while ((m = re.exec(body)) !== null) out.push(m[1]);
     return out.join("|") === ["/technical-indicators.js?v=20260617-action-priority", "/decision-journal-engine.js?v=20261030-dj-5",
-      "/home-action-engine.js?v=20261119-ha-2", "/decision-journal-page.js?v=20261119-dj-7", "/big-cache.js?v=20261110-bc-2",
-      "/app-navigation.js?v=20261111-nav-32"].join("|");
+      "/home-action-engine.js?v=20261119-ha-2", "/decision-journal-page.js?v=20261122-dj-9", "/big-cache.js?v=20261110-bc-2",
+      "/app-navigation.js?v=20261122-nav-35"].join("|");
   })());
   t("lang th + viewport", /<html lang="th">/.test(dj) && /name="viewport"[^>]*width=device-width/.test(dj));
 
@@ -662,7 +665,10 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     return all;
   });
   var COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|oklch|oklab|lab|lch)\(/;
-  t("CSS: colour literals only inside --dj-* token blocks", tokenRules.length >= 2 && !COLOR_LITERAL.test(restCss), (COLOR_LITERAL.exec(restCss) || [])[0]);
+  // dj-8 (2026-11-22 · การ์ดแก้ว): เจตนาเดิมคงไว้ — ไม่มีค่าสีกระจัดกระจายในไฟล์ของหน้า · สีบนแก้วของหน้าก็เป็น token (บล็อก .dj-page .gc-card)
+  //   ส่วนสี/ไล่สีของตัวการ์ดมาจาก glass-cards.css (ไม่ใช่ไฟล์นี้)
+  t("CSS: colour literals only inside --dj-* token blocks (on-glass values too)", tokenRules.length >= 3 && !COLOR_LITERAL.test(restCss) &&
+    tokenRules.some(function (r) { return r.sel === ".dj-page .gc-card"; }), (COLOR_LITERAL.exec(restCss) || [])[0]);
   function tokenNames(selRe) {
     var out = {};
     tokenRules.forEach(function (r) { if (selRe.test(r.sel)) r.decls.forEach(function (d) { out[d.split(":")[0].trim()] = 1; }); });
@@ -672,9 +678,13 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
   var lightTok = tokenNames(/^html\[data-theme="light"\] \.dj-page$/);
   var missingLight = darkTok.filter(function (k) { return lightTok.indexOf(k) < 0; });
   t("CSS: the light theme redefines every colour token of the dark default", darkTok.length >= 30 && missingLight.length === 0, missingLight);
-  t("CSS has no decorative gradients", !/gradient\(/.test(cssCode));
+  // dj-8: ไฟล์ของหน้ายังไม่มี gradient ของตัวเอง — ไล่สีของการ์ดแก้วมาจาก glass-cards.css ที่โหลดก่อนไฟล์นี้
+  t("CSS has no decorative gradients of its own (glass washes come from glass-cards.css, loaded first)", !/gradient\(/.test(cssCode) &&
+    dj.indexOf("/glass-cards.css?v=") >= 0 && dj.indexOf("/glass-cards.css?v=") < dj.indexOf("/decision-journal.css?v="));
   t("CSS sets no new font family", !/font-family:\s*(?!inherit|var\(--mc-font\))/.test(cssCode));
   // ตัวขยายสถานะ is-* ใช้ได้เมื่อเกาะกับคลาส dj- (แบบ .aa-status.is-ahead ของโปรเจกต์) — ห้ามยืนเดี่ยว
+  // dj-8 (2026-11-22): อ้างคลาสกลางของการ์ดแก้ว (gc-*) ได้ เฉพาะชื่อที่มีจริงใน glass-cards.css (ปรับแก้วบนหน้านี้) — คลาสของหน้ายังต้องเป็น dj-
+  var gcCss = readPub("glass-cards.css").replace(/\/\*[\s\S]*?\*\//g, "");
   t("CSS class selectors are dj- prefixed", (function () {
     var bad = [], re = /\.([A-Za-z_][\w-]*)/g, m;
     var sel = cssCode.replace(/\{[^}]*\}/g, "{}");
@@ -682,6 +692,7 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
       var name = m[1];
       if (name.indexOf("dj-") === 0) continue;
       if (name.indexOf("is-") === 0 && /\.dj-[\w-]+(\.is-[\w-]+)*$/.test(sel.slice(0, m.index))) continue;
+      if (name.indexOf("gc-") === 0 && new RegExp("\\." + name + "(?![\\w-])").test(gcCss)) continue;
       bad.push(name);
     }
     return bad.length === 0 || (console.error("   non-dj classes: " + bad.join(",")), false);
@@ -770,10 +781,12 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     // nav-28 (2026-11-09): ย้ายกลุ่ม Portfolio ไปต่อท้ายกลุ่ม AI Portfolio Manager
     // nav-29 (2026-11-10): snapshot fallback ไม่ล้มเงียบเมื่อพื้นที่เต็ม + engine เวอร์ชัน BigCache
     // nav-31 (2026-11-11): รวมกลุ่ม AI Portfolio Manager + Portfolio เป็นกลุ่มเดียว "Portfolio"
-    // nav-32 (2026-11-11): กลุ่ม Bitcoin ต่อท้ายกลุ่ม Portfolio
-    t("every HTML that references app-navigation.js uses 20261111-nav-32",
-      navRefs.length >= 19 && navRefs.every(function (f) { return /app-navigation\.js\?v=20261111-nav-32"/.test(readPub(f)) && !/app-navigation\.js\?v=(?!20261111-nav-32")/.test(readPub(f)); }),
-      navRefs.filter(function (f) { return !/app-navigation\.js\?v=20261111-nav-32"/.test(readPub(f)); }));
+    // nav-32 (2026-11-11): กลุ่ม Bitcoin ต่อท้ายกลุ่ม Portfolio · nav-33 (2026-11-21): ensureStylesheet ไม่โหลดซ้ำ + ปิดลิ้นชักเมนู
+    // nav-34 (2026-11-22): ฉีด mission-control-v2.css เวอร์ชัน mcx-12 (การ์ดแก้วของ Home)
+    // nav-35 (2026-11-22): ฉีด mission-control.css เวอร์ชัน mc-11 (ไม่ทาหน้าขาวธีมสว่างบนการ์ดแก้ว · ซ่อน Retry Failed ตอนไม่มีตัวล้มเหลว)
+    t("every HTML that references app-navigation.js uses 20261122-nav-35",
+      navRefs.length >= 19 && navRefs.every(function (f) { return /app-navigation\.js\?v=20261122-nav-35"/.test(readPub(f)) && !/app-navigation\.js\?v=(?!20261122-nav-35")/.test(readPub(f)); }),
+      navRefs.filter(function (f) { return !/app-navigation\.js\?v=20261122-nav-35"/.test(readPub(f)); }));
     t("every HTML that references privacy.js uses 20261025-pv-2",
       pvRefs.length >= 19 && pvRefs.every(function (f) { return /privacy\.js\?v=20261025-pv-2"/.test(readPub(f)) && !/privacy\.js\?v=(?!20261025-pv-2")/.test(readPub(f)); }),
       pvRefs.filter(function (f) { return !/privacy\.js\?v=20261025-pv-2"/.test(readPub(f)); }));
@@ -1990,8 +2003,8 @@ section("review (Task 11)", function () {
     t("review queue lists only due entries", countOf(/data-dj-review="/g) === 1 && /data-dj-review="e_fix1"/.test(html()), reviewIds());
     t("summary says รอทบทวน 1", /รอทบทวน<\/[^>]+>\s*<[^>]+>1/.test(html()) || /รอทบทวน 1/.test(html()));
     t("summary: รอทบทวน 1 on the first tile, and the callout above the tiles links to #djReview",
-      dueTileN() === "1" && sec("djSummary").indexOf('class="dj-due"') >= 0 &&
-      sec("djSummary").indexOf('class="dj-due"') < sec("djSummary").indexOf('class="dj-tiles"') &&
+      dueTileN() === "1" && sec("djSummary").indexOf('class="dj-due gc-card gc-strip gc-warning"') >= 0 &&
+      sec("djSummary").indexOf('class="dj-due gc-card gc-strip gc-warning"') < sec("djSummary").indexOf('class="dj-tiles"') &&
       /<a [^>]*href="#djReview"[^>]*>[\s\S]*รอทบทวน 1 รายการ/.test(sec("djSummary")), entriesSub());
     t("review section visible and the card lives in djReview", !reviewHidden() && /data-dj-review="e_fix1"/.test(sec("djReview")));
     t("review card is not a log card (log still counts 2)", logCount() === 2 && !/data-dj-entry=/.test(reviewCard("e_fix1")));
@@ -2568,7 +2581,7 @@ section("summary strip: ตามกฎ · คาดถูก · ไม้เป
     t("ไม้เปิดอยู่ = 1 (NVDA 10 − 4 = 6)", tileNum("ไม้เปิดอยู่") === "1", tileNum("ไม้เปิดอยู่"));
     // รับรู้ USD: (130 − 100) × 4 − 0 = +120
     t("กำไร/ขาดทุนที่รับรู้ · USD = +$120.00 coloured up", tileNum("กำไร/ขาดทุนที่รับรู้ · USD") === "+$120.00" &&
-      /class="dj-tile-n dj-up"/.test(tileBox("กำไร/ขาดทุนที่รับรู้ · USD")), tileNum("กำไร/ขาดทุนที่รับรู้ · USD"));
+      /class="dj-tile-n dj-up gc-num"/.test(tileBox("กำไร/ขาดทุนที่รับรู้ · USD")), tileNum("กำไร/ขาดทุนที่รับรู้ · USD"));
     t("no THB realized tile when there are no THB trades", tileNum("กำไร/ขาดทุนที่รับรู้ · THB") === null);
     t("entries / trades counters kept", entriesN() === "2" && tradesN() === "2", [entriesN(), entriesSub()]);
     t("tile order: บันทึกทั้งหมด → ตามกฎ → คาดถูก → ไม้เปิดอยู่ → รับรู้", (function () {
@@ -2615,7 +2628,7 @@ section("summary strip: ตามกฎ · คาดถูก · ไม้เป
     var want = Math.floor(b * 100 / 900000);
     t("Thai doc counted in UTF-8 bytes → พื้นที่บันทึกใช้ไปแล้ว " + want + "%", want >= 83 && want < 100 &&
       sec("djSummary").indexOf("พื้นที่บันทึกใช้ไปแล้ว " + want + "%") >= 0, [want, textOf(sec("djSummary")).slice(0, 400)]);
-    t("…warning is amber (warning, not failure)", /<div class="dj-alert is-warn"[^>]*>[\s\S]*?พื้นที่บันทึกใช้ไปแล้ว/.test(sec("djSummary")));
+    t("…warning is amber (warning, not failure)", /<div class="dj-alert is-warn gc-card gc-strip gc-warning"[^>]*>[\s\S]*?พื้นที่บันทึกใช้ไปแล้ว/.test(sec("djSummary")));
     JOURNAL = freshJournal();
     return freshTradesPage();
   });
@@ -2739,7 +2752,7 @@ section("method: stats explained · backup box (Task 13)", function () {
     m.indexOf("±" + D.FLAT_BAND_PCT + "%") >= 0 && m.indexOf("น้อยกว่า " + D.MIN_STAT_N + " รายการ") >= 0);
   t("backup box: export button + file input (data-dj-import), neither is primary",
     /<button[^>]*data-dj-export="1"/.test(m) && /<input[^>]*type="file"[^>]*data-dj-import="1"/.test(m) && !/dj-btn-primary/.test(m));
-  t("file input sits inside a visible label button", /<label class="dj-btn dj-file">[^<]*<input/.test(m));
+  t("file input sits inside a visible label button", /<label class="dj-btn dj-file gc-btn gc-btn-ghost">[^<]*<input/.test(m));
   t("<details> wired for open state", /<details class="dj-method" data-dj-method="1"/.test(m));
   var mNode = nodeOf("data-dj-method", "1");
   if (mNode) mNode.open = true;
@@ -2903,9 +2916,9 @@ section("browser-probe fixes (2026-10-26): mobile width · import copy · disabl
   var busy = sec("djMethod");
   S.saving = was; P.render();
   var idle = sec("djMethod");
-  t("saving: file label looks and announces disabled", /<label class="dj-btn dj-file is-disabled" aria-disabled="true">/.test(busy) &&
+  t("saving: file label looks and announces disabled", /<label class="dj-btn dj-file is-disabled gc-btn gc-btn-ghost" aria-disabled="true">/.test(busy) &&
     /<input[^>]*data-dj-import="1"[^>]*disabled/.test(busy), (/<label class="dj-btn dj-file[^>]*>/.exec(busy) || [""])[0]);
-  t("idle: file label enabled again", /<label class="dj-btn dj-file">/.test(idle) && !/aria-disabled/.test((/<label class="dj-btn dj-file[^>]*>/.exec(idle) || [""])[0]));
+  t("idle: file label enabled again", /<label class="dj-btn dj-file gc-btn gc-btn-ghost">/.test(idle) && !/aria-disabled/.test((/<label class="dj-btn dj-file[^>]*>/.exec(idle) || [""])[0]));
   t("CSS: disabled file label styled", /\.dj-file\.is-disabled\s*\{/.test(cssRaw));
   // จอมือถือ: วันที่ในช่องผลจริงเคยถูกตัดกลางคำ ("ครบ 2026-10-" / "31") เพราะ .dj-hz-s ตัดได้ทุกที่
   t("CSS: .dj-nw keeps a date/price on one line", /\.dj-nw\s*\{[^}]*white-space\s*:\s*nowrap/.test(cssRaw));
@@ -2955,8 +2968,9 @@ section("restyle dj-3: layout · tiles · section icons · steps · colour hooks
     t("two columns: the form column holds djNew · the log column holds djLog then djStats · trades below",
       at.cols >= 0 && at.cols < at.formCol && at.formCol < at.news && at.news < at.logCol && at.logCol < at.log && at.log < at.stats &&
       at.stats < at.trades && h.slice(at.formCol, at.logCol).indexOf('id="djLog"') < 0, at);
+    // dj-8: ส่วนที่เป็นการ์ดทั้งส่วน = การ์ดแก้วใบเดียว (gc-card gc-neutral) — ดู decision-journal-glass-test.js
     t("djNew and djLog are whole-card sections · the summary heading is for screen readers only",
-      /<section id="djNew" class="dj-block is-card"/.test(h) && /<section id="djLog" class="dj-block is-card"/.test(h) &&
+      /<section id="djNew" class="dj-block is-card gc-card gc-neutral"/.test(h) && /<section id="djLog" class="dj-block is-card gc-card gc-neutral"/.test(h) &&
       /<h2 id="djSummaryH" class="dj-sr">ภาพรวม<\/h2>/.test(h));
     var heads = { djReview: "amber", djNew: "green", djLog: "indigo", djStats: "violet", djTrades: "sky", djMethod: "slate" };
     var noIcon = Object.keys(heads).filter(function (id) {
@@ -2966,7 +2980,7 @@ section("restyle dj-3: layout · tiles · section icons · steps · colour hooks
 
     // กล่องสรุป: สีตามภาพ (ม่วงคราม · เขียว · ชมพู · เหลือง · ฟ้า) · ใบแรกเป็นลิงก์ไปบันทึกทั้งหมด
     var sum = sec("djSummary");
-    t("first tile links to the log, with a chevron", /<a class="dj-tile is-link" data-hue="indigo" href="#djLog">/.test(sum) && /class="dj-tile-go"/.test(sum));
+    t("first tile links to the log, with a chevron", /<a class="dj-tile is-link gc-card gc-tile gc-neutral" data-hue="indigo" href="#djLog">/.test(sum) && /class="dj-tile-go"/.test(sum));
     t("tile colours: indigo · green · pink · amber · sky", ["indigo", "green", "pink", "amber", "sky"].every(function (hue) {
       return new RegExp('class="dj-tile[^"]*" data-hue="' + hue + '"').test(sum);
     }));
@@ -3008,7 +3022,7 @@ section("restyle dj-3: layout · tiles · section icons · steps · colour hooks
     t("save row: บันทึก (primary) → ดูว่ากฎบอกอะไร → status, both buttons with an icon", (function () {
       var i = nw.indexOf('class="dj-actions dj-save-row"'), a = nw.indexOf('id="djSaveBtn"'), b = nw.indexOf('id="djPreviewBtn"'), c = nw.indexOf('id="djSaveStatus"');
       return i >= 0 && i < a && a < b && b < c &&
-        /id="djSaveBtn" class="dj-btn dj-btn-primary"[^>]*><svg[^>]*>[\s\S]*?<\/svg><span>บันทึก<\/span>/.test(nw) &&
+        /id="djSaveBtn" class="dj-btn dj-btn-primary gc-btn"[^>]*><svg[^>]*>[\s\S]*?<\/svg><span>บันทึก<\/span>/.test(nw) &&
         /id="djPreviewBtn"[^>]*><svg[^>]*>[\s\S]*?<\/svg><span>ดูว่ากฎบอกอะไร<\/span>/.test(nw);
     })());
 
@@ -3048,10 +3062,14 @@ section("restyle dj-3: layout · tiles · section icons · steps · colour hooks
     t("CSS: no coloured border-left/right above 1px anywhere", !/border-(left|right):\s*[2-9]/.test(css));
     t("CSS: native controls follow the theme (color-scheme)",
       /color-scheme:\s*dark/.test(css) && /html\[data-theme="light"\] \.dj-page\s*\{\s*color-scheme:\s*light/.test(css));
-    t("CSS: light theme puts white digits/icons on the darker ink (step numbers · heading icons · stat icons)",
-      /html\[data-theme="light"\] \.dj-step-n\s*\{\s*background:\s*var\(--dj-i\)/.test(css) &&
-      /html\[data-theme="light"\] \.dj-block-head > \.dj-ico\s*\{\s*background:\s*var\(--dj-i\)/.test(css) &&
-      /html\[data-theme="light"\] \.dj-stat-head > \.dj-ico\s*\{\s*background:\s*var\(--dj-i\)/.test(css));
+    // dj-8 (2026-11-22): เลขขั้น/ไอคอนหัวส่วน/ไอคอนสถิติอยู่บนการ์ดแก้วเสมอ (แก้วเข้มทั้งสองธีม) — เจตนาเดิม "ตัวเลข/ไอคอนอ่านออก"
+    //   = พื้นสีสดทึบ + เส้นเข้ม (--dj-on-s เข้มบนแก้ว) เหมือนกันทั้งสองธีม ไม่มีกฎธีมสว่างทับ
+    t("CSS: step numbers · heading icons · stat icons = solid hue + dark glyph on the glass, same in both themes",
+      /\.dj-step-n\s*\{[^}]*background:\s*var\(--dj-h\);\s*color:\s*var\(--dj-on-s\)/.test(css) &&
+      /\.dj-block-head > \.dj-ico\s*\{[^}]*background:\s*var\(--dj-h\);\s*color:\s*var\(--dj-on-s\)/.test(css) &&
+      /\.dj-stat-head > \.dj-ico\s*\{[^}]*background:\s*var\(--dj-h\);\s*color:\s*var\(--dj-on-s\)/.test(css) &&
+      /\.dj-page \.gc-card\s*\{[^}]*--dj-on-s:\s*#0b1220/.test(css) &&
+      !/html\[data-theme="light"\] \.dj-(step-n|block-head > \.dj-ico|stat-head > \.dj-ico)/.test(css));
     t("CSS: picked chip, search box and new button styled · reduced motion respected",
       /\.dj-chip\.is-on\s*\{/.test(css) && /\.dj-search-input\s*\{/.test(css) && /\.dj-new-btn\s*\{/.test(css) && /prefers-reduced-motion:\s*reduce/.test(css));
     t("no NaN/undefined, advisory words or money in titles after the restyle", !LEAK.test(html()) && !ADVISORY_TH.test(html()) &&
@@ -3238,8 +3256,8 @@ section("home-action entries on the journal (dj-6)", function () {
     t("home-action entries never enter the review queue", !/data-dj-review="ha_/.test(html()));
     t("…while the manual entry that is due is in the queue (the queue really rendered)", reviewIds().join() === "e_fix1", reviewIds());
     t("delete control exists for the home-action entry", /data-dj-delete="ha_NVDA_2_sell_2026-10-28"/.test(html()) || /data-dj-del[^=]*="ha_NVDA_2_sell_2026-10-28"/.test(html()));
-    // ตามเวอร์ชันปัจจุบัน (dj-6 → dj-7 ตอนเพิ่มการ์ดผลของการทำตามกฎ 2026-11-19)
-    t("decision-journal.html bumped and page is ES5", /decision-journal-page\.js\?v=20261119-dj-7/.test(DJ_HTML) && es5ok("decision-journal-page.js"));
+    // ตามเวอร์ชันปัจจุบัน (dj-6 → dj-7 ตอนเพิ่มการ์ดผลของการทำตามกฎ 2026-11-19 → dj-8 การ์ดแก้ว 2026-11-22)
+    t("decision-journal.html bumped and page is ES5", /decision-journal-page\.js\?v=20261122-dj-9/.test(DJ_HTML) && es5ok("decision-journal-page.js"));
 
     // แถว: วันที่ · สัญลักษณ์ · ฝั่งที่กฎบอก · ชิปสีตามคำตอบ (แทนป้ายตามกฎ/แหกกฎ) · บรรทัดย่อยจาก context.event + ราคา
     var r = haRow();
@@ -3282,7 +3300,7 @@ section("home-action entries on the journal (dj-6)", function () {
     t("unanswered → slate chip", /<span class="dj-ha-chip" data-hue="slate">จากกล่อง Action · กฎ 2 · ไม่ได้ตอบ<\/span>/.test(r), textOf(r));
     var css = readPub("decision-journal.css").replace(/\/\*[\s\S]*?\*\//g, "");
     t("CSS: .dj-ha-chip styled from the hue tokens and decision-journal.css bumped",
-      /\.dj-ha-chip\s*\{[^}]*var\(--dj-i\)/.test(css) && /decision-journal\.css\?v=20261119-dj-7/.test(DJ_HTML));
+      /\.dj-ha-chip\s*\{[^}]*var\(--dj-i\)/.test(css) && /decision-journal\.css\?v=20261122-dj-8/.test(DJ_HTML));
 
     // บันทึกปกติจากหน้านี้ (GET สด → merge → PUT): haLaunchedAt + entry ของกล่อง Action ต้องไปครบ
     JOURNAL = haJournal("done", 91);
@@ -3923,8 +3941,8 @@ section("home-action outcome card (dj-7)", function () {
       Object.keys(used).length >= 6 && noRule.length === 0 && bodies.length >= 6 && colourDecls.length >= 3 && badColour.length === 0 &&
       /<div class="dj-table-wrap"><table class="dj-table dj-hao-table">/.test(haoCard()) &&
       /\.dj-hao-table th,\s*\.dj-hao-table td\s*\{[^}]*white-space:\s*normal/.test(css) && /\.dj-hao-[\w-]+[^{]*\{/.test(mob) &&
-      /decision-journal\.css\?v=20261119-dj-7/.test(DJ_HTML), [Object.keys(used), noRule, badColour, mob.length]);
-    t("…decision-journal-page.js bumped to dj-7 and still ES5", /decision-journal-page\.js\?v=20261119-dj-7/.test(DJ_HTML) && es5ok("decision-journal-page.js"));
+      /decision-journal\.css\?v=20261122-dj-8/.test(DJ_HTML), [Object.keys(used), noRule, badColour, mob.length]);
+    t("…decision-journal-page.js bumped (dj-9) and still ES5", /decision-journal-page\.js\?v=20261122-dj-9/.test(DJ_HTML) && es5ok("decision-journal-page.js"));
     JOURNAL = freshJournal();
     return freshLogPage();
   }).then(null, function (e) { privacyLocked = false; failGet = null; doc.activeElement = null; JOURNAL = freshJournal(); throw e; });
@@ -3975,7 +3993,7 @@ function haoIAmts(h) {
   return out;
 }
 function haoMoreIn(h) {
-  var m = /<button type="button" class="dj-btn dj-hao-more" data-dj-hao-more="1"[^>]*>([^<]*)<\/button>/.exec(h);
+  var m = /<button type="button" class="dj-btn dj-hao-more gc-btn gc-btn-ghost" data-dj-hao-more="1"[^>]*>([^<]*)<\/button>/.exec(h);
   return m ? m[1] : null;
 }
 

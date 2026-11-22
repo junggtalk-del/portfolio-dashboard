@@ -322,15 +322,21 @@
   }
 
   // ---------------------------------------------------------------- view
+  // การ์ดแก้ว (glass-cards.css): section.ac-card = ตัวห่อบนพื้นหน้า · ข้างในมีการ์ดแก้วสองใบที่ไม่ซ้อนกัน
+  //   .ac-main (หัว · ช่องภาพรวม · กราฟแท่ง · ฟอร์ม · สถานะบันทึก) → gc-neutral (ไม่มีสถานะ · สีแท่งมีความหมาย คงเดิม)
+  //   .ac-cash (แถบเงินสด อยู่ใน data-ac-cash-wrap — วาดใหม่ขณะพิมพ์พร้อม tone) → cashBand.status
+  //     within → calm (กรอบที่ตั้งไว้ = แถบเขียว) · below / above → warning · ล็อกอยู่ / ไม่มีสถานะ → neutral
+  //     (ตอนล็อกสีบอกสถานะ = บอกยอดเงินสดได้ แบบเดียวกับจุด "ตอนนี้" และคำสถานะที่ไม่วาด)
+  var GC_CASH_TONE = { within: "gc-calm", below: "gc-warning", above: "gc-warning" };
   function messageCard(text) {
-    return '<section class="ac-card"><p class="ac-empty">' + esc(text) + "</p></section>";
+    return '<section class="ac-card"><div class="ac-main gc-card gc-neutral"><p class="ac-empty">' + esc(text) + "</p></div></section>";
   }
 
   function headHtml(M) {
     var sum = "ความมั่งคั่งรวม " + fmtM(M.wealth) + (M.quarterKey ? " · " + M.quarterKey : "");
     return '<div class="ac-head"><div class="ac-head-t"><h2 class="ac-title">Asset allocation</h2>' +
       '<span class="ac-head-sum">' + esc(sum) + "</span></div>" +
-      '<button type="button" class="ac-settings" data-ac-settings="1" aria-expanded="' + (state.form ? "true" : "false") + '">ตั้งกรอบเงินสด</button></div>' +
+      '<button type="button" class="ac-settings gc-btn gc-btn-ghost" data-ac-settings="1" aria-expanded="' + (state.form ? "true" : "false") + '">ตั้งกรอบเงินสด</button></div>' +
       '<p class="ac-sub">' + esc(fromPM() ? SUB_PM : SUB) + "</p>";
   }
 
@@ -463,7 +469,8 @@
     var edge = nowPct < 15 ? " is-left" : (nowPct > 85 ? " is-right" : "");
     var marker = locked ? "" :
       '<i class="ac-now' + edge + '" data-ac-now="' + cssPct(nowPct) + '" style="left:' + cssPct(nowPct) + '%"><span>' + esc("ตอนนี้ " + fmtM(B.now)) + "</span></i>";
-    return '<div class="ac-cash" data-ac-cash="' + esc(locked ? "locked" : (B.status || "")) + '">' +
+    var tone = locked ? "gc-neutral" : (GC_CASH_TONE[B.status] || "gc-neutral");
+    return '<div class="ac-cash gc-card ' + tone + '" data-ac-cash="' + esc(locked ? "locked" : (B.status || "")) + '">' +
       '<div class="ac-cash-head"><span class="ac-cash-now">' + esc(head) + "</span>" +
         '<span class="ac-cash-range">' + esc("กรอบที่ตั้งไว้ " + minM + "–" + maxM + " ล้าน") + "</span></div>" +
       '<div class="ac-band" data-ac-band>' +
@@ -485,7 +492,7 @@
     var dis = state.saveState === "saving" ? " disabled" : "";
     function field(name, label) {
       return '<label class="ac-form-f"><span>' + esc(label) + "</span>" +
-        '<input type="number" name="' + name + '" step="0.1" min="0" inputmode="decimal" value="' + esc(f[name]) + '"' +
+        '<input class="gc-field" type="number" name="' + name + '" step="0.1" min="0" inputmode="decimal" value="' + esc(f[name]) + '"' +
         (locked ? ' placeholder="' + esc(LOCKED_PH) + '"' : "") + "></label>";
     }
     var hint = locked
@@ -496,8 +503,8 @@
       '<div class="ac-form-row">' +
         field("min", "ค่าต่ำ") + '<span class="ac-form-dash" aria-hidden="true">–</span>' + field("max", "ค่าสูง") +
         '<div class="ac-form-btns">' +
-          '<button type="submit" class="ac-btn is-primary" data-ac-save="1"' + dis + ">บันทึก</button>" +
-          '<button type="button" class="ac-btn" data-ac-cancel="1">ยกเลิก</button>' +
+          '<button type="submit" class="ac-btn is-primary gc-btn" data-ac-save="1"' + dis + ">บันทึก</button>" +
+          '<button type="button" class="ac-btn gc-btn gc-btn-ghost" data-ac-cancel="1">ยกเลิก</button>' +
         "</div>" +
       "</div>" +
       '<p class="ac-form-hint">' + esc(hint) + "</p>" +
@@ -513,7 +520,7 @@
     else if (s === "saved") { cls += " is-ok"; parts.push("<span>บันทึกกรอบเงินสดแล้ว</span>"); }
     if (state.draft && state.draftNotice) {
       parts.push('<span class="ac-status-draft">' + esc(state.draftNotice + (s === "error" ? " (เก็บไว้ในเครื่องนี้)" : "")) + "</span>");
-      if (s === "error") parts.push('<button type="button" class="ac-btn" data-ac-retry="1">ลองบันทึกอีกครั้ง</button>');
+      if (s === "error") parts.push('<button type="button" class="ac-btn gc-btn gc-btn-ghost" data-ac-retry="1">ลองบันทึกอีกครั้ง</button>');
     }
     if (!parts.length) return "";
     return '<div class="' + cls + '" data-ac-status="' + esc(s) + '" role="status">' + parts.join("") + "</div>";
@@ -543,8 +550,10 @@
     if (!m.M) return messageCard(m.msg);
     var M = m.M;
     return '<section class="ac-card" data-ac-card>' +
-      headHtml(M) + kpisHtml(M) + chartHtml(M) +
-      (state.form ? formHtml() : "") + statusHtml() +
+      '<div class="ac-main gc-card gc-neutral">' +
+        headHtml(M) + kpisHtml(M) + chartHtml(M) +
+        (state.form ? formHtml() : "") + statusHtml() +
+      "</div>" +
       '<div class="ac-cash-wrap" data-ac-cash-wrap="1">' + cashHtml(M) + "</div>" +
       '<p class="ac-foot">' + esc(FOOT + (fromPM() ? FOOT_PM : "")) + "</p>" +
       "</section>";

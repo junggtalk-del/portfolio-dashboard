@@ -1,6 +1,11 @@
 /* ============================================================
    Portfolio Position — facts-only portfolio view.
    Reuses mission-control theme tokens (--mc-*) + --pp-* accents.
+   Glass cards (glass-cards.css gc-2, loaded before this file): every card on #ppRoot and #acRoot is a .gc-card
+   with ONE tone from a status the page already computes (portfolio-position-page.js wealthTone ·
+   allocation-card-page.js GC_CASH_TONE). Outside a card the --mc-* text tokens follow the theme (--app-*);
+   inside a card they become glass ink (--gc-ink / --gc-ink-2) — token map below. Status colours on the
+   glass are lifted to luminance ≥ 0.70 (≥ 4.5:1 on every tone).
    ============================================================ */
 :root {
   --pp-bull: #34d399;
@@ -17,23 +22,62 @@
 .pp-muted { color: var(--mc-muted); font-size: 12px; }
 .pp-up { color: var(--pp-bull); } .pp-down { color: var(--pp-bear); }
 
-/* -------------------------------------------------- hero / summary */
-.pp-hero { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card-glow), var(--mc-card); margin-bottom: 18px; }
-.pp-hero-inner { padding: 20px 24px; }
+/* -------------------------------------------------- glass (glass-cards.css) */
+/* on the page (outside a card) text follows the theme — --mc-muted (#64748b) is under 4.5:1 on both page backgrounds */
+.pp-page,
+.ac-embedded { --mc-text: var(--app-text); --mc-text-2: var(--app-text-2); --mc-muted: var(--app-text-2); }
+/* inside a glass card the shared tokens become glass ink (both themes) · status colours lifted for the glass
+   · the allocation card's bar colours keep their dark-theme values: the glass is dark in both site themes */
+.pp-page .gc-card,
+.ac-embedded .gc-card {
+  --mc-text: var(--gc-ink);
+  --mc-text-2: var(--gc-ink);
+  --mc-muted: var(--gc-ink-2);
+  --mc-faint: var(--gc-ink-2);
+  --mc-border: var(--gc-line);
+  --mc-border-active: var(--gc-rim);
+  --mc-card: var(--gc-well);
+  --mc-amber: #ffd98a;
+  --pp-bull: #7cf5c6;
+  --pp-mid: #ffd98a;
+  --pp-bear: #ffcfdb;
+  --pp-chip-bg: var(--gc-well);
+  --pp-track: rgba(255, 255, 255, 0.16);
+  --ac-held-bg: linear-gradient(180deg, #1f5f4c, #17493b);
+  --ac-held-bd: #2a7a62;
+  --ac-held-tx: #ffffff;
+  --ac-held-sub: #bfe8d9;
+  --ac-wait-bd: #4a5a80;
+  --ac-wait-stripe: rgba(148, 163, 184, 0.14);
+  --ac-band-ok: rgba(124, 245, 198, 0.2);
+  --ac-pill-shadow: 0 2px 8px rgba(2, 6, 23, 0.28);
+}
+/* a card whose content mixes text runs and inline tags stays block (gc-card is a flex column) */
+.pp-page .mc-empty.gc-card,
+.ac-embedded .mc-empty.gc-card { display: block; }
+.pp-page .gc-card a { color: var(--gc-ink); }
+
+/* -------------------------------------------------- hero / summary
+   .pp-hero = wrapper on the page: heading (gc-section-h) · three glass tiles (.pp-stat) · bar tile (.pp-invstrip)
+   empty state: .pp-hero-inner is the (neutral) glass card */
+.pp-hero { margin-bottom: 18px; }
+.pp-hero-inner { display: flex; flex-direction: column; gap: 12px; }
+.pp-hero-inner.gc-card { display: block; padding: 20px 24px; }
 .pp-hero-emoji { font-size: 40px; text-align: center; }
 .pp-title { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
 .pp-sub { margin: 4px 0 0; color: var(--mc-text-2); font-size: 13px; }
 .pp-empty-msg { margin: 12px 0 0; color: var(--mc-text-2); font-size: 13.5px; line-height: 1.7; max-width: 620px; }
-.pp-hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
-.pp-stats { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
-.pp-stat { flex: 1; min-width: 150px; border: 1px solid var(--mc-border); border-radius: 14px; background: var(--pp-chip-bg); padding: 12px 14px; }
-.pp-stat-n { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.pp-stat-l { font-size: 11.5px; color: var(--mc-muted); margin-top: 2px; font-weight: 600; }
-.pp-stat-s { font-size: 11.5px; margin-top: 4px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
+.pp-hero-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: 0 4px; }
+.pp-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+/* ความมั่งคั่งรวม (with the 3-line growth block) gets the most room; at ≤ ~500px it takes a row of its own */
+.pp-stat { flex: 1 1 150px; min-width: 0; }
+.pp-stat:first-child { flex: 2 1 320px; }
+.pp-stat-l { font-size: 11.5px; color: var(--mc-muted); font-weight: 600; }
+.pp-stat-s { font-size: 11.5px; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
 /* ผลตอบแทนไตรมาสนี้: รวมเงินเติม · เงินเติม · ไม่รวมเงินเติม — แสดงคู่กันเสมอ */
-.pp-grow { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 3px 10px; align-items: baseline; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.pp-grow { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 3px 10px; align-items: baseline; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .pp-grow-k { font-size: 11.5px; font-weight: 600; color: var(--mc-muted); white-space: nowrap; }
-.pp-grow-v { font-size: 13px; font-weight: 800; white-space: nowrap; }
+.pp-grow-v { font-size: 13px; font-weight: 700; white-space: nowrap; }
 .pp-grow-n { font-size: 11px; color: var(--mc-text-2); min-width: 0; }
 .pp-nw { white-space: nowrap; }
 .pp-grow-st { white-space: nowrap; font-weight: 800; }
@@ -45,25 +89,26 @@
 .pp-src { color: var(--mc-muted); }
 /* คำเตือนใต้ตัวเลข: ไตรมาสไม่มี/มีบางส่วนของข้อมูลเงินเติม — อำพัน ไม่ใช่แดง เพราะไม่ใช่ความผิดพลาด แต่เป็นข้อมูลที่ขาด */
 .pp-warn { color: var(--mc-amber, #fbbf24); }
-.pp-invbar { height: 12px; border-radius: 7px; background: var(--pp-track); overflow: hidden; margin-top: 16px; }
-.pp-invbar i { display: block; height: 100%; background: linear-gradient(90deg, #38bdf8, var(--pp-bull)); border-radius: 7px; }
-.pp-invbar-cap { display: flex; justify-content: space-between; font-size: 11px; color: var(--mc-muted); margin-top: 5px; }
+/* แถบลงทุน/เงินสด (การ์ด .pp-invstrip): สัดส่วนล้วน สีเดิมฟ้า→เขียวไม่ได้มีความหมาย → เส้นขาวแบบ Macro */
+.pp-invbar { height: 12px; border-radius: 999px; background: var(--pp-track); overflow: hidden; }
+.pp-invbar i { display: block; height: 100%; background: linear-gradient(90deg, rgba(255, 255, 255, 0.55), #fff); border-radius: 999px; box-shadow: 0 0 12px rgba(255, 255, 255, 0.35); }
+.pp-invbar-cap { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; color: var(--mc-muted); }
 
 .pp-banner { border: 1px solid var(--mc-border-warning); background: rgba(245, 158, 11, 0.08); color: var(--mc-text); border-radius: 12px; padding: 11px 14px; font-size: 12.5px; margin-bottom: 16px; }
 
 /* -------------------------------------------------- blocks */
 .pp-block { margin-bottom: 20px; }
-.pp-block-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.pp-block-head { display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .pp-block-head h2 { margin: 0; font-size: 16.5px; font-weight: 800; }
 .pp-block-sub { font-size: 12px; color: var(--mc-muted); }
 
-/* allocation bar */
+/* allocation bar (การ์ด .pp-block) — สีแต่ละส่วนเป็นสีประจำประเภทสินทรัพย์ คงเดิม */
 .pp-alloc { display: flex; height: 26px; border-radius: 9px; overflow: hidden; border: 1px solid var(--mc-border); }
 .pp-alloc i { display: block; height: 100%; min-width: 2px; }
-.pp-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 9px; font-size: 12px; color: var(--mc-text-2); }
+.pp-legend { display: flex; gap: 6px 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--mc-muted); }
 .pp-leg { display: inline-flex; align-items: center; gap: 6px; }
 .pp-leg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-.pp-leg b { font-variant-numeric: tabular-nums; }
+.pp-leg b { color: var(--mc-text); font-variant-numeric: tabular-nums; }
 
 /* -------------------------------------------------- bucket cards */
 .pp-board { display: flex; flex-direction: column; gap: 12px; }
@@ -168,34 +213,20 @@
 /* ============================================================
    Asset allocation card (.ac-*) — allocation-card-page.js วาดใน #acRoot
    #acRoot เป็นพี่น้องของ #ppRoot (ไม่ใช่ลูก) จึงไม่ได้สี/box-sizing จาก .pp-page — ตั้งเองที่นี่
-   ใช้ token ของ mission-control (--mc-*) + --pp-* ของไฟล์นี้ · สีแท่งเป็น --ac-* แยกธีม
+   ใช้ token ของ mission-control (--mc-*) + --pp-* ของไฟล์นี้ · สีแท่งเป็น --ac-* (ตั้งในโทเคนของการ์ดแก้วด้านบน:
+   ค่าโทนมืดเดิมทั้งสองธีม เพราะการ์ดแก้วมืดเสมอ — ค่าโทนสว่างของธีมสว่างถูกถอดออกพร้อมผิวการ์ดเดิม)
+   section.ac-card = ตัวห่อบนพื้นหน้า: การ์ดแก้ว .ac-main (หัว · ช่องภาพรวม · กราฟ · ฟอร์ม · สถานะ) + การ์ดแก้ว .ac-cash
+   (แถบเงินสด สีตามสถานะ) + คำอธิบาย .ac-foot บนพื้นหน้า
    ============================================================ */
-:root {
-  --ac-held-bg: linear-gradient(180deg, #1f5f4c, #17493b);
-  --ac-held-bd: #2a7a62;
-  --ac-held-tx: #ffffff;
-  --ac-held-sub: #bfe8d9;
-  --ac-wait-bd: #4a5a80;
-  --ac-wait-stripe: rgba(148, 163, 184, 0.14);
-  --ac-band-ok: rgba(52, 211, 153, 0.16);
-  --ac-pill-shadow: 0 2px 8px rgba(2, 6, 23, 0.28);
-}
-[data-theme="light"] {
-  --ac-held-bg: linear-gradient(180deg, #c9eee0, #b3e3d1);
-  --ac-held-bd: #5fb79a;
-  --ac-held-tx: #0b3b2e;
-  --ac-held-sub: #2f6b58;
-  --ac-wait-bd: #94a3b8;
-  --ac-wait-stripe: rgba(100, 116, 139, 0.14);
-  --ac-band-ok: rgba(16, 185, 129, 0.14);
-  --ac-pill-shadow: 0 1px 4px rgba(15, 23, 42, 0.10);
-}
 
 /* min-width: 0 — .mc-content เป็น flex column ไม่งั้นการ์ดดันหน้ากว้างบนจอแคบ (แบบ .aa-embedded) */
 .ac-embedded { min-width: 0; margin: 0; padding: 0; color: var(--mc-text); }
 .ac-embedded * { box-sizing: border-box; }
 
-.ac-card { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card-glow), var(--mc-card); padding: 18px 22px 16px; color: var(--mc-text); }
+.ac-card { display: flex; flex-direction: column; gap: 12px; }
+/* padding = ของการ์ดเดิม: ตัวเลขกำกับความกว้างของกราฟ/ป้าย (ป้ายในแท่ง · ป้ายลอย) วัดใน Chrome ด้วยขนาดนี้ · block ไม่ใช่ flex
+   (ระยะห่างระหว่างหัว ช่องภาพรวม และกราฟเหมือนเดิม) */
+.ac-main { display: block; padding: 18px 22px 16px; }
 .ac-empty { margin: 0; padding: 6px 0; text-align: center; font-size: 13px; color: var(--mc-text-2); }
 
 /* หัว */
@@ -203,15 +234,16 @@
 .ac-head-t { display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; min-width: 0; }
 .ac-title { margin: 0; font-size: 16.5px; font-weight: 800; letter-spacing: -0.01em; }
 .ac-head-sum { font-size: 13px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
-.ac-settings { border: 1px solid var(--mc-border); background: var(--pp-chip-bg); color: var(--mc-text-2); font-family: inherit; font-size: 12px; font-weight: 700; border-radius: 8px; padding: 5px 11px; cursor: pointer; white-space: nowrap; }
-.ac-settings:hover { color: var(--mc-text); border-color: var(--mc-border-active); }
+/* ปุ่ม = gc-btn gc-btn-ghost (หน้าตาจาก glass-cards.css) */
+.ac-settings { flex: 0 0 auto; }
 .ac-sub { margin: 4px 0 0; font-size: 12px; color: var(--mc-muted); line-height: 1.55; }
 
-/* ช่องภาพรวม 2 ช่อง — ยอดเงินล้วน ไม่มีแถบสี */
+/* ช่องภาพรวม 2 ช่อง — ยอดเงินล้วน ไม่มีแถบสี · หลุมในการ์ดแก้ว */
 .ac-kpis { display: grid; grid-template-columns: 1fr 1.7fr; gap: 10px; margin-top: 14px; }
-.ac-kpi { min-width: 0; border: 1px solid var(--mc-border); border-radius: 12px; background: var(--pp-chip-bg); padding: 10px 13px; }
+.ac-kpi { min-width: 0; border-radius: 16px; background: var(--gc-well); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); padding: 10px 13px; }
 .ac-kpi-l { font-size: 11.5px; font-weight: 600; color: var(--mc-muted); }
-.ac-kpi-v { margin-top: 2px; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+/* ตัวเลขส่วนหัวของการ์ด: Inter 700 tabular (แบบ gc-num) — ยอดกับ "% ของความมั่งคั่ง" อยู่ในกล่องเดียวกัน จึงไม่ใช้คลาส gc-num (nowrap) */
+.ac-kpi-v { margin-top: 2px; font-family: var(--gc-num-font); font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: #fff; font-variant-numeric: tabular-nums; }
 .ac-kpi-p { font-size: 12px; font-weight: 600; color: var(--mc-text-2); }
 .ac-kpi-d { margin-top: 3px; font-size: 12px; color: var(--mc-text-2); line-height: 1.5; font-variant-numeric: tabular-nums; }
 
@@ -246,7 +278,8 @@
 .ac-float { position: absolute; left: -12%; right: -12%; bottom: calc(100% + 5px); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 /* ความสูง: รอซื้อ ขอบ 2×2 + padding 3×2 + 16 + 14 = 40 (จอ 601–1239px +16 = 56 = PILL_PX.wait.d) · ลงทุน ขอบ 1×2 + padding 4×2 + 17 + 14 = 41 */
 .ac-pill { padding: 3px 9px; border-radius: 8px; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; box-shadow: var(--ac-pill-shadow); }
-.ac-pill.is-wait { border: 2px dashed var(--ac-wait-bd); background: linear-gradient(var(--mc-card), var(--mc-card)), var(--mc-bg); color: var(--mc-text); }
+/* พื้นทึบสีเข้มของแก้ว (ไม่เห็นเส้นกริดลอดผ่าน) — การ์ดแก้วมืดทั้งสองธีม */
+.ac-pill.is-wait { border: 2px dashed var(--ac-wait-bd); background: #14141c; color: var(--mc-text); }
 .ac-pill.is-wait .ac-seg-pct { color: var(--mc-text-2); }
 .ac-pill.is-held { border: 1px solid var(--ac-held-bd); padding: 4px 10px; background: var(--ac-held-bg); color: var(--ac-held-tx); }
 .ac-pill.is-held .ac-seg-pct { color: var(--ac-held-sub); }
@@ -269,15 +302,17 @@
   .ac-lbl { left: -2%; right: -2%; }
 }
 
-/* แถบเงินสด: เงินสดใน Editor เทียบกรอบ ต่ำ–สูง ของผู้ใช้ */
-.ac-cash { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--pp-chip-bg); padding: 12px 14px; }
+/* แถบเงินสด: เงินสดใน Editor เทียบกรอบ ต่ำ–สูง ของผู้ใช้ — การ์ดแก้วของตัวเอง สีตามสถานะ (ในกรอบ · ต่ำ/สูงกว่ากรอบ · ล็อกอยู่)
+   block (ไม่ใช่ flex) · padding ข้าง 22px = ที่ให้ป้ายขีดสุดท้าย (translateX −50%) ไม่โดนตัดขอบการ์ด */
+.ac-cash { display: block; padding: 16px 22px 14px; }
 .ac-cash-head { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 14px; flex-wrap: wrap; font-size: 12.5px; }
 .ac-cash-now { font-weight: 700; color: var(--mc-text); font-variant-numeric: tabular-nums; }
 .ac-cash-range { color: var(--mc-muted); }
 .ac-band { position: relative; height: 22px; margin: 26px 0 28px; border-radius: 6px; background: var(--pp-track); }
 .ac-band-ok { position: absolute; top: 0; bottom: 0; background: var(--ac-band-ok); border-left: 2px solid var(--pp-bull); border-right: 2px solid var(--pp-bull); }
-.ac-band [data-ac-now] { position: absolute; top: -6px; width: 2px; height: 34px; margin-left: -1px; background: var(--mc-amber); font-style: normal; }
-.ac-band [data-ac-now] span { position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 700; color: var(--mc-amber); white-space: nowrap; }
+/* จุด "ตอนนี้" = เหลือง signal ตัวเดียวบนการ์ด (แบบ Macro) */
+.ac-band [data-ac-now] { position: absolute; top: -6px; width: 2px; height: 34px; margin-left: -1px; background: var(--gc-signal); box-shadow: 0 0 10px rgba(255, 225, 77, 0.6); font-style: normal; }
+.ac-band [data-ac-now] span { position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 700; color: var(--gc-signal); white-space: nowrap; }
 /* จุดใกล้ขอบ: ป้ายชิดด้านใน ไม่ล้นการ์ด */
 .ac-band .ac-now.is-left span { left: -1px; transform: none; }
 .ac-band .ac-now.is-right span { left: auto; right: -1px; transform: none; }
@@ -285,26 +320,25 @@
 .ac-band-t.is-zero { transform: none; }
 /* กล่องกติกา 2 ช่อง — ทวนกติกาของผู้ใช้ สีที่ขอบซ้าย (bear แดง · bull เขียว) */
 .ac-rules { display: flex; gap: 10px; }
-.ac-rule { flex: 1; min-width: 0; margin: 0; padding: 8px 10px; border: 1px solid var(--mc-border); border-left: 3px solid var(--mc-border); border-radius: 8px; font-size: 12px; line-height: 1.5; color: var(--mc-text-2); }
-.ac-rule.is-bear { border-left-color: var(--pp-bear); }
-.ac-rule.is-bull { border-left-color: var(--pp-bull); }
+/* หลุมในการ์ด · ขอบซ้ายสีตามกติกา (bear แดง · bull เขียว — สีมีความหมาย คงไว้ ใช้ค่าเข้มพอบนแก้ว) */
+.ac-rule { flex: 1; min-width: 0; margin: 0; padding: 8px 10px; border-left: 3px solid var(--mc-border); border-radius: 10px; background: rgba(0, 0, 0, 0.22); font-size: 12px; line-height: 1.5; color: var(--mc-text-2); }
+.ac-rule.is-bear { border-left-color: #ff5c8a; }
+.ac-rule.is-bull { border-left-color: #34d399; }
 
-.ac-foot { margin: 10px 0 0; font-size: 11px; line-height: 1.6; color: var(--mc-muted); }
+/* คำอธิบายใต้การ์ด — อยู่บนพื้นหน้า (--mc-muted ของ .ac-embedded = --app-text-2 ตามธีม) */
+.ac-foot { margin: 0 4px; font-size: 11px; line-height: 1.6; color: var(--mc-muted); }
 
-/* ฟอร์มตั้งกรอบเงินสด (ปุ่ม ตั้งกรอบเงินสด) — อยู่เหนือแถบเงินสด ให้เห็นตัวอย่างขณะพิมพ์ */
-.ac-form { margin: 0 0 10px; padding: 12px 14px; border: 1px solid var(--mc-border-active); border-radius: 12px; background: var(--pp-chip-bg); }
+/* ฟอร์มตั้งกรอบเงินสด (ปุ่ม ตั้งกรอบเงินสด) — ท้ายการ์ดหลัก เหนือการ์ดแถบเงินสด ให้เห็นตัวอย่างขณะพิมพ์ · หลุมในการ์ด
+   ช่อง = gc-field · บันทึก = gc-btn · ยกเลิก / ลองบันทึกอีกครั้ง = gc-btn gc-btn-ghost (หน้าตาจาก glass-cards.css) */
+.ac-form { margin: 0 0 10px; padding: 12px 14px; border-radius: 16px; background: var(--gc-well); box-shadow: inset 0 0 0 1px var(--gc-rim); }
 .ac-form-t { font-size: 12.5px; font-weight: 700; color: var(--mc-text); }
 .ac-form-row { display: flex; align-items: flex-end; gap: 8px 10px; flex-wrap: wrap; margin-top: 8px; }
 .ac-form-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 11.5px; font-weight: 600; color: var(--mc-muted); }
-.ac-form-f input { width: 170px; max-width: 100%; padding: 7px 9px; border: 1px solid var(--mc-border); border-radius: 8px; background: var(--mc-card); color: var(--mc-text); font-family: inherit; font-size: 14px; font-variant-numeric: tabular-nums; }
-.ac-form-f input:focus { outline: 2px solid var(--mc-border-active); outline-offset: 1px; }
-.ac-form-f input::placeholder { color: var(--mc-muted); font-size: 12px; }
+/* ขนาดเดิม (placeholder ตอนล็อกพอดีช่องที่จอ 390/360px — วัดใน Chrome ด้วย padding ข้าง 9px / 7px) */
+.ac-form-f input { width: 170px; max-width: 100%; padding: 7px 9px; font-size: 14px; }
+.ac-form-f input::placeholder { font-size: 12px; }
 .ac-form-dash { padding-bottom: 8px; color: var(--mc-muted); }
 .ac-form-btns { display: flex; gap: 8px; margin-left: auto; }
-.ac-btn { border: 1px solid var(--mc-border); background: var(--pp-chip-bg); color: var(--mc-text); font-family: inherit; font-size: 12.5px; font-weight: 700; border-radius: 8px; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
-.ac-btn:hover { border-color: var(--mc-border-active); }
-.ac-btn.is-primary { background: var(--pp-bull); border-color: var(--pp-bull); color: #052e16; }
-.ac-btn:disabled { opacity: .6; cursor: wait; }
 .ac-form-hint { margin: 8px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--mc-muted); }
 .ac-form-err { margin: 6px 0 0; font-size: 12px; font-weight: 600; color: var(--pp-bear); }
 /* สถานะการบันทึก · ร่างที่ยังไม่ได้บันทึก + ปุ่มลองใหม่ */
@@ -312,11 +346,11 @@
 .ac-status.is-error { color: var(--pp-bear); font-weight: 600; }
 .ac-status.is-ok { color: var(--pp-bull); }
 .ac-status-draft { color: var(--mc-amber); font-weight: 600; }
-.ac-status .ac-btn { padding: 4px 11px; font-size: 12px; }
 
 /* มือถือ: ช่องภาพรวมเรียงบน-ล่าง · 5 แท่งยังแถวเดียว (แคบลง ข้อความในแท่งสองบรรทัดสั้น) · ไม่เลื่อนแนวนอน */
 @media (max-width: 600px) {
-  .ac-card { padding: 14px 14px 12px; border-radius: 15px; }
+  .ac-main { padding: 14px 14px 12px; }
+  .ac-cash { padding: 14px 16px 12px; }
   .ac-kpis { grid-template-columns: 1fr; }
   .ac-kpi-v { font-size: 18px; }
   /* กราฟ 200px − ขอบล่าง 1px = 199 = CHART_PX.m · has-float-top-m = กองป้ายลอยพ้นยอดกราฟที่จอนี้ (--ac-room-m) · ของจอกว้างไม่ใช้ที่นี่ */
@@ -357,7 +391,7 @@
   .ac-form-f input::placeholder { font-size: 11px; }
   .ac-form-f input::-webkit-input-placeholder { font-size: 11px; }
   .ac-form-btns { grid-column: 1 / -1; margin-left: 0; }
-  .ac-form-btns .ac-btn { flex: 1; padding: 9px 12px; }
+  .ac-form-btns .ac-btn { flex: 1; }
 }
 /* จอ 360px: ช่องเหลือที่ข้อความ ~86px — placeholder 11px ยาว ~96px ยังล้น → 10px (~88px) + padding ข้าง 7px (ที่ข้อความ ~90px)
    ป้ายใต้แท่งกว้าง ~44px ตัดเป็น 5 บรรทัด (สูง ~69px + ห่างแท่ง 7) → เผื่อที่ใต้กราฟ 84px (70px ทับกล่องเงินสด 5px — วัดใน Chrome) */

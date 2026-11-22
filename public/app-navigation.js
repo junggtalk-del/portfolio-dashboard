@@ -491,7 +491,11 @@
     const total = current?.assets?.length || 0;
     const failed = current?.errors?.length || 0;
     const success = Math.max(0, total - failed);
-    if (counts) counts.textContent = total ? `${success}/${total}${failed ? ` · ล้มเหลว ${failed}` : ""}` : "";
+    if (counts) {
+      counts.textContent = total ? `${success}/${total}${failed ? ` · ล้มเหลว ${failed}` : ""}` : "";
+      // CSS hides only the idle label on narrow screens; failures (and progress, below) always show
+      counts.setAttribute("data-state", failed ? "failed" : "idle");
+    }
     if (freshness) {
       freshness.textContent = `● ${notice ? (notice.short || notice.thai) : fresh.thai}`;
       freshness.dataset.freshness = fresh.key;
@@ -509,6 +513,7 @@
       const total = detail.totalAssets ?? 0;
       const failed = detail.failedAssets ?? 0;
       counts.textContent = `${completed}/${total}${detail.currentSymbol ? ` · ${detail.currentSymbol}` : ""}${failed ? ` · ล้มเหลว ${failed}` : ""}`;
+      counts.setAttribute("data-state", "loading");
     }
     if (freshness) {
       freshness.textContent = `● Step ${detail.step || "-"}/6`;
@@ -670,6 +675,24 @@
     });
   }
 
+  // ลิ้นชักเมนูจอแคบ (≤860px): เมื่อเปิด เมนูบังปุ่ม ☰ อยู่ จึงต้องปิดได้ด้วยการแตะนอกเมนูหรือกด Escape
+  // ผูกครั้งเดียวที่ document — ใช้ได้ทั้งเปลือกที่สร้างที่นี่และเปลือกเขียนตายของหน้า Home
+  function wireDrawerClose() {
+    if (window.__mcDrawerCloseWired) return;
+    window.__mcDrawerCloseWired = true;
+    document.addEventListener("click", function (e) {
+      var sb = document.getElementById("mcSidebar");
+      var tg = document.getElementById("mcMenuToggle");
+      if (!sb || !sb.classList.contains("is-open")) return;
+      if (sb.contains(e.target) || (tg && tg.contains(e.target))) return;
+      sb.classList.remove("is-open");
+    });
+    document.addEventListener("keydown", function (e) {
+      var sb = document.getElementById("mcSidebar");
+      if (e.key === "Escape" && sb && sb.classList.contains("is-open")) sb.classList.remove("is-open");
+    });
+  }
+
   function buildHeader() {
     return `
       <button class="mc-icon-btn mc-menu-toggle" id="mcMenuToggle" type="button">☰</button>
@@ -698,12 +721,24 @@
       </section>`;
   }
 
+  // Dedupe by PATH (like ensureScript): a page that links /mission-control.css?v=… itself must not get a
+  // second copy at the end of <head> — that copy used to override glass-cards.css and the page's own CSS.
+  // Sheets the page lacks go in just BEFORE /glass-cards.css when it has one, so .gc-card wins at equal
+  // specificity; otherwise they are appended as before.
   function ensureStylesheet(href) {
-    if (document.querySelector(`link[href^="${href}"]`)) return;
-    const link = document.createElement("link");
+    var base = href.split("?")[0];
+    var links = document.querySelectorAll('link[rel="stylesheet"]');
+    var glass = null;
+    for (var i = 0; i < links.length; i++) {
+      var path = String(links[i].getAttribute("href") || "").split("?")[0];
+      if (path === base) return;
+      if (!glass && path === "/glass-cards.css") glass = links[i];
+    }
+    var link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = href;
-    document.head.appendChild(link);
+    if (glass && glass.parentNode) glass.parentNode.insertBefore(link, glass);
+    else document.head.appendChild(link);
   }
 
   function ensureScript(src) {
@@ -735,14 +770,14 @@
 
   function mountShell() {
     if (document.getElementById("mc-shell")) return;
-    ensureStylesheet("/mission-control.css?v=20260623-mc-7");
+    ensureStylesheet("/mission-control.css?v=20261122-mc-11");
     ensureScript("/scoring.js?v=20260623-scoring-10");
     ensureScript("/signal-quality.js?v=20260621-sq-5");
     // The AI Boom Universe is the monitor list — keep its seed available on every
     // page so snapshot loads see the full universe consistently.
     ensureScript("/ai-boom-universe-data.js?v=20260524-summary-1");
     // Global Market Regime engine + chip styles available on EVERY page.
-    ensureStylesheet("/mission-control-v2.css?v=20260630-mcx-1");
+    ensureStylesheet("/mission-control-v2.css?v=20261122-mcx-12");
     ensureScript("/market-regime.js?v=20260715-regime-2");
     // Bitcoin Intelligence engine — available wherever Load Latest Data can run, so
     // the snapshot loader can extend snapshot.bitcoinIntelligence. Runs only on load.
@@ -769,6 +804,7 @@
       // ไม่งั้นหน้า Home จะย่อเมนูไม่ได้อยู่หน้าเดียว
       if (readRail()) existingApp.classList.add("is-rail");
       wireRailToggle(existingApp);
+      wireDrawerClose();
       wireRegimeChip();
       return;
     }
@@ -816,6 +852,7 @@
     const toggle = document.getElementById("mcMenuToggle");
     if (toggle) toggle.addEventListener("click", () => sidebar.classList.toggle("is-open"));
     wireRailToggle(app);
+    wireDrawerClose();
 
     wireDataStatus();
     wireRegimeChip();

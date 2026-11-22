@@ -16,10 +16,22 @@
   var COLORS = { core: "#38bdf8", tactical: "#a78bfa", cash: "#64748b" };
   var TONE = { bull: "#34d399", watch: "#f59e0b", bear: "#f43f5e" };
 
+  // การ์ดแก้ว (glass-cards.css gc-2): สีการ์ด = สถานะที่ engine/หน้านี้คำนวณอยู่แล้ว (สีเดิมของหน้า) · ไม่มีสถานะ → gc-neutral (ไม่ประดิษฐ์สถานะใหม่)
+  //   tone ของ engine (Mega Trend state · Dip verdict): bull เขียว → gc-calm · watch เหลือง → gc-warning · bear แดง → gc-danger
+  //   Recommendation: increase (เขียว) → gc-calm · maintain (ฟ้า) → gc-normal · reduce (เหลือง) → gc-warning · unknown → gc-neutral
+  //   Confidence: แถบเดิมของ scoreColor (≥70 เขียว · ≥40 เหลือง · ต่ำกว่า แดง) → calm · warning · danger · ไม่มีคะแนน → gc-neutral
+  var GLASS_TONE = { bull: "gc-calm", watch: "gc-warning", bear: "gc-danger" };
+  var RECO_TONE = { increase: "gc-calm", maintain: "gc-normal", reduce: "gc-warning" };
+  function pickTone(map, k) { return Object.prototype.hasOwnProperty.call(map, k) ? map[k] : "gc-neutral"; }
+  function glassTone(t) { return pickTone(GLASS_TONE, t); }
+  function recoTone(key) { return pickTone(RECO_TONE, key); }
+  function scoreBand(v) { return v == null ? null : v >= 70 ? "bull" : v >= 40 ? "watch" : "bear"; }
+  function confTone(score) { return glassTone(scoreBand(score)); }
+
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
   function readSnapshot() { try { return (window.PortfolioDataSnapshot && window.PortfolioDataSnapshot.read && window.PortfolioDataSnapshot.read()) || null; } catch (e) { return null; } }
   function toneColor(t) { return TONE[t] || "#94a3b8"; }
-  function scoreColor(v) { return v == null ? "#64748b" : v >= 70 ? TONE.bull : v >= 40 ? TONE.watch : TONE.bear; }
+  function scoreColor(v) { var b = scoreBand(v); return b ? TONE[b] : "#64748b"; }
   function bar(pct, color) {
     var w = Math.max(0, Math.min(100, Number(pct) || 0));
     return '<span class="ap-bar"><i style="width:' + w + "%;background:" + color + '"></i></span>';
@@ -28,8 +40,8 @@
     var arr = items && items.length ? items : ["—"];
     return '<ul class="ap-list">' + arr.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
   }
-  function sec(n, title, sub, body) {
-    return '<section class="ap-sec"><div class="ap-sec-head"><span class="ap-sec-n">' + n + "</span><div><h2>" + esc(title) + "</h2>" + (sub ? "<p>" + esc(sub) + "</p>" : "") + "</div></div>" + body + "</section>";
+  function sec(n, title, sub, body, tone) {
+    return '<section class="ap-sec gc-card ' + (tone || "gc-neutral") + '"><div class="ap-sec-head"><span class="ap-sec-n">' + n + "</span><div><h2>" + esc(title) + "</h2>" + (sub ? "<p>" + esc(sub) + "</p>" : "") + "</div></div>" + body + "</section>";
   }
   function states() { return (window.AdaptivePosition && window.AdaptivePosition.STATES) || []; }
   function stateRange(S, i) {
@@ -62,14 +74,14 @@
     var root = document.getElementById(ROOT_ID);
     if (!root) return;
     if (!window.AdaptivePosition || typeof window.AdaptivePosition.compute !== "function") {
-      root.innerHTML = '<div class="mc-empty"><strong>Adaptive Position Engine ไม่พร้อม</strong><br>โหลดสคริปต์หน้าไม่ครบ — ลอง refresh หน้านี้</div>';
+      root.innerHTML = '<div class="mc-empty gc-card gc-neutral"><strong>Adaptive Position Engine ไม่พร้อม</strong><br>โหลดสคริปต์หน้าไม่ครบ — ลอง refresh หน้านี้</div>';
       return;
     }
     var opts = {};
     if (psCache) opts.portfolioStatus = psCache;
     var R;
     try { R = window.AdaptivePosition.compute(readSnapshot() || {}, opts); }
-    catch (e) { root.innerHTML = '<div class="mc-empty"><strong>คำนวณไม่สำเร็จ</strong><br>' + esc(String(e && e.message || e)) + "</div>"; return; }
+    catch (e) { root.innerHTML = '<div class="mc-empty gc-card gc-neutral"><strong>คำนวณไม่สำเร็จ</strong><br>' + esc(String(e && e.message || e)) + "</div>"; return; }
     if (!R || !R.available) { root.innerHTML = headerSection() + emptyState(R); return; }
     root.innerHTML = headerSection() + heroSection(R) + megaSection(R) + dipSection(R) + planSection(R) + confidenceSection(R) + explainSection(R);
   }
@@ -81,30 +93,31 @@
 
   function emptyState(R) {
     var msg = R && R.thai ? R.thai : R && R.error ? R.error : ("เหตุผล: " + esc(R && R.reason ? R.reason : "unknown"));
-    return '<div class="mc-empty"><strong>ยังคำนวณ Adaptive Position ไม่ได้</strong><br>' + esc(msg) +
+    return '<div class="mc-empty gc-card gc-neutral"><strong>ยังคำนวณ Adaptive Position ไม่ได้</strong><br>' + esc(msg) +
       '<br><span class="ap-muted">กด <b>Load Latest Data</b> มุมขวาบน แล้วหน้านี้จะคำนวณให้อัตโนมัติ</span></div>';
   }
 
   // ---- §1 · Verdict hero — 4 answers at a glance ----
+  // 4 การ์ดแก้ว: สีการ์ดบอกสถานะแทนตัวอักษรสี (ตัวเลข/ป้ายบนการ์ดเป็นขาว) · การ์ดสัดส่วนไม่มีสถานะ → gc-neutral
   function heroSection(R) {
-    var M = R.megaTrend, st = M.state, stC = toneColor(st.tone);
-    var dip = R.dip.verdict, dipC = toneColor(dip.tone);
+    var M = R.megaTrend, st = M.state;
+    var dip = R.dip.verdict;
     var reco = R.recommendation || {};
     var conf = R.confidence || {};
     var confBadge = conf.score != null && conf.label
-      ? '<span class="ap-conf-badge">ความมั่นใจ ' + conf.score + "/100 · " + esc(conf.label.thai) + "</span>"
-      : '<span class="ap-conf-badge ap-muted">ความมั่นใจ — รอข้อมูล</span>';
+      ? '<span class="ap-conf-badge gc-pill gc-pill-ghost">ความมั่นใจ ' + conf.score + "/100 · " + esc(conf.label.thai) + "</span>"
+      : '<span class="ap-conf-badge ap-muted gc-pill gc-pill-ghost">ความมั่นใจ — รอข้อมูล</span>';
     return '<section class="ap-hero"><div class="ap-hero-grid">' +
-      '<div class="ap-hcell"><div class="ap-hlbl">AI Mega Trend</div>' +
-        '<div class="ap-hbig"><b style="color:' + stC + '">' + M.score + "</b><span>/100</span></div>" +
-        '<span class="ap-chip" style="color:' + stC + ";border-color:" + stC + '">' + esc(st.label) + " · " + esc(st.thai) + "</span>" +
-        '<div class="ap-gate ' + (R.gate.open ? "ap-gate-open" : "ap-gate-closed") + '">เกต buy-the-dip: ' + esc(R.gate.label) + "</div></div>" +
-      '<div class="ap-hcell"><div class="ap-hlbl">จังหวะย่อวันนี้</div>' +
-        '<div class="ap-hbig"><b style="color:' + dipC + '">' + esc(dip.label) + "</b></div>" +
+      '<div class="ap-hcell gc-card ' + glassTone(st.tone) + '"><div class="ap-hlbl">AI Mega Trend</div>' +
+        '<div class="ap-hbig"><b class="gc-num gc-num-m">' + M.score + "</b><span>/100</span></div>" +
+        '<span class="ap-chip gc-pill">' + esc(st.label) + " · " + esc(st.thai) + "</span>" +
+        '<div class="ap-gate ' + (R.gate.open ? "ap-gate-open gc-chip gc-chip-safe" : "ap-gate-closed gc-chip gc-chip-risk") + '">เกต buy-the-dip: ' + esc(R.gate.label) + "</div></div>" +
+      '<div class="ap-hcell gc-card ' + glassTone(dip.tone) + '"><div class="ap-hlbl">จังหวะย่อวันนี้</div>' +
+        '<div class="ap-hbig"><b>' + esc(dip.label) + "</b></div>" +
         '<div class="ap-hsub">' + esc(dip.thai) + " · ดูเงื่อนไขครบใน Checklist ด้านล่าง</div></div>" +
-      '<div class="ap-hcell"><div class="ap-hlbl">สัดส่วนแนะนำ · สถานะ ' + esc(st.label) + "</div>" + allocBar(R.allocation) + "</div>" +
-      '<div class="ap-hcell"><div class="ap-hlbl">สิ่งที่ควรทำตอนนี้</div>' +
-        '<span class="ap-chip ap-reco-' + esc(reco.key || "unknown") + '">' + esc(reco.label || "—") + "</span>" +
+      '<div class="ap-hcell gc-card gc-neutral"><div class="ap-hlbl">สัดส่วนแนะนำ · สถานะ ' + esc(st.label) + "</div>" + allocBar(R.allocation) + "</div>" +
+      '<div class="ap-hcell gc-card ' + recoTone(reco.key) + '"><div class="ap-hlbl">สิ่งที่ควรทำตอนนี้</div>' +
+        '<span class="ap-chip ap-reco-' + esc(reco.key || "unknown") + ' gc-pill">' + esc(reco.label || "—") + "</span>" +
         '<div class="ap-hsub">' + esc(reco.detail || "") + "</div>" + confBadge + "</div>" +
       "</div></section>";
   }
@@ -141,7 +154,7 @@
     }).join("");
     return sec(2, "Mega Trend Breakdown",
       "คะแนน " + M.score + "/100 มาจากไหน — ทุกองค์ประกอบมีที่มาตรวจสอบได้ · ครอบคลุมข้อมูล " + M.coverage + "%",
-      '<div class="ap-comp-list">' + head + rows + "</div>" + stateLegend(M.state.key) + list(M.why));
+      '<div class="ap-comp-list">' + head + rows + "</div>" + stateLegend(M.state.key) + list(M.why), glassTone(M.state.tone));
   }
 
   function trendCell(t) {
@@ -172,9 +185,9 @@
       var ic = c.met === true ? "✅" : c.met === false ? "❌" : "❓";
       return '<div class="ap-chk ap-chk-' + k + '"><span class="ap-chk-ic">' + ic + "</span><div><b>" + esc(c.label) + "</b><small>" + esc(c.detail) + "</small></div></div>";
     }).join("");
-    var note = '<div class="ap-note">สัญญาณเทคนิคอย่างเดียว override เกต Mega Trend ไม่ได้ — ต้องผ่านครบทั้ง ' + D.conditions.length + " ข้อจึงนับเป็นจังหวะสะสมภายใต้กรอบ Tactical</div>";
+    var note = '<div class="ap-note gc-callout gc-callout-dashed">สัญญาณเทคนิคอย่างเดียว override เกต Mega Trend ไม่ได้ — ต้องผ่านครบทั้ง ' + D.conditions.length + " ข้อจึงนับเป็นจังหวะสะสมภายใต้กรอบ Tactical</div>";
     return sec(3, "Dip-Buy Checklist", "เงื่อนไขการสะสมจังหวะย่อ — ต้องผ่านครบทุกข้อ ไม่มีข้อยกเว้น",
-      banner + '<div class="ap-chk-list">' + rows + "</div>" + note);
+      banner + '<div class="ap-chk-list">' + rows + "</div>" + note, glassTone(v.tone));
   }
 
   // ---- §4 · Core / Tactical plan ----
@@ -186,9 +199,10 @@
       if (!a) return "";
       var cur = st.key === A.state;
       return "<tr" + (cur ? ' class="ap-row-cur"' : "") + "><td>" + esc(st.label) + " <small>" + esc(st.thai) + "</small>" + (cur ? ' <span class="ap-cur-tag">ตอนนี้</span>' : "") + "</td>" +
-        "<td>" + esc(stateRange(S, i)) + "</td><td>" + a.core + "%</td><td>" + a.tactical + "%</td><td>" + a.cash + "%</td><td><b>" + (a.core + a.tactical) + "%</b></td></tr>";
+        '<td class="gc-cell-num">' + esc(stateRange(S, i)) + '</td><td class="gc-cell-num">' + a.core + '%</td><td class="gc-cell-num">' + a.tactical + '%</td><td class="gc-cell-num">' + a.cash + '%</td><td class="gc-cell-num"><b>' + (a.core + a.tactical) + "%</b></td></tr>";
     }).join("");
-    var table = '<div class="ap-table-wrap"><table class="ap-table"><thead><tr><th>สถานะ Mega Trend</th><th>ช่วงคะแนน</th><th>Core</th><th>Tactical</th><th>Cash</th><th>ลงทุนรวม</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
+    // ตารางเลื่อนแนวนอนในกล่องของตัวเองได้ (มือถือ) → กล่องรับโฟกัสคีย์บอร์ด (tabindex + aria-label ตาม gc-table-wrap)
+    var table = '<div class="ap-table-wrap gc-table-wrap" tabindex="0" aria-label="ตารางสัดส่วน Core / Tactical / Cash ตามสถานะ Mega Trend"><table class="ap-table gc-table"><thead><tr><th>สถานะ Mega Trend</th><th class="gc-cell-num">ช่วงคะแนน</th><th class="gc-cell-num">Core</th><th class="gc-cell-num">Tactical</th><th class="gc-cell-num">Cash</th><th class="gc-cell-num">ลงทุนรวม</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
 
     var cur = R.currentInvestedPct, target = A.suggestedInvested, marker;
     if (cur != null) {
@@ -208,7 +222,7 @@
         "<p>" + esc(reco.detail || "") + "</p><small>ปรับทีละไม่เกิน " + maxStep + "pp — ไม่มี forced liquidation · Core ถือยาว ขยับเฉพาะส่วน Tactical</small></div>";
     }
     return sec(4, "Core / Tactical Plan", "ตารางสัดส่วนตามสถานะ Mega Trend — Core ถือยาว · Tactical ปรับได้ · Cash รอจังหวะ (แถวไฮไลต์ = สถานะปัจจุบัน)",
-      table + marker + recoCard);
+      table + marker + recoCard, recoTone(reco.key));
   }
 
   // ---- §5 · Confidence ----
@@ -218,10 +232,10 @@
       return sec(5, "Confidence", "ความมั่นใจของคำแนะนำ",
         '<div class="ap-muted-box">ยังไม่มีข้อมูลพอสำหรับคะแนนความมั่นใจ — กด Load Latest Data</div>');
     }
-    var col = scoreColor(C.score);
-    var gauge = '<div class="ap-conf-gauge"><div class="ap-invtrack ap-conf-track"><i style="width:' + C.score + "%;background:" + col + '"></i></div>' +
-      '<b style="color:' + col + '">' + C.score + "/100</b>" +
-      (C.label ? '<span class="ap-chip">' + esc(C.label.label) + " · " + esc(C.label.thai) + "</span>" : "") + "</div>";
+    // แถบ + ตัวเลขเป็นสีขาวบนการ์ดแก้ว — สีช่วงคะแนนเดิม (scoreColor) ย้ายไปเป็นสีการ์ดทั้งใบ (confTone)
+    var gauge = '<div class="ap-conf-gauge"><div class="ap-invtrack ap-conf-track"><i style="width:' + C.score + '%"></i></div>' +
+      '<b class="gc-num gc-num-s">' + C.score + "/100</b>" +
+      (C.label ? '<span class="ap-chip gc-pill">' + esc(C.label.label) + " · " + esc(C.label.thai) + "</span>" : "") + "</div>";
     var rows = C.parts.map(function (p) {
       var cell = p.value == null ? '<b class="ap-muted">—</b>' : bar(p.value, scoreColor(p.value)) + "<b>" + p.value + "</b>";
       return '<div class="ap-part-row"><span class="ap-part-name">' + esc(p.label) + '</span><div class="ap-part-val">' + cell + '</div><span class="ap-comp-w">' + p.weight + "%</span></div>";
@@ -231,7 +245,7 @@
       '<div><h3 class="ap-h3">สิ่งที่หนุน</h3>' + list(E.confidenceUp) + "</div>" +
       '<div><h3 class="ap-h3">สิ่งที่ฉุด</h3>' + list(E.confidenceDown) + "</div></div>";
     return sec(5, "Confidence", "ความมั่นใจของคำแนะนำ — ถ่วงน้ำหนักจาก 5 ปัจจัย (เฉพาะที่มีข้อมูล)",
-      gauge + '<div class="ap-part-list">' + rows + "</div>" + cols);
+      gauge + '<div class="ap-part-list">' + rows + "</div>" + cols, confTone(C.score));
   }
 
   // ---- §6 · Explain + methodology ----
@@ -257,5 +271,6 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 
-  window.AdaptivePositionPage = { render: render };
+  // tones: ตัวแปลงสถานะ → สีการ์ดแก้ว (ให้เทสต์ scripts/adaptive-position-glass-test.js ตรวจ map ได้ตรง ๆ)
+  window.AdaptivePositionPage = { render: render, tones: { engine: glassTone, reco: recoTone, conf: confTone } };
 })();

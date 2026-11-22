@@ -29,6 +29,57 @@
     const n = fin(v);
     return n == null ? "" : n >= 0 ? "mc-up" : "mc-down";
   }
+
+  // ---------------------------------------------------------------- glass cards (glass-cards.css gc-2)
+  // การ์ด → สถานะที่หน้าคำนวณอยู่แล้ว → tone · ไม่มีสถานะ → gc-neutral (ไม่ประดิษฐ์สถานะใหม่)
+  //   สัญญาณ (Scoring.classifySignal .tone)  bull → calm · watch-bull / neutral → normal · watch-bear → warning · bear → danger · waiting → neutral
+  //   Signal Score (Scoring.bandFor .grade · สีเดิมเขียว/เขียวอมฟ้า/เหลือง/ส้ม/แดง)  A / B → calm · C / D → warning · E → danger
+  //   เปลี่ยนวันนี้ (upDown)  mc-up → calm · mc-down → danger
+  //   Thesis Score = สถานะ thesis แบบเดียวกับ /thesis §2 + การ์ดเทียบ (thesis-page.js / thesis-compare.js GC_THESIS บนแถบของ
+  //     thesis-engine.js thesisStatus 85/70/55/40)  Very Strong / Strong (≥ 70) → calm · Neutral (≥ 55) → normal · Weak (≥ 40) → warning · Broken → danger
+  //   Action (การ์ด hero) = action.key ที่หน้านี้แสดง (Scoring.actionFromSignal → ThesisReconcile.forAsset) — สีเดียวกับการ์ดของ /action-center
+  //     ที่ลิงก์มาหน้านี้: การ์ดหุ้นที่ถือ positionVerdict() (action-center-page.js) → GC_POS_TONE  sell → danger · buy → calm · watch → warning · none → neutral
+  //     key ที่ positionVerdict ไม่มีคำตัดสิน (⚪ rank 3) → การ์ดตัดสินใจ ACTION_CODE code → decisionTone() → GC_DECISION_TONE  watch → warning
+  //       (แถว watchlist ไม่มีการ์ดหุ้นที่ถือ — การ์ดตัดสินใจคือการ์ดเดียวที่ /action-center แสดง)
+  //     SELL_ALL / SELL_FIRST / REVIEW_THESIS → danger · BUY_DIP / BUY_MORE / HOLD_ADD → calm · HOLD_CORE / HOLD_LIMIT / WATCH_CLOSELY → warning ·
+  //     BUY_FIRST_WAIT_VOLUME / BUY_FIRST_SMALL / WATCH_WAIT (code watch) → warning · อื่น ๆ (DATA_WAITING / AVOID_WAIT) → neutral
+  //   EMA (กติกาหน้า: EMA12 < EMA26 = ขายไม้แรก / ลดน้ำหนัก)  EMA_BULLISH → calm · EMA_BEARISH → warning
+  //   SMA200 (กติกาหน้า: ราคา < SMA200 = ขายหมด)  ABOVE_SMA200 → calm · BELOW_SMA200 → danger
+  //   RSI zone  แข็งแรง → calm · กลาง → normal · อ่อนแรง / Overbought / Oversold → warning
+  //   วอลุ่ม  ยืนยัน (≥ 1x) → calm · ยังไม่ยืนยัน → normal
+  //   Data Quality  มีป้าย "ข้อมูลเริ่มเก่า" → warning
+  var GC_SIGNAL_TONE = { bull: "gc-calm", "watch-bull": "gc-normal", neutral: "gc-normal", "watch-bear": "gc-warning", bear: "gc-danger", waiting: "gc-neutral" };
+  var GC_GRADE_TONE = { A: "gc-calm", B: "gc-calm", C: "gc-warning", D: "gc-warning", E: "gc-danger" };
+  var GC_RSI_TONE = { "แข็งแรง": "gc-calm", "กลาง": "gc-normal", "อ่อนแรง": "gc-warning", Overbought: "gc-warning", Oversold: "gc-warning" };
+  var GC_ACTION_TONE = {
+    SELL_ALL: "gc-danger", SELL_FIRST: "gc-danger", REVIEW_THESIS: "gc-danger",
+    BUY_DIP: "gc-calm", BUY_MORE: "gc-calm", HOLD_ADD: "gc-calm",
+    HOLD_CORE: "gc-warning", HOLD_LIMIT: "gc-warning", WATCH_CLOSELY: "gc-warning",
+    BUY_FIRST_WAIT_VOLUME: "gc-warning", BUY_FIRST_SMALL: "gc-warning", WATCH_WAIT: "gc-warning"
+  };
+  function toneIn(map, k) { return k != null && Object.prototype.hasOwnProperty.call(map, k) ? map[k] : "gc-neutral"; }
+  function signalTone(signal) { return signal ? toneIn(GC_SIGNAL_TONE, signal.tone) : "gc-neutral"; }
+  function scoreTone(timing) { return timing && fin(timing.score) != null ? toneIn(GC_GRADE_TONE, timing.grade) : "gc-neutral"; }
+  function changeTone(v) { var c = upDown(v); return c === "mc-up" ? "gc-calm" : c === "mc-down" ? "gc-danger" : "gc-neutral"; }
+  function thesisTone(th) {
+    var s = th ? fin(th.score) : null;
+    return s == null ? "gc-neutral" : s >= 70 ? "gc-calm" : s >= 55 ? "gc-normal" : s >= 40 ? "gc-warning" : "gc-danger";
+  }
+  function actionTone(action) { return action ? toneIn(GC_ACTION_TONE, action.key) : "gc-neutral"; }
+  function emaTone(st) { return st === "EMA_BULLISH" ? "gc-calm" : st === "EMA_BEARISH" ? "gc-warning" : "gc-neutral"; }
+  function smaTone(st) { return st === "ABOVE_SMA200" ? "gc-calm" : st === "BELOW_SMA200" ? "gc-danger" : "gc-neutral"; }
+  function rsiTone(zone) { return toneIn(GC_RSI_TONE, zone); }
+  function volumeTone(r) { var n = fin(r); return n == null ? "gc-neutral" : n >= 1 ? "gc-calm" : "gc-normal"; }
+
+  // Privacy Lock: มูลค่าถือครองเป็นเงินในพอร์ต แต่ privacy.js ซ่อนได้เฉพาะ ฿ ในข้อความ ($ และตัวเลขเปล่าหลุด)
+  //   → ตอนล็อกวาด XXX เอง · ล็อก / ปลดล็อก (portfolio-privacy-changed) → วาดใหม่ · ไม่มีเงินใน title / aria-label
+  function privacyLocked() {
+    try {
+      var pv = window.PortfolioPrivacy;
+      return !!(pv && typeof pv.isLocked === "function" && pv.isLocked());
+    } catch (e) { return false; }
+  }
+  function holdingMoney(prefix, v) { return prefix + (privacyLocked() ? "XXX" : num(v, 0)); }
   function getSnapshot() {
     try {
       return (window.PortfolioDataSnapshot && window.PortfolioDataSnapshot.read && window.PortfolioDataSnapshot.read()) || null;
@@ -401,7 +452,7 @@
     const staleWarn = th.stale
       ? `<span style="font-size:11px;color:var(--app-warn,#f59e0b);">⚠ ข้อมูล curated อายุ ${th.staleMonths} เดือน — สั่ง /thesis-update ${esc(th.ticker)}</span>` : "";
     return `
-      <section class="mc-card mc-glow" style="padding:16px 18px;margin-bottom:14px;">
+      <section class="mc-card mc-glow gc-card ${thesisTone(th)}" style="padding:16px 18px;margin-bottom:14px;">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
           <div style="font-size:14px;font-weight:800;">🧾 Investment Thesis</div>
           <a href="/thesis?ticker=${encodeURIComponent(th.ticker)}" style="font-size:12px;color:var(--app-info,#38bdf8);text-decoration:none;">เปิดหน้า Thesis เต็ม →</a>
@@ -417,12 +468,13 @@
       </section>`;
   }
 
-  function metric(label, value, sub, subClass) {
-    return `<div class="mc-card mc-metric mc-glow">
-      <div class="mc-label"><span>${esc(label)}</span></div>
-      <div class="mc-value" style="font-size:24px;">${value}</div>
-      ${sub ? `<div class="mc-delta ${subClass || ""}">${sub}</div>` : ""}
-    </div>`;
+  // value / sub เป็น HTML ที่ผู้เรียก escape แล้ว (เหมือนเดิม) · tone = gc-<tone> จากตารางด้านบน · isNum → ตัวเลข gc-num
+  function metric(label, value, sub, subClass, tone, isNum) {
+    return '<div class="mc-card mc-metric mc-glow gc-card gc-tile ' + (tone || "gc-neutral") + '">' +
+      '<div class="mc-label"><span>' + esc(label) + "</span></div>" +
+      '<div class="mc-value' + (isNum ? " gc-num gc-num-s" : "") + '" style="font-size:24px;">' + value + "</div>" +
+      (sub ? '<div class="mc-delta ' + (subClass || "") + '">' + sub + "</div>" : "") +
+      "</div>";
   }
 
   function watchlistControl(key) {
@@ -452,10 +504,10 @@
           <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${watchlistControl(key)}</div>
         </div>
         <div class="a360-hero-cards" style="position:relative;z-index:1;min-width:min(560px,100%);">
-          ${metric("Latest Price / NAV", `${cur}${num(price)}`, change == null ? "" : signedPct(change), upDown(change))}
-          ${metric("Action", action ? esc(action.thaiAction) : "—", action ? esc(action.action) : "")}
-          ${metric("Signal Score (ตัวประกอบ)", timing ? `${timing.score}` : "—", timing ? esc(timing.thaiLabel) : "ยังไม่มีข้อมูล")}
-          ${holding ? metric("Portfolio Weight", `${num(holding.targetWeight, 1)}%`, `${cur}${num(holding.marketValue, 0)}`) : metric("Status", "Watchlist", "ยังไม่กระทบพอร์ต")}
+          ${metric("Latest Price / NAV", `${cur}${num(price)}`, change == null ? "" : signedPct(change), upDown(change), changeTone(change), true)}
+          ${metric("Action", action ? esc(action.thaiAction) : "—", action ? esc(action.action) : "", "", actionTone(action), false)}
+          ${metric("Signal Score (ตัวประกอบ)", timing ? `${timing.score}` : "—", timing ? esc(timing.thaiLabel) : "ยังไม่มีข้อมูล", "", scoreTone(timing), true)}
+          ${holding ? metric("Portfolio Weight", `${num(holding.targetWeight, 1)}%`, holdingMoney(cur, holding.marketValue), "", "gc-neutral", true) : metric("Status", "Watchlist", "ยังไม่กระทบพอร์ต", "", "gc-neutral", false)}
         </div>
       </div>
       ${tsChip ? `<div style="position:relative;z-index:1;margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">${tsChip}</div>` : ""}
@@ -473,7 +525,7 @@
       ["ความสดข้อมูล", esc(fresh.thai)]
     ];
     if (holding) {
-      cells.push(["มูลค่าถือครอง", `${cur}${num(holding.marketValue, 0)}`]);
+      cells.push(["มูลค่าถือครอง", holdingMoney(cur, holding.marketValue)]);
       cells.push(["น้ำหนักพอร์ต", `${num(holding.targetWeight, 1)}%`]);
     }
     return panel("Asset Snapshot", "สรุปภาพรวมสินทรัพย์",
@@ -481,11 +533,11 @@
   }
 
   function mainGrid(timing, quadrant, action, sq, signal) {
-    const chart = `<section class="mc-card mc-panel mc-fade">
+    const chart = `<section class="mc-card mc-panel mc-fade gc-card gc-neutral">
       <div class="mc-panel-head">
         <div><h2>Price Chart</h2><span class="mc-sub">แท่งเทียน + วอลุ่ม + EMA12 / EMA26 / SMA200</span></div>
         <div class="a360-range" id="a360Range">
-          ${["1M", "3M", "6M", "1Y", "3Y", "MAX"].map((r) => `<button class="${r === range ? "is-active" : ""}" data-range="${r}">${r}</button>`).join("")}
+          ${["1M", "3M", "6M", "1Y", "3Y", "MAX"].map((r) => `<button class="gc-btn gc-btn-ghost${r === range ? " is-active" : ""}" data-range="${r}">${r}</button>`).join("")}
         </div>
       </div>
       <div class="a360-chart-wrap" id="a360Chart">${drawChart()}</div>
@@ -503,7 +555,7 @@
     const warnings = (timing && timing.warnings) || [];
     const sqCardHtml = sq && window.SignalQuality ? window.SignalQuality.renderCard(sq, { thai: true }) : "";
     const sigChip = signal && window.Scoring ? window.Scoring.renderSignalChip(signal) : "";
-    const timingPanel = `<section class="mc-card mc-panel mc-fade">
+    const timingPanel = `<section class="mc-card mc-panel mc-fade gc-card ${signalTone(signal)}">
       <div class="mc-panel-head"><h2>Signal &amp; Action</h2></div>
       <div class="signal-state-row" style="margin-bottom:10px;">${sigChip || '<span class="ts-chip ts-na">—</span>'}</div>
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
@@ -531,17 +583,17 @@
     const emaState = tech.emaStatus === "EMA_BULLISH" ? "ขาขึ้น (Bullish)" : tech.emaStatus === "EMA_BEARISH" ? "ขาลง (Bearish)" : "—";
     const rsiZone = rsiVal == null ? "—" : rsiVal >= 70 ? "Overbought" : rsiVal <= 30 ? "Oversold" : rsiVal >= 60 ? "แข็งแรง" : rsiVal <= 40 ? "อ่อนแรง" : "กลาง";
     const rsiSig = rsi.signal || tech.rsiSignal || "—";
-    return panel("Technical Indicators", "ตัวชี้วัดทางเทคนิค", `<div class="a360-ind-grid">
-      <div class="a360-ind"><h4>EMA แนวโน้ม</h4><div class="a360-big">${esc(emaState)}</div>
+    return tilePanel("Technical Indicators", "ตัวชี้วัดทางเทคนิค", `<div class="a360-ind-grid">
+      <div class="a360-ind gc-card gc-tile ${emaTone(tech.emaStatus)}"><h4>EMA แนวโน้ม</h4><div class="a360-big">${esc(emaState)}</div>
         <div class="a360-row"><span>EMA12</span><strong>${num(ema12)}</strong></div>
         <div class="a360-row"><span>EMA26</span><strong>${num(ema26)}</strong></div></div>
-      <div class="a360-ind"><h4>สถานะ SMA200</h4><div class="a360-big">${tech.sma200Status === "ABOVE_SMA200" ? "เหนือ SMA200" : tech.sma200Status === "BELOW_SMA200" ? "ต่ำกว่า SMA200" : "—"}</div>
+      <div class="a360-ind gc-card gc-tile ${smaTone(tech.sma200Status)}"><h4>สถานะ SMA200</h4><div class="a360-big">${tech.sma200Status === "ABOVE_SMA200" ? "เหนือ SMA200" : tech.sma200Status === "BELOW_SMA200" ? "ต่ำกว่า SMA200" : "—"}</div>
         <div class="a360-row"><span>SMA200</span><strong>${num(sma200)}</strong></div>
         <div class="a360-row"><span>ระยะห่าง</span><strong class="${upDown(distSma)}">${signedPct(distSma)}</strong></div></div>
-      <div class="a360-ind"><h4>RSI</h4><div class="a360-big">${rsiVal == null ? "—" : rsiVal.toFixed(1)}</div>
+      <div class="a360-ind gc-card gc-tile ${rsiTone(rsiZone)}"><h4>RSI</h4><div class="a360-big gc-num">${rsiVal == null ? "—" : rsiVal.toFixed(1)}</div>
         <div class="a360-sub">${esc(rsiZone)}</div>
         <div class="a360-row"><span>Signal</span><strong>${esc(rsiSig)}</strong></div></div>
-      <div class="a360-ind"><h4>วอลุ่ม</h4><div class="a360-big">${fin(tech.volumeRatio) != null ? num(tech.volumeRatio) + "x" : "—"}</div>
+      <div class="a360-ind gc-card gc-tile ${volumeTone(tech.volumeRatio)}"><h4>วอลุ่ม</h4><div class="a360-big gc-num">${fin(tech.volumeRatio) != null ? num(tech.volumeRatio) + "x" : "—"}</div>
         <div class="a360-sub">${fin(tech.volumeRatio) != null ? (tech.volumeRatio >= 1 ? "ยืนยัน" : "ยังไม่ยืนยัน") : "ไม่มีข้อมูลวอลุ่ม"}</div></div>
     </div>`);
   }
@@ -572,7 +624,7 @@
     }
     const tags = (exposure.tags || []).slice(0, 6);
     return panel("Portfolio Impact", "ผลต่อพอร์ต", `<div class="a360-ind-grid">
-      <div class="a360-ind"><h4>มูลค่าถือครอง</h4><div class="a360-big">${num(holding.marketValue, 0)}</div></div>
+      <div class="a360-ind"><h4>มูลค่าถือครอง</h4><div class="a360-big">${holdingMoney("", holding.marketValue)}</div></div>
       <div class="a360-ind"><h4>น้ำหนักพอร์ต</h4><div class="a360-big">${num(holding.targetWeight, 1)}%</div></div>
       <div class="a360-ind"><h4>จำนวน</h4><div class="a360-big">${num(holding.quantity, 4)}</div></div>
       <div class="a360-ind"><h4>ต้นทุนเฉลี่ย</h4><div class="a360-big">${num(holding.averageCost)}</div></div>
@@ -610,10 +662,10 @@
     if (!rows.length) {
       return panel("Signal History", "ประวัติสัญญาณ", `<div class="mc-empty"><strong>ยังไม่มีประวัติสัญญาณของสินทรัพย์นี้</strong>ระบบยังไม่ได้เก็บ event log ย้อนหลัง</div>`);
     }
-    return panel("Signal History", "ประวัติสัญญาณ (ปัจจุบัน)", `<table class="a360-table">
-      <thead><tr><th>วันที่</th><th>สัญญาณ</th><th>รายละเอียด</th><th>Action</th><th class="num">Signal Score</th></tr></thead>
-      <tbody>${rows.map((r) => `<tr><td>${esc(r.date || "—")}</td><td>${esc(r.signal)}</td><td>${esc(r.detail)}</td><td>${esc(r.action || "—")}</td><td class="num">${esc(String(r.score || "—"))}</td></tr>`).join("")}</tbody>
-    </table>`);
+    return panel("Signal History", "ประวัติสัญญาณ (ปัจจุบัน)", `<div class="gc-table-wrap" tabindex="0" role="region" aria-label="ประวัติสัญญาณ"><table class="a360-table gc-table">
+      <thead><tr><th>วันที่</th><th>สัญญาณ</th><th>รายละเอียด</th><th>Action</th><th class="num gc-cell-num">Signal Score</th></tr></thead>
+      <tbody>${rows.map((r) => `<tr><td>${esc(r.date || "—")}</td><td>${esc(r.signal)}</td><td>${esc(r.detail)}</td><td>${esc(r.action || "—")}</td><td class="num gc-cell-num">${esc(String(r.score || "—"))}</td></tr>`).join("")}</tbody>
+    </table></div>`);
   }
 
   function dataQualitySection(hist, tech, closes, fresh) {
@@ -631,23 +683,29 @@
       <div class="a360-ind"><h4>จุดข้อมูลย้อนหลัง</h4><div class="a360-big">${closes.length}</div></div>
       <div class="a360-ind"><h4>Indicators</h4><div class="a360-big" style="font-size:13px;">${indicators.length ? indicators.join(", ") : "—"}</div></div>
       <div class="a360-ind"><h4>ข้อมูลที่ขาด</h4><div class="a360-big" style="font-size:13px;">${missing.length ? missing.join(" · ") : "ครบถ้วน"}</div></div>
-    </div>${staleWarn}`);
+    </div>${staleWarn}`, staleWarn ? "gc-warning" : "gc-neutral");
   }
 
-  function panel(title, sub, body) {
-    return `<section class="mc-card mc-panel mc-fade">
-      <div class="mc-panel-head"><div><h2>${esc(title)}</h2>${sub ? `<span class="mc-sub">${esc(sub)}</span>` : ""}</div></div>
-      ${body}
-    </section>`;
+  // การ์ดแก้วหนึ่งใบต่อ panel (tone จากตารางด้านบน · ไม่ส่ง = gc-neutral) · ช่องข้างใน (.a360-ind) เป็นหลุมเข้มบนแก้ว
+  function panel(title, sub, body, tone) {
+    return '<section class="mc-card mc-panel mc-fade gc-card ' + (tone || "gc-neutral") + '">' +
+      '<div class="mc-panel-head"><div><h2>' + esc(title) + "</h2>" + (sub ? '<span class="mc-sub">' + esc(sub) + "</span>" : "") + "</div></div>" +
+      body + "</section>";
+  }
+  // panel ที่ช่องข้างในเป็นการ์ดแก้วแต่ละใบ (tone ของตัวเอง): ตัวห่ออยู่บนพื้นหน้า (ไม่ใช่แก้ว · ไม่ซ้อนแก้ว) · หัวตามธีม (gc-section-h)
+  function tilePanel(title, sub, body) {
+    return '<section class="mc-card mc-panel mc-fade a360-tiles">' +
+      '<div class="mc-panel-head gc-section-h"><div><h2>' + esc(title) + "</h2>" + (sub ? '<span class="mc-sub">' + esc(sub) + "</span>" : "") + "</div></div>" +
+      body + "</section>";
   }
 
   function emptyPage(msg) {
-    return `<section class="mc-card mc-panel"><div class="mc-empty"><strong>${esc(msg)}</strong></div></section>`;
+    return `<section class="mc-card mc-panel gc-card gc-neutral"><div class="mc-empty"><strong>${esc(msg)}</strong></div></section>`;
   }
   function noSnapshotPage(raw, sym) {
     return `<section class="mc-page-hero mc-fade"><p class="mc-eyebrow">Asset 360</p><h1>${esc(sym || raw)}</h1><p class="mc-hero-sub">ยังไม่มีข้อมูลของสินทรัพย์นี้</p></section>
-      <section class="mc-card mc-panel"><div class="mc-empty"><strong>ยังไม่มีข้อมูลของสินทรัพย์นี้ / Data not loaded</strong>กด "Load Latest Data" ด้านบนเพื่อโหลดข้อมูล แล้วเปิดหน้านี้อีกครั้ง
-      <div style="margin-top:14px;"><button class="mc-btn mc-btn-primary" id="a360Load" type="button">Load Latest Data</button></div></div></section>`;
+      <section class="mc-card mc-panel gc-card gc-neutral"><div class="mc-empty"><strong>ยังไม่มีข้อมูลของสินทรัพย์นี้ / Data not loaded</strong>กด "Load Latest Data" ด้านบนเพื่อโหลดข้อมูล แล้วเปิดหน้านี้อีกครั้ง
+      <div style="margin-top:14px;"><button class="mc-btn mc-btn-primary gc-btn" id="a360Load" type="button">Load Latest Data</button></div></div></section>`;
   }
 
   function wireButtons() {
@@ -682,6 +740,8 @@
 
   window.addEventListener("portfolio-data-snapshot", render);
   window.addEventListener("watchlist-updated", render);
+  // privacy.js ยิง "portfolio-privacy-changed" บน document → วาดมูลค่าถือครองใหม่ (XXX ตอนล็อก)
+  document.addEventListener("portfolio-privacy-changed", render);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", render);
   else render();
 })();

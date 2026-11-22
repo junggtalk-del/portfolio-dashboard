@@ -46,9 +46,19 @@
   // avg/max drawdown per horizon needs per-occurrence dd; occurrences only carry maxDD90.
   // For other horizons we surface the engine's byHorizon aggregate (unfiltered) drawdown.
 
+  // Glass cards (glass-cards.css): a card's tone is a status this tab ALREADY computes — never a new one.
+  // The decision / bias / stance tones paint bull = emerald · neutral = blue · warn = amber · bear = red,
+  // so: bull → gc-calm (ดี) · neutral → gc-normal (ปกติ) · warn → gc-warning (ระวัง) · bear → gc-danger (แย่) · none → gc-neutral
+  var GC_TONE = { bull: "gc-calm", neutral: "gc-normal", warn: "gc-warning", bear: "gc-danger" };
+  function gcTone(t) { return (t != null && Object.prototype.hasOwnProperty.call(GC_TONE, t)) ? GC_TONE[t] : "gc-neutral"; }
+
+  // A section is a named region: inside 🔬 Research it scrolls sideways on narrow screens (bitcoin-intelligence.css),
+  // so screen readers / keyboard users get its title as the region name (leading emoji dropped).
+  function regionName(title) { return String(title).replace(/^[^A-Za-z0-9฀-๿]+/, ""); }
+
   // ============================================================ SECTIONS
-  function section(id, title, sub, bodyHtml, extraHead) {
-    return `<section class="mc-card mc-panel mc-fade bi-sec" id="${id}">
+  function section(id, title, sub, bodyHtml, extraHead, tone) {
+    return `<section class="mc-card mc-panel mc-fade bi-sec gc-card ${tone || "gc-neutral"}" id="${id}" role="region" aria-label="${esc(regionName(title))}">
       <div class="mc-panel-head"><div><h2>${title}</h2>${sub ? `<span class="mc-sub">${esc(sub)}</span>` : ""}</div>${extraHead || ""}</div>
       ${bodyHtml}</section>`;
   }
@@ -305,19 +315,19 @@
     const info = biLoading
       ? `<span class="bi-rb-status" id="biLoadStatus">${esc(biStatus || "กำลังดึงข้อมูล…")}</span>`
       : `<span class="bi-rb-info">${(m.bars || 0).toLocaleString()} แท่ง · 2014–${esc(m.lastDate || "-")} · ${esc(modeThai(m.mode))}${bi.updatedAt ? " · อัปเดต " + new Date(bi.updatedAt).toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" }) : ""}${(Date.now() - biDone < 6000) ? ' <b class="bi-pos">✓ อัปเดตแล้ว</b>' : ""}</span>`;
-    return `<div class="bi-refreshbar">${info}<button type="button" class="mc-btn mc-btn-primary bi-refresh-btn" data-bi-load="1"${biLoading ? " disabled" : ""}>${biLoading ? "⏳ กำลังดึงข้อมูล…" : "↻ อัปเดตข้อมูล Bitcoin"}</button></div>`;
+    return `<div class="bi-refreshbar gc-card gc-strip gc-neutral">${info}<button type="button" class="mc-btn mc-btn-primary bi-refresh-btn gc-btn" data-bi-load="1"${biLoading ? " disabled" : ""}>${biLoading ? "⏳ กำลังดึงข้อมูล…" : "↻ อัปเดตข้อมูล Bitcoin"}</button></div>`;
   }
   function emptyNoIntel() {
-    return `<section class="mc-card mc-panel mc-fade" style="text-align:center;padding:44px 22px;">
+    return `<section class="mc-card mc-panel mc-fade bi-empty gc-card gc-neutral" style="text-align:center;padding:44px 22px;">
       <div style="font-size:44px">🧠</div><h2 style="margin:12px 0 6px;">Bitcoin Intelligence</h2>
       <p style="color:var(--mc-muted);max-width:600px;margin:0 auto 16px;">Historical Decision Engine — "ในอดีตเมื่อโครงสร้างตลาดแบบวันนี้เกิดขึ้น มักเกิดอะไรตามมา" · กด <b>Load Latest Data</b> เพื่อสร้างฐานข้อมูลย้อนหลัง (2014–ปัจจุบัน) และประมวลผล</p>
       ${biLoading
         ? `<div class="bi-loadcard"><div class="bi-spinner"></div><div id="biLoadStatus">${esc(biStatus || "กำลังดึงข้อมูลย้อนหลังและประมวลผล…")}</div><small>ครั้งแรกอาจใช้เวลาสักครู่ (ดาวน์โหลด 2014–ปัจจุบัน)</small></div>`
-        : `<button class="mc-btn mc-btn-primary" data-bi-load="1" type="button" style="padding:10px 22px;">Load Latest Data</button>`}
+        : `<button class="mc-btn mc-btn-primary gc-btn" data-bi-load="1" type="button" style="padding:10px 22px;">Load Latest Data</button>`}
       ${biError ? `<p class="bi-neg" style="margin-top:12px">ดึงข้อมูลไม่สำเร็จ: ${esc(biError)}</p>` : ""}</section>`;
   }
   function notReady(bi) {
-    return `<section class="mc-card mc-panel mc-fade">${refreshBar(bi)}<div class="mc-empty"><strong>กำลังเตรียมข้อมูล Intelligence</strong>${esc((bi && bi.reason) || "ข้อมูลย้อนหลังยังไม่พอ")} — กด "อัปเดตข้อมูลล่าสุด" อีกครั้ง</div></section>`;
+    return `<section class="mc-card mc-panel mc-fade gc-card gc-neutral">${refreshBar(bi)}<div class="mc-empty"><strong>กำลังเตรียมข้อมูล Intelligence</strong>${esc((bi && bi.reason) || "ข้อมูลย้อนหลังยังไม่พอ")} — กด "อัปเดตข้อมูลล่าสุด" อีกครั้ง</div></section>`;
   }
 
   // ---------------------------------------------------------------- load control
@@ -387,7 +397,7 @@
     const dist = c.distribution.map((d) => `<div class="bi-cyc-dist${d.current ? " bi-cyc-dist-cur" : ""}"><div class="bi-cyc-dist-bar" style="height:${(d.pct / distMax * 100).toFixed(0)}%;background:${cyclePhaseColor(d.phase)}"></div><span class="bi-cyc-dist-pct">${d.pct}%</span><span class="bi-cyc-dist-lbl">${esc(d.phase)}</span></div>`).join("");
     const ms = c.marketStructure;
     const dtone = c.decision.tone === "bull" ? "bull" : c.decision.tone === "bear" ? "bear" : c.decision.tone === "warn" ? "warn" : "neutral";
-    return `<section class="mc-card mc-panel mc-fade bi-sec" id="bi-cycle">
+    return `<section class="mc-card mc-panel mc-fade bi-sec gc-card gc-neutral" id="bi-cycle" role="region" aria-label="Cycle Intelligence">
       <div class="mc-panel-head"><div><h2>🌀 Cycle Intelligence</h2><span class="mc-sub">Bitcoin อยู่ช่วงไหนของวัฏจักรตลาดในเชิงสถิติ (ไม่ใช่การพยากรณ์)</span></div>
         <span class="bi-cyc-badge" style="color:${col};border-color:${col}">${esc(c.current.state)} · ${c.current.confidence}%</span></div>
       <div class="bi-cyc-grid">
@@ -482,7 +492,7 @@
     // Playbook confidence
     const reasons = p.playbookConfidence.reasons.map((r) => `<div class="bi-pb-cf"><span class="bi-pb-dot ${lvlDotClass(r.level)}"></span><span class="bi-pb-cf-lbl">${esc(r.label)}</span><span class="bi-pb-cf-val">${esc(r.value)}</span><b>${esc(r.level)}</b></div>`).join("");
 
-    return `<section class="mc-card mc-panel mc-fade bi-sec bi-pb" id="bi-playbook">
+    return `<section class="mc-card mc-panel mc-fade bi-sec bi-pb gc-card ${gcTone(dtone)}" id="bi-playbook" role="region" aria-label="Bitcoin Playbook">
       <div class="mc-panel-head"><div><h2>📘 Bitcoin Playbook</h2><span class="mc-sub">แนวทางที่นักลงทุนในอดีตบริหาร Bitcoin ในสภาวะตลาดคล้ายปัจจุบัน · อ้างอิงหลักฐานเชิงสถิติ ไม่ใช่คำแนะนำการลงทุน</span></div>
         <span class="bi-cyc-badge" style="color:${col};border-color:${col}">${esc(p.state)} · ${p.confidence}%</span></div>
 
@@ -689,7 +699,7 @@
       : `<div class="bi-fc-reconcile bi-fc-conflict">⚠ เงื่อนไขชี้ ${cfBias === "bullish" ? "ทางขึ้น" : cfBias === "bearish" ? "ทางลง" : "ก้ำกึ่ง"} แต่รูปแบบราคา 45 วันชี้ ${biasTh} — ยังไม่ชัด ควรรอความชัดเจน</div>`) : "";
     // condition-line block (toggled)
     const condCards = showCond ? `<div class="bi-fc-cls">${cfLines.map((ln) => `<div class="bi-fc-cl" style="border-left-color:${ln.color}"><div class="bi-fc-cl-name"><span class="bi-fc-cl-dot" style="background:${ln.color}"></span>${esc(ln.label)} <small>${ln.occurrences} ครั้ง</small></div><div class="bi-fc-cl-rows">${[30, 60, 90].map((H) => { const o = ln.outcome[H]; return `<div class="bi-fc-cl-h"><small>${H}D</small><b class="${pctCls(o.median)}">${o.median > 0 ? "+" : ""}${o.median}%</b><span>บวก ${o.positivePct}%</span></div>`; }).join("")}</div></div>`).join("")}</div>` : "";
-    return `<section class="mc-card mc-panel mc-fade bi-sec bi-fc" id="bi-forecast">
+    return `<section class="mc-card mc-panel mc-fade bi-sec bi-fc gc-card ${gcTone(biasTone)}" id="bi-forecast">
       <div class="mc-panel-head"><div><h2>🔮 Pattern Forecast</h2><span class="mc-sub">รูปแบบราคา 45 วันล่าสุด เทียบกับอดีต → คาดการณ์ 30/60/90 วัน (เส้น median + ช่วงที่พบบ่อย p25–75) · สถิติจากอดีต ไม่รับประกันอนาคต</span></div>
         <span class="bi-cyc-badge bi-decision-${biasTone}">${biasTh} · conf ${af.confidence}%</span></div>
       <div class="bi-fc-ocs">${ocChips}</div>
@@ -722,7 +732,7 @@
         <ul class="mcx-ul bi-interp-why">${(d.rationale || []).map((x) => `<li>• ${esc(x)}</li>`).join("")}</ul>
         <div class="bi-interp-basis">อ้างอิงจาก: ${(d.basis || []).map((x) => `<span>${esc(x)}</span>`).join("")}</div>
         <p class="bi-interp-disc">Historically similar setups${b90.samples ? ` (${b90.samples} กรณี) ให้ผล 90 วันเป็นบวก ${b90.positivePct}%` : ""} — เป็นสถิติจากอดีต ไม่รับประกันอนาคต</p>
-      </div>`);
+      </div>`, "", gcTone(m.tone));
   }
 
   // Condition Monitor — each monitored condition as ใช่/ไม่ใช่ + how many days it has held.
@@ -747,7 +757,7 @@
       if (wk.sma50 && wk.sma50.above != null) rows.push(rowHtml("ราคาอยู่เหนือ SMA50 (Week)", wk.sma50.above, "ต่อเนื่องมา " + wk.sma50.weeks + " สัปดาห์"));
       if (wk.sma200 && wk.sma200.above != null) rows.push(rowHtml("ราคาอยู่เหนือ SMA200 (Week)", wk.sma200.above, "ต่อเนื่องมา " + wk.sma200.weeks + " สัปดาห์"));
     }
-    return `<section class="mc-card mc-panel mc-fade bi-sec" id="bi-conditions">
+    return `<section class="mc-card mc-panel mc-fade bi-sec gc-card gc-neutral" id="bi-conditions">
       <div class="mc-panel-head"><div><h2>🎯 เงื่อนไขที่ติดตาม (Condition Monitor)</h2><span class="mc-sub">แต่ละเงื่อนไข "ใช่ / ไม่ใช่" และเข้าเงื่อนไขมาแล้วกี่วัน — ไม่มีการให้คะแนนถ่วงน้ำหนัก</span></div></div>
       <div class="bi-cm-rows">${rows.join("")}</div></section>`;
   }
@@ -765,7 +775,7 @@
         <div class="bi-case-dd">Max DD 90D <b class="bi-neg">${pctStr(s.maxDrawdown90)}</b><span class="bi-case-open">Replay →</span></div>
       </button>`;
     }).join("");
-    return `<section class="mc-card mc-panel mc-fade bi-sec" id="bi-cases">
+    return `<section class="mc-card mc-panel mc-fade bi-sec gc-card gc-neutral" id="bi-cases">
       <div class="mc-panel-head"><div><h2>🏛️ Most Similar Historical Cases</h2><span class="mc-sub">10 วันในอดีตที่ DNA เหมือนวันนี้ที่สุด — คลิกการ์ดเพื่อดู Historical Replay</span></div></div>
       <div class="bi-cases-grid">${cards}</div></section>`;
   }
@@ -971,7 +981,7 @@
       }
     }
     const steps = hs.map((h) => { const rv = h === 0 ? 0 : (rr[h] != null ? rr[h] : null); return `<div class="bi-rp-step"><span class="bi-rp-day">Day ${h}</span><span class="bi-rp-val ${h === 0 ? "" : pctCls(rv)}">${h === 0 ? "100%" : (rv == null ? "—" : pctStr(rv, true))}</span></div>`; }).join("");
-    return `<div class="bi-modal"><div class="bi-modal-card bi-modal-wide">
+    return `<div class="bi-modal"><div class="bi-modal-card bi-modal-wide gc-card gc-neutral">
       <div class="bi-modal-head"><div><h3>Historical Replay · ${esc(cs.date)}</h3><span class="mc-sub">${esc(cs.marketPhase)} · Similarity ${cs.similarity}% · PS ${cs.patternScore} — ทาบรูปราคาปัจจุบันกับอดีต แล้วดูผลจริง 30/90/180/365 วัน · ไม่ใช่การพยากรณ์</span></div><button type="button" class="bi-modal-x">✕</button></div>
       ${chart}
       ${legend}
@@ -985,7 +995,7 @@
   function researchAccordion(bi) {
     const open = S.research;
     const inner = open ? (interpretationSection(bi) + cycleSection(bi) + outcomeSection(bi) + overlaySection(bi) + playbookSection(bi) + patternCombinationSection(bi) + filterSection(bi) + probabilitySection(bi) + matrixSection(bi) + distributionSection(bi) + timelineSection(bi) + rankingSection(bi) + heatmapSection(bi) + mtfSection(bi) + evolutionSection(bi) + similaritySection(bi) + dataQualitySection(bi)) : "";
-    return `<section class="mc-card mc-panel mc-fade bi-research" id="bi-research">
+    return `<section class="mc-card mc-panel mc-fade bi-research gc-card gc-neutral" id="bi-research">
       <button type="button" class="bi-research-toggle" data-research="1"><span>🔬 Research &amp; รายละเอียดเชิงลึก</span><span class="bi-research-chev">${open ? "▲" : "▼"}</span></button>
       <div class="bi-research-caption">Interpretation · Cycle เต็ม · Historical Outcome · Price Overlay · Playbook · Pattern Combination · สถิติดิบ (Ranking/Matrix/Distribution/Timeline/Heatmap/MTF) — ซ่อนไว้โดยค่าเริ่มต้น</div>
       ${open ? `<div class="bi-research-body">${inner}</div>` : ""}</section>`;
@@ -1031,7 +1041,7 @@
     if (o90) chips.push(`<div class="bi-vd-chip"><small>คาดการณ์ 90 วัน (รูปแบบราคา)</small><b class="${pctCls(o90.median)}">median ${o90.median > 0 ? "+" : ""}${o90.median}%</b><span>เป็นบวก ${o90.positivePct}% ของกรณี</span></div>`);
     if (cy && cy.current) chips.push(`<div class="bi-vd-chip"><small>วัฏจักร 4 ปี</small><b>${esc(cy.current.state)}</b><span>${h && h.daysSince != null ? h.daysSince + " วันหลัง halving" : ""}</span></div>`);
     const rationale = (d.rationale || []).slice(0, 3);
-    return `<section class="mc-card mc-panel mc-fade bi-sec bi-vd bi-decision-${m.tone}" id="bi-verdict">
+    return `<section class="mc-card mc-panel mc-fade bi-sec bi-vd bi-decision-${m.tone} gc-card ${gcTone(m.tone)}" id="bi-verdict">
       <div class="bi-vd-head"><p class="mc-eyebrow">วันนี้ทำอะไร · สรุปจากหลักฐานอดีต</p><div class="bi-vd-word">${esc(m.th)}</div>${pb ? `<div class="bi-vd-pb">Playbook: ${esc(pb.action)}${pb.th ? " · " + esc(pb.th) : ""}</div>` : ""}</div>
       <div class="bi-vd-chips">${chips.join("")}</div>
       ${rationale.length ? `<ul class="bi-vd-why">${rationale.map((x) => `<li>• ${esc(x)}</li>`).join("")}</ul>` : ""}
@@ -1062,7 +1072,7 @@
     const col = cyclePhaseColor(cy.current.state), h = cy.halving || {}, p0 = cy.paths && cy.paths[0];
     const halving = `⛏️ ${esc(h.bucket || "")}${h.daysSince != null ? ` · ${h.daysSince} วันหลัง halving ${esc(h.lastHalving || "")}` : ""}${h.daysTo != null ? ` · อีก ${h.daysTo} วันถึง halving ถัดไป` : ""}`;
     const scen = p0 ? `เส้นทางในอดีตที่ใกล้สุด: <b>${esc(p0.scenario)}</b> (โอกาส ${p0.probability}%) → 90D <b class="${pctCls(p0.avgForward90)}">${pctStr(p0.avgForward90, true)}</b> · 180D <b class="${pctCls(p0.avgForward180)}">${pctStr(p0.avgForward180, true)}</b>` : "";
-    return `<section class="mc-card mc-panel mc-fade bi-sec bi-cystrip" id="bi-cyclestrip">
+    return `<section class="mc-card mc-panel mc-fade bi-sec bi-cystrip gc-card gc-neutral" id="bi-cyclestrip">
       <div class="mc-panel-head"><div><h2>⛏️ ตำแหน่งวัฏจักร 4 ปี</h2><span class="mc-sub">${halving}</span></div>
         <span class="bi-cyc-badge" style="color:${col};border-color:${col}">${esc(cy.current.state)} · ${cy.current.confidence}%</span></div>
       ${scen ? `<div class="bi-cystrip-scen">${scen}</div>` : ""}

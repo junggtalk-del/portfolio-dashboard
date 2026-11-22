@@ -89,6 +89,30 @@
     "no-target": { label: "ยังไม่ตั้งเป้า", cls: "is-idle" },
     "no-data": { label: "ยังไม่มีข้อมูล", cls: "is-idle" }
   };
+  // การ์ดแก้ว (glass-cards.css): สีการ์ด = สถานะที่ส่วนนี้คิดอยู่แล้ว · ไม่มีสถานะ → gc-neutral (ไม่ประดิษฐ์สถานะใหม่)
+  //   นำ / ตาม / ตามหลังเป้า (การ์ดพอร์ต · ประโยคสรุป · การ์ดผลตอบแทนจริงปีนี้ · หัวสรุปเกษียณ) ahead → calm · on → normal ·
+  //   behind → warning (อำพันเดิมของ --aa-behind — ตั้งใจไม่ใช้แดงกับการตามหลังเป้า) · no-target / no-data → neutral
+  //   แถวแบ่งสัดส่วน (ชิป aa-sum): is-ok → calm · is-warn → warning · is-bad → danger · แถบบันทึก: saved → calm · failed → danger
+  var GC_STATUS_TONE = { ahead: "gc-calm", on: "gc-normal", behind: "gc-warning" };
+  function gcTone(status) { return GC_STATUS_TONE[status] || "gc-neutral"; }
+  var GC_SUM_TONE = { "is-ok": "gc-calm", "is-warn": "gc-warning", "is-bad": "gc-danger" };
+  var GC_SAVE_TONE = { saved: "gc-calm", failed: "gc-danger" };
+  // ตารางเลื่อนซ้ายขวาในกล่องของตัวเอง — โฟกัสด้วยคีย์บอร์ดได้ · ป้ายไม่มีเงิน
+  function tableWrap(extraCls, label) {
+    return '<div class="aa-table-wrap' + (extraCls ? " " + extraCls : "") + ' gc-table-wrap" tabindex="0" role="region" aria-label="' + esc(label) + '">';
+  }
+
+  // Privacy Lock (privacy.js ซ่อนได้แค่ text node ไม่แตะ <input value>) — ช่องที่เป็นเงิน (ต้องใช้เงินเดือนละ · เติมเงินไตรมาสละ)
+  //   ตอนล็อกวาดว่าง + placeholder · ช่องว่างตอนล็อกไม่ถูกบันทึก (ไม่งั้นค่าที่ตั้งไว้หาย) · พิมพ์ค่าใหม่ตอนล็อกยังบันทึกได้
+  var LOCKED_PH = "ล็อกอยู่ — ใส่ค่าใหม่ได้";
+  var MONEY_FIELDS = { monthlyExpense: true, quarterlyContribution: true };
+  function privacyLocked() {
+    try { return !!(window.PortfolioPrivacy && typeof window.PortfolioPrivacy.isLocked === "function" && window.PortfolioPrivacy.isLocked()); }
+    catch (e) { return false; }
+  }
+  function lockedBlank(field, v) {
+    return !!MONEY_FIELDS[field] && privacyLocked() && String(v == null ? "" : v).replace(/^\s+|\s+$/g, "") === "";
+  }
   var HORIZON_TH = { 4: "1 ปี", 8: "2 ปี", 12: "3 ปี" };
   // เกินกว่านี้ถือว่าไม่สมจริงพอจะเอาไปวางแผน — engine คำนวณได้ แต่ไม่มีประโยชน์ที่จะโชว์
   var PLAUSIBLE_RATE_PCT = 50;
@@ -190,6 +214,12 @@
   }
   function onHoldingsUpdated() {
     if (dirty || saving) return;
+    if (aaControlFocused()) { holdingsRenderPending = true; return; }
+    render();
+  }
+  // ล็อก/ปลดล็อก Privacy → วาดใหม่ให้ช่องเงินว่าง (ล็อก) / มีค่า (ปลดล็อก) · กำลังพิมพ์ใน #aaRoot อยู่ → เลื่อนแบบ holdings
+  //   (การบันทึกที่ค้างอยู่วาดใหม่เองตอนจบ ด้วยสถานะล็อกตอนนั้น)
+  function onPrivacyChanged() {
     if (aaControlFocused()) { holdingsRenderPending = true; return; }
     render();
   }
@@ -410,6 +440,8 @@
 
   // ---------------------------------------------------------------- headline
   // ประโยคสรุปสร้างจาก engine ล้วน ๆ — ไม่มีการแต่งเรื่องหรือประเมินเพิ่ม
+  // none: true = ประโยคที่ไม่ได้บอกสถานะเทียบเป้า (ยังไม่มีข้อมูล · ยังไม่ตั้งผลตอบแทนคาดหวัง · มีแค่ runway) —
+  //   tone ยังเป็นค่าเริ่มต้น "on" (คลาส is-on เดิม) แต่การ์ดแก้วเป็น neutral ไม่ใช่ "ตามเป้า" (normal)
   function headline(R) {
     var P = AA().PORTS, clauses = [], tone = "on";
     var anyData = false;
@@ -417,6 +449,7 @@
     if (!anyData) {
       return {
         tone: "on",
+        none: true,
         text: R.totals.unassignedCount > 0
           ? "ยังไม่ได้จัดสินทรัพย์เข้าพอร์ตใดเลย — เริ่มจากหัวข้อ “จัดสินทรัพย์เข้าพอร์ต” ด้านล่าง"
           : "ยังไม่มีข้อมูลพอจะวัดผลตอบแทนของพอร์ตไหน"
@@ -446,9 +479,10 @@
       var onTarget = [];
       P.forEach(function (p) { if (R.ports[p].status === "on") onTarget.push(R.ports[p].label); });
       if (onTarget.length) return { tone: "on", text: "พอร์ต" + onTarget.join(" และ ") + "เดินตามเส้นคาดหวังอยู่" };
-      return { tone: "on", text: "มีข้อมูลผลตอบแทนแล้ว แต่ยังไม่ได้ตั้งผลตอบแทนคาดหวังของพอร์ตไหน — ตั้งได้ที่หัวข้อ “ตั้งค่า”" };
+      return { tone: "on", none: true, text: "มีข้อมูลผลตอบแทนแล้ว แต่ยังไม่ได้ตั้งผลตอบแทนคาดหวังของพอร์ตไหน — ตั้งได้ที่หัวข้อ “ตั้งค่า”" };
     }
-    return { tone: tone, text: clauses.slice(0, 2).join(" ขณะที่ ") };
+    // tone ยังเป็นค่าเริ่มต้น = ประโยคมีแค่ runway (ไม่มีพอร์ตตามหลัง · นำ ไม่ถูกตรวจเพราะมีประโยคแล้ว) → ไม่มีสถานะ
+    return { tone: tone, none: tone === "on", text: clauses.slice(0, 2).join(" ขณะที่ ") };
   }
 
   // ---------------------------------------------------------------- sections
@@ -468,28 +502,32 @@
     var TV = targetVerdict(R);
     var h = headline(R);
     var fresh = psFetchedAt ? "ข้อมูลพอร์ตดึงเมื่อ " + esc(timeAgo(psFetchedAt)) : "";
+    // .aa-hero = ตัวห่อบนพื้นหน้า: หัว (gc-section-h) · ประโยคสรุป (การ์ดตามสถานะ) · ช่องตัวเลขเป็นการ์ดแก้วของตัวเอง
+    //   ยังไม่จัด: มีรายการที่ยังไม่จัด → warning (กรอบอำพันเดิมของ .aa-unassigned) · ไม่มี → neutral
+    var tile = "aa-stat gc-card gc-tile ", num = "aa-stat-n gc-num gc-num-s";
     return '<section class="aa-hero"><div class="aa-hero-inner">' +
-      '<h1 class="aa-title">ASSET ALLOCATION</h1>' +
-      '<p class="aa-sub">แบ่งพอร์ตเป็น 3 ระยะ และติดตามผลตอบแทนจริงเทียบกับเป้าหมาย</p>' +
-      '<div class="aa-headline is-' + h.tone + '">' + esc(h.text) + "</div>" +
+      '<div class="aa-hero-head gc-section-h"><h1 class="aa-title">ASSET ALLOCATION</h1>' +
+      '<p class="aa-sub">แบ่งพอร์ตเป็น 3 ระยะ และติดตามผลตอบแทนจริงเทียบกับเป้าหมาย</p></div>' +
+      '<div class="aa-headline is-' + h.tone + " gc-card " + gcTone(h.none ? null : h.tone) + '">' + esc(h.text) + "</div>" +
       '<div class="aa-stats">' +
-        '<div class="aa-stat"><div class="aa-stat-n">' + thb(R.totals.latest) + '</div>' +
+        '<div class="' + tile + 'gc-neutral"><div class="' + num + '">' + thb(R.totals.latest) + '</div>' +
           // ชุดเดียวกับส่วนหัวของหน้า · โหมด pm บอกที่มาของหุ้นต่างประเทศเป็นบรรทัดจางใต้ไตรมาสล่าสุด
           '<div class="aa-stat-l">มูลค่าพอร์ตรวม</div>' +
           '<div class="aa-stat-s">ไตรมาสล่าสุด ' + esc(R.latestKey) + "</div>" +
           (pm ? '<div class="aa-stat-s"><span class="aa-muted" data-aa-src="pm">' + esc(SRC_PM_TH) + "</span></div>" : "") + "</div>" +
-        '<div class="aa-stat"><div class="aa-stat-n">' + (R.totals.assignedPct === null ? "—" : pctOf(R.totals.assignedPct, 0)) + '</div>' +
+        '<div class="' + tile + 'gc-neutral"><div class="' + num + '">' + (R.totals.assignedPct === null ? "—" : pctOf(R.totals.assignedPct, 0)) + '</div>' +
           '<div class="aa-stat-l">จัดเข้าพอร์ตแล้ว</div>' +
           '<div class="aa-stat-s">' + thb(R.totals.assigned) + "</div></div>" +
-        '<div class="aa-stat"><div class="aa-stat-n">' + R.totals.unassignedCount + ' รายการ</div>' +
+        // "N รายการ" มีคำไทย — ไม่ใช่ gc-num (ขนาด/น้ำหนักเท่ากันจาก CSS)
+        '<div class="' + tile + (R.totals.unassignedCount > 0 ? "gc-warning" : "gc-neutral") + '"><div class="aa-stat-n">' + R.totals.unassignedCount + ' รายการ</div>' +
           '<div class="aa-stat-l">ยังไม่จัด</div>' +
           '<div class="aa-stat-s">' + thb(R.totals.unassigned) + "</div>" +
           (R.totals.unassignedCount > 0 ? '<a class="aa-stat-link" href="#aaAssign">ไปจัดเลย →</a>' : "") + "</div>" +
-        '<div class="aa-stat"><div class="aa-stat-n aa-num">' + R.quarters.length + '</div>' +
+        '<div class="' + tile + 'gc-neutral"><div class="' + num + ' aa-num">' + R.quarters.length + '</div>' +
           '<div class="aa-stat-l">ไตรมาสที่มีข้อมูล</div>' +
           '<div class="aa-stat-s">' + esc(fresh) + "</div></div>" +
-        (TV ? '<div class="aa-stat aa-stat-target is-' + TV.status + '" title="' + esc("ผลตอบแทนจริงทั้งพอร์ต หักเงินเติม/ถอนแล้ว เทียบเป้าพอร์ตเกษียณ " + tgtNum(TV.annualPct) + "%/ปี (ปรับตามจำนวนไตรมาสที่ผ่านไป)") + '">' +
-          '<div class="aa-stat-n">' + pctSigned(TV.real) + '</div>' +
+        (TV ? '<div class="aa-stat aa-stat-target is-' + TV.status + " gc-card gc-tile " + gcTone(TV.status) + '" title="' + esc("ผลตอบแทนจริงทั้งพอร์ต หักเงินเติม/ถอนแล้ว เทียบเป้าพอร์ตเกษียณ " + tgtNum(TV.annualPct) + "%/ปี (ปรับตามจำนวนไตรมาสที่ผ่านไป)") + '">' +
+          '<div class="' + num + '">' + pctSigned(TV.real) + '</div>' +
           '<div class="aa-stat-l">ผลตอบแทนจริงปี ' + TV.year + ' (' + targetSpan(TV) + ')</div>' +
           '<div class="aa-stat-s">เป้า ' + pctSigned(TV.target) + ' · <b>' + TARGET_TH[TV.status] + "</b></div></div>" : "") +
       "</div></div></section>";
@@ -527,11 +565,11 @@
         return esc(a.name) + " " + num(a.weightPct, 0) + "% (" + thb(a.allocatedValue) + ")";
       }).join(" · ") + "</div>"
       : "";
-    return '<article class="aa-card" data-port="' + esc(P.key) + '">' +
+    return '<article class="aa-card gc-card ' + gcTone(P.status) + '" data-port="' + esc(P.key) + '">' +
       '<div class="aa-card-top"><span class="aa-dot" style="background:' + P.color + '"></span>' +
         '<span class="aa-card-name">' + esc(P.label) + '</span>' +
         '<span class="aa-card-sub">' + esc(P.sub) + "</span></div>" +
-      '<div><div class="aa-card-val">' + thb(P.latestValue) + "</div>" +
+      '<div><div class="aa-card-val gc-num">' + thb(P.latestValue) + "</div>" +
         '<div class="aa-card-share">' + (P.share === null ? "—" : pctOf(P.share) + " ของพอร์ตรวม") + "</div></div>" +
       '<div class="aa-vs">' +
         '<div class="aa-vs-cell"><div class="aa-vs-l">คาดหวัง</div>' +
@@ -553,7 +591,7 @@
   }
 
   function cardsSection(R) {
-    return '<section class="aa-block"><div class="aa-block-head"><h2>เงินอยู่ตรงไหน และทำได้ตามเป้าหรือไม่</h2>' +
+    return '<section class="aa-block"><div class="aa-block-head gc-section-h"><h2>เงินอยู่ตรงไหน และทำได้ตามเป้าหรือไม่</h2>' +
       '<span class="aa-block-sub">ผลตอบแทนจริงหักเงินเติม/ถอนแล้ว' + splitSub(R) + " · “~” = ค่าประมาณ</span></div>" +
       '<div class="aa-cards">' + AA().PORTS.map(function (p) { return portCard(R.ports[p]); }).join("") + "</div></section>";
   }
@@ -573,12 +611,13 @@
           '<div class="aa-fh-s">เพื่อกลับไปอยู่บนเส้นคาดหวังภายใน ' + P.required.horizonQuarters + " ไตรมาส (ถึง " + esc(P.required.targetKey || "—") + ")" +
           (P.status === "ahead" ? " · ตอนนี้นำเป้าอยู่ ตัวเลขนี้จึงต่ำกว่าเป้าที่ตั้งไว้" : "") + "</div>";
       }
-      return '<div class="aa-fh"><div class="aa-fh-name"><span class="aa-dot" style="background:' + P.color + '"></span>' + esc(P.label) + "</div>" + body + "</div>";
+      // ไม่มีสถานะของตัวเอง (สถานะของพอร์ตอยู่ที่การ์ดพอร์ตด้านบน) → neutral
+      return '<div class="aa-fh gc-card gc-neutral"><div class="aa-fh-name"><span class="aa-dot" style="background:' + P.color + '"></span>' + esc(P.label) + "</div>" + body + "</div>";
     }).join("");
-    return '<section class="aa-block"><div class="aa-block-head"><h2>จากนี้ต้องทำได้เท่าไหร่</h2>' +
+    return '<section class="aa-block"><div class="aa-block-head gc-section-h"><h2>จากนี้ต้องทำได้เท่าไหร่</h2>' +
       '<span class="aa-block-sub">จากดัชนีผลตอบแทนจริง (หักเงินเติมแล้ว' + splitSub(R) + ") เทียบเส้นคาดหวัง</span>" +
       '<span class="aa-horizon"><label for="aaHorizon">ภายใน</label>' +
-      '<select class="aa-select" id="aaHorizon" data-horizon>' + opts + "</select></span></div>" +
+      '<select class="aa-select gc-field" id="aaHorizon" data-horizon>' + opts + "</select></span></div>" +
       '<div class="aa-fromhere">' + cards + "</div></section>";
   }
 
@@ -607,13 +646,17 @@
     function Y(v) { return T + (1 - v / maxV) * (H - T - B); }
 
     var svg = "";
+    // ป้ายแกนเงิน (648M · 4.3M · 520k) บอกขนาดพอร์ต — ล็อก Privacy อยู่ → นำหน้าด้วย ฿ ให้ privacy.js ซ่อนเป็น ฿XXXM
+    //   (MONEY_RE จับเฉพาะ ฿ / บาท / THB) · ปลดล็อก = ข้อความเดิม (ส่วนนี้วาดใหม่ทุกครั้งที่ล็อก/ปลดล็อก)
+    var lockedAxis = privacyLocked();
     for (var g = 0; g <= 3; g++) {
       var gy = T + (g / 3) * (H - T - B), gv = maxV - (g / 3) * maxV;
+      var lab = gv >= 1e7 ? Math.round(gv / 1e6) + "M"
+        : gv >= 1e6 ? (gv / 1e6).toFixed(1) + "M"
+        : gv >= 1000 ? Math.round(gv / 1000) + "k" : "0";
       svg += '<line class="aa-grid" x1="' + L + '" y1="' + gy.toFixed(1) + '" x2="' + (W - Rr) + '" y2="' + gy.toFixed(1) + '" />';
       svg += '<text class="aa-axis" x="' + (L - 7) + '" y="' + (gy + 3.5).toFixed(1) + '" text-anchor="end">' +
-        (gv >= 1e7 ? Math.round(gv / 1e6) + "M"
-          : gv >= 1e6 ? (gv / 1e6).toFixed(1) + "M"
-          : gv >= 1000 ? Math.round(gv / 1000) + "k" : "0") + "</text>";
+        (lockedAxis && lab !== "0" ? "฿" + lab : lab) + "</text>";
     }
     // เส้นแบ่งวันเกษียณ
     var rx = X(RT.workYears);
@@ -660,25 +703,31 @@
       var bx2 = Math.max(L, Math.min(W - Rr - bandW2, X(yr) - bandW2 / 2));
       svg += hitBand(bx2, bandW2, T, H - T - B, h2);
     }
-    return '<div class="aa-chart"><svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' +
+    // กราฟอยู่ในการ์ดแก้วของตัวเอง (ไม่มีสถานะ → neutral) · สีเส้นสองเส้นมีความหมาย (คาด / จริง ตามคำอธิบายใต้กราฟ) คงเดิม
+    return '<div class="aa-retire-chart gc-card gc-neutral">' +
+      '<div class="aa-chart"><svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' +
       esc("กราฟมูลค่าพอร์ตตั้งแต่วันนี้จนจบช่วงเกษียณ") + '">' + svg + '</svg><div class="aa-tip"></div></div>' +
       '<div class="aa-legend">' + lines.map(function (ln) {
         return '<span><i style="border-top-color:' + ln.color + (ln.dash ? ";border-top-style:dashed" : "") + '"></i>' + esc(ln.label) + "</span>";
-      }).join("") + "</div>";
+      }).join("") + "</div></div>";
   }
 
 
   function retireInputs(RT, TV) {
     // hint = ข้อความสั้นใต้ช่อง (ให้การ์ดทั้ง 8 ใบสูงพอ ๆ กันและเรียงได้บรรทัดเดียว) · tip = คำอธิบายเต็มเมื่อชี้เมาส์
+    // ช่องเงิน (MONEY_FIELDS) ตอนล็อก Privacy: value ว่าง + placeholder ล็อกอยู่ (privacy.js ไม่ซ่อน <input value>)
+    var locked = privacyLocked();
     function f(id, label, field, val, hint, step, tip) {
+      var blank = locked && !!MONEY_FIELDS[field];
       return '<div class="aa-field"' + (tip ? ' title="' + esc(tip) + '"' : "") + '><label class="aa-field-l" for="' + id + '">' + esc(label) + "</label>" +
         // เงินเติมไตรมาสละมักพิมพ์ "250,000" — type=number ของ Chrome คืนค่าว่างเมื่อมีจุลภาค (ค่าที่ตั้งจะหายเงียบ ๆ)
         // จึงใช้ช่องข้อความ + แป้นตัวเลข แล้วให้ setRetirement ตัดจุลภาคเอง
-        '<input class="aa-input" id="' + id + '" ' + (field === "quarterlyContribution"
+        '<input class="aa-input gc-field" id="' + id + '" ' + (field === "quarterlyContribution"
           ? 'type="text" inputmode="numeric" autocomplete="off" '
           : 'type="number" min="0" step="' + (step || 1) + '" inputmode="decimal" ') +
         (field === "monthlyExpense" ? "data-monthly-expense" : 'data-retire="' + field + '"') +
-        ' value="' + (val === null || val === undefined ? "" : esc(field === "quarterlyContribution" ? Number(val).toLocaleString("en-US") : val)) + '" />' +
+        ' value="' + (blank || val === null || val === undefined ? "" : esc(field === "quarterlyContribution" ? Number(val).toLocaleString("en-US") : val)) + '"' +
+        (blank ? ' placeholder="' + esc(LOCKED_PH) + '"' : "") + " />" +
         '<div class="aa-field-h">' + hint + "</div></div>";
     }
     // เก็บเป็นรายปี (แผนเกษียณคิดรายปี) แต่กรอก/แสดงเป็น "ไตรมาสละ"
@@ -693,7 +742,8 @@
     var targetHint = TV
       ? '<span class="aa-tv is-' + TV.status + '">ปี ' + TV.year + " (" + targetSpan(TV) + ") ทำได้ " + pctSigned(TV.real) + " · เป้า " + pctSigned(TV.target) + " → <b>" + TARGET_TH[TV.status] + "</b></span>"
       : "ใช้เทียบผลตอบแทนจริงทุกไตรมาส/ปี";
-    return '<div class="aa-retire-in">' +
+    // ช่องตั้งค่าแผนเกษียณอยู่ในการ์ดแก้วใบเดียว (ไม่มีสถานะ → neutral) · แต่ละช่องเป็นหลุมในการ์ด
+    return '<div class="aa-retire-set gc-card gc-neutral"><div class="aa-retire-in">' +
       f("aaAge", "อายุตอนนี้ (ปี)", "currentAge", allocation.retirement.currentAge, "แสดงเป็นอายุแทนจำนวนปี", 1,
         "ใส่แล้วทุกอย่างจะแสดงเป็นอายุ ไม่ใช่แค่จำนวนปี") +
       f("aaExpense", "ต้องใช้เงินเดือนละ (บาท · ค่าวันนี้)", "monthlyExpense", allocation.monthlyExpense, "ราคาวันนี้ · ใช้คิด runway และแผนเกษียณ", 1000,
@@ -711,7 +761,7 @@
       f("aaTarget", "เป้าผลตอบแทนพอร์ตเกษียณ (%/ปี)", "targetReturnPct", allocation.retirement.targetReturnPct, targetHint, 0.5,
         "ต้องทำให้ได้เท่านี้ไปตลอด เพราะจะใช้กำไรเป็นค่าใช้จ่ายหลังเกษียณ · เทียบกับผลตอบแทนจริงที่หักเงินเติม/ถอนแล้ว (ใต้ช่องนี้ · หัวหน้า · ตารางบันทึกผลตอบแทน) · " +
         "เว้นว่าง = 10 · คนละตัวกับผลตอบแทนคาดหวังของ 3 พอร์ตที่ใช้ฉายภาพแผนเกษียณ") +
-      "</div>";
+      "</div></div>";
   }
 
   // ── ช่วงที่ 1 · ก่อนเกษียณ — ต้องทำอีกเท่าไหร่ถึงจะเกษียณได้
@@ -744,7 +794,8 @@
         : "เติมเข้าพอร์ตปีละ <b>" + thb(sc.requiredAnnualContribution) + "</b> (เพิ่มอีก " + thb(sc.extraContributionNeeded) + "/ปี)";
       how = '<p class="aa-sc-note is-warn">ปิดช่องว่างได้ 2 ทาง — ' + rateTxt + " <b>หรือ</b> " + contribTxt + "</p>";
     }
-    return '<div class="aa-phase' + (enough ? " is-ok" : "") + '">' +
+    // สถานะของการ์ด = เงินพอ ณ วันเกษียณไหม (is-ok · ช่อง "ยังขาดอีก" is-short) → calm / warning
+    return '<div class="aa-phase' + (enough ? " is-ok" : "") + " gc-card " + (enough ? "gc-calm" : "gc-warning") + '">' +
       '<div class="aa-phase-head"><span class="aa-phase-no">ช่วงที่ 1</span> ก่อนเกษียณ — ต้องทำอีกเท่าไหร่ถึงจะเกษียณได้' +
       ' <span class="aa-block-sub">' + esc(when) + " · ผลตอบแทนคาดหวัง " + num(RT.expectedRatePct) + "%/ปี</span></div>" +
       '<div class="aa-gap-grid">' + rows + "</div>" + how + "</div>";
@@ -788,7 +839,8 @@
         thb(RT.actual.afterRetirement.wealthAtRetirement) + "</b> ตอนเกษียณ และใช้ได้ <b>" +
         thb(RT.actual.afterRetirement.spendAll.monthlyToday) + "/เดือน</b> (ค่าเงินวันนี้)</p>";
     }
-    return '<div class="aa-phase">' +
+    // การ์ดช่วงที่ 2 ไม่มีสถานะของตัวเอง (สถานะอยู่ที่ช่อง is-ok / is-short ข้างใน) → neutral
+    return '<div class="aa-phase gc-card gc-neutral">' +
       '<div class="aa-phase-head"><span class="aa-phase-no">ช่วงที่ 2</span> หลังเกษียณ — ใช้เท่าไหร่พอร์ตถึงอยู่ได้จนจบ' +
       ' <span class="aa-block-sub">' + esc(when) + " · ผลตอบแทนคาดหวัง " + num(sc.postRatePct) + "%/ปี" +
       (RT.postReturnPct === null ? " (เท่ากับก่อนเกษียณ)" : "") + "</span></div>" +
@@ -799,23 +851,26 @@
   function retirementSection(R) {
     var RT = R.retirement;
     var body;
+    // .aa-retire = ตัวห่อ: ทุกกล่องข้างในเป็นการ์ดแก้วของตัวเอง (ไม่ซ้อนกัน)
     if (!RT.ready) {
-      body = '<div class="aa-q-line">ยังตั้งค่าไม่ครบ — ต้องใส่: <b>' + esc(RT.missing.join(" · ")) + "</b></div>" +
-        (RT.expectedRatePct === null ? '<div class="aa-q-line">ผลตอบแทนคาดหวังมาจากที่ตั้งไว้ในแต่ละพอร์ต (หัวข้อ “ตั้งค่า”) ถ่วงตามมูลค่าพอร์ตจริง</div>' : "");
+      body = '<div class="aa-retire-note gc-card gc-neutral"><div class="aa-q-line">ยังตั้งค่าไม่ครบ — ต้องใส่: <b>' + esc(RT.missing.join(" · ")) + "</b></div>" +
+        (RT.expectedRatePct === null ? '<div class="aa-q-line">ผลตอบแทนคาดหวังมาจากที่ตั้งไว้ในแต่ละพอร์ต (หัวข้อ “ตั้งค่า”) ถ่วงตามมูลค่าพอร์ตจริง</div>' : "") + "</div>";
     } else {
       var head = "";
       if (RT.expected) {
         var v = VERDICT_TH[RT.expected.verdict] || VERDICT_TH.tight;
+        // หัวสรุปเกษียณ: สบาย (is-ahead) → calm · พอดีตัว (is-on) → normal · เสี่ยง — เงินไม่พอ (is-behind) → warning
         var msg = RT.expected.runsOutInYear !== null
           ? "ถ้าได้ผลตอบแทนตามที่คาด (" + num(RT.expectedRatePct) + "%/ปี) เงินจะหมดก่อนครบกำหนด " + RT.expected.yearsShort + " ปี"
           : (RT.expected.verdict === "comfortable"
             ? "ถ้าได้ผลตอบแทนตามที่คาด (" + num(RT.expectedRatePct) + "%/ปี) เงินพอใช้ครบ " + RT.retireYears + " ปี และยังเหลือ " + thb(RT.expected.endWealth)
             : "ถ้าได้ผลตอบแทนตามที่คาด (" + num(RT.expectedRatePct) + "%/ปี) เงินพอใช้ครบ " + RT.retireYears + " ปี แต่เหลือไม่มาก");
-        head = '<div class="aa-headline is-' + (RT.expected.verdict === "short" ? "behind" : RT.expected.verdict === "comfortable" ? "ahead" : "on") + '">' +
+        var vTone = RT.expected.verdict === "short" ? "behind" : RT.expected.verdict === "comfortable" ? "ahead" : "on";
+        head = '<div class="aa-headline is-' + vTone + " gc-card " + gcTone(vTone) + '">' +
           "<b>" + esc(v.label) + "</b> — " + esc(msg) + "</div>";
       }
       var excl = RT.unassignedExcluded > 0
-        ? '<div class="aa-banner">แผนนี้คิดจากเฉพาะเงินที่จัดเข้าพอร์ตแล้ว ' + thb(RT.startWealth) +
+        ? '<div class="aa-banner gc-card gc-tile gc-warning">แผนนี้คิดจากเฉพาะเงินที่จัดเข้าพอร์ตแล้ว ' + thb(RT.startWealth) +
           " — ยังไม่รวมอีก " + thb(RT.unassignedExcluded) + " (" + num(RT.unassignedPct, 0) +
           "% ของพอร์ต) ที่ยังไม่ได้จัด เพราะยังไม่มีใครตั้งผลตอบแทนคาดหวังให้ส่วนนั้น" +
           ' <a href="#aaAssign">ไปจัดให้ครบ →</a></div>'
@@ -827,7 +882,7 @@
         (RT.retireAge !== null ? " · เกษียณตอนอายุ " + num(RT.retireAge, 0) : "") +
         (RT.endAge !== null ? " · วางแผนถึงอายุ " + num(RT.endAge, 0) : "") + " · "
       : "";
-    return '<section class="aa-block" id="aaRetire"><div class="aa-block-head"><h2>ฉันมีเงินพอแล้วหรือยัง</h2>' +
+    return '<section class="aa-block" id="aaRetire"><div class="aa-block-head gc-section-h"><h2>ฉันมีเงินพอแล้วหรือยัง</h2>' +
       '<span class="aa-block-sub">' + esc(ageLine) + "เงินที่จัดเข้าพอร์ตแล้ว ณ " + esc(R.latestKey) + " " + thb(RT.startWealth) +
       " · ผลตอบแทนคาดหวังก่อนเกษียณ " + num(RT.expectedRatePct) + "%/ปี" +
       (RT.postRateUsedPct === null ? "" : " · หลังเกษียณ " + num(RT.postRateUsedPct) + "%/ปี") +
@@ -849,8 +904,9 @@
         "<td>" + (q.expectedIndex === null ? "—" : q.expectedIndex.toFixed(1)) + "</td>" +
         "<td>" + esc(note) + "</td></tr>";
     }).join("");
-    return '<details class="aa-details"><summary>ดูรายไตรมาสของพอร์ต' + esc(P.label) + " (" + P.quarters.length + " ไตรมาส)</summary>" +
-      '<div class="aa-table-wrap"><table class="aa-table"><thead><tr>' +
+    // <details> เป็นการ์ดแก้ว neutral ของตัวเอง (อยู่นอกกล่องคุณภาพข้อมูล)
+    return '<details class="aa-details gc-card gc-neutral"><summary>ดูรายไตรมาสของพอร์ต' + esc(P.label) + " (" + P.quarters.length + " ไตรมาส)</summary>" +
+      tableWrap("", "ตารางรายไตรมาสของพอร์ต" + P.label + " เลื่อนซ้ายขวาได้") + '<table class="aa-table gc-table"><thead><tr>' +
       "<th>ไตรมาส</th><th>ต้นงวด</th><th>เติม/ถอน</th><th>ปลายงวด</th><th>~ผลตอบแทน</th><th>ดัชนีจริง</th><th>ดัชนีคาด</th><th>หมายเหตุ</th>" +
       "</tr></thead><tbody>" + rows + "</tbody></table></div></details>";
   }
@@ -864,7 +920,7 @@
       var meta = AA().PORT_META[p];
       var v = a.split[p] || 0;
       return '<label class="aa-sp"><span class="aa-sp-l"><i class="aa-dot" style="background:' + meta.color + '"></i>' + esc(meta.label) + "</span>" +
-        '<span class="aa-sp-in"><input class="aa-input aa-input-pct" type="number" min="0" max="100" step="1" inputmode="decimal" ' +
+        '<span class="aa-sp-in"><input class="aa-input aa-input-pct gc-field" type="number" min="0" max="100" step="1" inputmode="decimal" ' +
         'data-split="' + esc(a.key) + '" data-port="' + p + '" value="' + (v || "") + '" placeholder="0" ' +
         'aria-label="' + esc(a.name + " ในพอร์ต" + meta.label + " (%)") + '" />%</span>' +
         '<span class="aa-sp-v">' + (v > 0 ? thb(a.latestValue * v / 100) : "—") + "</span></label>";
@@ -874,11 +930,12 @@
     else if (a.sumPct >= 99.999) { cls = "is-ok"; txt = "รวม 100%"; }
     else if (a.sumPct <= 0.0001) { cls = "is-warn"; txt = "ยังไม่จัดเลย (" + thb(a.latestValue) + ")"; }
     else { cls = "is-warn"; txt = "รวม " + num(a.sumPct, 0) + "% · เหลือ " + num(100 - a.sumPct, 0) + "% (" + thb(a.latestValue * (100 - a.sumPct) / 100) + ") ยังไม่จัด"; }
-    var preset = '<select class="aa-select aa-preset" data-assign="' + esc(a.key) + '" aria-label="' + esc("ตั้งทั้งก้อนของ " + a.name) + '">' +
+    var preset = '<select class="aa-select aa-preset gc-field" data-assign="' + esc(a.key) + '" aria-label="' + esc("ตั้งทั้งก้อนของ " + a.name) + '">' +
       '<option value="">ตั้งทั้งก้อน…</option><option value="">ยังไม่จัด (ล้าง)</option>' +
       AA().PORTS.map(function (p) { return '<option value="' + p + '">100% ' + esc(AA().PORT_META[p].label) + "</option>"; }).join("") +
       "</select>";
-    return '<div class="aa-arow" data-asset="' + esc(a.key) + '">' +
+    // แถวเป็นการ์ดแก้ว (gc-tile) สีตามชิปรวม % ของแถวเอง: ครบ 100% → calm · ยังไม่ครบ → warning · เกิน 100% → danger
+    return '<div class="aa-arow gc-card gc-tile ' + GC_SUM_TONE[cls] + '" data-asset="' + esc(a.key) + '">' +
       '<div class="aa-arow-id"><div class="aa-row-name">' + esc(a.name) + "</div>" +
         '<div class="aa-row-type">' + esc(a.typeLabel || a.type) + " · " + thb(a.latestValue) +
         (a.lastSeenKey ? " · ล่าสุด " + esc(a.lastSeenKey) : "") + "</div></div>" +
@@ -901,39 +958,40 @@
       : "";
     var stale = "";
     if (R.meta.staleKeys.length) {
-      stale = '<div class="aa-banner">มีการจัดพอร์ตที่ชี้ไปรายการซึ่งไม่มีอยู่ในไตรมาสไหนแล้ว ' + R.meta.staleKeys.length + " รายการ " +
+      stale = '<div class="aa-banner gc-card gc-tile gc-warning">มีการจัดพอร์ตที่ชี้ไปรายการซึ่งไม่มีอยู่ในไตรมาสไหนแล้ว ' + R.meta.staleKeys.length + " รายการ " +
         "(เกิดได้เมื่อเปลี่ยนชื่อรายการใน Quarterly Editor) — ระบบยังเก็บไว้ให้ ไม่ได้ลบเอง: " +
         R.meta.staleKeys.map(function (k) {
-          return '<span class="aa-chip">' + esc(k) + ' <button class="aa-btn aa-btn-danger" data-drop-stale="' + esc(k) + '" type="button">ลบ</button></span>';
+          return '<span class="aa-chip">' + esc(k) + ' <button class="aa-btn aa-btn-danger gc-btn gc-btn-ghost" data-drop-stale="' + esc(k) + '" type="button">ลบ</button></span>';
         }).join(" ") + "</div>";
     }
     var bad = "";
     if (R.meta.invalidSplits.length) {
-      bad = '<div class="aa-banner">' + R.meta.invalidSplits.length + " รายการตั้งสัดส่วนรวมเกิน 100% — " +
+      bad = '<div class="aa-banner gc-card gc-tile gc-warning">' + R.meta.invalidSplits.length + " รายการตั้งสัดส่วนรวมเกิน 100% — " +
         "ระบบไม่นำเข้าพอร์ตเลยเพื่อไม่ให้ยอดรวมของพอร์ตมากกว่ามูลค่าจริง: " +
         R.meta.invalidSplits.map(function (x) { return esc(x.name) + " (" + num(x.sum, 0) + "%)"; }).join(" · ") + "</div>";
     }
-    return '<section class="aa-block" id="aaAssign"><div class="aa-block-head"><h2>แบ่งสัดส่วนเข้าพอร์ต</h2>' +
+    // กล่องยังจัดไม่ครบ: มีรายการ → warning (กรอบอำพันเดิม) · จัดครบ (is-empty) → neutral
+    return '<section class="aa-block" id="aaAssign"><div class="aa-block-head gc-section-h"><h2>แบ่งสัดส่วนเข้าพอร์ต</h2>' +
       '<span class="aa-block-sub">สินทรัพย์หนึ่งตัวแบ่งได้หลายพอร์ต เช่น Bitcoin ระยะกลาง 30% ระยะยาว 70% · ทุกรายการเริ่มที่ “ยังไม่จัด” ระบบไม่เดาให้</span></div>' +
       bad + stale +
-      '<div class="aa-unassigned' + (un.length ? "" : " is-empty") + '"><div class="aa-q-line">' + head + "</div>" + unBody + "</div>" +
+      '<div class="aa-unassigned' + (un.length ? " gc-card gc-warning" : " is-empty gc-card gc-neutral") + '"><div class="aa-q-line">' + head + "</div>" + unBody + "</div>" +
       '<div class="aa-atable">' + R.assetsAll.map(splitRow).join("") + "</div></section>";
   }
 
   function settingsSection(R) {
     var fields = AA().PORTS.map(function (p) {
       var P = R.ports[p];
-      return '<div class="aa-field"><label class="aa-field-l" for="aaExp-' + p + '">' +
+      return '<div class="aa-field gc-card gc-tile gc-neutral"><label class="aa-field-l" for="aaExp-' + p + '">' +
         "ผลตอบแทนคาดหวัง · " + esc(P.label) + " (%/ปี)</label>" +
-        '<input class="aa-input" id="aaExp-' + p + '" type="number" step="0.1" inputmode="decimal" data-expected="' + p + '" value="' +
+        '<input class="aa-input gc-field" id="aaExp-' + p + '" type="number" step="0.1" inputmode="decimal" data-expected="' + p + '" value="' +
         (P.expectedReturnPct === null ? "" : esc(P.expectedReturnPct)) + '" placeholder="เช่น 6" />' +
         '<div class="aa-field-h">ใช้สร้างเส้นคาดหวังแบบทบต้น เว้นว่างได้ถ้ายังไม่อยากตั้ง</div></div>';
     }).join("");
-    fields += '<div class="aa-field"><span class="aa-field-l">ค่าใช้จ่ายต่อเดือน · เงินเฟ้อ · แผนเกษียณ</span>' +
+    fields += '<div class="aa-field gc-card gc-tile gc-neutral"><span class="aa-field-l">ค่าใช้จ่ายต่อเดือน · เงินเฟ้อ · แผนเกษียณ</span>' +
       '<div class="aa-field-h">ตั้งอยู่ที่หัวข้อ <a href="#aaRetire">“ฉันมีเงินพอแล้วหรือยัง”</a> ด้านบน เพราะใช้ร่วมกับการคำนวณเกษียณและ runway</div></div>';
-    fields += '<div class="aa-field"><span class="aa-field-l">ช่วงเวลาเป้าหมาย</span>' +
+    fields += '<div class="aa-field gc-card gc-tile gc-neutral"><span class="aa-field-l">ช่วงเวลาเป้าหมาย</span>' +
       '<div class="aa-field-h">ตั้งอยู่ที่หัวข้อ “จากนี้ต้องทำได้เท่าไหร่” ด้านบน — ตอนนี้เลือกไว้ที่ ' + HORIZON_TH[horizonQuarters] + "</div></div>";
-    return '<section class="aa-block"><div class="aa-block-head"><h2>ตั้งค่า</h2>' +
+    return '<section class="aa-block"><div class="aa-block-head gc-section-h"><h2>ตั้งค่า</h2>' +
       '<span class="aa-block-sub">บันทึกเมื่อออกจากช่อง (ไม่บันทึกระหว่างพิมพ์)</span></div>' +
       '<div class="aa-settings">' + fields + "</div></section>";
   }
@@ -946,12 +1004,13 @@
   function recordSection(R) {
     var R2 = R.record, W = R2 && R2.whole;
     if (!R2 || !W || !W.rows.length) {
-      return '<section class="aa-block" id="aaRecord"><div class="aa-block-head"><h2>บันทึกผลตอบแทนย้อนหลัง</h2></div>' +
-        '<div class="aa-quality"><div class="aa-q-line">ต้องมีอย่างน้อย 2 ไตรมาสที่มีมูลค่า จึงจะเริ่มบันทึกผลตอบแทนได้</div></div></section>';
+      return '<section class="aa-block" id="aaRecord"><div class="aa-block-head gc-section-h"><h2>บันทึกผลตอบแทนย้อนหลัง</h2></div>' +
+        '<div class="aa-quality gc-card gc-neutral"><div class="aa-q-line">ต้องมีอย่างน้อย 2 ไตรมาสที่มีมูลค่า จึงจะเริ่มบันทึกผลตอบแทนได้</div></div></section>';
     }
-    return '<section class="aa-block" id="aaRecord"><div class="aa-block-head"><h2>บันทึกผลตอบแทนย้อนหลัง</h2>' +
+    // ตารางทั้งพอร์ต + หมายเหตุ + ตารางรายพอร์ตที่พับไว้ อยู่ในการ์ดแก้วใบเดียว (สถานะรายแถวอยู่ที่ป้ายในตาราง) → neutral
+    return '<section class="aa-block" id="aaRecord"><div class="aa-block-head gc-section-h"><h2>บันทึกผลตอบแทนย้อนหลัง</h2>' +
       '<span class="aa-block-sub">ทั้งพอร์ตแต่ละไตรมาส: รวมเงินเติม · เงินเติม · ไม่รวมเงินเติม (ผลตอบแทนจริง) เทียบเป้าพอร์ตเกษียณ</span></div>' +
-      wholeTable(W) + portBreakdown(R, R2) + "</section>";
+      '<div class="aa-rec-card gc-card gc-neutral">' + wholeTable(W) + portBreakdown(R, R2) + "</div></section>";
   }
 
   // เป้าเป็นจำนวนเต็มให้แสดง "10%" ไม่ใช่ "10.0%" · มีทศนิยมจึงแสดง 1 ตำแหน่ง
@@ -1049,7 +1108,7 @@
     var anySpan = W.rows.some(function (r) { return r.span > 1; });
     var anyOver = W.rows.some(function (r) { return r.settingOverridden; });
     var anyGap = W.rows.concat(W.yearly).some(function (r) { return r.status === "ahead" || r.status === "behind"; });
-    return '<div class="aa-table-wrap aa-rec-wrap"><table class="aa-table aa-rec aa-rec-whole"><thead><tr><th>ไตรมาส</th>' +
+    return tableWrap("aa-rec-wrap", "ตารางบันทึกผลตอบแทนทั้งพอร์ต เลื่อนซ้ายขวาได้") + '<table class="aa-table aa-rec aa-rec-whole gc-table"><thead><tr><th>ไตรมาส</th>' +
       '<th class="aa-rec-v">ต้นงวด</th><th class="aa-rec-v">ปลายงวด</th>' +
       "<th>รวมเงินเติม</th><th>เงินเติม</th><th>ไม่รวมเงินเติม</th></tr></thead><tbody>" + body + sums + "</tbody></table></div>" +
       (q !== null
@@ -1130,7 +1189,7 @@
       return AA().PORTS.some(function (p) { return row.ports[p].flowStatus === "missing" || row.ports[p].flowStatus === "partial"; });
     });
     return '<details class="aa-details aa-rec-ports"><summary>ดูแยกรายพอร์ต สั้น / กลาง / ยาว (' + R2.rows.length + " ไตรมาส)</summary>" +
-      '<div class="aa-table-wrap aa-rec-wrap"><table class="aa-table aa-rec"><thead><tr><th>ไตรมาส</th>' +
+      tableWrap("aa-rec-wrap", "ตารางผลตอบแทนแยกรายพอร์ต เลื่อนซ้ายขวาได้") + '<table class="aa-table aa-rec gc-table"><thead><tr><th>ไตรมาส</th>' +
       AA().PORTS.map(function (p) { return '<th><span class="aa-dot" style="background:' + AA().PORT_META[p].color + '"></span> ' + esc(AA().PORT_META[p].label) + "</th>"; }).join("") +
       "<th title=\"ผลรวมของ 3 พอร์ต ไม่รวมรายการที่ยังไม่จัด\">มูลค่าที่จัดแล้ว</th></tr></thead><tbody>" + body +
       sumRow("สะสมทั้งช่วง", function (P) { return P.cumReturn; }, "") +
@@ -1165,14 +1224,14 @@
       ? '<div class="aa-q-port"><div class="aa-q-name">ไตรมาสที่ข้ามไป</div><div class="aa-q-line">' +
         esc(R.skippedQuarters.join(" · ")) + " — ยังไม่มีมูลค่าสินทรัพย์ จึงไม่ถูกนำมาคิดผลตอบแทน</div></div>"
       : "";
-    return '<section class="aa-block"><div class="aa-block-head"><h2>คุณภาพข้อมูล</h2>' +
+    return '<section class="aa-block"><div class="aa-block-head gc-section-h"><h2>คุณภาพข้อมูล</h2>' +
       '<span class="aa-block-sub">ข้อจำกัดของตัวเลขบนหน้านี้ แสดงไว้ตรง ๆ ไม่ซ่อน</span></div>' +
-      '<div class="aa-quality">' + body + skipped + "</div>" +
+      '<div class="aa-quality gc-card gc-neutral">' + body + skipped + "</div>" +
       AA().PORTS.map(function (p) { return quarterTable(R.ports[p]); }).join("") + "</section>";
   }
 
   function methodSection(R) {
-    return '<section class="aa-block"><details class="aa-details"><summary>วิธีคำนวณ</summary>' +
+    return '<section class="aa-block"><details class="aa-details gc-card gc-neutral"><summary>วิธีคำนวณ</summary>' +
       '<div class="aa-table-wrap"><ul class="aa-method">' +
       "<li>ผลตอบแทนแต่ละไตรมาสใช้วิธี <b>Modified Dietz</b>: (มูลค่าปลายงวด − มูลค่าต้นงวด − เงินเติม/ถอนสุทธิ) ÷ (มูลค่าต้นงวด + " + R.meta.dietzWeight + " × เงินเติม/ถอนสุทธิ)</li>" +
       "<li>น้ำหนัก " + R.meta.dietzWeight + " หมายถึงสมมติว่าเงินเข้า/ออก <b>กลางไตรมาส</b> เพราะระบบบันทึกเป็นยอดสุทธิทั้งไตรมาสโดยไม่มีวันที่ — ตัวเลขผลตอบแทนทุกตัวจึงมี “~” กำกับว่าเป็นค่าประมาณ</li>" +
@@ -1192,16 +1251,17 @@
     var extra = "";
     if (conflict) {
       extra = ' <span class="aa-muted">' + esc(saveMsg) + " — เก็บร่างของคุณไว้ในเครื่องแล้ว</span>" +
-        ' <button class="aa-btn" type="button" data-take-remote>ใช้ฉบับจากที่อื่น (ทิ้งของฉัน)</button>' +
-        ' <button class="aa-btn aa-btn-danger" type="button" data-overwrite-remote>เอาของฉันทับ</button>';
+        ' <button class="aa-btn gc-btn gc-btn-ghost" type="button" data-take-remote>ใช้ฉบับจากที่อื่น (ทิ้งของฉัน)</button>' +
+        ' <button class="aa-btn aa-btn-danger gc-btn gc-btn-ghost" type="button" data-overwrite-remote>เอาของฉันทับ</button>';
     } else if (saveState === "failed") {
       extra = ' <span class="aa-muted">' + esc(saveMsg) + " — เก็บร่างไว้ในเครื่องแล้ว</span>" +
-        ' <button class="aa-btn" type="button" data-save-now>ลองบันทึกอีกครั้ง</button>' +
-        ' <button class="aa-btn aa-btn-danger" type="button" data-discard-draft>ทิ้งร่าง</button>';
+        ' <button class="aa-btn gc-btn gc-btn-ghost" type="button" data-save-now>ลองบันทึกอีกครั้ง</button>' +
+        ' <button class="aa-btn aa-btn-danger gc-btn gc-btn-ghost" type="button" data-discard-draft>ทิ้งร่าง</button>';
     } else if (saveState === "saved" && serverUpdatedAt) {
       extra = ' <span class="aa-muted">' + esc(String(serverUpdatedAt).slice(0, 16).replace("T", " ")) + "</span>";
     }
-    return '<div class="aa-savebar" data-save-state="' + saveState + '"><span>' + esc(txt) + "</span>" + extra + "</div>";
+    // แถบบันทึก (gc-strip): บันทึกแล้ว → calm · ไม่สำเร็จ / มีฉบับใหม่กว่าจากที่อื่น (failed) → danger · อื่น ๆ → neutral
+    return '<div class="aa-savebar gc-card gc-strip ' + (GC_SAVE_TONE[saveState] || "gc-neutral") + '" data-save-state="' + saveState + '"><span>' + esc(txt) + "</span>" + extra + "</div>";
   }
 
   function emptyState(R) {
@@ -1209,7 +1269,7 @@
       ? "มีไตรมาสอยู่ แต่ยังไม่มีมูลค่าสินทรัพย์ — กรอกมูลค่าใน <a href=\"/\">Quarterly Editor</a> ก่อน"
       : "ยังไม่มีข้อมูลพอร์ตรายไตรมาส — เริ่มจากกรอกสินทรัพย์ของคุณใน <a href=\"/\">Quarterly Editor</a> แล้วกลับมาที่หน้านี้เพื่อแบ่งพอร์ตเป็น 3 ระยะ";
     if (loadError) msg = "โหลดข้อมูลพอร์ตไม่สำเร็จ (" + esc(loadError) + ") — ลองรีเฟรชหน้า";
-    return '<section class="aa-hero"><div class="aa-hero-inner">' +
+    return '<section class="aa-hero"><div class="aa-hero-inner gc-card gc-neutral">' +
       '<h1 class="aa-title">ASSET ALLOCATION</h1>' +
       '<p class="aa-sub">แบ่งพอร์ตเป็น 3 ระยะ และติดตามผลตอบแทนจริงเทียบกับเป้าหมาย</p>' +
       '<p class="aa-empty-msg">' + msg + "</p></div></section>";
@@ -1220,28 +1280,29 @@
     var root = typeof document !== "undefined" && document.getElementById(ROOT_ID);
     if (!root) return;
     holdingsRenderPending = false;   // วาดรอบนี้ครอบการวาดที่เลื่อนไว้แล้ว (อ่าน holdings ล่าสุดตอนนี้)
-    if (!AA()) { root.innerHTML = '<div class="mc-empty"><strong>ยังโหลด engine ไม่เสร็จ</strong></div>'; return; }
+    if (!AA()) { root.innerHTML = '<div class="mc-empty gc-card gc-neutral"><strong>ยังโหลด engine ไม่เสร็จ</strong></div>'; return; }
     if (!allocation) allocation = AA().normalizeAllocation(null);
 
     if (!psCache) {
       ensurePortfolioFetched(false);
-      root.innerHTML = loadError ? emptyState(null) : '<div class="mc-empty"><strong>กำลังโหลดข้อมูลพอร์ต…</strong></div>';
+      root.innerHTML = loadError ? emptyState(null) : '<div class="mc-empty gc-card gc-neutral"><strong>กำลังโหลดข้อมูลพอร์ต…</strong></div>';
       return;
     }
     // คำนวณบนสำเนาที่แปลงหุ้นต่างประเทศแล้ว (โหมด editor = psCache ตัวเดิม) · psCache ไม่ถูกแก้ และไม่ถูกส่งไป PUT จากที่นี่
     var view = sleeveView(psCache);
     var R;
     try { R = AA().compute(view.ps, allocation, { horizonQuarters: horizonQuarters }); }
-    catch (e) { root.innerHTML = '<div class="mc-empty"><strong>คำนวณไม่สำเร็จ:</strong> ' + esc(e && e.message) + "</div>"; return; }
+    catch (e) { root.innerHTML = '<div class="mc-empty gc-card gc-neutral"><strong>คำนวณไม่สำเร็จ:</strong> ' + esc(e && e.message) + "</div>"; return; }
 
     if (!R.available) { root.innerHTML = emptyState(R); return; }
     notifyAllocationChanged();
 
+    // ป้ายบนสุด (มีฉบับใหม่กว่าจากที่อื่น / ร่างที่ยังไม่บันทึก) = กรอบอำพันเดิม → gc-warning
     var banner = conflict
-      ? '<div class="aa-banner">มีการแก้ไขการจัดพอร์ตจากที่อื่นใหม่กว่าของคุณ (' +
+      ? '<div class="aa-banner gc-card gc-tile gc-warning">มีการแก้ไขการจัดพอร์ตจากที่อื่นใหม่กว่าของคุณ (' +
         esc(String(conflict.remoteUpdatedAt).slice(0, 16).replace("T", " ")) +
         ') — ระบบยังไม่บันทึกทับให้ และเก็บร่างของคุณไว้ในเครื่องแล้ว เลือกได้ที่แถบด้านล่างว่าจะใช้ฉบับไหน</div>'
-      : draftNotice ? '<div class="aa-banner">' + esc(draftNotice) + "</div>" : "";
+      : draftNotice ? '<div class="aa-banner gc-card gc-tile gc-warning">' + esc(draftNotice) + "</div>" : "";
     root.innerHTML =
       banner +
       heroSection(R, view.pm) +
@@ -1313,11 +1374,15 @@
     var rt = root.querySelectorAll("[data-retire]");
     for (var r0 = 0; r0 < rt.length; r0++) {
       (function (el) {
-        el.addEventListener("change", function () { setRetirement(el.getAttribute("data-retire"), el.value); });
+        el.addEventListener("change", function () {
+          var field = el.getAttribute("data-retire");
+          if (lockedBlank(field, el.value)) return;   // ล็อกอยู่ + ช่องเงินว่าง = คงค่าเดิม (ช่องวาดว่างเพราะล็อก ไม่ใช่ผู้ใช้ล้าง)
+          setRetirement(field, el.value);
+        });
       })(rt[r0]);
     }
     var me = root.querySelector("[data-monthly-expense]");
-    if (me) me.addEventListener("change", function () { setMonthlyExpense(me.value); });
+    if (me) me.addEventListener("change", function () { if (lockedBlank("monthlyExpense", me.value)) return; setMonthlyExpense(me.value); });
     var hz = root.querySelector("[data-horizon]");
     if (hz) hz.addEventListener("change", function () { setHorizon(hz.value); });
     var sn = root.querySelector("[data-save-now]");
@@ -1366,6 +1431,8 @@
     window.addEventListener("focus", refreshOnFocus);
     if (typeof document !== "undefined") document.addEventListener("visibilitychange", refreshOnFocus);
     if (typeof document !== "undefined") document.addEventListener("focusout", onAaFocusOut);
+    // privacy.js ยิง "portfolio-privacy-changed" บน document
+    if (typeof document !== "undefined") document.addEventListener("portfolio-privacy-changed", onPrivacyChanged);
     if (typeof document !== "undefined" && document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", init);
     } else {

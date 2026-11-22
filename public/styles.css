@@ -1,3 +1,14 @@
+/* ============================================================
+   Quarterly Editor (/ → index.html) — page CSS, loaded after glass-cards.css (gc-2)
+   Glass cards: every card on the page is a .gc-card — all gc-neutral except the tile
+   "เติบโตจากไตรมาสก่อน", whose tone app.js sets from the growth it already computes
+   (growthToneOf: no previous quarter → neutral · ≥ 0 → calm · < 0 → danger).
+   Other statuses colour the text / chip only, never the card: status lines (qe-st-ok / -bad / -warn,
+   app.js statusToneOf) · the "จาก AI Portfolio Manager" row badge (gc-chip).
+   Outside a card the page follows the theme (--app-*); inside a card the page tokens below become
+   glass ink (--gc-ink / --gc-ink-2) in both themes. Status colours on the glass are lifted to
+   luminance ≥ 0.70 (≥ 4.5:1 on every tone — the values /portfolio measured).
+   ============================================================ */
 :root {
   --bg: var(--app-bg);
   --panel: var(--app-card);
@@ -11,6 +22,19 @@
   --green: var(--app-up);
   --red: var(--app-down);
   --shadow: var(--app-shadow);
+}
+
+/* inside a glass card the page tokens become glass ink (the glass is dark in both site themes) */
+.app-shell .gc-card {
+  --ink: var(--gc-ink);
+  --navy: var(--gc-ink);
+  --muted: var(--gc-ink-2);
+  --line: var(--gc-line);
+  --accent: #fff;
+  --accent-dark: #fff;
+  --gold: #ffd98a;
+  --green: #7cf5c6;
+  --red: #ffcfdb;
 }
 
 * {
@@ -83,18 +107,19 @@ h2 {
   font-size: 1.1rem;
 }
 
-.ghost-button,
-.primary-button,
-.secondary-button,
-.delete-button,
-.icon-button,
+/* old buttons — only where an element does not wear the gc pieces (gc-btn / gc-btn-ghost style the rest) */
+.ghost-button:not(.gc-btn),
+.primary-button:not(.gc-btn),
+.secondary-button:not(.gc-btn),
+.delete-button:not(.gc-btn),
+.icon-button:not(.gc-btn),
 .tab-button {
   border: 0;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
-.ghost-button {
+.ghost-button:not(.gc-btn) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -107,32 +132,33 @@ h2 {
   font-weight: 700;
 }
 
-.ghost-button:hover,
-.primary-button:hover,
-.secondary-button:hover,
-.icon-button:hover,
+.ghost-button:not(.gc-btn):hover,
+.primary-button:not(.gc-btn):hover,
+.secondary-button:not(.gc-btn):hover,
+.icon-button:not(.gc-btn):hover,
 .tab-button:hover,
-.delete-button:hover {
+.delete-button:not(.gc-btn):hover {
   transform: translateY(-1px);
 }
 
+/* แถบไตรมาส (การ์ดแก้ว) — ข้อความสถานะเต็มแถวล่าง */
 .controls-bar {
   display: grid;
-  grid-template-columns: minmax(190px, 260px) 150px 150px auto 1fr;
+  grid-template-columns: minmax(190px, 260px) 150px 150px auto auto;
   gap: 12px;
   align-items: end;
-  margin-bottom: 18px;
-  padding: 16px;
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
-  background: var(--app-card);
-  box-shadow: var(--app-shadow);
+  /* ระยะจากปุ่มด้านบน (เปลือก Mission Control บังคับ margin ของแถบหัวเป็น 0) */
+  margin: 12px 0 18px;
+  padding: 16px 18px;
 }
 
 .controls-bar p {
-  margin: 0 0 11px;
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin: 0;
   color: var(--muted);
-  justify-self: end;
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .auth-panel {
@@ -158,22 +184,23 @@ h2 {
   margin-bottom: 18px;
 }
 
+/* แท็บอยู่บนพื้นหน้า (ไม่ใช่การ์ด) → ตามธีม · ตัวอักษรรองใช้ --app-text-2 (≥ 4.5:1 ทั้งสองธีม) */
 .tabs {
   display: inline-flex;
   gap: 6px;
   margin: 0 0 18px;
   padding: 5px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 999px;
   background: var(--app-card);
 }
 
 .tab-button {
   min-height: 40px;
   padding: 8px 18px;
-  border-radius: 7px;
+  border-radius: 999px;
   background: transparent;
-  color: var(--muted);
+  color: var(--app-text-2);
   font-weight: 800;
 }
 
@@ -181,6 +208,11 @@ h2 {
   background: var(--app-accent);
   color: white;
   box-shadow: var(--app-shadow);
+}
+
+.tab-button:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
 }
 
 .view-panel {
@@ -198,13 +230,10 @@ h2 {
   margin-bottom: 18px;
 }
 
+/* ช่องสรุป 4 ช่อง = gc-card gc-tile (ตัวเลข gc-num) */
 .summary-card {
   min-height: 138px;
-  padding: 22px;
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
-  background: var(--app-card);
-  box-shadow: var(--app-shadow);
+  padding: 18px 20px;
 }
 
 .summary-card span,
@@ -213,25 +242,31 @@ h2 {
   color: var(--muted);
 }
 
+.summary-card span {
+  font-weight: 600;
+}
+
 .summary-card strong {
   display: block;
   margin: 12px 0 6px;
-  color: var(--navy);
-  font-size: clamp(1.65rem, 3vw, 2.55rem);
-  line-height: 1.05;
+}
+
+/* ตัวเลขในช่องสรุปต้องไม่ถูกตัดที่ความกว้างใดก็ตาม (การ์ดแก้ว overflow: hidden · gc-num เป็น nowrap):
+   ย่อตามความกว้างของช่องก่อน (14cqi = 14% ของความกว้างการ์ด → "฿123,456,789" ยังอยู่บรรทัดเดียว)
+   แล้วตัดบรรทัดได้เป็นทางสุดท้าย (overflow-wrap เดิมของหน้า) · จอกว้างได้ขนาดเต็มของ gc-num-s / -m ตามเดิม
+   เบราว์เซอร์ที่ไม่รู้จัก cqi ทิ้ง clamp() → ใช้ขนาดจาก glass-cards.css + ตัดบรรทัด */
+.summary-card strong.gc-num {
+  white-space: normal;
   overflow-wrap: anywhere;
+  line-height: 1.1;
 }
 
-.wealth-card {
-  background: linear-gradient(135deg, #17324d, #0f5f68 62%, var(--app-accent));
-  color: white;
-  box-shadow: var(--shadow);
+.summary-card strong.gc-num-s {
+  font-size: clamp(16px, 14cqi, 24px);
 }
 
-.wealth-card span,
-.wealth-card small,
-.wealth-card strong {
-  color: white;
+.summary-card strong.gc-num-m {
+  font-size: clamp(20px, 14cqi, 36px);
 }
 
 .workspace {
@@ -241,14 +276,7 @@ h2 {
   align-items: start;
 }
 
-.asset-form,
-.portfolio-panel {
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
-  background: var(--app-card);
-  box-shadow: var(--app-shadow);
-}
-
+/* ฟอร์ม (การ์ดแก้ว) */
 .asset-form {
   display: grid;
   gap: 15px;
@@ -275,6 +303,7 @@ label {
   font-weight: 700;
 }
 
+/* old fields — the page's fields wear gc-field; these stay for any field without it */
 input,
 select {
   width: 100%;
@@ -287,12 +316,8 @@ select {
   outline: none;
 }
 
-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--app-accent-soft);
-}
-
-select:focus {
+input:not(.gc-field):focus,
+select:not(.gc-field):focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--app-accent-soft);
 }
@@ -307,7 +332,7 @@ select:focus {
   gap: 12px;
 }
 
-.primary-button {
+.primary-button:not(.gc-btn) {
   min-height: 48px;
   border-radius: 8px;
   background: var(--accent);
@@ -316,11 +341,7 @@ select:focus {
   box-shadow: var(--app-shadow);
 }
 
-.primary-button:hover {
-  background: var(--accent-dark);
-}
-
-.secondary-button {
+.secondary-button:not(.gc-btn) {
   min-height: 44px;
   padding: 9px 14px;
   border: 1px solid var(--line);
@@ -335,9 +356,20 @@ select:focus {
   gap: 10px;
 }
 
+.form-actions .gc-btn {
+  min-height: 42px;
+}
+
+/* แผง (การ์ดแก้ว) — หัวมีระยะของตัวเอง ตารางกว้างเต็มการ์ด */
 .portfolio-panel {
   min-width: 0;
   overflow: hidden;
+  padding: 0;
+}
+
+/* แผงที่เรียงต่อกันตรง ๆ ในแท็บ (กราฟ → การเติบโตรายสินทรัพย์) ไม่ชนกัน */
+.view-panel > .portfolio-panel {
+  margin-bottom: 18px;
 }
 
 .chart-panel {
@@ -354,21 +386,16 @@ select:focus {
 
 .currency-pill {
   flex: 0 0 auto;
-  padding: 7px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--app-card), var(--app-warn) 16%);
-  color: var(--app-warn);
-  font-size: 0.8rem;
-  font-weight: 800;
 }
 
+/* ลงทุน (ขาว) / เงินสด (อำพัน) — สองประเภทคงความต่างของสีไว้ */
 .allocation-strip {
   display: flex;
   height: 12px;
   margin: 0 22px 16px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--app-elevated);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .allocation-invested,
@@ -379,6 +406,7 @@ select:focus {
 
 .allocation-invested {
   background: var(--accent);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
 }
 
 .allocation-cash {
@@ -389,8 +417,9 @@ select:focus {
   overflow-x: auto;
 }
 
-.table-wrap.compact table {
-  min-width: 520px;
+/* ขอบโฟกัสของกล่องเลื่อนที่ชิดขอบการ์ด — ให้อยู่ด้านใน ไม่โดนขอบการ์ดตัด */
+.table-wrap.gc-table-wrap:focus-visible {
+  outline-offset: -2px;
 }
 
 table {
@@ -399,30 +428,31 @@ table {
   min-width: 920px;
 }
 
-th,
-td {
-  padding: 15px 14px;
-  border-top: 1px solid var(--line);
+.table-wrap.compact table {
+  min-width: 520px;
+}
+
+/* gc-table: ระยะ/การจัดชิดของหน้าเดิม (ตัวเลขชิดขวา คอลัมน์แรกชิดซ้าย ขอบซ้ายขวา 22px ตรงกับหัวการ์ด) */
+.app-shell .gc-table th,
+.app-shell .gc-table td {
+  padding: 13px 14px;
   text-align: right;
-  vertical-align: middle;
   white-space: nowrap;
 }
 
-th {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 800;
+.app-shell .gc-table thead th {
+  padding-top: 6px;
   text-transform: uppercase;
 }
 
-th:first-child,
-td:first-child {
-  text-align: left;
+.app-shell .gc-table th:first-child,
+.app-shell .gc-table td:first-child {
   padding-left: 22px;
+  text-align: left;
 }
 
-th:last-child,
-td:last-child {
+.app-shell .gc-table th:last-child,
+.app-shell .gc-table td:last-child {
   padding-right: 22px;
 }
 
@@ -454,7 +484,26 @@ td:last-child {
   color: var(--red);
 }
 
-.delete-button {
+/* ปุ่มในแถว = gc-btn gc-btn-ghost · ปุ่มลบ (×) สีชมพูอ่อน (ลบ) · ถูกปิด = คง title ไว้ให้เห็นเหตุผล */
+.icon-button.gc-btn {
+  min-height: 34px;
+  padding: 6px 14px;
+}
+
+.delete-button.gc-btn {
+  width: 34px;
+  min-height: 34px;
+  padding: 0;
+  color: #ffcfdb;
+  font-size: 16px;
+}
+
+.delete-button.gc-btn:disabled {
+  pointer-events: auto;
+  cursor: not-allowed;
+}
+
+.delete-button:not(.gc-btn) {
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -463,7 +512,7 @@ td:last-child {
   font-weight: 900;
 }
 
-.icon-button {
+.icon-button:not(.gc-btn) {
   min-height: 36px;
   padding: 7px 10px;
   border-radius: 8px;
@@ -509,6 +558,7 @@ td:last-child {
 .legend-item strong {
   color: var(--muted);
   font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .legend-color {
@@ -535,9 +585,40 @@ td:last-child {
   place-items: center;
   margin: 0 auto 12px;
   border-radius: 50%;
-  background: var(--app-accent-soft);
-  color: var(--accent-dark);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  color: #fff;
   font-size: 1.6rem;
+}
+
+/* ข้อความสถานะ (app.js statusToneOf): สีที่ตัวข้อความ ไม่ใช่ทั้งการ์ด */
+.app-shell .qe-st-ok {
+  color: #7cf5c6;
+}
+
+.app-shell .qe-st-bad {
+  color: #ffcfdb;
+}
+
+.app-shell .qe-st-warn {
+  color: #ffd98a;
+}
+
+#statusText {
+  font-weight: 600;
+}
+
+/* จอกลาง (981–1200px) + เมนูข้างกาง (~307px): แถบไตรมาส 5 ช่องต้องการการ์ดกว้าง ~850px (ปุ่ม gc-btn ไม่ตัดบรรทัด → เกินถูกขอบการ์ดตัด)
+   และแผงภาพรวม 2 คอลัมน์มีขั้นต่ำ 360 + 18 + 420 = 798px (วัดได้: หน้าเลื่อนแนวนอน scrollWidth 1082 ที่จอ 981 และ 1024)
+   → แถบไตรมาส 3 ช่อง (ปุ่มลงแถวที่สอง) · แผงภาพรวมคอลัมน์เดียว · จอ ≤ 980px ใช้กติกาด้านล่างตามเดิม */
+@media (max-width: 1200px) {
+  .controls-bar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 980px) {
@@ -568,12 +649,6 @@ td:last-child {
   .auth-form {
     grid-template-columns: 1fr;
   }
-
-  .controls-bar p {
-    grid-column: 1 / -1;
-    justify-self: start;
-    margin: 0;
-  }
 }
 
 @media (max-width: 680px) {
@@ -586,6 +661,27 @@ td:last-child {
   .panel-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .panel-header {
+    padding: 18px 18px 12px;
+  }
+
+  .panel-header .currency-pill {
+    align-self: flex-start;
+  }
+
+  .pie-layout {
+    padding: 2px 18px 18px;
+  }
+
+  .allocation-strip {
+    margin: 0 18px 14px;
+  }
+
+  .app-shell .gc-table th:first-child,
+  .app-shell .gc-table td:first-child {
+    padding-left: 18px;
   }
 
   .top-actions {
@@ -619,23 +715,29 @@ td:last-child {
 }
 
 /* ============================================================
-   Quarterly growth line chart
+   Quarterly growth line chart (on the glass card)
+   .gc-grid / .gc-axis are this chart's own SVG classes (app.js) — older than glass-cards.css, not part of it
    ============================================================ */
-.growth-mode { display: inline-flex; gap: 6px; }
-.growth-mode-btn { border: 1px solid var(--app-border, #d8e0ec); background: var(--app-card, #fff); color: var(--app-text, #17324d); font: inherit; font-size: 0.8rem; font-weight: 800; border-radius: 8px; padding: 7px 12px; cursor: pointer; }
-.growth-mode-btn.is-active { background: #17324d; border-color: #17324d; color: #fff; }
-.growth-chart { margin-top: 6px; }
-.growth-chart svg { width: 100%; height: auto; display: block; }
-.gc-grid { stroke: var(--app-border, #e3e9f2); stroke-width: 1; }
-.gc-axis { fill: var(--app-muted, #6c778c); font-size: 11.5px; font-family: inherit; }
-.growth-chart-empty { color: var(--app-muted, #6c778c); font-size: 0.9rem; padding: 18px 4px; margin: 0; }
-.growth-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; }
-.growth-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--app-muted, #536078); font-weight: 700; }
+.growth-mode { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+/* ปุ่มโหมด = gc-btn gc-btn-ghost · โหมดที่เลือก (is-active จาก app.js) = หน้าขาวแบบ gc-btn (ชนะ hover ของ ghost) */
+.growth-mode-btn { min-height: 34px; padding: 6px 13px; font-size: 12.5px; }
+.growth-mode .growth-mode-btn.is-active,
+.growth-mode .growth-mode-btn.is-active:not(:disabled):not([aria-disabled="true"]):hover { background: #fff; box-shadow: none; color: #0b0b12; font-weight: 700; }
+.growth-chart { margin-top: 6px; padding: 0 12px; }
+/* overflow visible: ป้ายไตรมาสสุดท้ายของแกน x ยื่นเกินกรอบ viewBox เล็กน้อย — ให้ล้นลงในระยะขอบของกราฟแทนถูกตัด */
+.growth-chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.gc-grid { stroke: rgba(255, 255, 255, 0.12); stroke-width: 1; }
+.gc-axis { fill: var(--muted); font-size: 11.5px; font-family: inherit; }
+.growth-chart-empty { color: var(--muted); font-size: 0.9rem; padding: 18px 10px; margin: 0; }
+.growth-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; padding: 0 22px 20px; }
+.growth-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--muted); font-weight: 700; }
 .growth-legend-item i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
-.growth-legend-item strong { color: var(--app-text, #17324d); font-variant-numeric: tabular-nums; }
+.growth-legend-item strong { color: var(--ink); font-variant-numeric: tabular-nums; }
 .growth-legend-item em { font-style: normal; font-variant-numeric: tabular-nums; }
 .growth-legend-item.is-total { font-size: 0.88rem; }
-.growth-chart-note { color: var(--app-muted, #6c778c); font-size: 0.78rem; margin: 8px 0 0; line-height: 1.5; }
+/* ช่องสี "รวม" = จุดรวมในกราฟที่มาการเติบโต (น้ำเงินเข้ม + ขอบขาว 1.5px) — ไม่มีขอบจะจมหายบนแก้ว */
+.growth-legend-item.is-total i { box-shadow: 0 0 0 1.5px #fff; }
+.growth-chart-note { color: var(--muted); font-size: 0.78rem; margin: 8px 10px 0; line-height: 1.5; }
 
 /* เงินเติม/ถอนสุทธิรายไตรมาส — ป้อนที่ฟอร์ม ใช้คำนวณผลตอบแทนจริงในหน้า Asset Allocation */
 .net-flow-field small {
@@ -646,20 +748,13 @@ td:last-child {
 }
 .net-flow-field small a { color: inherit; }
 
-/* หุ้นต่างประเทศของไตรมาสล่าสุดดึงจากหน้า AI Portfolio Manager — ป้ายที่มาในตาราง + ช่องที่ถูกล็อกในฟอร์ม */
+/* หุ้นต่างประเทศของไตรมาสล่าสุดดึงจากหน้า AI Portfolio Manager — ป้ายที่มาในตาราง (gc-chip gc-chip-flat) + ช่องที่ถูกล็อกในฟอร์ม */
 .pm-source-badge {
   justify-self: start;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--app-accent-soft);
-  color: var(--accent-dark);
-  font-size: 0.76rem;
-  font-weight: 700;
+  margin-top: 2px;
   text-decoration: none;
 }
 .pm-source-badge:hover { text-decoration: underline; }
 .pm-lock-note { margin: 0; }
 .pm-lock-note a { color: inherit; }
-.delete-button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-.asset-form input:disabled,
-.asset-form select:disabled { opacity: 0.65; cursor: not-allowed; }
+.app-shell .gc-card a:not(.gc-btn):not(.gc-chip) { color: var(--gc-ink); }

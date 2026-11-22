@@ -299,7 +299,17 @@ t("big-cache.js removed the legacy localStorage price cache on page load", store
   //   daysLeft = (D+3) − วันนี้: 10-27 → เหลือ 1 วัน · 10-28 → เหลือ 2 วัน
   t("NVDA card: 3 rule lines · rule 1 = ขาย (EMA12 ตัดลง, สัญญาณ 2026-10-27, เหลือ 1 วัน) · rule 2 = ขาย (หลุด SMA200 ยืนยัน, สัญญาณ 2026-10-28, เหลือ 2 วัน) · rule 3 = no new signal (ยังไม่ถึง 20%)", countIn(cardOf("NVDA"), /data-ha-rule="/g) === 3 && /data-ha-rule="1"[\s\S]*?ha-act is-sell">ขาย<[\s\S]*?EMA12 ตัดลง EMA26[\s\S]*?สัญญาณ 2026-10-27[\s\S]*?เหลือ 1 วัน/.test(cardOf("NVDA")) && /data-ha-rule="2"[\s\S]*?ha-act is-sell">ขาย<[\s\S]*?หลุด SMA200 ยืนยัน[\s\S]*?สัญญาณ 2026-10-28[\s\S]*?เหลือ 2 วัน/.test(cardOf("NVDA")) && /data-ha-rule="3"[\s\S]*?ไม่มีสัญญาณใหม่[\s\S]*?ยังไม่ถึง 20%/.test(cardOf("NVDA")), textOf(cardOf("NVDA")));
   t("GOOG card shows both the sell (กฎ 1) and the buy (กฎ 3) lines with buttons", /ha-act is-sell">ขาย</.test(cardOf("GOOG")) && /ha-act is-buy">ซื้อ</.test(cardOf("GOOG")) && /data-ha-done="ha_GOOG_3_buy_2026-10-27"/.test(cardOf("GOOG")) && /data-ha-skip="ha_GOOG_3_buy_2026-10-27"/.test(cardOf("GOOG")) && /data-ha-done="ha_GOOG_1_sell_2026-10-27"/.test(cardOf("GOOG")));
-  t("quiet line lists symbols without new signals (BTC · ETH · INTC) · INTC has no card", /ไม่มีสัญญาณใหม่ใน 3 วัน[^<]*BTCUSD[^<]*ETHUSD[^<]*INTC/.test(html()) && !/data-ha-sym="INTC"/.test(html()));
+  // ---- การ์ดแก้ว (glass-cards.css · 2026-11-22): กล่องไม่มีสถานะของตัวเอง (ซื้อ/ขายปนกันต่อหุ้น) → gc-neutral ·
+  //      การ์ดหุ้นเป็นช่องในกล่อง (ไม่ซ้อนแก้ว) · ปุ่ม = gc-btn (ทำแล้ว/บันทึก ขาว · ที่เหลือ ghost) · ชิปซื้อ/ขายคงคลาสเดิม
+  t("glass: box = <section class=\"ha-box gc-card gc-neutral …\"> (no status of its own) · stock cards are wells, not nested glass",
+    /^<section class="ha-box gc-card gc-neutral mc-fade" aria-labelledby="haTitle">/.test(html()) && countIn(html(), /class="[^"]*\bgc-card\b/g) === 1 &&
+    !/gc-card/.test(cardOf("NVDA") + cardOf("GOOG")), html().slice(0, 120));
+  t("glass: ทำแล้ว = gc-btn (white) · ไม่ทำ = gc-btn gc-btn-ghost · ดึงราคาใหม่ = gc-btn (mc-btn ha-btn kept) · data hooks unchanged",
+    /<button type="button" class="ha-b is-done gc-btn" data-ha-done="ha_GOOG_3_buy_2026-10-27">ทำแล้ว<\/button>/.test(cardOf("GOOG")) &&
+    /<button type="button" class="ha-b gc-btn gc-btn-ghost" data-ha-skip="ha_GOOG_3_buy_2026-10-27">ไม่ทำ<\/button>/.test(cardOf("GOOG")) &&
+    /<button type="button" class="mc-btn ha-btn gc-btn" data-ha-refresh="1">ดึงราคาใหม่<\/button>/.test(html()),
+    (html().match(/<button[^>]*>/g) || []).slice(0, 4));
+  t("quiet line lists symbols without new signals (BTC · ETH · INTC) · INTC has no card",/ไม่มีสัญญาณใหม่ใน 3 วัน[^<]*BTCUSD[^<]*ETHUSD[^<]*INTC/.test(html()) && !/data-ha-sym="INTC"/.test(html()));
   t("items state: 4 open items (NVDA r1+r2 · GOOG r1+r3), 0 expired", H._state.items.filter(function (x) { return x.vis.visible; }).length === 4 && H._state.toRecord.length === 0);
   t("journal doc loaded via GET only (no PUT yet) · launchedAt set to today", fetchCalls.filter(function (u) { return /doc=journal/.test(u); }).length === 1 && puts.length === 0 && H._state.launchedAt === "2026-10-29");
   failSym.NVDA = "reject";
@@ -394,6 +404,9 @@ t("big-cache.js removed the legacy localStorage price cache on page load", store
   await H.refresh(false); await settle();
   t("journal GET failed + no saved launch date → launchedAt = today in memory only (not persisted)", H._state.docState === "error" &&
     H._state.launchedAt === "2026-10-29" && store[LKEY] === undefined);
+  t("glass: the journal-error note keeps role=alert and its ลองใหม่ button is a gc-btn (mc-btn ha-btn kept)",
+    /<div class="ha-docerr" role="alert">[\s\S]*?<button type="button" class="mc-btn ha-btn gc-btn" data-ha-docretry="1">ลองใหม่<\/button>/.test(html()),
+    (/<div class="ha-docerr"[\s\S]*?<\/div>/.exec(html()) || [""])[0]);
   docFail = false;
   await H.refresh(false); await settle();
   t("journal loads OK again without haLaunchedAt → today persisted immediately", H._state.docState === "ok" && store[LKEY] === "2026-10-29");
@@ -477,6 +490,10 @@ t("big-cache.js removed the legacy localStorage price cache on page load", store
   p0 = puts.length;
   t("with a form open: no NaN/undefined · no advisory words · no ฿ inside any title attribute", !LEAK.test(html()) && !ADVISORY_TH.test(html()) && !ADVISORY_EN.test(html()) && !/title="[^"]*฿/.test(html()),
     (LEAK.exec(html()) || ADVISORY_TH.exec(html()) || ADVISORY_EN.exec(html()) || [])[0]);
+  t("glass: the open form's inputs are gc-field (ha-in + name kept) · บันทึก = gc-btn · ยกเลิก = gc-btn gc-btn-ghost",
+    /<input class="ha-in gc-field" name="execPrice" type="number"/.test(formOf(G3)) && /<input class="ha-in gc-field" name="amount" type="number"/.test(formOf(G3)) &&
+    /<button type="button" class="ha-b is-done gc-btn" data-ha-confirm="ha_GOOG_3_buy_2026-10-27">บันทึก<\/button>/.test(formOf(G3)) &&
+    /<button type="button" class="ha-b gc-btn gc-btn-ghost" data-ha-cancel="ha_GOOG_3_buy_2026-10-27">ยกเลิก<\/button>/.test(formOf(G3)), formOf(G3).slice(0, 400));
   click("data-ha-cancel", G3);
   // แก้ NVDA กฎ 2 (ตอนนี้ "ไม่ทำ" จากร่างที่ส่งแล้ว) → เปิดเป็นทำแล้ว + ปุ่มสลับ · สลับไปไม่ทำ = ไม่มีช่องราคา · สลับกลับ = ราคาที่พิมพ์ยังอยู่
   var prevN2 = H._state.doc.entries.filter(function (e) { return e.id === N2; })[0] || {};
@@ -704,6 +721,10 @@ t("big-cache.js removed the legacy localStorage price cache on page load", store
   t("row a at 7 days: price −10.0% · impact +10.0% · ได้ ฿10,000 · signal close 50.00 · ทำแล้ว · 30-day column รอ (19/30)",
     /−10\.0%|-10\.0%/.test(histRow("a")) && /\+10\.0%[\s\S]*?ได้ ฿10,000/.test(histRow("a")) && /50\.00/.test(histRow("a")) && /ทำแล้ว/.test(histRow("a")) && /รอ \(19\/30\)/.test(histRow("a")), textOf(histRow("a")));
   t("viewing the summary writes nothing (no PUT)", puts.length === q9);
+  t("glass: history = table.ha-hist.gc-table in a focusable scrolling gc-table-wrap (tabindex 0 · role region so the aria-label is announced · no money) · tile counts are gc-num · row แก้ = ghost gc-btn",
+    /<div class="ha-histwrap gc-table-wrap" tabindex="0" role="region" aria-label="ประวัติสัญญาณ เลื่อนซ้ายขวาได้"><table class="ha-hist gc-table">/.test(html()) &&
+    countIn(html(), /<b class="ha-kpi-n gc-num">/g) === 3 && /<button type="button" class="ha-b gc-btn gc-btn-ghost" data-ha-edit="a" data-ha-at="hist">แก้<\/button>/.test(html()) &&
+    !/(title|aria-label)="[^"]*(฿|บาท|THB|\d{1,3},\d{3})/.test(html()), (/<div class="ha-histwrap[^>]*>/.exec(html()) || [""])[0]);
   click("data-ha-horizon", "30");
   t("toggle to 30 days re-renders tiles from the 30-day horizon and marks pending rows รอ (n/30)", /data-ha-horizon="30"[^>]*aria-pressed="true"/.test(html()) && /รอ \(\d+\/30\)/.test(html()));
   t("money is rendered with the ฿ prefix so privacy.js can mask it · no money in title attributes", /฿10,000/.test(html()) && !/title="[^"]*฿/.test(html()));

@@ -59,6 +59,13 @@
 
   function uniMeta(key) { for (var i = 0; i < UNIVERSES.length; i++) if (UNIVERSES[i].key === key) return UNIVERSES[i]; return { key: key, icon: "•", label: key, short: key }; }
 
+  // การ์ดแก้ว (glass-cards.css): สีการ์ด = สถานะที่หน้านี้คิดอยู่แล้ว · ไม่ประดิษฐ์สถานะใหม่
+  //   🔔 สัญญาณซื้อ → ระดับวอลุ่มของการ์ด (volCls ใน signalCard จาก volumeConfirmation ของเซิร์ฟเวอร์)
+  //   ⏳ ใกล้ตัดขึ้น → gc-warning (แท็กอำพันเดิม · เซิร์ฟเวอร์: "รอ EMA12 ตัดขึ้น EMA26 เพื่อ confirm")
+  //   แผงควบคุม · ข้อความว่าง · ตารางรายกลุ่ม · วิธีคิด → gc-neutral (ไม่มีสถานะ)
+  var GC_VOL_TONE = { "sc-vol-strong": "gc-calm", "sc-vol-ok": "gc-normal", "sc-vol-weak": "gc-warning" };
+  function signalTone(isBuy, volCls) { return isBuy ? (GC_VOL_TONE[volCls] || "gc-neutral") : "gc-warning"; }
+
   // ---------------------------------------------------------- scanning
   async function fetchBatch(uniKey, offset, limit, symbols, force) {
     var qs = "universe=" + encodeURIComponent(uniKey) + "&offset=" + offset + "&limit=" + limit + (force ? "&refresh=1" : "");
@@ -130,7 +137,7 @@
     UNIVERSES.concat(state.data.CUSTOM_GLOBAL ? [{ key: "CUSTOM_GLOBAL", icon: "✏️", label: "Custom symbols", short: "Custom" }] : []).forEach(function (u) {
       html += universeSection(u);
     });
-    html += '<div class="sc-method">🔎 สัญญาณจากกฎเดิมของระบบ: <b>EMA12 ตัดขึ้น EMA26 ภายใน 3 วัน</b> + วอลุ่มเทียบเฉลี่ย 5 วัน + สถานะ SMA200 · ประมวลผลฝั่งเซิร์ฟเวอร์ (Yahoo, cache รายวัน) · หุ้นนอกสแกนจาก "ตัวแม่" ของ DR ไทย (ราคา DR จริงบน SET อาจต่างเล็กน้อย) · ข้อมูลเพื่อประกอบการตัดสินใจ ไม่ใช่คำแนะนำซื้อขาย</div>';
+    html += '<div class="sc-method gc-card gc-neutral">🔎 สัญญาณจากกฎเดิมของระบบ: <b>EMA12 ตัดขึ้น EMA26 ภายใน 3 วัน</b> + วอลุ่มเทียบเฉลี่ย 5 วัน + สถานะ SMA200 · ประมวลผลฝั่งเซิร์ฟเวอร์ (Yahoo, cache รายวัน) · หุ้นนอกสแกนจาก "ตัวแม่" ของ DR ไทย (ราคา DR จริงบน SET อาจต่างเล็กน้อย) · ข้อมูลเพื่อประกอบการตัดสินใจ ไม่ใช่คำแนะนำซื้อขาย</div>';
     root.innerHTML = html;
     wire(root);
   }
@@ -142,23 +149,23 @@
       var meta = uniMeta(p.uniKey);
       var pct = p.total > 0 ? Math.round(p.done / p.total * 100) : 5;
       pctBar = '<div class="sc-progress"><div class="sc-progress-label">กำลังสแกน ' + meta.icon + " " + esc(meta.short) + " … " + (p.total ? p.done + "/" + p.total : "") + '</div>' +
-        '<div class="sc-progress-bar"><i style="width:' + pct + '%"></i></div>' +
-        '<button class="sc-btn sc-btn-ghost" id="scCancel">หยุด</button></div>';
+        '<div class="sc-progress-bar gc-funnel-rail"><i class="gc-funnel-fill" style="width:' + pct + '%"></i></div>' +
+        '<button class="sc-btn sc-btn-ghost gc-btn gc-btn-ghost" id="scCancel">หยุด</button></div>';
     }
     var stamps = UNIVERSES.map(function (u) {
       var d = state.data[u.key];
-      return '<span class="sc-stamp">' + u.icon + " " + (d ? esc(timeAgo(d.scannedAt)) : "ยังไม่สแกน") + "</span>";
+      return '<span class="sc-stamp gc-pill gc-pill-ghost">' + u.icon + " " + (d ? esc(timeAgo(d.scannedAt)) : "ยังไม่สแกน") + "</span>";
     }).join("");
-    return '<section class="sc-hero">' +
+    return '<section class="sc-hero gc-card gc-neutral">' +
       '<div class="sc-hero-top"><div><h1 class="sc-title">🔎 Market Scanner</h1>' +
       '<p class="sc-sub">สแกนหาสัญญาณซื้อ (EMA ตัดขึ้น + วอลุ่มยืนยัน) — หุ้นไทย · หุ้นนอกที่มี DR ไทย · Crypto</p></div>' +
       '<div class="sc-actions">' +
-        '<button class="sc-btn sc-btn-primary" id="scScanAll"' + (state.scanning ? " disabled" : "") + '>▶ สแกนทั้งหมด</button>' +
-        UNIVERSES.map(function (u) { return '<button class="sc-btn" data-scan="' + u.key + '"' + (state.scanning ? " disabled" : "") + '>' + u.icon + " " + esc(u.short) + "</button>"; }).join("") +
+        '<button class="sc-btn sc-btn-primary gc-btn" id="scScanAll"' + (state.scanning ? " disabled" : "") + '>▶ สแกนทั้งหมด</button>' +
+        UNIVERSES.map(function (u) { return '<button class="sc-btn gc-btn gc-btn-ghost" data-scan="' + u.key + '"' + (state.scanning ? " disabled" : "") + '>' + u.icon + " " + esc(u.short) + "</button>"; }).join("") +
       '</div></div>' +
       '<div class="sc-customrow"><label>เพิ่ม symbol เอง (คั่นด้วยช่องว่าง เช่น <code>COIN PLTR 9988.HK DOT-USD GULF.BK</code>):</label>' +
-      '<div class="sc-customline"><input id="scCustom" type="text" value="' + esc(readCustom()) + '" placeholder="COIN PLTR DOT-USD …" />' +
-      '<button class="sc-btn" id="scScanCustom"' + (state.scanning ? " disabled" : "") + '>สแกน custom</button></div></div>' +
+      '<div class="sc-customline"><input id="scCustom" class="gc-field" type="text" value="' + esc(readCustom()) + '" placeholder="COIN PLTR DOT-USD …" />' +
+      '<button class="sc-btn gc-btn gc-btn-ghost" id="scScanCustom"' + (state.scanning ? " disabled" : "") + '>สแกน custom</button></div></div>' +
       '<div class="sc-stamps">' + stamps + "</div>" +
       pctBar +
     '</section>';
@@ -173,10 +180,10 @@
   function buySection() {
     var rows = allRows("results").slice().sort(function (a, b) { return hotScore(b) - hotScore(a); });
     var body;
-    if (!Object.keys(state.data).length) body = '<div class="sc-empty">กด <b>▶ สแกนทั้งหมด</b> เพื่อเริ่มค้นหาสัญญาณซื้อ</div>';
-    else if (!rows.length) body = '<div class="sc-empty">ยังไม่พบสัญญาณซื้อ (EMA ตัดขึ้น ≤ 3 วัน) จากการสแกนล่าสุด — ดูรายการ "ใกล้ตัดขึ้น" ด้านล่างประกอบ</div>';
+    if (!Object.keys(state.data).length) body = '<div class="sc-empty gc-card gc-neutral">กด <b>▶ สแกนทั้งหมด</b> เพื่อเริ่มค้นหาสัญญาณซื้อ</div>';
+    else if (!rows.length) body = '<div class="sc-empty gc-card gc-neutral">ยังไม่พบสัญญาณซื้อ (EMA ตัดขึ้น ≤ 3 วัน) จากการสแกนล่าสุด — ดูรายการ "ใกล้ตัดขึ้น" ด้านล่างประกอบ</div>';
     else body = '<div class="sc-grid">' + rows.map(function (r) { return signalCard(r, true); }).join("") + "</div>";
-    return '<section class="sc-block"><div class="sc-block-head"><h2>🔔 สัญญาณซื้อที่พบ</h2>' +
+    return '<section class="sc-block"><div class="sc-block-head gc-section-h"><h2>🔔 สัญญาณซื้อที่พบ</h2>' +
       '<span class="sc-block-sub">EMA12 ตัดขึ้น EMA26 ใน 3 วันล่าสุด · เรียงตามความแรง (วอลุ่ม → ความสด → เหนือ SMA200)</span>' +
       (rows.length ? '<span class="sc-count-pill">' + rows.length + '</span>' : "") + "</div>" + body + "</section>";
   }
@@ -184,7 +191,7 @@
   function nearSection() {
     var rows = allRows("near").slice().sort(function (a, b) { return (num(a.emaGapPct) || 99) - (num(b.emaGapPct) || 99); });
     if (!rows.length) return "";
-    return '<section class="sc-block"><div class="sc-block-head"><h2>⏳ ใกล้ตัดขึ้น</h2>' +
+    return '<section class="sc-block"><div class="sc-block-head gc-section-h"><h2>⏳ ใกล้ตัดขึ้น</h2>' +
       '<span class="sc-block-sub">EMA12 ยังต่ำกว่า EMA26 แต่ห่าง ≤ 0.5% — จับตารอวันตัดจริง</span>' +
       '<span class="sc-count-pill">' + rows.length + '</span></div>' +
       '<div class="sc-grid">' + rows.map(function (r) { return signalCard(r, false); }).join("") + "</div></section>";
@@ -197,10 +204,10 @@
     var volCls = /VERY_STRONG|STRONG/.test(r.volumeConfirmation || "") ? "sc-vol-strong" : (r.volumeConfirmation === "VOLUME_CONFIRMED" ? "sc-vol-ok" : "sc-vol-weak");
     var smaCls = r.sma200Status === "ABOVE_SMA200" ? "sc-sma-above" : r.sma200Status === "BELOW_SMA200" ? "sc-sma-below" : "";
     var smaTxt = r.sma200Status === "ABOVE_SMA200" ? "เหนือ SMA200" : r.sma200Status === "BELOW_SMA200" ? "ใต้ SMA200" : "SMA200 —";
-    return '<div class="sc-card' + (isBuy ? " sc-card-buy" : "") + '">' +
+    return '<div class="sc-card' + (isBuy ? " sc-card-buy" : "") + " gc-card gc-tile " + signalTone(isBuy, volCls) + '">' +
       '<div class="sc-card-top"><b class="sc-sym">' + esc(r.displaySymbol) + '</b>' +
       '<span class="sc-uni">' + u.icon + " " + esc(u.short) + (r.drNote ? " · DR: " + esc(r.drNote) : "") + '</span>' +
-      '<span class="sc-close">' + fmtClose(r.close) + '</span></div>' +
+      '<span class="sc-close gc-num gc-num-xs">' + fmtClose(r.close) + '</span></div>' +
       '<div class="sc-card-name">' + esc(r.name || "") + '</div>' +
       '<div class="sc-card-tags">' +
         '<span class="sc-tag ' + (isBuy ? "sc-tag-buy" : "sc-tag-near") + '">' + (isBuy ? "✚ " + esc(r.signalThai || "EMA ตัดขึ้น") + (days != null ? " · " + (days <= 1 ? "วันนี้/เมื่อวาน" : days + " วันก่อน") : "") : "⏳ " + esc(r.signalThai || "ใกล้ตัดขึ้น") + (r.emaGapPct != null ? " · ห่าง " + r.emaGapPct + "%" : "")) + '</span>' +
@@ -217,16 +224,18 @@
     var okCount = (d.results || []).length, nearCount = (d.near || []).length;
     var probs = (d.insufficient || []).length + (d.failed || []).length;
     var rows = (d.results || []).concat(d.near || []);
+    // ตารางเลื่อนซ้ายขวาในกล่องของตัวเอง (gc-table-wrap) — หน้าไม่เลื่อนตามบนจอแคบ
     var table = rows.length
-      ? '<table class="sc-tbl"><thead><tr><th>Symbol</th><th>ราคา</th><th>สัญญาณ</th><th>ตัดเมื่อ</th><th>วอลุ่ม</th><th>SMA200</th></tr></thead><tbody>' +
+      ? '<div class="sc-tbl-wrap gc-table-wrap" tabindex="0" role="region" aria-label="' + esc("ตารางผลสแกน " + u.label + " เลื่อนซ้ายขวาได้") + '">' +
+        '<table class="sc-tbl gc-table"><thead><tr><th>Symbol</th><th class="gc-cell-num">ราคา</th><th>สัญญาณ</th><th>ตัดเมื่อ</th><th class="gc-cell-num">วอลุ่ม</th><th>SMA200</th></tr></thead><tbody>' +
         rows.map(function (r) {
           return "<tr><td><b>" + esc(r.displaySymbol) + "</b>" + (r.drNote ? ' <span class="sc-dr">' + esc(r.drNote) + "</span>" : "") + "</td>" +
-            "<td>" + fmtClose(r.close) + "</td>" +
+            '<td class="gc-cell-num">' + fmtClose(r.close) + "</td>" +
             '<td class="' + (r.signal === "EMA_BULLISH_CROSS" ? "sc-td-buy" : "sc-td-near") + '">' + esc(r.signalThai || r.signal) + "</td>" +
             "<td>" + (r.crossoverDate ? esc(String(r.crossoverDate).slice(0, 10)) : (r.emaGapPct != null ? "ห่าง " + r.emaGapPct + "%" : "—")) + "</td>" +
-            "<td>" + (r.volumeRatio != null ? r.volumeRatio + "×" : "—") + "</td>" +
+            '<td class="gc-cell-num">' + (r.volumeRatio != null ? r.volumeRatio + "×" : "—") + "</td>" +
             "<td>" + (r.sma200Status === "ABOVE_SMA200" ? "✓ เหนือ" : r.sma200Status === "BELOW_SMA200" ? "✗ ใต้" : "—") + "</td></tr>";
-        }).join("") + "</tbody></table>"
+        }).join("") + "</tbody></table></div>"
       : '<div class="sc-empty">ไม่พบสัญญาณในกลุ่มนี้</div>';
     var probsHtml = probs
       ? '<details class="sc-probs"><summary>ข้อมูลไม่พอ/ล้มเหลว ' + probs + " รายการ</summary>" +
@@ -234,7 +243,7 @@
         (d.failed || []).map(function (x) { return '<div class="sc-prob">' + esc(x.displaySymbol) + " — " + esc(String(x.errorMessage || "ดึงข้อมูลไม่ได้").slice(0, 80)) + "</div>"; }).join("") +
         "</details>"
       : "";
-    return '<details class="sc-uni-sec"' + (okCount ? " open" : "") + '><summary>' + u.icon + " <b>" + esc(u.label) + "</b>" +
+    return '<details class="sc-uni-sec gc-card gc-neutral"' + (okCount ? " open" : "") + '><summary>' + u.icon + " <b>" + esc(u.label) + "</b>" +
       '<span class="sc-uni-counts">สแกน ' + (d.total || rows.length) + " · ซื้อ " + okCount + " · ใกล้ตัด " + nearCount + " · " + esc(timeAgo(d.scannedAt)) + "</span></summary>" +
       table + probsHtml + "</details>";
   }

@@ -1,6 +1,14 @@
 /* ============================================================
    Market Scanner — unified scanner page. Mission-control theme
    tokens (--mc-*) + scanner accents; dark + light supported.
+   Glass cards (glass-cards.css gc-2, loaded before this file): every card on #scannerRoot is a .gc-card with ONE
+   tone from a status the page already computes (scanner-page.js signalTone):
+     🔔 buy tile  = its own volume level (volCls): sc-vol-strong → gc-calm · sc-vol-ok → gc-normal · sc-vol-weak → gc-warning
+     ⏳ near tile = NEAR_EMA_BULLISH_CROSS (the amber "wait" tag) → gc-warning
+     control panel · empty states · universe tables · method note → gc-neutral (no status)
+   Outside a card the --mc-* text tokens follow the theme (--app-*); inside a card they become glass ink
+   (--gc-ink / --gc-ink-2) — token map below. Status colours on the glass are lifted to luminance ≥ 0.70
+   (≥ 4.5:1 on every tone) and the tags sit on the dark well.
    ============================================================ */
 :root {
   --sc-buy: #34d399;
@@ -12,86 +20,113 @@
 .sc-page { padding: 22px 26px 60px; max-width: 1180px; margin: 0 auto; color: var(--mc-text); }
 .sc-page * { box-sizing: border-box; }
 
-/* ------------------------------------------------ hero / controls */
-.sc-hero { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card-glow), var(--mc-card); padding: 18px 22px; margin-bottom: 18px; }
+/* ------------------------------------------------ glass (glass-cards.css) */
+/* on the page (outside a card) text follows the theme — --mc-muted (#64748b) is under 4.5:1 on both page backgrounds */
+.sc-page { --mc-text: var(--app-text); --mc-text-2: var(--app-text-2); --mc-muted: var(--app-text-2); }
+/* inside a glass card the shared tokens become glass ink (both themes) · status colours lifted for the glass */
+.sc-page .gc-card {
+  --mc-text: var(--gc-ink);
+  --mc-text-2: var(--gc-ink);
+  --mc-muted: var(--gc-ink-2);
+  --mc-border: var(--gc-line);
+  --mc-border-active: var(--gc-rim);
+  --mc-red: #ffcfdb;
+  --sc-buy: #7cf5c6;
+  --sc-near: #ffd98a;
+  --sc-chip: var(--gc-well);
+}
+/* a card whose content mixes text runs and inline tags stays block (gc-card is a flex column) · so does <details> */
+.sc-page .mc-empty.gc-card,
+.sc-empty.gc-card,
+.sc-method.gc-card,
+.sc-uni-sec.gc-card { display: block; }
+
+/* ------------------------------------------------ hero / controls (one neutral glass card)
+   buttons wear gc-btn (▶ สแกนทั้งหมด) / gc-btn gc-btn-ghost (the rest) · the symbol box is a gc-field · stamps are gc-pill */
+.sc-hero { margin-bottom: 20px; }
 .sc-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .sc-title { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
-.sc-sub { margin: 4px 0 0; color: var(--mc-text-2); font-size: 13px; }
+.sc-sub { margin: 4px 0 0; color: var(--mc-muted); font-size: 13px; }
 .sc-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.sc-btn {
-  font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
-  color: var(--mc-text); background: var(--sc-chip); border: 1px solid var(--mc-border);
-  border-radius: 10px; padding: 8px 14px; transition: border-color .15s, transform .1s;
-}
-.sc-btn:hover:not(:disabled) { border-color: var(--mc-border-active); }
-.sc-btn:disabled { opacity: 0.45; cursor: default; }
-.sc-btn-primary { background: linear-gradient(135deg, #10b981, #0ea5e9); color: #04121f; border: 0; }
-.sc-btn-ghost { background: transparent; }
-.sc-customrow { margin-top: 14px; font-size: 11.5px; color: var(--mc-muted); }
-.sc-customrow code { background: var(--sc-chip); border-radius: 4px; padding: 1px 5px; }
-.sc-customline { display: flex; gap: 8px; margin-top: 6px; }
-.sc-customline input {
-  flex: 1; font-family: inherit; font-size: 13px; color: var(--mc-text);
-  background: var(--sc-chip); border: 1px solid var(--mc-border); border-radius: 10px; padding: 8px 12px;
-}
-.sc-customline input:focus { outline: none; border-color: var(--mc-border-active); }
-.sc-stamps { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-.sc-stamp { font-size: 11px; color: var(--mc-muted); background: var(--sc-chip); border-radius: 999px; padding: 3px 10px; }
-.sc-progress { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.sc-customrow { margin-top: 16px; font-size: 12px; color: var(--mc-muted); }
+.sc-customrow code { background: var(--sc-chip); color: var(--mc-text); border-radius: 6px; padding: 1px 6px; font-size: 11.5px; }
+.sc-customline { display: flex; gap: 8px; margin-top: 8px; }
+.sc-customline input { flex: 1 1 auto; }
+.sc-stamps { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.sc-progress { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; margin-top: 14px; }
 .sc-progress-label { font-size: 12px; color: var(--mc-text-2); white-space: nowrap; }
-.sc-progress-bar { flex: 1; height: 8px; border-radius: 5px; background: var(--sc-chip); overflow: hidden; }
-.sc-progress-bar i { display: block; height: 100%; background: linear-gradient(90deg, #38bdf8, #34d399); border-radius: 5px; transition: width .3s; }
+/* gc-funnel-rail > gc-funnel-fill: white like the Macro bars (the old cyan→green gradient carried no meaning) */
+.sc-progress-bar { flex: 1 1 140px; }
+.sc-progress-bar i { transition: width .3s; }
 
-/* ------------------------------------------------ blocks */
-.sc-block { margin-bottom: 20px; }
-.sc-block-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.sc-block-head h2 { margin: 0; font-size: 17px; font-weight: 800; }
-.sc-block-sub { font-size: 11.5px; color: var(--mc-muted); }
-.sc-count-pill { font-size: 11px; font-weight: 800; background: var(--sc-chip); border: 1px solid var(--mc-border); border-radius: 999px; padding: 2px 10px; }
-.sc-empty { border: 1px dashed var(--mc-border); border-radius: 12px; padding: 16px; color: var(--mc-muted); font-size: 12.5px; }
+/* ------------------------------------------------ blocks (heading on the page = gc-section-h) */
+.sc-block { margin-bottom: 22px; }
+.sc-block-head { display: flex; align-items: baseline; gap: 6px 10px; flex-wrap: wrap; }
+.sc-block-head h2 { margin: 0; }
+.sc-block-sub { font-size: 12px; font-weight: 400; color: var(--mc-muted); }
+.sc-count-pill {
+  font-family: "Inter", "Noto Sans Thai", system-ui, sans-serif; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--mc-text); background: var(--sc-chip); border: 1px solid var(--mc-border); border-radius: 999px; padding: 1px 10px;
+}
+.sc-empty { color: var(--mc-muted); font-size: 13px; line-height: 1.6; }
+.sc-empty.gc-card b { color: var(--mc-text); }
 
+/* ------------------------------------------------ signal tiles (.sc-card = gc-card gc-tile <tone>) */
 .sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
-.sc-card { border: 1px solid var(--mc-border); border-radius: 14px; background: var(--mc-card); padding: 12px 14px; }
-.sc-card-buy { border-color: rgba(52, 211, 153, 0.45); box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.15); }
-.sc-card-top { display: flex; align-items: baseline; gap: 8px; }
-.sc-sym { font-size: 15.5px; }
-.sc-uni { font-size: 10px; color: var(--mc-muted); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sc-close { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.sc-card-name { font-size: 11px; color: var(--mc-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sc-card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.sc-tag { font-size: 10.5px; font-weight: 700; border-radius: 6px; padding: 2px 7px; background: var(--sc-chip); border: 1px solid var(--mc-border); }
-.sc-tag-buy { color: var(--sc-buy); border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.10); }
-.sc-tag-near { color: var(--sc-near); border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.10); }
+.sc-card-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+/* the label takes only the room left (basis 0, as before) — the symbol and the price keep theirs; a long symbol on a
+   narrow tile wraps at "-" (never cut) */
+.sc-sym { font-size: 15.5px; font-weight: 700; }
+.sc-uni { flex: 1 1 0; min-width: 0; font-size: 11px; color: var(--mc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-close { flex: 0 0 auto; }
+.sc-card-name { font-size: 11.5px; color: var(--mc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.sc-tag {
+  font-size: 11px; font-weight: 700; line-height: 1.35; border-radius: 7px; padding: 2px 7px;
+  color: var(--mc-text-2); background: var(--sc-chip); box-shadow: inset 0 0 0 1px var(--mc-border);
+}
+.sc-tag-buy { color: var(--sc-buy); box-shadow: inset 0 0 0 1px rgba(124, 245, 198, 0.5); }
+.sc-tag-near { color: var(--sc-near); box-shadow: inset 0 0 0 1px rgba(255, 217, 138, 0.5); }
 .sc-vol-strong { color: var(--sc-buy); }
 .sc-vol-ok { color: var(--mc-text-2); }
 .sc-vol-weak { color: var(--mc-muted); }
 .sc-sma-above { color: var(--sc-buy); }
 .sc-sma-below { color: var(--mc-red); }
-.sc-card-action { margin-top: 8px; font-size: 11.5px; color: var(--mc-text-2); }
+.sc-card-action { margin-top: auto; padding-top: 2px; font-size: 12px; line-height: 1.5; color: var(--mc-text-2); }
 
-/* ------------------------------------------------ universe tables */
-.sc-uni-sec { border: 1px solid var(--mc-border); border-radius: 14px; background: var(--mc-card); margin-bottom: 12px; overflow: hidden; }
-.sc-uni-sec summary { cursor: pointer; padding: 12px 16px; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; list-style: none; }
-.sc-uni-sec summary::-webkit-details-marker { display: none; }
-.sc-uni-sec summary::before { content: "▸"; color: var(--mc-muted); }
-.sc-uni-sec[open] summary::before { content: "▾"; }
-.sc-uni-counts { font-size: 11px; color: var(--mc-muted); margin-left: auto; }
-.sc-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.sc-tbl th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--mc-muted); padding: 7px 14px; border-top: 1px solid var(--mc-border); border-bottom: 1px solid var(--mc-border); }
-.sc-tbl td { padding: 7px 14px; border-bottom: 1px solid var(--mc-border); font-variant-numeric: tabular-nums; }
-.sc-tbl tr:last-child td { border-bottom: 0; }
+/* ------------------------------------------------ universe tables (one neutral glass card each · table = gc-table in gc-table-wrap) */
+.sc-uni-sec { margin-bottom: 12px; }
+.sc-uni-sec.gc-card { padding: 14px 18px; }
+.sc-uni-sec > summary,
+.sc-probs > summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; cursor: pointer; list-style: none; }
+.sc-uni-sec > summary { font-size: 14px; }
+.sc-uni-sec > summary::-webkit-details-marker,
+.sc-probs > summary::-webkit-details-marker { display: none; }
+.sc-uni-sec > summary::before,
+.sc-probs > summary::before { content: "▸"; color: var(--mc-muted); }
+.sc-uni-sec[open] > summary::before,
+.sc-probs[open] > summary::before { content: "▾"; }
+.sc-uni-counts { margin-left: auto; font-size: 12px; color: var(--mc-muted); }
+.sc-uni-sec > .gc-table-wrap { margin-top: 12px; }
+.sc-uni-sec .sc-empty { margin-top: 12px; padding: 14px 16px; border: 1px dashed var(--gc-rim); border-radius: 14px; font-size: 12.5px; }
 .sc-td-buy { color: var(--sc-buy); font-weight: 700; }
 .sc-td-near { color: var(--sc-near); }
-.sc-dr { font-size: 9.5px; color: var(--mc-muted); background: var(--sc-chip); border-radius: 4px; padding: 1px 4px; }
-.sc-probs { padding: 8px 16px 12px; }
-.sc-probs summary { font-size: 11.5px; color: var(--mc-muted); cursor: pointer; }
-.sc-prob { font-size: 11px; color: var(--mc-muted); padding: 3px 0 0 12px; }
+.sc-dr { font-size: 10.5px; color: var(--mc-muted); background: var(--sc-chip); border-radius: 4px; padding: 1px 5px; }
+.sc-probs { margin-top: 12px; }
+.sc-probs > summary { font-size: 12px; color: var(--mc-muted); }
+.sc-prob { font-size: 12px; color: var(--mc-muted); padding: 3px 0 0 14px; }
 
-.sc-method { margin-top: 18px; font-size: 11.5px; color: var(--mc-muted); line-height: 1.6; border: 1px dashed var(--mc-border); border-radius: 12px; padding: 12px 14px; }
-.sc-method b { color: var(--mc-text-2); }
+.sc-method { margin-top: 18px; font-size: 12px; line-height: 1.65; color: var(--mc-muted); }
+.sc-method b { color: var(--mc-text); }
 
 @media (max-width: 640px) {
   .sc-page { padding: 14px 12px 48px; }
   .sc-grid { grid-template-columns: 1fr 1fr; }
   .sc-tbl th:nth-child(4), .sc-tbl td:nth-child(4) { display: none; }
+  /* two tiles per row: room for a 7-letter symbol + its price on one line */
+  .sc-card-top { gap: 6px; }
+  .sc-close { font-size: 16px; }
+  /* five columns fit a phone without scrolling the wrap */
+  .sc-uni-sec.gc-card { padding: 12px 14px; }
+  .sc-tbl th, .sc-tbl td { padding-left: 6px; padding-right: 6px; }
 }

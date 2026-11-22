@@ -94,7 +94,8 @@ mod.setView("all");
 var hAll = mod.sectionCurrent(out, inp);
 var tAll = tableRows(hAll);
 ok("all: มีปุ่มสลับ 2 ปุ่ม", (hAll.match(/data-pm-cview=/g) || []).length === 2);
-ok("all: ปุ่มทั้งพอร์ตติดสว่าง", /is-on pm-bull" data-pm-cview="all"/.test(hAll));
+// ปุ่มที่เลือกต่อท้ายด้วยคลาสแก้ว (gc-btn) ได้ — "is-on pm-bull" ต้องยังติดกัน
+ok("all: ปุ่มทั้งพอร์ตติดสว่าง", /is-on pm-bull[^"]*" data-pm-cview="all"/.test(hAll));
 ok("all: มี QQQM ในตาราง", !!tAll.QQQM);
 ok("all: มีแถวเงินสด", hAll.indexOf("pm-row-cash") >= 0);
 ok("all: QQQM = 40.0%", tAll.QQQM && tAll.QQQM.w === 40, tAll.QQQM && tAll.QQQM.w);
@@ -119,7 +120,8 @@ ok("เป้า: section 🎯 Target Allocation ถูกลบออกจา�
 mod.setView("stocks");
 var hSt = mod.sectionCurrent(out, inp);
 var tSt = tableRows(hSt);
-ok("stocks: ปุ่มหุ้นรายตัวติดสว่าง", /is-on pm-bull" data-pm-cview="stocks"/.test(hSt));
+ok("stocks: ปุ่มหุ้นรายตัวติดสว่าง", /is-on pm-bull[^"]*" data-pm-cview="stocks"/.test(hSt));
+ok("stocks: ปุ่มทั้งพอร์ตไม่ติดสว่าง", !/is-on[^"]*" data-pm-cview="all"/.test(hSt));
 ok("stocks: ไม่มี QQQM ในตาราง", !tSt.QQQM, Object.keys(tSt).join(","));
 ok("stocks: ไม่มีแถวเงินสด", hSt.indexOf("pm-row-cash") < 0);
 ok("stocks: เหลือหุ้นครบ 7 ตัว", Object.keys(tSt).length === 7, Object.keys(tSt).length);

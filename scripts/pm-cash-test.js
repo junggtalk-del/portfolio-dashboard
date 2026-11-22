@@ -391,10 +391,10 @@ function hasFromPM(body) { return JSON.stringify(body).indexOf("fromPM") >= 0; }
 function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || []).filter(function (a) { return a.type === "foreign-stock"; }); }
 
 (async function main() {
-  t("portfolio-manager.html: page pm-33 (PM settings on the server · ?doc=pm · per-change ops · merge uploads never overwrite) · css pm-13 · foreign-sleeve.js before the PM engine/page",
-    /portfolio-manager-page\.js\?v=20261110-pm-33"/.test(HTML) && /portfolio-manager\.css\?v=20261109-pm-13"/.test(HTML) &&
+  t("portfolio-manager.html: page pm-34 (glass cards · PM settings on the server · ?doc=pm · per-change ops) · css pm-14 · foreign-sleeve.js before the PM engine/page",
+    /portfolio-manager-page\.js\?v=20261122-pm-34"/.test(HTML) && /portfolio-manager\.css\?v=20261122-pm-14"/.test(HTML) &&
     HTML.indexOf("foreign-sleeve.js") > 0 && HTML.indexOf("foreign-sleeve.js") < HTML.indexOf("portfolio-manager-engine.js"));
-  t("index.html loads app.js?v=20261109-app-13", /\/app\.js\?v=20261109-app-13"/.test(read("index.html")));
+  t("index.html loads app.js?v=20261122-app-15", /\/app\.js\?v=20261122-app-15"/.test(read("index.html")));
 
   // ---------- MAIN: เอกสารไม่มี foreignSleeve → สูตรเดิม (Editor) ----------
   var serverEmpty = false, failPut = false, failGet = false, throwGet = false, holdPut = false;
@@ -703,10 +703,16 @@ function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || [])
     L.getsSince() === 0 && L.putsSince() === 0 && /ใช้ค่าเดิม/.test(L.html()) && L.html().indexOf(INVALID_TH) < 0);
   L.mark(); L.setValue("data-pm-cash", "1", "900000"); L.key("data-pm-cash", "1", "Enter"); await flush(80);
   t("locked + a typed value saves normally (PUT 900000) and the input goes back to blank", L.putsSince() === 1 && L.puts[L.puts.length - 1].data.foreignSleeve.cash === 900000 && inputValue(L.html()) === "");
+  // glass fix round 1: the per-stock value inputs (data-pm-mv) are <input value> too — blank while locked, back on unlock
+  function mvValues(h) { return (h.match(/<input[^>]*data-pm-mv="[^"]*"[^>]*>/g) || []).map(function (tag) { var m = /\svalue="([^"]*)"/.exec(tag); return (/data-pm-mv="([^"]*)"/.exec(tag) || [])[1] + "=" + (m ? m[1] : "?"); }); }
+  var mvLockedVals = mvValues(L.html());
   PV.locked = false; L.fireDoc("portfolio-privacy-changed");
-  var unl = inputValue(L.html());
+  var unl = inputValue(L.html()), mvUnl = mvValues(L.html());
   PV.locked = true; L.fireDoc("portfolio-privacy-changed");
   t("portfolio-privacy-changed re-renders: unlock → input 900000 · lock → blank + placeholder", unl === "900000" && inputValue(L.html()) === "" && inputPlaceholder(L.html()) === LOCKED_PH, [unl, inputValue(L.html())]);
+  t("per-stock value inputs: locked → every value \"\" · portfolio-privacy-changed unlock → the stored amounts (QQQM 2000000 · NVDA 435000 · META 291000) · lock again → blank",
+    mvLockedVals.length === 3 && mvLockedVals.every(function (s) { return /=$/.test(s); }) &&
+    mvUnl.join() === "QQQM=2000000,NVDA=435000,META=291000" && mvValues(L.html()).every(function (s) { return /=$/.test(s); }), [mvLockedVals, mvUnl, mvValues(L.html())]);
   // ล็อกระหว่างพิมพ์ → ช่องถูกล้าง (ไม่ค้างค่าที่พิมพ์ไว้บนจอ)
   PV.locked = false; L.fireDoc("portfolio-privacy-changed");
   L.setValue("data-pm-cash", "1", "12345"); PV.locked = true; L.fireDoc("portfolio-privacy-changed");
@@ -718,7 +724,8 @@ function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || [])
   t("no ฿ inside title/aria-label on any rendered state", pages.every(function (p) { return !/(title|aria-label)="[^"]*฿/.test(p[1]); }), pages.map(function (p) { return (/(title|aria-label)="[^"]*฿[^"]*"/.exec(p[1]) || [""])[0]; }).filter(Boolean));
   t("cash card / cash row carry no advisory words (TH list + Buy/Sell)",
     pages.every(function (p) { var s = cashCard(p[1]) + cashRow(p[1]); return !ADVISORY_TH.test(s) && !ADVISORY_EN.test(s); }));
-  t("the 4 overview stat cards remain (class=\"pm-stat\" × 4)", (h1.match(/class="pm-stat"/g) || []).length === 4);
+  // the tiles also wear the glass classes (class="pm-stat gc-card gc-tile <tone>") — count the pm-stat token
+  t("the 4 overview stat cards remain (class=\"pm-stat …\" × 4)", (h1.match(/class="pm-stat[ "]/g) || []).length === 4);
 
   // ---------- final fix wave [2a]: หน้า PM เขียนแถวหุ้นต่างประเทศลงไตรมาสล่าสุดที่ยังไม่จบ ----------
   //   ไม่งั้นวันที่ 1 ของไตรมาสใหม่ ผู้อ่านถอยไปใช้แถวที่เก็บไว้ (ค่าเก่า) → ผลตอบแทนไตรมาสที่เพิ่งจบเปลี่ยนข้ามคืน

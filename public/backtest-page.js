@@ -44,6 +44,32 @@
   let selectedResult = null;
   let isRunning = false;
 
+  // ---- การ์ดแก้ว (glass-cards.css) — โค้ดใหม่เป็น ES5 ----
+  // สีการ์ด = สถานะที่หน้าคำนวณอยู่แล้ว (คลาสเดิม good / warn / bad ของการ์ดตัวเลข) · ไม่มีสถานะ → gc-neutral
+  var GC_TONE = { good: "gc-calm", warn: "gc-warning", bad: "gc-danger" };
+  function gcTone(status) {
+    return Object.prototype.hasOwnProperty.call(GC_TONE, status) ? GC_TONE[status] : "gc-neutral";
+  }
+  // การ์ดช่วงเวลา: overfit ที่หน้าติด is-warning ไว้มาก่อน · ช่วงที่ไม่มีเทรด (0 หรือไม่มีค่า — การ์ดแสดง "Trades: 0"
+  // เช่นช่วงที่ไม่มีแท่งราคาเลย engine คืน 0%) หรือผลตอบแทนไม่มี/ไม่ใช่ตัวเลขจำกัด → ไม่มีสถานะ ·
+  // ไม่งั้นกำไร/ขาดทุนของช่วงนั้นด้วยกติกาเดียวกับการ์ด "ผลตอบแทนรวม" (≥ 0 good · < 0 bad)
+  function periodStatus(isWarning, totalReturnPct, tradeCount) {
+    if (isWarning) return "warn";
+    if (!(Number(tradeCount) > 0)) return "";
+    if (totalReturnPct == null || totalReturnPct === "") return "";
+    var value = Number(totalReturnPct);
+    if (!isFinite(value)) return "";
+    return value >= 0 ? "good" : "bad";
+  }
+  function esc(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  // กราฟวางบนการ์ดแก้ว: ไม่ทาพื้นขาว · เส้นตาราง/ตัวหนังสือเป็นขาวโปร่ง (สีเส้นข้อมูลมาจาก renderCharts)
+  var CHART_GRID = "rgba(255, 255, 255, 0.12)";
+  var CHART_INK = "rgba(245, 245, 250, 0.8)";
+
   function formatNumber(value, digits = 2) {
     if (!Number.isFinite(Number(value))) return "-";
     return Number(value).toLocaleString("en-US", {
@@ -87,17 +113,17 @@
 
   function metricCard(label, value, note, tone) {
     return `
-      <article class="metric-card ${tone || ""}">
-        <span>${label}</span>
-        <strong>${value}</strong>
-        <small>${note || ""}</small>
+      <article class="metric-card ${tone || ""} gc-card gc-tile ${gcTone(tone)}">
+        <span>${esc(label)}</span>
+        <strong class="gc-num">${esc(value)}</strong>
+        <small>${esc(note || "")}</small>
       </article>
     `;
   }
 
   function renderSummary(result) {
     if (!result) {
-      summaryCards.innerHTML = `<div class="empty-box">ยังไม่มีผลลัพธ์</div>`;
+      summaryCards.innerHTML = `<div class="empty-box gc-card gc-neutral">ยังไม่มีผลลัพธ์</div>`;
       periodCards.innerHTML = "";
       return;
     }
@@ -121,11 +147,12 @@
     periodCards.innerHTML = periodEntries.map(([key, label]) => {
       const period = result.periodResults?.[key];
       const m = period?.metrics || {};
+      var isWarning = Boolean(result.overfitWarning && key === "out_of_sample");
       return `
-        <article class="period-card ${result.overfitWarning && key === "out_of_sample" ? "is-warning" : ""}">
+        <article class="period-card ${isWarning ? "is-warning" : ""} gc-card gc-tile ${gcTone(periodStatus(isWarning, m.totalReturnPct, m.tradeCount))}">
           <strong>${label}</strong>
           <p>Total return: ${formatPct(m.totalReturnPct)}</p>
-          <p>Win rate: ${formatPct(m.winRate)} · Trades: ${m.tradeCount || 0}</p>
+          <p>Win rate: ${formatPct(m.winRate)} · Trades: ${esc(m.tradeCount || 0)}</p>
           <p>PF: ${m.profitFactor === null ? "∞" : formatNumber(m.profitFactor)}</p>
         </article>
       `;
@@ -133,7 +160,7 @@
     if (result.overfitWarning) {
       periodCards.insertAdjacentHTML(
         "beforeend",
-        `<article class="period-card is-warning"><strong>Overfit warning</strong><p>กลยุทธ์นี้อาจ overfit เพราะผลลัพธ์ดีเฉพาะช่วงพัฒนา แต่ไม่ดีในช่วงทดสอบจริง</p></article>`
+        `<article class="period-card is-warning gc-card gc-tile gc-warning"><strong>Overfit warning</strong><p>กลยุทธ์นี้อาจ overfit เพราะผลลัพธ์ดีเฉพาะช่วงพัฒนา แต่ไม่ดีในช่วงทดสอบจริง</p></article>`
       );
     }
   }
@@ -151,19 +178,19 @@
       const recent = result.periodResults?.recent?.metrics || {};
       return `
         <tr class="${selectedResult === result ? "is-selected" : ""}" data-rank-index="${index}">
-          <td><button class="ranking-button" type="button" data-rank-index="${index}">${result.symbol}</button></td>
-          <td>${result.strategyName}</td>
-          <td>${formatPct(metrics.totalReturnPct)}</td>
-          <td>${formatPct(inSample.totalReturnPct)}</td>
-          <td>${formatPct(outSample.totalReturnPct)}</td>
-          <td>${formatPct(recent.totalReturnPct)}</td>
-          <td>${formatPct(metrics.winRate)}</td>
-          <td>${metrics.profitFactor === null ? "∞" : formatNumber(metrics.profitFactor)}</td>
-          <td>${formatPct(metrics.maxDrawdown)}</td>
-          <td>${formatNumber(metrics.expectancy)}</td>
-          <td>${metrics.tradeCount || 0}</td>
-          <td>${result.strategyScore || 0}</td>
-          <td>${result.verdict || "-"}</td>
+          <td><button class="ranking-button" type="button" data-rank-index="${index}">${esc(result.symbol)}</button></td>
+          <td>${esc(result.strategyName)}</td>
+          <td class="gc-cell-num">${formatPct(metrics.totalReturnPct)}</td>
+          <td class="gc-cell-num">${formatPct(inSample.totalReturnPct)}</td>
+          <td class="gc-cell-num">${formatPct(outSample.totalReturnPct)}</td>
+          <td class="gc-cell-num">${formatPct(recent.totalReturnPct)}</td>
+          <td class="gc-cell-num">${formatPct(metrics.winRate)}</td>
+          <td class="gc-cell-num">${metrics.profitFactor === null ? "∞" : formatNumber(metrics.profitFactor)}</td>
+          <td class="gc-cell-num">${formatPct(metrics.maxDrawdown)}</td>
+          <td class="gc-cell-num">${formatNumber(metrics.expectancy)}</td>
+          <td class="gc-cell-num">${esc(metrics.tradeCount || 0)}</td>
+          <td class="gc-cell-num">${esc(result.strategyScore || 0)}</td>
+          <td>${esc(result.verdict || "-")}</td>
           <td>${result.overfitWarning ? "อาจ overfit" : "-"}</td>
         </tr>
       `;
@@ -179,15 +206,15 @@
     }
     tradeRows.innerHTML = trades.map((trade) => `
       <tr>
-        <td>${trade.entryDate}</td>
-        <td>${trade.exitDate}</td>
-        <td>${formatNumber(trade.entryPrice, 4)}</td>
-        <td>${formatNumber(trade.exitPrice, 4)}</td>
-        <td>${formatNumber(trade.shares, 4)}</td>
-        <td>${formatNumber(trade.pnl)}</td>
-        <td>${formatPct(trade.pnlPct)}</td>
-        <td>${trade.exitReason || "-"}</td>
-        <td>${trade.holdingDays || 0}</td>
+        <td>${esc(trade.entryDate)}</td>
+        <td>${esc(trade.exitDate)}</td>
+        <td class="gc-cell-num">${formatNumber(trade.entryPrice, 4)}</td>
+        <td class="gc-cell-num">${formatNumber(trade.exitPrice, 4)}</td>
+        <td class="gc-cell-num">${formatNumber(trade.shares, 4)}</td>
+        <td class="gc-cell-num">${formatNumber(trade.pnl)}</td>
+        <td class="gc-cell-num">${formatPct(trade.pnlPct)}</td>
+        <td>${esc(trade.exitReason || "-")}</td>
+        <td class="gc-cell-num">${esc(trade.holdingDays || 0)}</td>
       </tr>
     `).join("");
   }
@@ -197,12 +224,10 @@
     const width = canvas.width;
     const height = canvas.height;
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, width, height);
     const values = (points || []).map((point) => Number(point[valueKey])).filter(Number.isFinite);
     if (values.length < 2) {
-      ctx.fillStyle = "#6c778c";
-      ctx.font = "16px sans-serif";
+      ctx.fillStyle = CHART_INK;
+      ctx.font = "16px Inter, 'Noto Sans Thai', sans-serif";
       ctx.fillText("No chart data", 24, 42);
       return;
     }
@@ -215,7 +240,7 @@
     const xFor = (index) => padding.left + (index / Math.max(points.length - 1, 1)) * chartWidth;
     const yFor = (value) => padding.top + (1 - (value - min) / span) * chartHeight;
 
-    ctx.strokeStyle = "#dfe6f1";
+    ctx.strokeStyle = CHART_GRID;
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i += 1) {
       const y = padding.top + (i / 4) * chartHeight;
@@ -242,14 +267,15 @@
     ctx.fillStyle = fillColor;
     ctx.fill();
 
-    ctx.fillStyle = "#6c778c";
-    ctx.font = "12px sans-serif";
+    ctx.fillStyle = CHART_INK;
+    ctx.font = "12px Inter, sans-serif";
     ctx.fillText(formatNumber(max, 2), 10, padding.top + 4);
     ctx.fillText(formatNumber(min, 2), 10, height - padding.bottom);
   }
 
   function renderCharts(result) {
-    drawLineChart(equityCanvas, result?.equityCurve || [], "equity", "#0f8b8d", "rgba(15,139,141,0.09)", false);
+    // equity = เส้นเดียว สีเดิม (teal) ไม่มีความหมาย → ขาวแบบ Macro · drawdown แดง = ขาดทุนจากจุดสูงสุด (มีความหมาย) → คงเดิม
+    drawLineChart(equityCanvas, result?.equityCurve || [], "equity", "#ffffff", "rgba(255,255,255,0.08)", false);
     drawLineChart(drawdownCanvas, result?.drawdownCurve || [], "drawdown", "#c2413a", "rgba(194,65,58,0.09)", true);
   }
 
@@ -277,7 +303,7 @@
         : "กำลังดึงข้อมูลราคาและรัน backtest..."
     );
     setExportEnabled(false);
-    summaryCards.innerHTML = `<div class="empty-box">กำลังคำนวณ...</div>`;
+    summaryCards.innerHTML = `<div class="empty-box gc-card gc-neutral">กำลังคำนวณ...</div>`;
     rankingRows.innerHTML = `<tr><td colspan="14">กำลังรัน backtest...</td></tr>`;
 
     try {
@@ -308,7 +334,7 @@
       setExportEnabled(Boolean(payload.ranking?.length));
     } catch (error) {
       setupStatus.textContent = String(error.message || error);
-      summaryCards.innerHTML = `<div class="empty-box">Backtest failed: ${String(error.message || error)}</div>`;
+      summaryCards.innerHTML = `<div class="empty-box gc-card gc-neutral">Backtest failed: ${esc(String(error.message || error))}</div>`;
       rankingRows.innerHTML = `<tr><td colspan="14">Backtest failed</td></tr>`;
     } finally {
       setLoading(false);

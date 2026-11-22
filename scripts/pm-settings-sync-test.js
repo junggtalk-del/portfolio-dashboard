@@ -271,7 +271,7 @@ var SERVER_DOC = {
 };
 
 (async function main() {
-  t("portfolio-manager.html loads portfolio-manager-page.js?v=20261110-pm-33", /portfolio-manager-page\.js\?v=20261110-pm-33"/.test(HTML));
+  t("portfolio-manager.html loads portfolio-manager-page.js?v=20261122-pm-34", /portfolio-manager-page\.js\?v=20261122-pm-34"/.test(HTML));
 
   // ================= 1. server มีเอกสาร → รับ + เขียน cache + ไม่ PUT =================
   console.log("== 1. server has a doc → adopt, no PUT on open ==");

@@ -538,9 +538,10 @@ win.ThaiDrPage.load(false).then(function () {
   // นับเฉพาะ <button class="dr-chip ..."> ไม่ใช่ dr-chip__count ที่อยู่ข้างใน
   // checkbox ที่เหลือบนหน้าคือคอลัมน์ "ไม่สนใจ" ในตาราง ซึ่งเป็นคนละเรื่องกับตัวกรอง
   t("ตัวกรองใช้ chip ไม่ใช่ checkbox", (function () {
-    var bar = /<div class="dr-filterbar">[\s\S]*?<\/div>\s*<div class="dr-results"/.exec(h);
+    // แถบกรองเป็นการ์ดแก้ว (2026-11-22: class="dr-filterbar gc-card gc-neutral") — ต้องหาแถบเจอจริง ไม่ผ่านเพราะ regex ว่าง
+    var bar = /<div class="dr-filterbar[^"]*">[\s\S]*?<\/div>\s*<div class="dr-results"/.exec(h);
     var barHtml = bar ? bar[0] : "";
-    return countOf(/class="dr-chip[ "]/g) === 4 && barHtml.indexOf('type="checkbox"') < 0;
+    return !!bar && countOf(/class="dr-chip[ "]/g) === 4 && barHtml.indexOf('type="checkbox"') < 0;
   })(), countOf(/class="dr-chip[ "]/g));
   t("chip บอกจำนวนในตัวเอง", countOf(/dr-chip__count/g) === 4, countOf(/dr-chip__count/g));
   t("chip บอกสถานะเปิด/ปิดด้วย aria-pressed", h.indexOf('aria-pressed="false"') >= 0);

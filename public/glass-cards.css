@@ -1,0 +1,581 @@
+/* ==========================================================================
+   glass-cards.css — shared "glass card" look · gc-2 (2026-11)
+   First adopter: /market-risk. Page-agnostic: every class starts with gc-.
+   gc-2 adds the pieces every page shares: tables, buttons, fields, section
+   headings. Pages that wear the cards are listed in scripts/glass-sitewide-test.js.
+
+   A card is a self-contained tile: two radial washes in the card's tone over
+   a dark base, a soft top sheen, a 1px light rim and an offset shadow. Cards
+   keep their colours and white text in BOTH site themes; only the page around
+   them follows the theme.
+
+   Load order: theme.css → glass-cards.css → page stylesheet.
+   Fonts: Inter 400-800 for numerals/Latin + Noto Sans Thai (Thai falls
+   through to it automatically from the --gc-font stack).
+
+   Card
+     .gc-card                    tile (flex column, 28px radius). It is also an
+                                 inline-size container for @container queries:
+                                 put it on a block or grid item, never on a
+                                 shrink-to-fit element (inline-block, float).
+     .gc-calm .gc-normal .gc-warning .gc-danger
+                                 tone = risk level (green · violet · orange · rose)
+     .gc-neutral                 slate, no tone (also the default)
+     .gc-tile                    compact tile (18px radius, tight padding)
+     .gc-strip                   one-line bar that wraps
+   Head
+     .gc-head > .gc-title + .gc-head-end
+     .gc-pill  .gc-pill-ghost    white label / translucent label
+     button.gc-info              round "i" button (40px hit area, focus ring)
+   Numbers
+     .gc-num + .gc-num-xl | -l | -m | -s | -xs   Inter 700, tabular figures
+     .gc-unit                    unit after a number (%, pp, /100)
+   Signals
+     .gc-chip + .gc-chip-risk | -safe | -flat    toward risk = yellow,
+                                                 toward safe = green
+     .gc-dir  + .gc-dir-risk  | -safe | -flat    text led by a signal dot
+     .gc-dot                     glowing status dot
+   Charts (all white, one yellow "now" dot)
+     .gc-zone > .gc-zone-track > .gc-zone-seg ×4 (.gc-lit) + .gc-knob
+              + .gc-zone-labels > span ×4        (.gc-zone-mini = small track)
+     .gc-spark > svg (.gc-spark-area .gc-spark-line .gc-spark-now) + .gc-spark-dot
+     .gc-ring > svg (.gc-ring-track .gc-ring-arc) + .gc-ring-value
+     .gc-funnel-rail > .gc-funnel-fill + .gc-knob
+   Text & blocks
+     .gc-meta  .gc-meaning       secondary text (white-tinted, never grey)
+     .gc-callout (.gc-callout-dashed)            dark inset note
+     .gc-list > .gc-list-row     warning rows
+     .gc-dl > .gc-dl-row > span + b              label / value rows
+     .gc-stats > .gc-stat > span + b             stat cells
+   Tables, controls — made for the glass, also readable off the glass: every
+   card-only token they use (--gc-ink, --gc-line, --gc-rim, --gc-focus …) has
+   a site-theme fallback (--app-text, --app-border, --app-muted, --app-accent …),
+   so outside a .gc-card they take the page's colours in both themes.
+     .gc-table-wrap > table.gc-table
+                                 the wrap scrolls sideways inside the card when
+                                 the table is wider; give a scrolling wrap
+                                 tabindex="0" + aria-label so keyboards reach it
+     .gc-table                   thead th = secondary ink, rows split by
+                                 --gc-line, hovered row darkens, figures tabular
+     .gc-cell-num                numeric th/td: right-aligned, no wrap
+     .gc-btn                     white pill button (<button> or <a>), >= 36px
+     .gc-btn-ghost               translucent pill with a light rim; works alone
+                                 or as class="gc-btn gc-btn-ghost"
+     .gc-field                   text <input> / <select> / <textarea> on a dark
+                                 well; native parts dark on the card (the card
+                                 sets color-scheme: dark), themed off it
+                                 Each control: :hover, :focus-visible ring,
+                                 :disabled. Buttons also take aria-disabled=
+                                 "true" (dimmed, no hover, no pointer) — that
+                                 does not stop the keyboard: drop the href /
+                                 guard the handler too.
+   Page only (never on a card — it uses the theme's dark-on-light text)
+     .gc-section-h               section heading: on the heading block
+                                 (h2/h3 + p) or on the h2 itself
+
+   Contrast (measured on the composited gradients): --gc-ink-2 is >= 4.5:1 on
+   the lightest pixel of every tone (the top-right wash; tall stacked cards
+   are the low point) and >= 11:1 on the darkest. --gc-ink-3 and --gc-line
+   are for non-text marks only. Over that same lightest pixel: ghost button
+   ink >= 4.8:1, field text >= 8.9:1, placeholder >= 6.3:1, hovered table row
+   ink-2 >= 5.7:1 (hover darkens, never lightens). gc-section-h uses the
+   theme's --app-text (>= 11:1) and --app-text-2 (>= 7:1); off the glass the
+   pieces use the same theme tokens (measured in Chrome, both themes).
+   ========================================================================== */
+
+.gc-card {
+  --gc-a: 148, 163, 184;
+  --gc-b: 51, 65, 85;
+  --gc-c: 15, 23, 42;
+  --gc-wash: 0.34;
+  --gc-ink: #f5f5fa;
+  --gc-ink-2: rgba(245, 245, 250, 0.8);
+  --gc-ink-3: rgba(245, 245, 250, 0.5);
+  --gc-line: rgba(255, 255, 255, 0.1);
+  --gc-well: rgba(0, 0, 0, 0.26);
+  --gc-signal: #ffe14d;
+  --gc-safe: #6df2bd;
+  --gc-font: "Inter", "Noto Sans Thai", system-ui, sans-serif;
+  --gc-num-font: "Inter", "Noto Sans Thai", system-ui, sans-serif;
+  --gc-radius: 28px;
+  --gc-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.9);
+  /* on-glass values of the shared tables / controls (each has a theme fallback where it is used) */
+  --gc-line-strong: rgba(255, 255, 255, 0.2);
+  --gc-hover: rgba(0, 0, 0, 0.18);
+  --gc-fill: rgba(255, 255, 255, 0.1);
+  --gc-rim: rgba(255, 255, 255, 0.28);
+  --gc-rim-strong: rgba(255, 255, 255, 0.6);
+  --gc-press: rgba(0, 0, 0, 0.2);
+  --gc-btn-rim: transparent;
+  --gc-focus: #fff;
+  color-scheme: dark;   /* native parts inside a tile (select arrows, pickers, scrollbars) stay dark in both themes */
+  position: relative;
+  isolation: isolate;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--gc-radius);
+  background:
+    radial-gradient(120% 95% at 100% 0%, rgba(var(--gc-a), var(--gc-wash)) 0%, rgba(var(--gc-a), 0) 58%),
+    radial-gradient(110% 90% at 0% 100%, rgba(var(--gc-b), 0.85) 0%, rgba(var(--gc-b), 0) 70%),
+    linear-gradient(160deg, rgb(var(--gc-c)) 0%, #0b0b12 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--gc-shadow);
+  color: var(--gc-ink);
+  font-family: var(--gc-font);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* glass sheen: above the washes, below the content */
+.gc-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0) 38%);
+  pointer-events: none;
+}
+
+/* on the light page the tile keeps its colours; only its shadow softens */
+html[data-theme="light"] .gc-card { --gc-shadow: 0 18px 34px -20px rgba(15, 23, 42, 0.45); }
+
+/* tones — wash alpha tuned per hue so --gc-ink-2 keeps 4.5:1 at the brightest spot */
+.gc-neutral { --gc-a: 148, 163, 184; --gc-b: 51, 65, 85;  --gc-c: 15, 23, 42; --gc-wash: 0.34; }
+.gc-calm    { --gc-a: 16, 196, 128;  --gc-b: 6, 104, 72;  --gc-c: 4, 36, 27;  --gc-wash: 0.37; }
+.gc-normal  { --gc-a: 124, 92, 255;  --gc-b: 49, 30, 140; --gc-c: 18, 12, 52; --gc-wash: 0.55; }
+.gc-warning { --gc-a: 255, 120, 24;  --gc-b: 150, 58, 8;  --gc-c: 46, 19, 4;  --gc-wash: 0.43; }
+.gc-danger  { --gc-a: 255, 45, 111;  --gc-b: 128, 10, 52; --gc-c: 46, 4, 20;  --gc-wash: 0.54; }
+
+.gc-tile  { --gc-radius: 18px; gap: 6px; padding: 11px 12px 12px; }
+.gc-strip { --gc-radius: 20px; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 12px 16px; }
+
+.gc-card ::selection { background: rgba(255, 255, 255, 0.3); color: #fff; }
+.gc-card :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* ---------------------------------------------------------------- head */
+.gc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.gc-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--gc-ink);
+}
+.gc-head-end { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 8px; }
+
+.gc-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: #0b0b12;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.gc-pill-ghost {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  color: var(--gc-ink);
+  font-weight: 600;
+}
+
+.gc-info {
+  position: relative;
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--gc-ink-2);
+  font: italic 700 12px/1 Georgia, "Times New Roman", serif;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.gc-info::before { content: ""; position: absolute; inset: -8px; border-radius: 50%; }
+.gc-info:hover { border-color: rgba(255, 255, 255, 0.75); background: rgba(255, 255, 255, 0.14); color: #fff; }
+.gc-info:active { background: rgba(255, 255, 255, 0.24); }
+.gc-info:focus-visible { outline: 2px solid #fff; outline-offset: 2px; color: #fff; }
+
+/* ---------------------------------------------------------------- numbers */
+.gc-num {
+  font-family: var(--gc-num-font);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  color: #fff;
+  white-space: nowrap;
+}
+.gc-num-xl { font-size: 64px; }
+.gc-num-l  { font-size: 46px; }
+.gc-num-m  { font-size: 36px; }
+.gc-num-s  { font-size: 24px; letter-spacing: -0.02em; }
+.gc-num-xs { font-size: 18px; letter-spacing: -0.015em; }
+.gc-unit {
+  margin-left: 0.12em;
+  font-family: var(--gc-font);
+  font-size: max(11px, 0.34em);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--gc-ink-2);
+}
+.gc-num-xs .gc-unit, .gc-num-s .gc-unit { font-size: 0.66em; }
+
+/* ---------------------------------------------------------------- signals */
+.gc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gc-chip-risk { background: var(--gc-signal); color: #2a2000; }
+.gc-chip-safe { background: rgba(4, 40, 28, 0.55); box-shadow: inset 0 0 0 1px rgba(90, 236, 178, 0.5); color: #9ff7d3; }
+.gc-chip-flat { background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); color: var(--gc-ink); }
+
+.gc-dir { display: inline-flex; align-items: baseline; gap: 7px; }
+.gc-dir::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+}
+.gc-dir-risk::before { background: var(--gc-signal); box-shadow: 0 0 8px rgba(255, 225, 77, 0.8); }
+.gc-dir-safe::before { background: var(--gc-safe); box-shadow: 0 0 8px rgba(109, 242, 189, 0.7); }
+
+.gc-dot {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.16), 0 0 14px rgba(255, 255, 255, 0.7);
+}
+
+/* ---------------------------------------------------------------- zone bar */
+.gc-zone { margin-top: 14px; }
+.gc-zone-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  height: 8px;
+}
+.gc-zone-seg { height: 100%; border-radius: 999px; background: rgba(255, 255, 255, 0.16); }
+.gc-zone-seg.gc-lit { background: rgba(255, 255, 255, 0.55); }
+.gc-knob {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18), 0 0 16px rgba(255, 255, 255, 0.6), 0 2px 6px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+.gc-zone-labels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--gc-ink-2);
+}
+.gc-zone-labels > span:nth-child(2),
+.gc-zone-labels > span:nth-child(3) { text-align: center; }
+.gc-zone-labels > span:last-child { text-align: right; }
+.gc-zone-mini { gap: 3px; height: 5px; }
+.gc-zone-mini .gc-knob {
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.16), 0 0 10px rgba(255, 255, 255, 0.55);
+}
+
+/* ---------------------------------------------------------------- sparkline */
+.gc-spark { position: relative; height: var(--gc-spark-h, 56px); margin-top: 10px; }
+.gc-spark > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.gc-spark-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--gc-signal);
+  box-shadow: 0 0 0 3px rgba(255, 225, 77, 0.25), 0 0 14px rgba(255, 225, 77, 0.9);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- ring */
+.gc-ring { position: relative; flex: 0 0 auto; width: 112px; height: 112px; }
+.gc-ring > svg { display: block; width: 100%; height: 100%; }
+.gc-ring-track { stroke: rgba(255, 255, 255, 0.14); }
+.gc-ring-arc { stroke: #fff; filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.55)); }
+.gc-ring-value { position: absolute; inset: 0; display: grid; place-items: center; }
+
+/* ---------------------------------------------------------------- funnel bar */
+.gc-funnel-rail {
+  position: relative;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.gc-funnel-fill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  max-width: calc(100% - 4px);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.5), #fff);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.35);
+}
+
+/* ---------------------------------------------------------------- text & blocks */
+.gc-meta { margin-top: 6px; font-size: 12.5px; line-height: 1.5; color: var(--gc-ink-2); }
+.gc-meaning { margin-top: auto; padding-top: 12px; font-size: 12.5px; line-height: 1.6; color: var(--gc-ink-2); }
+
+.gc-callout {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--gc-well);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: var(--gc-ink);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.gc-callout-dashed { border: 1px dashed rgba(255, 225, 77, 0.55); box-shadow: none; }
+
+.gc-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.gc-list-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 16px;
+  background: var(--gc-well);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: var(--gc-ink);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.gc-dl { display: grid; gap: 7px; }
+.gc-dl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 12.5px; line-height: 1.45; }
+.gc-dl-row > span { flex: 0 0 auto; color: var(--gc-ink-2); }
+.gc-dl-row > b { min-width: 0; color: var(--gc-ink); font-weight: 600; text-align: right; }
+.gc-dl-row > b.gc-dir { justify-content: flex-end; }
+
+.gc-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.gc-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--gc-well);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+.gc-stat > span { color: var(--gc-ink-2); font-size: 11.5px; line-height: 1.3; }
+.gc-stat > b {
+  font-family: var(--gc-num-font);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- table */
+/* var(--gc-x, var(--app-y)): the glass value on a card, the site theme's off it */
+.gc-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border-radius: 12px;
+}
+.gc-table-wrap:focus-visible { outline: 2px solid var(--gc-focus, var(--app-accent)); outline-offset: 2px; }
+.gc-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--gc-ink, var(--app-text));
+  font-size: 12.5px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+.gc-table th,
+.gc-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--gc-line, var(--app-border));
+  text-align: left;
+  vertical-align: middle;
+}
+.gc-table thead th {
+  padding-top: 4px;
+  border-bottom-color: var(--gc-line-strong, var(--app-border-strong));
+  color: var(--gc-ink-2, var(--app-text-2));
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.gc-table tbody th { font-weight: 600; }
+.gc-table tbody tr:last-child > * { border-bottom: 0; }
+/* on glass: darken, never lighten — ink-2 is only just 4.5:1 at the card's brightest spot */
+.gc-table tbody tr:hover > * { background: var(--gc-hover, var(--app-accent-soft)); }
+.gc-table .gc-cell-num {
+  font-family: var(--gc-num-font, "Inter", "Noto Sans Thai", system-ui, sans-serif);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- controls */
+.gc-btn,
+.gc-btn-ghost {
+  box-sizing: border-box;   /* <a> is content-box by default — same height as <button> */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  max-width: 100%;
+  margin: 0;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--gc-btn-rim, var(--app-muted));
+  color: #0b0b12;
+  font-family: var(--gc-font, "Inter", "Noto Sans Thai", system-ui, sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+.gc-btn:not(:disabled):not([aria-disabled="true"]):hover { background: #e6e6ef; }
+.gc-btn:not(:disabled):not([aria-disabled="true"]):active { background: #d6d6e2; }
+/* after the gc-btn states, so class="gc-btn gc-btn-ghost" keeps the translucent face */
+.gc-btn-ghost {
+  background: var(--gc-fill, transparent);
+  box-shadow: inset 0 0 0 1px var(--gc-rim, var(--app-muted));
+  color: var(--gc-ink, var(--app-text));
+  font-weight: 600;
+}
+.gc-btn-ghost:not(:disabled):not([aria-disabled="true"]):hover {
+  background: var(--gc-fill, transparent);
+  box-shadow: inset 0 0 0 1px var(--gc-rim-strong, var(--app-text));
+}
+.gc-btn-ghost:not(:disabled):not([aria-disabled="true"]):active { background: var(--gc-press, var(--app-accent-soft)); }
+.gc-btn:focus-visible,
+.gc-btn-ghost:focus-visible { outline: 2px solid var(--gc-focus, var(--app-accent)); outline-offset: 2px; }
+/* aria-disabled keeps the button focusable for screen readers; pointer-events stops the mouse only */
+.gc-btn:disabled,
+.gc-btn-ghost:disabled,
+.gc-btn[aria-disabled="true"],
+.gc-btn-ghost[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+
+.gc-field {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 36px;
+  margin: 0;
+  padding: 7px 12px;
+  border: 1px solid var(--gc-rim, var(--app-muted));
+  border-radius: 12px;
+  background: var(--gc-well, var(--app-surface));
+  color: var(--gc-ink, var(--app-text));
+  font-family: var(--gc-font, "Inter", "Noto Sans Thai", system-ui, sans-serif);
+  font-size: 13px;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.gc-field::placeholder { color: var(--gc-ink-2, var(--app-text-2)); opacity: 1; }
+.gc-field:not(:disabled):hover { border-color: var(--gc-rim-strong, var(--app-text)); }
+.gc-field:focus-visible {
+  outline: 2px solid var(--gc-focus, var(--app-accent));
+  outline-offset: 2px;
+  border-color: var(--gc-rim-strong, var(--app-accent));
+}
+.gc-field:disabled { opacity: 0.55; cursor: not-allowed; }
+select.gc-field { cursor: pointer; }
+.gc-card select.gc-field option { background: #14141c; color: #f5f5fa; }
+
+/* ---------------------------------------------------------------- section heading (on the page, not on a card) */
+.gc-section-h {
+  margin: 0 4px 14px;
+  color: var(--app-text);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.gc-section-h h2,
+.gc-section-h h3 { margin: 0 0 4px; color: inherit; font: inherit; }
+.gc-section-h p {
+  max-width: 96ch;
+  margin: 0;
+  color: var(--app-text-2);
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* ---------------------------------------------------------------- adaptation */
+@container (min-width: 560px) {
+  .gc-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@container (max-width: 320px) {
+  .gc-num-xl { font-size: 52px; }
+  .gc-num-l  { font-size: 40px; }
+  .gc-num-m  { font-size: 32px; }
+}
+@media (max-width: 600px) {
+  .gc-card  { padding: 16px 18px; }
+  .gc-tile  { padding: 10px 11px 11px; }
+  .gc-strip { padding: 12px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gc-card, .gc-card *, .gc-card *::before,
+  .gc-btn, .gc-btn-ghost, .gc-field { transition: none !important; animation: none !important; }
+}

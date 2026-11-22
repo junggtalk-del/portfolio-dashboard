@@ -239,20 +239,23 @@
   }
 
   // ---------------- ส่วนประกอบข้อความ ----------------
+  // การ์ดแก้ว (glass-cards.css): สีการ์ด = สถานะที่ช่องนั้นระบายอยู่แล้ว — gl-pos (เขียว: เพิ่ม/ขึ้น) → gc-calm ·
+  // gl-neg (แดง: หด/ลง) → gc-danger · ไม่มีค่า หรือช่องที่ไม่มีสถานะ → gc-neutral (ไม่สร้างสถานะใหม่)
+  function gcSignTone(v) { return v == null || !isFinite(v) ? "gc-neutral" : v < 0 ? "gc-danger" : "gc-calm"; }
   function statCards(R) {
     var L = R.latest || {};
     var bl = R.bestLag;
     var claimed = R.lagScan[Math.round(R.options.leadWeeks)];
     return '<div class="gl-cards">' +
-      '<div class="gl-card"><small>สภาพคล่องรวม (Fed+ECB+BOJ)</small><b>' + tn(L.totalUsd) + "</b>" +
+      '<div class="gl-card gc-card gc-tile gc-neutral"><small>สภาพคล่องรวม (Fed+ECB+BOJ)</small><b class="gc-num">' + tn(L.totalUsd) + "</b>" +
       "<em>ณ " + thDate(L.date) + "</em></div>" +
-      '<div class="gl-card"><small>BALI · %เปลี่ยน ' + R.options.changeWeeks + " สัปดาห์</small><b class=\"" +
+      '<div class="gl-card gc-card gc-tile ' + gcSignTone(L.baliPct) + '"><small>BALI · %เปลี่ยน ' + R.options.changeWeeks + " สัปดาห์</small><b class=\"gc-num " +
       (L.baliPct != null && L.baliPct < 0 ? "gl-neg" : "gl-pos") + '">' + pct(L.baliPct, 2) + "</b>" +
       "<em>" + (L.baliPct != null && L.baliPct < 0 ? "สภาพคล่องกำลังหด" : "สภาพคล่องกำลังเพิ่ม") + "</em></div>" +
-      '<div class="gl-card"><small>BTC · %เปลี่ยน ' + R.options.changeWeeks + " สัปดาห์</small><b class=\"" +
+      '<div class="gl-card gc-card gc-tile ' + gcSignTone(L.btcPct) + '"><small>BTC · %เปลี่ยน ' + R.options.changeWeeks + " สัปดาห์</small><b class=\"gc-num " +
       (L.btcPct != null && L.btcPct < 0 ? "gl-neg" : "gl-pos") + '">' + pct(L.btcPct, 1) + "</b>" +
       "<em>ราคาปิด " + (L.btcClose != null ? "$" + Math.round(L.btcClose).toLocaleString("en-US") : "—") + "</em></div>" +
-      '<div class="gl-card"><small>ความนำที่ข้อมูลบอกเอง</small><b>' +
+      '<div class="gl-card gc-card gc-tile gc-neutral"><small>ความนำที่ข้อมูลบอกเอง</small><b class="gc-num">' +
       (bl ? bl.weeks + " สัปดาห์" : "—") + "</b>" +
       "<em>" + (bl ? "สหสัมพันธ์ " + bl.corr.toFixed(2) + " · ที่ " + Math.round(R.options.leadWeeks) + " สัปดาห์ = " +
         (claimed && claimed.corr != null ? claimed.corr.toFixed(2) : "—") : "ข้อมูลไม่พอ") + "</em></div>" +
@@ -297,7 +300,7 @@
         "</td><td>" + thDate(ser && ser.lastDate) + "</td><td>" + esc(extra || "") + "</td></tr>";
     }
     return '<details class="gl-data"><summary>ที่มาของข้อมูลและข้อจำกัด</summary>' +
-      '<div class="gl-tablewrap"><table class="gl-table"><thead><tr>' +
+      '<div class="gl-tablewrap gc-table-wrap" tabindex="0" aria-label="ตารางที่มาของข้อมูล"><table class="gl-table gc-table"><thead><tr>' +
       "<th>ชุดข้อมูล</th><th>รหัส FRED</th><th>ความถี่</th><th>ล่าสุด</th><th>หมายเหตุ</th>" +
       "</tr></thead><tbody>" +
       row("Fed — งบดุลรวม", s.fed, "ใช้เป็นกริดหลักของกราฟ") +
@@ -330,9 +333,9 @@
       "<p>เก็บราคาที่โมเดลให้ไว้ ณ วันที่ทำนาย แล้วรอดูว่าเวลาผ่านไปจริง ๆ ราคาต่างกันแค่ไหน " +
       "<strong>ตัวเลขคำทำนายถูกแช่แข็งไว้ ไม่คำนวณใหม่ย้อนหลัง</strong></p></div>" +
       '<div class="gl-tr-btns">' +
-      '<button type="button" class="mc-btn" data-gl-save="1">เก็บคำทำนายวันนี้</button>' +
-      '<button type="button" class="mc-btn" data-gl-export="1">ส่งออก</button>' +
-      '<button type="button" class="mc-btn" data-gl-import="1">นำเข้า</button>' +
+      '<button type="button" class="mc-btn gc-btn gc-btn-ghost" data-gl-save="1">เก็บคำทำนายวันนี้</button>' +
+      '<button type="button" class="mc-btn gc-btn gc-btn-ghost" data-gl-export="1">ส่งออก</button>' +
+      '<button type="button" class="mc-btn gc-btn gc-btn-ghost" data-gl-import="1">นำเข้า</button>' +
       "</div></div>";
 
     var warn = "";
@@ -380,7 +383,7 @@
           (hh.hit95Pct == null ? "—" : hh.hit95Pct.toFixed(0) + "%") + "</td></tr>";
       }
       horiz = '<details class="gl-tr-det"><summary>ความแม่นแยกตามระยะล่วงหน้า</summary>' +
-        '<div class="gl-tablewrap"><table class="gl-table"><thead><tr>' +
+        '<div class="gl-tablewrap gc-table-wrap" tabindex="0" aria-label="ตารางความแม่นแยกตามระยะ"><table class="gl-table gc-table"><thead><tr>' +
         "<th>ระยะ</th><th>จำนวน</th><th>พลาดเฉลี่ย</th><th>ตกในช่วง 95%</th>" +
         "</tr></thead><tbody>" + hrows + "</tbody></table></div></details>";
     }
@@ -414,7 +417,7 @@
     var more = ev.rows.length > shown.length
       ? "<p class=\"gl-tr-note\">แสดง " + shown.length + " จาก " + ev.rows.length + " รายการ</p>" : "";
 
-    var table = '<div class="gl-tablewrap"><table class="gl-table gl-tr-table"><thead><tr>' +
+    var table = '<div class="gl-tablewrap gc-table-wrap" tabindex="0" aria-label="ตารางคำทำนายเทียบราคาจริง"><table class="gl-table gl-tr-table gc-table"><thead><tr>' +
       "<th>วันที่ทำนาย</th><th>เป้าหมาย</th><th>ราคาตอนนั้น</th><th>โมเดลทาย</th>" +
       "<th>ราคาจริง</th><th>ต่าง %</th><th>ต่าง $</th><th>ช่วง</th><th>ทิศ</th>" +
       "</tr></thead><tbody>" + rows + "</tbody></table></div>" + more;
@@ -434,27 +437,27 @@
 
   function html() {
     if (state.loading && !state.result) {
-      return '<div class="mc-empty"><strong>กำลังโหลดข้อมูลสภาพคล่องธนาคารกลาง…</strong>ดึงจาก FRED (Fed · ECB · BOJ)</div>';
+      return '<div class="mc-empty gc-card gc-neutral"><strong>กำลังโหลดข้อมูลสภาพคล่องธนาคารกลาง…</strong>ดึงจาก FRED (Fed · ECB · BOJ)</div>';
     }
     if (state.error) {
-      return '<div class="mc-empty"><strong>โหลดข้อมูลไม่สำเร็จ</strong>' + esc(state.error) +
-        '<br><button type="button" class="mc-btn" data-gl-reload="1">ลองอีกครั้ง</button></div>';
+      return '<div class="mc-empty gc-card gc-neutral"><strong>โหลดข้อมูลไม่สำเร็จ</strong>' + esc(state.error) +
+        '<br><button type="button" class="mc-btn gc-btn gc-btn-ghost" data-gl-reload="1">ลองอีกครั้ง</button></div>';
     }
     var R = state.result;
     if (!R) {
-      return '<div class="mc-empty"><strong>ยังไม่ได้โหลดข้อมูล</strong>' +
-        '<br><button type="button" class="mc-btn" data-gl-reload="1">โหลดข้อมูล</button></div>';
+      return '<div class="mc-empty gc-card gc-neutral"><strong>ยังไม่ได้โหลดข้อมูล</strong>' +
+        '<br><button type="button" class="mc-btn gc-btn gc-btn-ghost" data-gl-reload="1">โหลดข้อมูล</button></div>';
     }
     if (!R.available) {
-      return '<div class="mc-empty"><strong>คำนวณไม่ได้</strong>' + esc(R.reason || "") + "</div>";
+      return '<div class="mc-empty gc-card gc-neutral"><strong>คำนวณไม่ได้</strong>' + esc(R.reason || "") + "</div>";
     }
-    return '<section class="gl-sec">' +
+    return '<section class="gl-sec gc-card gc-neutral">' +
       '<div class="gl-head"><div>' +
       "<h2>🌊 สภาพคล่องธนาคารกลาง (BALI) กับ Bitcoin</h2>" +
       "<p>งบดุลรวมของ Fed + ECB + BOJ แปลงเป็นดอลลาร์ แล้วดูว่า %เปลี่ยนแปลง " + R.options.changeWeeks +
       " สัปดาห์ของมัน นำราคา Bitcoin หรือไม่ · <strong>เป็นบริบทฉากหลัง ไม่ใช่สัญญาณซื้อขาย</strong></p>" +
       "</div>" +
-      '<button type="button" class="mc-btn" data-gl-reload="1">' + (state.loading ? "กำลังโหลด…" : "โหลดใหม่") + "</button>" +
+      '<button type="button" class="mc-btn gc-btn gc-btn-ghost" data-gl-reload="1">' + (state.loading ? "กำลังโหลด…" : "โหลดใหม่") + "</button>" +
       "</div>" +
       statCards(R) + chart(R) + honestyBlock(R) + trackRecord(R) + dataBlock(R) +
       '<p class="gl-foot">' + esc(R.disclaimer) + "</p>" +

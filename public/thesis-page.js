@@ -35,7 +35,6 @@
   // ---------------------------------------------- helpers
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
   function readSnapshot() { try { return (window.PortfolioDataSnapshot && window.PortfolioDataSnapshot.read && window.PortfolioDataSnapshot.read()) || null; } catch (e) { return null; } }
-  function toneColor(t) { return TONE[t] || "#94a3b8"; }
   function scoreColor(v) { return v == null ? "#64748b" : v >= 70 ? TONE.bull : v >= 40 ? TONE.watch : TONE.bear; }
   function fmt(v) { return v == null || v === "" ? "—" : String(v); }
   function bar(pct, color) {
@@ -46,8 +45,14 @@
     var arr = items && items.length ? items : ["—"];
     return '<ul class="th-list">' + arr.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
   }
-  function sec(n, title, sub, body) {
-    return '<section class="th-sec"><div class="th-sec-head"><span class="th-sec-n">' + n + "</span><div><h2>" + esc(title) + "</h2>" + (sub ? "<p>" + esc(sub) + "</p>" : "") + "</div></div>" + body + "</section>";
+  // section: หัวข้ออยู่บนหน้า (gc-section-h ตามธีม) · เนื้อหาอยู่บนการ์ดแก้ว
+  //   sec()      = การ์ดเดียว tone ตามสถานะของ section (ไม่ส่ง = gc-neutral)
+  //   secCards() = section ที่มีหลายชิ้น (แถบสถานะ / grid tile / การ์ดย่อยที่มีสถานะของตัวเอง) — ผู้เรียกส่งการ์ดมาเอง
+  function secCards(n, title, sub, cards) {
+    return '<section class="th-sec"><div class="th-sec-head gc-section-h"><span class="th-sec-n">' + n + "</span><div><h2>" + esc(title) + "</h2>" + (sub ? "<p>" + esc(sub) + "</p>" : "") + "</div></div>" + cards + "</section>";
+  }
+  function sec(n, title, sub, body, tone) {
+    return secCards(n, title, sub, '<div class="th-sec-body gc-card ' + (tone || "gc-neutral") + '">' + body + "</div>");
   }
   function trendArrow(t) {
     var k = t === "up" ? "up" : t === "down" ? "down" : "flat";
@@ -67,6 +72,36 @@
   function toneChip(tone, text) {
     return '<span class="th-chip th-tone-' + esc(tone || "neutral") + '">' + esc(text) + "</span>";
   }
+
+  // ---------------- การ์ดแก้ว (glass-cards.css) — สีการ์ด = สถานะที่หน้าคำนวณอยู่แล้ว (ไม่สร้างสถานะใหม่) ----------------
+  //   คำ tone ของ engine/หน้านี้ (bull/blue/watch/bear) ใช้ชุดเดียวกับหน้า AI Portfolio Manager:
+  //     bull → calm · blue → normal · watch → warning · bear → danger
+  //     = คำตอบ YES/WAIT/NO (hero + แถบ sticky) · §3 ประเภทการย่อ · §4 decision · §6 verdict + 2 การ์ดคะแนน · §9 Overall · §14 classification
+  //   ยกเว้น §3 ประเภทการย่อ macro / rotation (engine tone watch) → normal ตามกติกา 🟡 → normal ทั้งเว็บ — สีเดียวกับการ์ด
+  //     🟡 Macro Pullback ของ /accumulation-center (accumulation-page.js GC_DIP_TONE) ที่ลิงก์มาหน้านี้ · watch ที่อื่นบนหน้านี้ยัง warning
+  //   §2 สถานะ thesis (ตามโจทย์): Very Strong / Strong → calm · Neutral → normal · Weak → warning · Broken → danger
+  //   ป้ายอายุข้อมูล (th-stale-ok / -soon / -warn): สด → calm · ใกล้งบ → warning · เก่า/งบออกแล้ว → danger
+  //   §16 สถานะของ IntelligenceEngine = สีของไอคอนที่ engine ให้สถานะนั้นเอง: 🟢 calm · 🟡 normal · 🟠 warning · 🔴 danger · ⚪ neutral
+  //   ไม่มีสถานะ (§5 §7 §8 §10 §11 §12 §13 · กราฟ/ตาราง · ข้อความว่าง · Lite) → gc-neutral
+  //   แถว/ชิปที่มีสถานะของตัวเอง (fundamentals · what changed · execution · capital ฯลฯ) ใช้สีที่แถว/ชิป ไม่ใช่ทั้งการ์ด
+  var GC_TONE = { bull: "gc-calm", blue: "gc-normal", watch: "gc-warning", bear: "gc-danger" };
+  var GC_ANSWER = { YES: "gc-calm", WAIT: "gc-warning", NO: "gc-danger" };
+  var GC_THESIS = { "very-strong": "gc-calm", strong: "gc-calm", neutral: "gc-normal", weak: "gc-warning", broken: "gc-danger" };
+  var GC_STALE = { ok: "gc-calm", soon: "gc-warning", warn: "gc-danger" };
+  var GC_ICON = { "🟢": "gc-calm", "🟡": "gc-normal", "🟠": "gc-warning", "🔴": "gc-danger" };
+  var GC_DIP = { macro: "gc-normal", rotation: "gc-normal" };
+  function gcTone(map, key) { return key != null && Object.prototype.hasOwnProperty.call(map, key) ? map[key] : "gc-neutral"; }
+  function gcState(st) { return gcTone(GC_ICON, st && st.icon); }
+  // §3 ประเภทการย่อ: ตาม key ก่อน (macro / rotation → normal) · ประเภทอื่นตาม tone ของ engine
+  function gcDip(D) { return D.key != null && Object.prototype.hasOwnProperty.call(GC_DIP, D.key) ? GC_DIP[D.key] : gcTone(GC_TONE, D.tone); }
+  // ป้ายอายุข้อมูล = แถบแก้ว (k: ok / soon / warn) — คลาส th-stale-* เดิมคงไว้
+  function staleCls(k) { return "th-stale th-stale-" + k + " gc-card gc-strip " + gcTone(GC_STALE, k); }
+  // ตารางบนการ์ด: เลื่อนซ้ายขวาในกล่องของตัวเอง · คีย์บอร์ดเข้าถึงได้ (aria-label ไม่มีตัวเลขเงิน)
+  function tableWrap(label, tableHtml) {
+    return '<div class="th-table-wrap gc-table-wrap" tabindex="0" role="region" aria-label="' + esc(label) + '">' + tableHtml + "</div>";
+  }
+  // ปุ่มเลือกช่วง/มุมมองบนการ์ด: ที่เลือก = gc-btn ขาว · ที่เหลือ = gc-btn-ghost (คลาส th-yrbtn / th-yrbtn-on เดิมคงไว้)
+  function yrCls(on) { return "th-yrbtn" + (on ? " th-yrbtn-on gc-btn" : " gc-btn gc-btn-ghost"); }
   // heuristic tone for free-form status strings (competitive factors ฯลฯ)
   function statusTone(s) {
     var x = String(s == null ? "" : s).toLowerCase();
@@ -121,12 +156,12 @@
   function renderOverview(root) {
     var TO = window.ThesisOverview;
     if (!TO || typeof TO.render !== "function") {
-      root.innerHTML = '<div class="mc-empty"><strong>Overview module ไม่พร้อม</strong> — refresh หน้านี้</div>';
+      root.innerHTML = '<div class="mc-empty gc-card gc-neutral"><strong>Overview module ไม่พร้อม</strong> — refresh หน้านี้</div>';
       return;
     }
     var html;
     try { html = TO.render(readSnapshot() || {}, { sort: thoSort }); }
-    catch (eOv) { html = '<div class="mc-empty">Overview ล้มเหลว: ' + esc(String((eOv && eOv.message) || eOv)) + "</div>"; }
+    catch (eOv) { html = '<div class="mc-empty gc-card gc-neutral">Overview ล้มเหลว: ' + esc(String((eOv && eOv.message) || eOv)) + "</div>"; }
     // แถบชิปด้านบน — กดเข้าดู thesis รายตัวได้ทันทีโดยไม่ต้องเลื่อนหาตารางท้ายหน้า
     var nav = '<nav class="th-chips th-chips-ov" aria-label="เลือกหุ้นเพื่อดู thesis รายตัว">' +
       '<span class="th-chips-lead">เปิดรายตัว</span>' + tickerChips(true) + "</nav>";
@@ -145,14 +180,14 @@
     var root = document.getElementById(ROOT_ID);
     if (!root) return;
     if (!window.ThesisEngine || typeof window.ThesisEngine.compute !== "function") {
-      root.innerHTML = headerSection(null) + '<div class="mc-empty"><strong>Thesis Engine ไม่พร้อม</strong><br>โหลดสคริปต์หน้าไม่ครบ — ลอง refresh หน้านี้</div>';
+      root.innerHTML = headerSection(null) + '<div class="mc-empty gc-card gc-neutral"><strong>Thesis Engine ไม่พร้อม</strong><br>โหลดสคริปต์หน้าไม่ครบ — ลอง refresh หน้านี้</div>';
       return;
     }
     // โหมดเทียบหุ้น — แทนที่มุมมองรายตัวทั้งหมด (ออกจากโหมดแล้วกลับมาที่ตัวที่เลือกไว้เดิม)
     if (compareMode) {
       var cmpBody = window.ThesisCompare && window.ThesisCompare.render
         ? window.ThesisCompare.render(compareSel, readSnapshot() || {}, {})
-        : '<div class="mc-empty"><strong>โหลด thesis-compare.js ไม่สำเร็จ</strong></div>';
+        : '<div class="mc-empty gc-card gc-neutral"><strong>โหลด thesis-compare.js ไม่สำเร็จ</strong></div>';
       root.innerHTML = headerSection(null) + cmpBody;
       return;
     }
@@ -166,7 +201,7 @@
         : window.ThesisEngine.computeLite(sel, readSnapshot() || {}, {});
     }
     catch (e) {
-      root.innerHTML = headerSection(null) + '<div class="mc-empty"><strong>คำนวณไม่สำเร็จ</strong><br>' + esc(String((e && e.message) || e)) + "</div>";
+      root.innerHTML = headerSection(null) + '<div class="mc-empty gc-card gc-neutral"><strong>คำนวณไม่สำเร็จ</strong><br>' + esc(String((e && e.message) || e)) + "</div>";
       return;
     }
     if (!R || !R.available) { root.innerHTML = headerSection(null) + emptyState(R); return; }
@@ -194,7 +229,7 @@
 
   function emptyState(R) {
     var msg = R && R.thai ? R.thai : "เหตุผล: " + ((R && R.reason) || "unknown");
-    return '<div class="mc-empty"><strong>ยังแสดง Investment Thesis ไม่ได้</strong><br>' + esc(msg) +
+    return '<div class="mc-empty gc-card gc-neutral"><strong>ยังแสดง Investment Thesis ไม่ได้</strong><br>' + esc(msg) +
       '<br><span class="th-muted">กด <b>Load Latest Data</b> มุมขวาบน แล้วหน้านี้จะคำนวณให้อัตโนมัติ</span></div>';
   }
 
@@ -230,10 +265,11 @@
     var chips = tickerChips(false);
     var note = "";
     if (R && R.dataNote) {
-      note = '<div class="th-datanote">📎 ' + esc(R.dataNote) + (R.asOf ? " · ความรู้เชิงโครงสร้าง curated ณ <b>" + esc(R.asOf) + "</b>" : "") + "</div>";
+      // หมายเหตุที่มาของข้อมูล — ไม่มีสถานะ → แถบแก้ว gc-neutral
+      note = '<div class="th-datanote gc-card gc-strip gc-neutral">📎 ' + esc(R.dataNote) + (R.asOf ? " · ความรู้เชิงโครงสร้าง curated ณ <b>" + esc(R.asOf) + "</b>" : "") + "</div>";
     }
     // staleness badge — earnings-aware: heads-up ก่อนงบ + เตือนโหลดหลังงบออก/เมื่อข้อมูลเก่า
-    // precedence: overdue > stale (อายุเกินเกณฑ์) > due-soon > current
+    // precedence: overdue > stale (อายุเกินเกณฑ์) > due-soon > current · แถบแก้ว tone ตามป้าย (staleCls)
     if (R && !R.lite) {
       var E = R.earnings || {};
       var dtxt = earnDateText(E.nextEarnings);
@@ -241,13 +277,13 @@
       var upd = " — โหลดใหม่: สั่ง <code>/thesis-update " + esc(R.ticker) + "</code>";
       var nextInfo = E.hasDate ? " · งบใหม่ " + esc(dtxt) + " (" + daysText(E.daysToEarnings) + ")" + est : "";
       if (E.state === "overdue") {
-        note += '<div class="th-stale th-stale-warn">⚠ งบ ' + esc(R.ticker) + " น่าจะออกแล้ว (" + esc(dtxt) + " · " + daysText(E.daysToEarnings) + ") · ข้อมูล curated ยังเป็นก่อนงบ" + upd + est + "</div>";
+        note += '<div class="' + staleCls("warn") + '">⚠ งบ ' + esc(R.ticker) + " น่าจะออกแล้ว (" + esc(dtxt) + " · " + daysText(E.daysToEarnings) + ") · ข้อมูล curated ยังเป็นก่อนงบ" + upd + est + "</div>";
       } else if (E.state === "stale") {
-        note += '<div class="th-stale th-stale-warn">⚠ ข้อมูล curated ของ ' + esc(R.ticker) + " อายุ <b>" + R.staleMonths + " เดือน</b> — เลยรอบงบแล้ว" + nextInfo + upd + "</div>";
+        note += '<div class="' + staleCls("warn") + '">⚠ ข้อมูล curated ของ ' + esc(R.ticker) + " อายุ <b>" + R.staleMonths + " เดือน</b> — เลยรอบงบแล้ว" + nextInfo + upd + "</div>";
       } else if (E.state === "due-soon") {
-        note += '<div class="th-stale th-stale-soon">🔔 งบ ' + esc(R.ticker) + " ใกล้ออก " + daysText(E.daysToEarnings) + " (" + esc(dtxt) + ") — เตรียมสั่ง <code>/thesis-update " + esc(R.ticker) + "</code> หลังงบออก" + est + "</div>";
+        note += '<div class="' + staleCls("soon") + '">🔔 งบ ' + esc(R.ticker) + " ใกล้ออก " + daysText(E.daysToEarnings) + " (" + esc(dtxt) + ") — เตรียมสั่ง <code>/thesis-update " + esc(R.ticker) + "</code> หลังงบออก" + est + "</div>";
       } else { // current
-        note += '<div class="th-stale th-stale-ok">🟢 ข้อมูลทันรอบงบ' + (E.hasDate && E.daysToEarnings > 0 ? " · งบหน้า " + esc(dtxt) + " (" + daysText(E.daysToEarnings) + ")" + est : (R.staleMonths != null ? " · อายุ " + R.staleMonths + " เดือน" : "")) + "</div>";
+        note += '<div class="' + staleCls("ok") + '">🟢 ข้อมูลทันรอบงบ' + (E.hasDate && E.daysToEarnings > 0 ? " · งบหน้า " + esc(dtxt) + " (" + daysText(E.daysToEarnings) + ")" + est : (R.staleMonths != null ? " · อายุ " + R.staleMonths + " เดือน" : "")) + "</div>";
       }
     }
     return '<header class="th-head"><h1>🧾 Investment Thesis</h1>' +
@@ -262,8 +298,9 @@
     var rg = R.inputs && R.inputs.regime;
     var rt = R.inputs && R.inputs.rates;
     var F = R.falling || {};
+    // Lite = ค่า live ล้วน ไม่มีคำตัดสิน → ทุกชิ้นเป็นแก้ว gc-neutral
     var card = function (title, big, sub) {
-      return '<div class="th-lite-card"><span>' + esc(title) + "</span><b>" + big + "</b>" + (sub ? '<i>' + sub + "</i>" : "") + "</div>";
+      return '<div class="th-lite-card gc-card gc-tile gc-neutral"><span>' + esc(title) + "</span><b>" + big + "</b>" + (sub ? '<i>' + sub + "</i>" : "") + "</div>";
     };
     var techBig = t && t.signalScore != null ? t.signalScore + "/100" : "—";
     var techSub = t ? esc(t.thaiSignalLabel || "") + (t.aboveSma != null ? " · " + (t.aboveSma ? "เหนือ" : "ใต้") + " SMA200" : "") + (t.emaBull != null ? " · EMA " + (t.emaBull ? "ตัดขึ้น" : "ตัดลง") : "") : "รอข้อมูล — กด Load Latest Data";
@@ -272,7 +309,7 @@
     var causes = (F.causes || []).map(function (c) {
       return '<li><b>' + esc(c.label) + "</b> (" + c.magnitude + ") — " + esc(c.detail) + "</li>";
     }).join("");
-    return '<div class="th-lite-banner">🔎 ' + esc(R.note) + "</div>" +
+    return '<div class="th-lite-banner gc-card gc-strip gc-neutral">🔎 ' + esc(R.note) + "</div>" +
       '<div class="th-lite-grid">' +
         card("Technical (live)", techBig, techSub) +
         card("ราคาย่อจาก high 90 วัน", ddBig, ddSub) +
@@ -280,8 +317,8 @@
         card("Macro Regime", rg ? rg.score + "/100" : "—", rg ? esc(rg.label) : "โหลดข้อมูลก่อน") +
         card("ลมต้านดอกเบี้ย", rt ? rt.score + "/100" : "—", rt ? (rt.severe ? "Severe — แรง" : "ไม่ถึงขั้น Severe") : "ไม่มีข้อมูล yield") +
       "</div>" +
-      (causes ? '<div class="th-lite-causes"><h3>เจาะสาเหตุการย่อ (จากราคาจริง)</h3><ul>' + causes + "</ul></div>" : "") +
-      '<div class="th-lite-cta">ต้องการมุมมองเต็ม (thesis score · dip classification · YES/NO)? → สั่ง <code>/thesis-update ' + esc(R.ticker) + '</code> ใน Claude Code เพื่อสร้างข้อมูล curated ของตัวนี้ (ใช้เวลาไม่กี่นาที)</div>';
+      (causes ? '<div class="th-lite-causes gc-card gc-neutral"><h3>เจาะสาเหตุการย่อ (จากราคาจริง)</h3><ul>' + causes + "</ul></div>" : "") +
+      '<div class="th-lite-cta gc-card gc-strip gc-neutral">ต้องการมุมมองเต็ม (thesis score · dip classification · YES/NO)? → สั่ง <code>/thesis-update ' + esc(R.ticker) + '</code> ใน Claude Code เพื่อสร้างข้อมูล curated ของตัวนี้ (ใช้เวลาไม่กี่นาที)</div>';
   }
 
   // ---- sticky bar: บอกว่ากำลังดูหุ้นอะไรอยู่ (ค้างบนสุดเวลาเลื่อนลง) ----
@@ -290,7 +327,8 @@
     var th = R.thesis || {};
     var scoreTxt = th.score != null ? (th.status && th.status.label ? esc(th.status.label) + " " : "") + th.score + "/100" : "";
     var ans = R.finalVerdict ? (R.finalVerdict.answer === "YES" ? "YES" : R.finalVerdict.answer === "NO" ? "NO" : "WAIT") : null;
-    return '<div class="th-sticky">' +
+    // แถบแก้ว tone = คำตอบเดียวกับ hero (Lite ไม่มีคำตอบ → gc-neutral)
+    return '<div class="th-sticky gc-card gc-strip ' + (ans ? gcTone(GC_ANSWER, ans) : "gc-neutral") + '">' +
       '<span class="th-sticky-sym">' + esc(R.ticker || "") + "</span>" +
       (R.name ? '<span class="th-sticky-name">' + esc(R.name) + "</span>" : "") +
       (scoreTxt ? '<span class="th-sticky-score">' + scoreTxt + "</span>" : "") +
@@ -338,7 +376,8 @@
       ? '<div class="th-risks"><h3 class="th-h3">ความเสี่ยงหลักที่ต้องจับตา</h3>' + list(FV.risks) + "</div>"
       : "";
     var pm = FV.pmSummary ? '<p class="th-pm">' + esc(FV.pmSummary) + "</p>" : "";
-    return '<section class="th-hero th-hero-' + ansKey + '">' +
+    // การ์ดแก้ว tone = คำตอบ (YES calm · WAIT warning · NO danger) — ตัวคำตอบเป็นสีขาว สีอยู่ที่การ์ด
+    return '<section class="th-hero th-hero-' + ansKey + " gc-card " + gcTone(GC_ANSWER, ans) + '">' +
       '<div class="th-hero-co">' + esc(R.name || "") + " · " + esc(R.ticker || "") + "</div>" +
       '<div class="th-hero-grid">' +
         '<div class="th-hero-ans"><div class="th-q">Should I Buy This Dip?</div>' +
@@ -394,18 +433,18 @@
   function thesisSection(R) {
     var T = R.thesis || {};
     var st = T.status || {};
-    var stC = toneColor(st.tone);
     var tr = T.trend || {};
     var trTone = tr.key === "improving" ? "bull" : tr.key === "deteriorating" ? "bear" : "blue";
     var trIcon = tr.key === "improving" ? "▲" : tr.key === "deteriorating" ? "▼" : "▬";
     var pillars = (T.pillars || []).map(function (p) { return '<span class="th-chip th-pillar">' + esc(p) + "</span>"; }).join("");
+    // บนแก้ว: เลขคะแนนเป็น gc-num สีขาว (การ์ดถือสีของสถานะ) · ชิปสถานะใช้คลาส tone เดิมของ engine แทนสี inline
     var body = '<div class="th-score-row">' +
-      '<div class="th-score-big"><b style="color:' + scoreColor(T.score) + '">' + fmt(T.score) + "</b><span>/100</span></div>" +
-      '<span class="th-chip" style="color:' + stC + ";border-color:" + stC + '">' + esc(st.label || "—") + (st.thai ? " · " + esc(st.thai) : "") + "</span>" +
+      '<div class="th-score-big"><b class="gc-num">' + fmt(T.score) + "</b><span>/100</span></div>" +
+      toneChip(st.tone, (st.label || "—") + (st.thai ? " · " + st.thai : "")) +
       toneChip(trTone, trIcon + " " + (tr.thai || tr.key || "—")) + "</div>" +
       (T.statement ? '<p class="th-statement">' + esc(T.statement) + "</p>" : "") +
       (pillars ? '<div class="th-pillars"><span class="th-hlbl">เสาหลักของ thesis</span>' + pillars + "</div>" : "");
-    return sec(2, "Thesis Score", "thesis ระยะยาวยังยืนอยู่แค่ไหน — คะแนนรวมจากพื้นฐาน · execution · moat · การจัดสรรทุน", body);
+    return sec(2, "Thesis Score", "thesis ระยะยาวยังยืนอยู่แค่ไหน — คะแนนรวมจากพื้นฐาน · execution · moat · การจัดสรรทุน", body, gcTone(GC_THESIS, st.key));
   }
 
   // ---- §3 · Why falling + dip class ----
@@ -434,13 +473,15 @@
       body = dd + '<div class="th-cause-grid">' + cards + "</div>" +
         (causeRows ? '<div class="th-mag-list"><span class="th-hlbl">น้ำหนักของแต่ละสาเหตุ</span>' + causeRows + "</div>" : "");
     }
+    // หลักฐานการย่อ (ไม่มีสถานะ) = การ์ด gc-neutral · ประเภทการย่อ = แถบแก้วของตัวเอง tone ตาม dipClass (gcDip · ยังจำแนกไม่ได้ = gc-neutral)
     var banner;
     if (D && D.key) {
-      banner = '<div class="th-dipbanner th-tone-' + esc(D.tone || "neutral") + '"><b>' + esc(D.label || "—") + "</b><span>" + esc(D.thai || "") + (D.why ? " · " + esc(D.why) : "") + "</span></div>";
+      banner = '<div class="th-dipbanner th-tone-' + esc(D.tone || "neutral") + " gc-card gc-strip " + gcDip(D) + '"><b>' + esc(D.label || "—") + "</b><span>" + esc(D.thai || "") + (D.why ? " · " + esc(D.why) : "") + "</span></div>";
     } else {
-      banner = '<div class="th-dipbanner th-dipbanner-none"><b>ยังจำแนกประเภทการย่อไม่ได้</b><span>' + esc((D && D.thai) || "ต้องมีข้อมูลราคาก่อน — กด Load Latest Data") + "</span></div>";
+      banner = '<div class="th-dipbanner th-dipbanner-none gc-card gc-strip gc-neutral"><b>ยังจำแนกประเภทการย่อไม่ได้</b><span>' + esc((D && D.thai) || "ต้องมีข้อมูลราคาก่อน — กด Load Latest Data") + "</span></div>";
     }
-    return sec(3, "Why Is It Falling? + Dip Class", "ราคาย่อเพราะอะไร — และเป็นการย่อประเภทไหน (จำแนกก่อนตัดสินใจเสมอ)", body + banner);
+    return secCards(3, "Why Is It Falling? + Dip Class", "ราคาย่อเพราะอะไร — และเป็นการย่อประเภทไหน (จำแนกก่อนตัดสินใจเสมอ)",
+      '<div class="th-sec-body gc-card gc-neutral">' + body + "</div>" + banner);
   }
 
   // ---- §4 · Decision ----
@@ -448,7 +489,7 @@
     var D = R.decision || {};
     var big = '<div class="th-dec th-tone-' + esc(D.tone || "neutral") + '"><b>' + esc(D.label || "—") + "</b>" + (D.thai ? "<span>" + esc(D.thai) + "</span>" : "") + "</div>";
     var note = '<div class="th-note">ห้ามตัดสินจาก technical เดี่ยว ๆ — decision นี้ผ่านเกต thesis · Mega Trend · macro · การจำแนกประเภทการย่อ มาแล้วทั้งหมด</div>';
-    return sec(4, "Decision", "ข้อสรุปเชิงปฏิบัติ — สะสม / รอ / ลดเชิงยุทธวิธี / ทบทวน thesis", big + list(D.why) + note);
+    return sec(4, "Decision", "ข้อสรุปเชิงปฏิบัติ — สะสม / รอ / ลดเชิงยุทธวิธี / ทบทวน thesis", big + list(D.why) + note, gcTone(GC_TONE, D.tone));
   }
 
   // ---- §5 · Fundamentals ----
@@ -525,20 +566,20 @@
     if (!W || W.maxYears < W.minYears) return "";
     var btns = "";
     for (var y = W.minYears; y <= W.maxYears; y++) {
-      btns += '<button type="button" class="th-yrbtn' + (y === W.years ? " th-yrbtn-on" : "") + '" data-th-hyears="' + y + '">' + y + " ปี</button>";
+      btns += '<button type="button" class="' + yrCls(y === W.years) + '" data-th-hyears="' + y + '">' + y + " ปี</button>";
     }
     return '<div class="th-yrsel"><span class="th-yrsel-lbl">ช่วงปีที่ดู</span>' + btns +
       (W.years >= W.available ? '<span class="th-yrsel-note">(ครบทุกปีที่มีใน KB)</span>' : "") + "</div>";
   }
   function modeToggle() {
     return '<div class="th-yrsel"><span class="th-yrsel-lbl">มุมมอง</span>' +
-      '<button type="button" class="th-yrbtn' + (historyMode !== "quarter" ? " th-yrbtn-on" : "") + '" data-th-hmode="year">รายปี</button>' +
-      '<button type="button" class="th-yrbtn' + (historyMode === "quarter" ? " th-yrbtn-on" : "") + '" data-th-hmode="quarter">รายไตรมาส</button></div>';
+      '<button type="button" class="' + yrCls(historyMode !== "quarter") + '" data-th-hmode="year">รายปี</button>' +
+      '<button type="button" class="' + yrCls(historyMode === "quarter") + '" data-th-hmode="quarter">รายไตรมาส</button></div>';
   }
   function quarterRangeSelector(Q) {
     var opts = [4, 8, 12].filter(function (n) { return !Q || n <= Math.max(4, Q.totalAvailable || 12); });
     var btns = opts.map(function (n) {
-      return '<button type="button" class="th-yrbtn' + (n === historyQuarters ? " th-yrbtn-on" : "") + '" data-th-hquarters="' + n + '">' + (n / 4) + " ปี</button>";
+      return '<button type="button" class="' + yrCls(n === historyQuarters) + '" data-th-hquarters="' + n + '">' + (n / 4) + " ปี</button>";
     }).join("");
     return '<div class="th-yrsel"><span class="th-yrsel-lbl">ช่วงที่ดู</span>' + btns + '<span class="th-yrsel-note">(' + historyQuarters + " ไตรมาสล่าสุด)</span></div>";
   }
@@ -591,7 +632,7 @@
       : "ราคาสิ้นไตรมาสเป็น ~ประมาณ (curated) — กด Load Latest Data เพื่อใช้ราคาจริง ~2 ปีล่าสุด";
     var noteLines = Q.quarters.filter(function (y) { return y.epsNote; })
       .map(function (y) { return "<li><b>" + esc(y.q) + ":</b> " + esc(y.epsNote) + "</li>"; }).join("");
-    return '<div class="th-table-wrap"><table class="th-table th-bp-table"><thead><tr><th>ไตรมาส</th><th>งวดจบ</th><th>Revenue (YoY)</th><th>EPS (YoY)</th><th>Op. Margin</th><th>FCF</th><th>ราคาสิ้นไตรมาส (YoY)</th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
+    return tableWrap("ตารางธุรกิจเทียบราคารายไตรมาส — เลื่อนซ้ายขวาได้", '<table class="th-table th-bp-table gc-table"><thead><tr><th>ไตรมาส</th><th>งวดจบ</th><th>Revenue (YoY)</th><th>EPS (YoY)</th><th>Op. Margin</th><th>FCF</th><th>ราคาสิ้นไตรมาส (YoY)</th></tr></thead><tbody>' + rows + "</tbody></table>") +
       (anyNote ? '<div class="th-vx-link th-vx-conflict"><b>⚠ ไตรมาสที่ EPS มีรายการพิเศษ</b> — เทียบ EPS ข้ามไตรมาสตรง ๆ จะเข้าใจผิด<ul class="th-qnotes">' + noteLines + "</ul></div>" : "") +
       '<div class="th-hint">YoY = เทียบไตรมาสเดียวกันปีก่อน (ตัดฤดูกาล) · ' + Q.count + " ไตรมาสล่าสุด · " + priceNote + " · <b>งวดจบ</b> = วันสิ้นงวดจริง (DD/MM/YY) · ที่ขึ้น ~MM/YY คือ KB เก็บระดับเดือน · verdict/คะแนนยังอิงการวิเคราะห์รายปี · ตัวเลขการเงินเป็น ~curated (ผลรวม 4 ไตรมาส = ทั้งปี)</div>";
   }
@@ -727,7 +768,7 @@
     }).join("");
     var foot = "<tr class=\"th-bp-cagr\"><td>CAGR</td><td>~" + esc(fmt(M.revCagrPct)) + "%</td><td>" + (M.epsCagrPct != null ? "~" + esc(fmt(M.epsCagrPct)) + "%" : (M.epsTurnaround ? "พลิกกำไร" : "—")) + "</td><td>" + (M.marginDeltaPp != null ? (M.marginDeltaPp >= 0 ? "+" : "") + esc(fmt(M.marginDeltaPp)) + "pp" : "—") + "</td><td>" + (M.fcfCagrPct != null ? "~" + esc(fmt(M.fcfCagrPct)) + "%" : "—") + "</td><td>~" + esc(fmt(M.priceCagr5FYPct)) + "%/ปี</td></tr>";
     var annualTable = rows
-      ? '<div class="th-table-wrap"><table class="th-table th-bp-table"><thead><tr><th>ปีบัญชี</th><th>Revenue (YoY)</th><th>EPS (YoY)</th><th>Op. Margin</th><th>FCF</th><th>ราคาสิ้นปีบัญชี (YoY)</th></tr></thead><tbody>' + rows + foot + "</tbody></table></div>"
+      ? tableWrap("ตารางธุรกิจเทียบราคารายปี — เลื่อนซ้ายขวาได้", '<table class="th-table th-bp-table gc-table"><thead><tr><th>ปีบัญชี</th><th>Revenue (YoY)</th><th>EPS (YoY)</th><th>Op. Margin</th><th>FCF</th><th>ราคาสิ้นปีบัญชี (YoY)</th></tr></thead><tbody>' + rows + foot + "</tbody></table>")
       : "";
     // toggle รายปี ⇄ รายไตรมาส — quarter mode สลับ "กราฟ + ตาราง" (verdict/คะแนนยังอิงรายปี)
     var isQuarter = historyMode === "quarter";
@@ -752,14 +793,16 @@
       }).join("");
     };
     var qTone = Q.label ? Q.label.tone : "neutral";
+    var aTone = A.score >= 65 ? "bull" : A.score >= 50 ? "watch" : "bear"; // ช่วงเดียวกับชิปป้าย Alignment เดิม
+    // การ์ดคะแนน 2 ใบ = แก้วของตัวเอง tone ตามป้ายของแต่ละใบ (ไม่มีป้าย = gc-neutral) · เลขคะแนน gc-num สีขาว
     var cards = '<div class="th-bp-cards">' +
-      '<div class="th-bp-card"><div class="th-hlbl">Fundamental Alignment Score</div>' +
-        '<div class="th-score-row"><div class="th-score-big"><b style="color:' + scoreColor(A.score) + '">' + fmt(A.score) + "</b><span>/100</span></div>" +
-        (A.label ? toneChip(A.score >= 65 ? "bull" : A.score >= 50 ? "watch" : "bear", A.label.label) : "") + "</div>" +
+      '<div class="th-bp-card gc-card ' + (A.label ? gcTone(GC_TONE, aTone) : "gc-neutral") + '"><div class="th-hlbl">Fundamental Alignment Score</div>' +
+        '<div class="th-score-row"><div class="th-score-big"><b class="gc-num">' + fmt(A.score) + "</b><span>/100</span></div>" +
+        (A.label ? toneChip(aTone, A.label.label) : "") + "</div>" +
         (A.label ? '<p class="th-bp-cardnote">' + esc(A.label.thai) + "</p>" : "") +
         '<div class="th-part-list">' + partRows(A.parts) + "</div></div>" +
-      '<div class="th-bp-card"><div class="th-hlbl">Growth Quality Score</div>' +
-        '<div class="th-score-row"><div class="th-score-big"><b style="color:' + scoreColor(Q.score) + '">' + fmt(Q.score) + "</b><span>/100</span></div>" +
+      '<div class="th-bp-card gc-card ' + (Q.label ? gcTone(GC_TONE, qTone) : "gc-neutral") + '"><div class="th-hlbl">Growth Quality Score</div>' +
+        '<div class="th-score-row"><div class="th-score-big"><b class="gc-num">' + fmt(Q.score) + "</b><span>/100</span></div>" +
         (Q.label ? toneChip(qTone, Q.label.label) : "") + "</div>" +
         (Q.label ? '<p class="th-bp-cardnote">' + esc(Q.label.thai) + "</p>" : "") +
         '<div class="th-part-list">' + partRows(Q.parts) + "</div></div>" +
@@ -776,10 +819,10 @@
         return '<div class="th-bp-attr-row"><span class="th-bp-attr-name">' + esc(d.label) + star + "</span>" +
           '<div class="th-bp-attr-val">' + bar(w, color) + "<b>" + (d.pp >= 0 ? "+" : "") + esc(fmt(d.pp)) + "pp/ปี</b></div></div>";
       }).join("");
-      attr = '<div class="th-bp-attr"><span class="th-hlbl">Price Attribution — ผลตอบแทนราคา ' + (AT.totalPp >= 0 ? "+" : "") + fmt(AT.totalPp) + "pp/ปี มาจากไหน</span>" + drows +
+      attr = '<div class="th-bp-attr gc-card gc-neutral"><span class="th-hlbl">Price Attribution — ผลตอบแทนราคา ' + (AT.totalPp >= 0 ? "+" : "") + fmt(AT.totalPp) + "pp/ปี มาจากไหน</span>" + drows +
         '<p class="th-bp-cardnote">' + esc(AT.note || "") + "</p></div>";
     } else {
-      attr = '<div class="th-bp-attr"><span class="th-hlbl">Price Attribution</span><p class="th-bp-cardnote">' + esc(AT.note || "—") + "</p></div>";
+      attr = '<div class="th-bp-attr gc-card gc-neutral"><span class="th-hlbl">Price Attribution</span><p class="th-bp-cardnote">' + esc(AT.note || "—") + "</p></div>";
     }
 
     // ---- verdict why + disclosure ----
@@ -787,8 +830,14 @@
     var disc = Hy.disclosure ? '<div class="th-method">📎 ' + esc(Hy.disclosure) + (Hy.notes ? " · " + esc(Hy.notes) : "") + "</div>" : "";
 
     var annualBlock = yearSelector(W) + charts + strip + consHint + epsNote + chips + annualTable;
-    return sec(6, title, sub,
-      modeToggle() + banner + '<div class="th-qchips">' + gapChip + "</div>" + (isQuarter ? qBlock : annualBlock) + cards + attr + why + disc);
+    // การ์ด: verdict (tone ตาม verdict · "insufficient" = วัดไม่ได้ → gc-neutral) → กราฟ+ตาราง (ปุ่มมุมมองอยู่บนการ์ดที่มันสลับ)
+    //   → การ์ดคะแนน 2 ใบ → Price Attribution → เหตุผล+ที่มา (สามใบหลังไม่มีสถานะ = gc-neutral)
+    var vTone = V.key === "insufficient" ? "gc-neutral" : gcTone(GC_TONE, V.tone);
+    return secCards(6, title, sub,
+      '<div class="th-bp-verdict gc-card ' + vTone + '">' + banner + '<div class="th-qchips">' + gapChip + "</div></div>" +
+      '<div class="th-sec-body th-bp-main gc-card gc-neutral">' + modeToggle() + (isQuarter ? qBlock : annualBlock) + "</div>" +
+      cards + attr +
+      '<div class="th-sec-body th-bp-foot gc-card gc-neutral">' + why + disc + "</div>");
   }
 
   // ---- §7 · Revenue quality ----
@@ -803,7 +852,7 @@
       return "<tr><td>" + esc(s.name) + "</td><td>" + esc(fmt(s.sharePct)) + "%</td><td>" + esc(s.growthNote || "—") + "</td><td>" + trendArrow(s.trend) + "</td></tr>";
     }).join("");
     var table = segRows
-      ? '<div class="th-table-wrap"><table class="th-table"><thead><tr><th>เซกเมนต์</th><th>สัดส่วนรายได้</th><th>การเติบโต</th><th>เทรนด์</th></tr></thead><tbody>' + segRows + "</tbody></table></div>"
+      ? tableWrap("ตารางเซกเมนต์รายได้ — เลื่อนซ้ายขวาได้", '<table class="th-table gc-table"><thead><tr><th>เซกเมนต์</th><th>สัดส่วนรายได้</th><th>การเติบโต</th><th>เทรนด์</th></tr></thead><tbody>' + segRows + "</tbody></table>")
       : '<div class="th-muted-box">ยังไม่มีข้อมูลเซกเมนต์รายได้</div>';
     return sec(7, "Revenue Quality", "คะแนน " + fmt(Q.score) + "/100 — คุณภาพรายได้: เร่งตัวไหม · สม่ำเสมอไหม · เป็นรายได้ประจำแค่ไหน",
       chips + note + table);
@@ -831,8 +880,10 @@
         toneChip(statusTone(f.status), fmt(f.status)) +
         '<small class="th-comp-note">' + esc(f.note || "") + "</small></div>";
     }).join("");
+    // tone = Overall ของ section (ตัวเดียวกับชิป Overall) · ไม่มี Overall = gc-neutral · ชิปรายปัจจัยคงสีของตัวเอง
     return sec(9, "Competitive Position", "คะแนน " + fmt(C.score) + "/100 — คูเมืองแข็งขึ้นหรือถูกกัดเซาะ",
-      top + (rows ? '<div class="th-comp-list">' + rows + "</div>" : '<div class="th-muted-box">ยังไม่มีข้อมูลปัจจัยแข่งขัน</div>'));
+      top + (rows ? '<div class="th-comp-list">' + rows + "</div>" : '<div class="th-muted-box">ยังไม่มีข้อมูลปัจจัยแข่งขัน</div>'),
+      C.overall ? gcTone(GC_TONE, ovTone) : "gc-neutral");
   }
 
   // ---- §10 · Capital allocation ----
@@ -853,11 +904,13 @@
   // ---- §11 · What changed ----
   function changedSection(R) {
     var W = R.whatChanged || [];
+    // ทิศของแต่ละแถว: KB เขียน positive / negative / neutral (คำเดียวกับที่ thesis-engine นับ trend) — เดิมหน้าเช็คแค่ up / down
+    // ทุกแถวจึงขึ้นเป็น flat · ตอนนี้รับทั้งสองชุดคำ → แถวขึ้นสีและลูกศรตามที่ CSS th-chg-up / down ออกแบบไว้ (สีอยู่ที่แถว ไม่ใช่ทั้งการ์ด)
     var rows = W.map(function (w) {
-      var k = w.direction === "up" ? "up" : w.direction === "down" ? "down" : "flat";
+      var k = w.direction === "up" || w.direction === "positive" ? "up" : w.direction === "down" || w.direction === "negative" ? "down" : "flat";
       return '<div class="th-chg-row th-chg-' + k + '"><span class="th-chg-name">' + esc(w.metric) + "</span>" +
         '<span class="th-chg-val">' + esc(fmt(w.prev)) + ' <i class="th-chg-arr">→</i> <b>' + esc(fmt(w.now)) + "</b></span>" +
-        trendArrow(w.direction) + "</div>";
+        trendArrow(k) + "</div>";
     }).join("");
     return sec(11, "What Changed", "อะไรเปลี่ยนไปจากรอบก่อน — เฉพาะที่กระทบ thesis",
       rows ? '<div class="th-chg-list">' + rows + "</div>" : '<div class="th-muted-box">ยังไม่มีการเปลี่ยนแปลงที่บันทึกไว้</div>');
@@ -957,15 +1010,15 @@
     var cls = CLS[V.classification] || CLS.INSUFFICIENT_DATA;
     var clsChip = '<span class="th-vx-cls th-vx-cls-' + esc(V.classification) + '">' + cls.icon + " " + esc(V.classification.replace(/_/g, " ")) + " · " + esc(cls.th) + "</span>";
 
-    // ---- STALE / MISSING — ประกาศชัด ห้ามใช้ข้อมูลเก่าแบบเงียบ ----
+    // ---- STALE / MISSING — ประกาศชัด ห้ามใช้ข้อมูลเก่าแบบเงียบ (ป้ายอายุข้อมูล = แถบแก้วของตัวเองเหนือการ์ด) ----
     var banners = "";
     if (V.warnings.indexOf("STALE_PRICE") >= 0) {
-      banners += '<div class="th-stale th-stale-warn">⚠ <b>STALE PRICE</b> — ราคาที่ใช้คือ' +
+      banners += '<div class="' + staleCls("warn") + '">⚠ <b>STALE PRICE</b> — ราคาที่ใช้คือ' +
         (V.price.source === "kb-quarter-end" ? "ราคาสิ้นไตรมาส " + esc(V.price.asOf || "—") + " จาก KB" : "ราคา ณ " + esc(V.price.asOf || "—")) +
         (V.price.staleDays != null ? " (เก่า " + V.price.staleDays + " วัน)" : " (ไม่ทราบอายุ)") + " — กด <b>Load Latest Data</b> เพื่อใช้ราคาจริง ตัวเลขด้านล่างจะคลาดเคลื่อนจนกว่าจะโหลด</div>";
     }
     if (V.warnings.indexOf("STALE_FUNDAMENTAL") >= 0) {
-      banners += '<div class="th-stale th-stale-warn">⚠ <b>STALE FUNDAMENTAL</b> — ไตรมาสล่าสุดใน KB จบ ' + esc(V.eps.asOf || "—") +
+      banners += '<div class="' + staleCls("warn") + '">⚠ <b>STALE FUNDAMENTAL</b> — ไตรมาสล่าสุดใน KB จบ ' + esc(V.eps.asOf || "—") +
         " (" + V.eps.staleDays + " วันก่อน) น่าจะมีงบใหม่ออกแล้ว — รัน <code>/thesis-update " + esc(T) + "</code></div>";
     }
 
@@ -975,10 +1028,10 @@
 
     // ---- fail-safe: ไม่มีตัวเลขที่เชื่อถือได้ → N/A พร้อมเหตุผล ไม่มโนตัวเลข ----
     if (pe == null) {
-      return sec(14, "บริบทมูลค่า (Valuation)", "P/E ปัจจุบันเทียบอดีตตัวเอง — จาก Valuation Engine (ราคาจริง + งบ curated)",
-        banners + '<div class="th-muted-box"><b>N/A — ข้อมูลไม่พอคำนวณ P/E ที่เชื่อถือได้</b><br>เหตุ: ' +
+      return secCards(14, "บริบทมูลค่า (Valuation)", "P/E ปัจจุบันเทียบอดีตตัวเอง — จาก Valuation Engine (ราคาจริง + งบ curated)",
+        banners + '<div class="th-sec-body gc-card gc-neutral"><div class="th-muted-box"><b>N/A — ข้อมูลไม่พอคำนวณ P/E ที่เชื่อถือได้</b><br>เหตุ: ' +
         esc(V.warnings.length ? V.warnings.join(" · ") : "insufficient data") +
-        '<br><span class="th-muted">ระบบไม่ประมาณค่าแทน — Data unavailable</span></div>');
+        '<br><span class="th-muted">ระบบไม่ประมาณค่าแทน — Data unavailable</span></div></div>');
     }
 
     // ---- บรรทัดสรุปภาษาคน + status ----
@@ -1055,8 +1108,9 @@
         "</div>";
     })();
 
-    return sec(14, "บริบทมูลค่า (Valuation)", "P/E ปัจจุบันเทียบอดีตตัวเอง — จาก Valuation Engine (ราคาจริง + งบ curated) · เป็นบริบท ไม่ใช่คำสั่ง",
-      banners + summary + cards + band + qual + link);
+    // การ์ดหลัก tone = classification (ATTRACTIVE calm · FAIR normal · PREMIUM warning · EXPENSIVE danger · ข้อมูลไม่พอ gc-neutral)
+    return secCards(14, "บริบทมูลค่า (Valuation)", "P/E ปัจจุบันเทียบอดีตตัวเอง — จาก Valuation Engine (ราคาจริง + งบ curated) · เป็นบริบท ไม่ใช่คำสั่ง",
+      banners + '<div class="th-sec-body gc-card ' + gcTone(GC_TONE, cls.tone) + '">' + summary + cards + band + qual + link + "</div>");
   }
 
   // กราฟแท่ง guidance เทียบผลจริง — แท่ง = ผลจริงห่างจากจุดกึ่งกลาง guidance (%) · สีตาม result
@@ -1157,12 +1211,13 @@
     var neYm = neRaw ? neRaw.slice(0, 7) : null;
     var nePassed = neRaw ? (neRaw.length >= 10 ? new Date(neRaw + "T23:59:59") < now : neYm < nowYm) : false;
     var badge;
+    // ป้ายอายุข้อมูล = แถบแก้วของตัวเอง (staleCls: ok calm · soon warning · warn danger) อยู่เหนือการ์ดเนื้อหา
     if (nePassed && FV.asOf && FV.asOf <= neYm) {
-      badge = '<div class="th-stale th-stale-warn">⚠ มีงบออกหลังวันที่ประทับข้อมูลนี้ (forwardView ณ ' + esc(FV.asOf) + " · งบ " + esc(neRaw) + ") — รัน <code>/thesis-update " + esc(R.ticker) + "</code> เพื่ออัปเดต consensus/guidance</div>";
+      badge = '<div class="' + staleCls("warn") + '">⚠ มีงบออกหลังวันที่ประทับข้อมูลนี้ (forwardView ณ ' + esc(FV.asOf) + " · งบ " + esc(neRaw) + ") — รัน <code>/thesis-update " + esc(R.ticker) + "</code> เพื่ออัปเดต consensus/guidance</div>";
     } else if (ageM != null && ageM > 3) {
-      badge = '<div class="th-stale th-stale-warn">⚠ consensus อาจล้าสมัย — forwardView อายุ ' + ageM + " เดือน (ณ " + esc(FV.asOf) + ")</div>";
+      badge = '<div class="' + staleCls("warn") + '">⚠ consensus อาจล้าสมัย — forwardView อายุ ' + ageM + " เดือน (ณ " + esc(FV.asOf) + ")</div>";
     } else {
-      badge = '<div class="th-stale th-stale-ok">🟢 forwardView ณ ' + esc(FV.asOf || "—") + (ageM != null ? " · อายุ " + ageM + " เดือน" : "") + "</div>";
+      badge = '<div class="' + staleCls("ok") + '">🟢 forwardView ณ ' + esc(FV.asOf || "—") + (ageM != null ? " · อายุ " + ageM + " เดือน" : "") + "</div>";
     }
 
     // ---- Fix 4 · วันประกาศงบถัดไป — ตัวกำหนดอายุของทุกตัวเลขใน section นี้ (อ่าน nextEarnings อย่างเดียว) ----
@@ -1171,7 +1226,7 @@
     if (neRaw) {
       var eTxt = "", eWarnSoon = false;
       if (nePassed) {
-        earn = '<div class="th-stale th-stale-warn">📅 งบออกแล้ว — รอ /thesis-update</div>';
+        earn = '<div class="' + staleCls("warn") + '">📅 งบออกแล้ว — รอ /thesis-update</div>';
       } else {
         if (neRaw.length >= 10) {
           var eDt = new Date(neRaw + "T00:00:00");
@@ -1187,7 +1242,7 @@
           eTxt = "งบถัดไป ~" + (THM[eM - 1] || neYm) + " " + eY + " (ประมาณเดือน)";
           if (neYm === nowYm) { eTxt += " · ภายในเดือนนี้"; eWarnSoon = true; }
         }
-        earn = '<div class="th-stale ' + (eWarnSoon ? "th-stale-soon" : "th-stale-ok") + '">📅 ' + esc(eTxt) + (eWarnSoon ? " — ตัวเลขในส่วนนี้จะเปลี่ยนหลังงบออก" : "") + "</div>";
+        earn = '<div class="' + staleCls(eWarnSoon ? "soon" : "ok") + '">📅 ' + esc(eTxt) + (eWarnSoon ? " — ตัวเลขในส่วนนี้จะเปลี่ยนหลังงบออก" : "") + "</div>";
       }
     }
     var badges = '<div class="th-fw-badges">' + badge + earn + "</div>";
@@ -1211,10 +1266,11 @@
         var ptsStr = eps.map(function (v, i) { return (pad2 + i * xw2).toFixed(1) + "," + Y2(v).toFixed(1); }).join(" ");
         var chg = eps[0] !== 0 ? (eps[eps.length - 1] - eps[0]) / Math.abs(eps[0]) * 100 : null; // จุดแรก 0 → เทียบ % ไม่ได้
         var up = chg == null || chg >= 0, cCol = up ? "#34d399" : "#f43f5e";
+        var cInk = up ? "#7cf5c6" : "#ffcfdb"; // ตัวอักษรบนแก้ว: เฉดสว่างของสีเดียวกัน (เส้นกราฟคงสีเดิม — ขึ้นเขียว / ลงแดง)
         var chgTxt = chg != null ? (up ? "▲ +" : "▼ ") + (Math.round(chg * 10) / 10) + "%" : "—";
         var svg = '<svg class="th-fw-spark" viewBox="0 0 ' + W2 + " " + H2 + '" role="img"><polyline points="' + ptsStr + '" fill="none" stroke="' + cCol + '" stroke-width="2"/><circle cx="' + (pad2 + (eps.length - 1) * xw2).toFixed(1) + '" cy="' + Y2(eps[eps.length - 1]).toFixed(1) + '" r="3" fill="' + cCol + '"/></svg>';
         c1 = '<div class="th-fw-c1">' + svg +
-          '<div class="th-fw-c1txt"><b style="color:' + cCol + '">' + chgTxt + "</b> จากจุดแรกถึงล่าสุด (EPS consensus " + esc(latestFy) + " ~" + eps[eps.length - 1] + ")" +
+          '<div class="th-fw-c1txt"><b style="color:' + cInk + '">' + chgTxt + "</b> จากจุดแรกถึงล่าสุด (EPS consensus " + esc(latestFy) + " ~" + eps[eps.length - 1] + ")" +
           '<div class="th-hint">อิง ' + rowsFy.length + " จุด · " + esc(rowsFy[0].asOf) + " ถึง " + esc(rowsFy[rowsFy.length - 1].asOf) + "</div></div></div>";
       }
     }
@@ -1312,8 +1368,8 @@
       }).join("");
       // ตารางเต็ม (ช่วง guidance ตามที่ประกาศจริง) — พับเก็บ เพราะตัวเลขหลักอยู่บนกราฟแล้ว
       var gTable = '<details class="th-fw-src"><summary>ตารางตัวเลขเต็ม — ช่วง guidance ที่ประกาศ + metric (' + gt.length + " ไตรมาส)</summary>" +
-        '<div class="th-table-wrap"><table class="th-table th-bp-table th-fw-table"><thead><tr><th>ไตรมาส</th><th>metric</th><th>ที่บริษัทคาด (guidance)</th><th>ที่ทำได้จริง</th><th>ต่างจากจุดกึ่งกลาง</th><th>ผล</th></tr></thead><tbody>' +
-        gRows + "</tbody></table></div>" +
+        tableWrap("ตาราง guidance เทียบผลจริง — เลื่อนซ้ายขวาได้", '<table class="th-table th-bp-table th-fw-table gc-table"><thead><tr><th>ไตรมาส</th><th>metric</th><th>ที่บริษัทคาด (guidance)</th><th>ที่ทำได้จริง</th><th>ต่างจากจุดกึ่งกลาง</th><th>ผล</th></tr></thead><tbody>' +
+        gRows + "</tbody></table>") +
         '<div class="th-hint">เรียงใหม่→เก่า · ต่างจากจุดกึ่งกลาง = ผลจริงเทียบจุดกึ่งกลางของช่วง guidance · ตัวเลขเป็น ~curated จาก earnings press release ของบริษัท</div></details>';
       c2 = '<h3 class="th-h3">ประวัติ guidance เทียบผลจริง — เก่า (ซ้าย) → ใหม่ (ขวา)</h3>' +
         trackHtml + legend + gTable + statsHtml;
@@ -1344,8 +1400,9 @@
       ? '<details class="th-fw-src"><summary>ที่มาและข้อจำกัดของข้อมูล</summary><ul>' + srcItems.join("") + "</ul></details>"
       : "";
 
-    return sec(15, "ความคาดหวังข้างหน้า (Forward View)", "ตัวเลขที่ตลาดคาด + แนวโน้มการปรับประมาณการ + วินัย guidance — เส้นคาดการณ์ (คาด) ต่ออยู่บนกราฟ §6",
-      badges + c0 + '<h3 class="th-h3">EPS revision trend</h3>' + c1 + c2 + noteHtml);
+    // แถบป้ายอายุข้อมูล (แก้วของตัวเอง) + การ์ดเนื้อหา gc-neutral (ทั้ง section ไม่มีสถานะเดียว)
+    return secCards(15, "ความคาดหวังข้างหน้า (Forward View)", "ตัวเลขที่ตลาดคาด + แนวโน้มการปรับประมาณการ + วินัย guidance — เส้นคาดการณ์ (คาด) ต่ออยู่บนกราฟ §6",
+      badges + '<div class="th-sec-body gc-card gc-neutral">' + c0 + '<h3 class="th-h3">EPS revision trend</h3>' + c1 + c2 + noteHtml + "</div>");
   }
 
 
@@ -1354,6 +1411,10 @@
   function iiStatusIcon(st) { return st === "ok" ? '<span class="th-ii-ok">✓</span>' : st === "warn" ? '<span class="th-ii-warn">⚠</span>' : st === "crit" ? '<span class="th-ii-crit">✗</span>' : '<span class="th-ii-na">—</span>'; }
   function iiCard(label, value, note) {
     return '<div class="th-vx-card"><small>' + esc(label) + '</small><b>' + value + '</b><span>' + esc(note || "") + '</span></div>';
+  }
+  // tile แก้วของแถบหลักฐาน 8 ใบ (tone = สถานะของ tile เอง · ไม่มีสถานะ = gc-neutral) — iiCard ด้านบนคือ well ในการ์ด
+  function iiTile(label, value, note, tone) {
+    return '<div class="th-vx-card gc-card gc-tile ' + (tone || "gc-neutral") + '"><small>' + esc(label) + '</small><b>' + value + '</b><span>' + esc(note || "") + '</span></div>';
   }
   // scatter Growth vs Valuation — X = P/E percentile เทียบอดีตตัวเอง (ถูก→แพง) · Y = fundCagr %/ปี
   function iiMatrixSvg(points, selected) {
@@ -1418,31 +1479,33 @@
     var H = X.health, S = X.summary, M = X.aiMonetization, E2 = X.expectations, DDX = X.drawdown, MP = X.matrixPoint, VC = X.valueChain;
     var DV = X.divergence, CG = X.change, RD = X.readiness;
 
-    // ---- executive summary ----
-    var hero = '<div class="th-ii-hero th-ii-' + S.state.key.toLowerCase().replace(/_/g, "-") + '">' +
+    // ---- executive summary (การ์ดแก้ว tone = สีไอคอนของสถานะสรุป) ----
+    var hero = '<div class="th-ii-hero th-ii-' + S.state.key.toLowerCase().replace(/_/g, "-") + " gc-card " + gcState(S.state) + '">' +
       '<div class="th-ii-hero-head"><span class="th-ii-ico">' + S.state.icon + '</span><div><b>' + esc(S.state.label) + '</b><span>' + esc(S.state.thai) + '</span></div></div>' +
       '<ul>' + S.why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join("") + '</ul>' +
       '<div class="th-muted">ป้ายนี้ตอบ "สุขภาพ thesis + คุณภาพของ dip" — จังหวะวางเงินจริงต้องผ่านเกต Macro/Mega Trend ที่ §4 Decision และหน้า Portfolio Manager</div></div>';
 
-    // ---- evidence strip (การ์ดสรุป 6 ใบ) ----
+    // ---- evidence strip (การ์ดสรุป 8 ใบ = tile แก้ว · tone = สีไอคอนของสถานะใน tile · Drawdown / Value Chain ไม่มีสถานะ = gc-neutral) ----
     var vNow = MP.valuation;
     var cards = '<div class="th-vx-cards th-ii-cards">' +
-      iiCard("Thesis Health", H.state.icon + " " + H.state.label, "crit " + H.counts.criticals + " · warn " + H.counts.warnings + " จาก " + H.counts.total + " pillar") +
-      iiCard("Expectations", E2.state.icon + " " + E2.state.label, E2.revisions ? "EPS " + (E2.revisions.eps && E2.revisions.eps.chgVsPrevPct != null ? (E2.revisions.eps.chgVsPrevPct >= 0 ? "+" : "") + E2.revisions.eps.chgVsPrevPct + "%" : "—") : "รอสะสมประวัติ estimate") +
-      iiCard("AI Monetization", M.state.icon + " " + M.state.label, (M.overall != null ? "รวม " + M.overall : "—") + " · แนวโน้ม " + (M.trend === "improving" ? "↑" : M.trend === "deteriorating" ? "↓" : "→")) +
-      iiCard("Drawdown", DDX.available && DDX.dd1y != null ? Math.round(Math.abs(Math.min(DDX.dd1y, 0))) + "% จาก high 1 ปี" : "—", DDX.available ? DDX.classification.label : "ไม่มีข้อมูลราคา") +
-      iiCard("Growth vs Valuation", MP.quadrant.icon + " " + MP.quadrant.key, (MP.growthCagrPct != null ? "โต " + MP.growthCagrPct + "%/ปี" : "—") + (vNow && vNow.percentile != null ? " · pct " + vNow.percentile : "")) +
-      iiCard("Value Chain", VC.available ? esc(VC.layerName) : "—", VC.available && VC.phase ? "phase: " + VC.phase.name + " · benefit " + (VC.benefit || "—") : "ต้องมี snapshot จึงระบุ phase ได้") +
-      iiCard("Business vs Price", DV.state.icon + " " + DV.state.key, "ธุรกิจ " + DV.businessDirection + " · ราคา " + DV.priceDirection) +
-      iiCard("Investment Readiness", RD.state.icon + " " + RD.state.label, RD.waitingFor && RD.waitingFor.length ? "รอ: " + RD.waitingFor.length + " เงื่อนไข" : "เงื่อนไขครบ") +
+      iiTile("Thesis Health", H.state.icon + " " + H.state.label, "crit " + H.counts.criticals + " · warn " + H.counts.warnings + " จาก " + H.counts.total + " pillar", gcState(H.state)) +
+      iiTile("Expectations", E2.state.icon + " " + E2.state.label, E2.revisions ? "EPS " + (E2.revisions.eps && E2.revisions.eps.chgVsPrevPct != null ? (E2.revisions.eps.chgVsPrevPct >= 0 ? "+" : "") + E2.revisions.eps.chgVsPrevPct + "%" : "—") : "รอสะสมประวัติ estimate", gcState(E2.state)) +
+      iiTile("AI Monetization", M.state.icon + " " + M.state.label, (M.overall != null ? "รวม " + M.overall : "—") + " · แนวโน้ม " + (M.trend === "improving" ? "↑" : M.trend === "deteriorating" ? "↓" : "→"), gcState(M.state)) +
+      iiTile("Drawdown", DDX.available && DDX.dd1y != null ? Math.round(Math.abs(Math.min(DDX.dd1y, 0))) + "% จาก high 1 ปี" : "—", DDX.available ? DDX.classification.label : "ไม่มีข้อมูลราคา", "gc-neutral") +
+      iiTile("Growth vs Valuation", MP.quadrant.icon + " " + MP.quadrant.key, (MP.growthCagrPct != null ? "โต " + MP.growthCagrPct + "%/ปี" : "—") + (vNow && vNow.percentile != null ? " · pct " + vNow.percentile : ""), gcState(MP.quadrant)) +
+      iiTile("Value Chain", VC.available ? esc(VC.layerName) : "—", VC.available && VC.phase ? "phase: " + VC.phase.name + " · benefit " + (VC.benefit || "—") : "ต้องมี snapshot จึงระบุ phase ได้", "gc-neutral") +
+      iiTile("Business vs Price", DV.state.icon + " " + DV.state.key, "ธุรกิจ " + DV.businessDirection + " · ราคา " + DV.priceDirection, gcState(DV.state)) +
+      iiTile("Investment Readiness", RD.state.icon + " " + RD.state.label, RD.waitingFor && RD.waitingFor.length ? "รอ: " + RD.waitingFor.length + " เงื่อนไข" : "เงื่อนไขครบ", gcState(RD.state)) +
       '</div>';
 
     // ---- F1 pillars ----
     var pillarRows = H.pillars.map(function (p) {
       return '<tr><td>' + iiStatusIcon(p.status) + '</td><td>' + esc(p.label) + (p.companyPillar ? "" : ' <span class="th-muted">(ตลาด)</span>') + '</td><td>' + esc(p.evidence) + '</td></tr>';
     }).join("");
-    var f1 = '<details class="th-fw-src th-ii-det"><summary>🩺 Thesis Health — หลักฐานราย pillar (' + H.counts.companyAvailable + ' pillar บริษัทมีข้อมูล)</summary>' +
-      '<div class="th-table-wrap"><table class="th-table"><thead><tr><th></th><th>Pillar</th><th>หลักฐาน</th></tr></thead><tbody>' + pillarRows + '</tbody></table></div>' +
+    // ลิ้นชักหลักฐาน = การ์ดแก้วของตัวเอง: ลิ้นชักที่หัวบอกสถานะ (⚖️ Business vs Price · 🕓 Thesis Change · 🚦 Readiness) tone ตามสถานะนั้น
+    //   ที่เหลือเป็นหลักฐานประกอบ ไม่มีสถานะบนหัว → gc-neutral · กล่อง th-ii-hero ข้างในเป็น well (ไม่ซ้อนแก้ว)
+    var f1 = '<details class="th-fw-src th-ii-det gc-card gc-neutral"><summary>🩺 Thesis Health — หลักฐานราย pillar (' + H.counts.companyAvailable + ' pillar บริษัทมีข้อมูล)</summary>' +
+      tableWrap("ตารางหลักฐาน Thesis Health ราย pillar — เลื่อนซ้ายขวาได้", '<table class="th-table gc-table"><thead><tr><th></th><th>Pillar</th><th>หลักฐาน</th></tr></thead><tbody>' + pillarRows + '</tbody></table>') +
       '<div class="th-muted">' + esc(H.note) + '</div></details>';
 
     // ---- F8 Business vs Price ----
@@ -1451,7 +1514,7 @@
       '</div><div class="th-ii-bv-col"><b>Price</b>' +
       (DV.priceEvidence.length ? DV.priceEvidence.map(function (x) { return "<span>" + esc(x) + "</span>"; }).join("") : "<span>— ไม่มีข้อมูลราคา (กด Load Latest Data)</span>") +
       "</div></div>";
-    var f8 = '<details class="th-fw-src th-ii-det" open><summary>⚖️ Business vs Price — ' + DV.state.icon + " " + esc(DV.state.label) + '</summary>' +
+    var f8 = '<details class="th-fw-src th-ii-det gc-card ' + gcState(DV.state) + '" open><summary>⚖️ Business vs Price — ' + DV.state.icon + " " + esc(DV.state.label) + '</summary>' +
       '<div class="th-ii-hero th-ii-dv-' + DV.state.key.toLowerCase() + '"><div class="th-ii-hero-head"><span class="th-ii-ico">' + DV.state.icon + '</span><div><b>' + esc(DV.state.label) + "</b><span>" + esc(DV.state.thai) + "</span></div></div></div>" +
       bvRows + '<div class="th-muted">' + esc(DV.note) + "</div></details>";
 
@@ -1469,16 +1532,16 @@
       }).join("");
       f7body = '<div class="th-ii-hero th-ii-cg-' + CG.state.key.toLowerCase() + '"><div class="th-ii-hero-head"><span class="th-ii-ico">' + CG.state.icon + '</span><div><b>' + esc(CG.state.label) + "</b><span>" + esc(CG.state.thai) + "</span></div></div>" +
         (CG.why.length ? "<ul>" + CG.why.map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("") + "</ul>" : "") + "</div>" +
-        '<div class="th-table-wrap"><table class="th-table"><thead><tr><th>Metric</th><th>ก่อน</th><th>ตอนนี้</th><th>เปลี่ยน</th></tr></thead><tbody>' + rows7 + "</tbody></table></div>" +
+        tableWrap("ตาราง Thesis Change เทียบรอบก่อน — เลื่อนซ้ายขวาได้", '<table class="th-table gc-table"><thead><tr><th>Metric</th><th>ก่อน</th><th>ตอนนี้</th><th>เปลี่ยน</th></tr></thead><tbody>' + rows7 + "</tbody></table>") +
         '<div class="th-muted">Current As Of: ' + esc(CG.currentAsOf || "—") + " · Previous As Of: " + esc(CG.previousAsOf || "—") + " · " + esc(CG.note) + "</div>";
     }
-    var f7 = '<details class="th-fw-src th-ii-det"><summary>🕓 Thesis Change — ' + CG.state.icon + " " + esc(CG.state.label) + "</summary>" + f7body + "</details>";
+    var f7 = '<details class="th-fw-src th-ii-det gc-card ' + (CG.firstObservation ? "gc-neutral" : gcState(CG.state)) + '"><summary>🕓 Thesis Change — ' + CG.state.icon + " " + esc(CG.state.label) + "</summary>" + f7body + "</details>";
 
     // ---- F9 Investment Readiness ----
     var f9why = (RD.why || []).map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("");
     var f9even = (RD.evenThough || []).map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("");
     var f9wait = (RD.waitingFor || []).map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("");
-    var f9 = '<details class="th-fw-src th-ii-det" open><summary>🚦 Investment Readiness — ' + RD.state.icon + " " + esc(RD.state.label) + "</summary>" +
+    var f9 = '<details class="th-fw-src th-ii-det gc-card ' + gcState(RD.state) + '" open><summary>🚦 Investment Readiness — ' + RD.state.icon + " " + esc(RD.state.label) + "</summary>" +
       '<div class="th-ii-hero th-ii-rd-' + RD.state.key.toLowerCase() + '"><div class="th-ii-hero-head"><span class="th-ii-ico">' + RD.state.icon + '</span><div><b>' + esc(RD.state.label) + "</b><span>" + esc(RD.state.thai) + "</span></div></div>" +
       (f9why ? "<b>Why:</b><ul>" + f9why + "</ul>" : "") +
       (f9even ? "<b>Even though:</b><ul>" + f9even + "</ul>" : "") +
@@ -1503,7 +1566,7 @@
         return '<span class="th-ii-sur-' + r0.result + '" title="' + esc(r0.quarter) + (r0.magnitudePct != null ? " " + (r0.magnitudePct >= 0 ? "+" : "") + r0.magnitudePct + "%" : "") + '">' + ic + " " + esc(r0.quarter) + '</span>';
       }).join(" ") + ' <span class="th-muted">(' + su.beats + '/' + su.n + ' beat)</span></div>';
     }
-    var f2 = '<details class="th-fw-src th-ii-det"><summary>📈 Earnings Expectations — revision + วินัย guidance</summary>' + f2body +
+    var f2 = '<details class="th-fw-src th-ii-det gc-card gc-neutral"><summary>📈 Earnings Expectations — revision + วินัย guidance</summary>' + f2body +
       surLine("Revenue vs guidance (4 ไตรมาสล่าสุด):", E2.surprise.revenue) + surLine("EPS vs guidance:", E2.surprise.eps) +
       '<div class="th-muted">' + esc(E2.surprise.basis) + ' · หลักฐานประกอบ ไม่แปลงเป็นคำสั่งซื้อขายอัตโนมัติ</div></details>';
 
@@ -1511,7 +1574,7 @@
     var f3rows = M.components.map(function (c) {
       return '<div class="th-ii-mrow"><span>' + esc(c.label) + '</span>' + (c.score == null ? '<b class="th-ii-na">—</b>' : '<b>' + c.score + '</b>' + bar(c.score, scoreColor(c.score))) + '<small>' + esc(c.evidence) + '</small></div>';
     }).join("");
-    var f3 = '<details class="th-fw-src th-ii-det"><summary>🤖 AI Monetization — เงินลงทุน AI กลายเป็นผลธุรกิจจริงไหม</summary>' +
+    var f3 = '<details class="th-fw-src th-ii-det gc-card gc-neutral"><summary>🤖 AI Monetization — เงินลงทุน AI กลายเป็นผลธุรกิจจริงไหม</summary>' +
       '<div class="th-muted">แยก "การลงทุน/execute" ออกจาก "ผลธุรกิจที่วัดได้" — ลงทุนเยอะไม่ใช่ข่าวดีอัตโนมัติ · ' + esc(M.why) + '</div>' + f3rows +
       '<div class="th-muted">ที่มา: ' + esc(M.source) + ' · asOf ' + esc(M.asOf || "—") + '</div></details>';
 
@@ -1534,7 +1597,7 @@
       }
       f4body += '<div class="th-ii-note">⚠ ' + esc(DDX.note) + '</div>';
     }
-    var f4 = '<details class="th-fw-src th-ii-det"><summary>📉 Drawdown Context — ย่อครั้งนี้ลึกแค่ไหนเทียบตัวเอง</summary>' + f4body + '</details>';
+    var f4 = '<details class="th-fw-src th-ii-det gc-card gc-neutral"><summary>📉 Drawdown Context — ย่อครั้งนี้ลึกแค่ไหนเทียบตัวเอง</summary>' + f4body + '</details>';
 
     // ---- F5 matrix ----
     var f5body = "";
@@ -1542,7 +1605,7 @@
       var MX = IE.matrix(readSnapshot() || {}, {});
       f5body = MX.available ? iiMatrixSvg(MX.points, R.ticker) + '<div class="th-muted">' + esc(MX.note) + '</div>' : '<div class="th-muted">—</div>';
     } catch (eMx) { f5body = '<div class="th-muted">คำนวณ matrix ไม่ได้</div>'; }
-    var f5 = '<details class="th-fw-src th-ii-det"><summary>🧭 Growth vs Valuation Matrix — ทุกตัวใน KB (' + esc(MP.quadrant.icon + " " + R.ticker + " = " + MP.quadrant.label) + ')</summary>' +
+    var f5 = '<details class="th-fw-src th-ii-det gc-card gc-neutral"><summary>🧭 Growth vs Valuation Matrix — ทุกตัวใน KB (' + esc(MP.quadrant.icon + " " + R.ticker + " = " + MP.quadrant.label) + ')</summary>' +
       '<div class="th-muted">' + esc(MP.growthWhy) + (MP.growthVsPrice && MP.growthVsPrice.score != null ? ' · growth-vs-price score ' + MP.growthVsPrice.score + ' (PMEngine)' : "") + '</div>' + f5body + '</details>';
 
     // ---- F6 value chain ----
@@ -1561,12 +1624,12 @@
         }).join(" · ") + '</div>';
       }
     }
-    var f6 = '<details class="th-fw-src th-ii-det"><summary>⛓️ AI Value Chain Position — อยู่ตรงไหนของห่วงโซ่ ได้ประโยชน์ phase ไหน</summary>' + f6body + '</details>';
+    var f6 = '<details class="th-fw-src th-ii-det gc-card gc-neutral"><summary>⛓️ AI Value Chain Position — อยู่ตรงไหนของห่วงโซ่ ได้ประโยชน์ phase ไหน</summary>' + f6body + '</details>';
 
     // ---- data quality ----
-    var qual = '<div class="th-vx-qual"><b>Intelligence Data Quality</b> · Health: KB quarters + thesis-engine · Expectations: forwardView (asOf ' + esc(E2.asOf || "—") + ') · Monetization: curated KB (asOf ' + esc(X.asOf || "—") + ') · Drawdown: ' + (DDX.available ? esc(DDX.source) : "ไม่มี snapshot") + ' · Matrix: ' + esc(MP.source) + ' · engine v' + esc(X.version) + ' · ไม่มีการประเมินแทนข้อมูลที่ขาด (ช่องว่าง = —)</div>';
+    var qual = '<div class="th-vx-qual gc-card gc-neutral"><b>Intelligence Data Quality</b> · Health: KB quarters + thesis-engine · Expectations: forwardView (asOf ' + esc(E2.asOf || "—") + ') · Monetization: curated KB (asOf ' + esc(X.asOf || "—") + ') · Drawdown: ' + (DDX.available ? esc(DDX.source) : "ไม่มี snapshot") + ' · Matrix: ' + esc(MP.source) + ' · engine v' + esc(X.version) + ' · ไม่มีการประเมินแทนข้อมูลที่ขาด (ช่องว่าง = —)</div>';
 
-    return sec(16, "Investment Intelligence", "หุ้นลงเพราะอะไร แล้ว thesis ยังอยู่ไหม — Thesis Health + Expectations + AI Monetization + Drawdown + Matrix + Value Chain",
+    return secCards(16, "Investment Intelligence", "หุ้นลงเพราะอะไร แล้ว thesis ยังอยู่ไหม — Thesis Health + Expectations + AI Monetization + Drawdown + Matrix + Value Chain",
       hero + cards + f8 + f1 + f7 + f9 + f2 + f3 + f4 + f5 + f6 + qual);
   }
 

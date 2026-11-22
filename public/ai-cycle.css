@@ -11,8 +11,8 @@
 .aic-page { padding: 24px 26px 70px; max-width: 1120px; margin: 0 auto; color: var(--mc-text); }
 .aic-page * { box-sizing: border-box; }
 
-/* ---- Section 1 · Hero ---- */
-.aic-hero { display: flex; gap: 26px; align-items: center; flex-wrap: wrap; padding: 26px 30px; border: 1px solid var(--mc-border); border-radius: 22px; background: var(--mc-card-glow), var(--mc-card); margin-bottom: 26px; }
+/* ---- Section 1 · Hero ---- (the card skin is .gc-card + tone — see "Glass cards" at the end) */
+.aic-hero { display: flex; flex-direction: row; gap: 26px; align-items: center; flex-wrap: wrap; padding: 26px 30px; margin-bottom: 26px; }
 .aic-hero-left { flex: 1 1 360px; }
 .aic-hero-right { text-align: center; }
 .aic-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mc-muted); }
@@ -24,15 +24,17 @@
 .aic-phase-thesis { margin: 8px 0 0; font-size: 14px; color: var(--mc-text-2); max-width: 560px; line-height: 1.6; }
 .aic-phase-next { margin-top: 12px; font-size: 13px; color: var(--mc-text-2); }
 .aic-phase-next b { color: var(--mc-text); }
-.aic-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+/* --aic-ring-col / --aic-ring-deg come from ring() in ai-cycle-page.js (band colour + arc) */
+.aic-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: conic-gradient(var(--aic-ring-col, #94a3b8) var(--aic-ring-deg, 0deg), var(--mc-border) 0); }
 .aic-ring-hole { position: absolute; inset: 8px; border-radius: 50%; background: var(--mc-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.aic-ring-hole b { font-size: 30px; font-weight: 800; line-height: 1; }
+.aic-ring-hole b { font-size: 30px; font-weight: 700; line-height: 1; color: var(--aic-ring-col, var(--mc-text)); }
 .aic-ring-hole b span { font-size: 14px; }
 .aic-ring-hole small { font-size: 10px; color: var(--mc-muted); margin-top: 3px; }
 .aic-evidence { margin-top: 10px; font-size: 11.5px; color: var(--mc-muted); }
 
-/* ---- section shell ---- */
-.aic-sec { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card); padding: 20px 22px; margin-bottom: 18px; }
+/* ---- section shell ---- (card skin = .gc-card + tone; .aic-sec-open = heading on the page, its cards are the glass) */
+.aic-sec { padding: 20px 22px; margin-bottom: 18px; }
+.aic-sec-open { padding: 4px 0 0; }
 .aic-sec-head { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 16px; }
 .aic-sec-n { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px; background: var(--aic-chip); border: 1px solid var(--mc-border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--mc-text-2); }
 .aic-sec-head h2 { margin: 0; font-size: 18px; font-weight: 800; }
@@ -67,8 +69,9 @@
 /* ---- Section 3 · Value Chain ---- */
 .aic-vc { display: flex; flex-direction: column; }
 .aic-vc-node { position: relative; padding-bottom: 12px; }
-.aic-vc-line { position: absolute; left: 26px; top: 44px; bottom: -4px; width: 2px; background: linear-gradient(var(--mc-border), transparent); }
-.aic-vc-card { border: 1px solid var(--mc-border); border-radius: 14px; background: var(--aic-chip); padding: 13px 15px; }
+/* the layer cards are opaque glass now, so the chain line only shows in the gap between two cards → solid */
+.aic-vc-line { position: absolute; left: 26px; top: 44px; bottom: -4px; width: 2px; background: var(--mc-border); }
+.aic-vc-card { padding: 13px 15px; }
 .aic-vc-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .aic-vc-order { width: 24px; height: 24px; border-radius: 50%; background: var(--mc-bg); border: 1px solid var(--mc-border); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex: 0 0 auto; }
 .aic-vc-name { font-size: 15px; flex: 1; }
@@ -115,12 +118,7 @@
 .aic-act-red { color: var(--aic-out); background: rgba(245, 158, 11, 0.14); border: 1px solid rgba(245, 158, 11, 0.4); }
 .aic-plan-note { font-size: 11.5px; color: var(--mc-muted); }
 
-/* ---- Section 6 · Opportunity table ---- */
-.aic-table-wrap { overflow-x: auto; }
-.aic-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.aic-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mc-muted); padding: 7px 10px; border-bottom: 1px solid var(--mc-border); }
-.aic-table td { padding: 8px 10px; border-bottom: 1px solid var(--mc-border); }
-.aic-table tr:last-child td { border-bottom: 0; }
+/* ---- Section 6 · Opportunity table ---- (wrap / cells / dividers / header ink = gc-table-wrap + gc-table) */
 .aic-td-score { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .aic-td-score .aic-bar { width: 46px; height: 7px; margin-right: 6px; }
 .aic-td-note { color: var(--mc-muted); font-size: 11.5px; }
@@ -176,6 +174,9 @@
 
 @media (max-width: 720px) {
   .aic-page { padding: 16px 12px 50px; }
+  .aic-hero { padding: 20px 18px; gap: 18px; }
+  .aic-sec { padding: 16px 16px; }
+  .aic-sec-open { padding: 4px 0 0; }
   .aic-phase-title { font-size: 26px; }
   .aic-rot-row { grid-template-columns: 22px 1fr auto; }
   .aic-rot-bar, .aic-rot-row .aic-dir { display: none; }
@@ -211,9 +212,9 @@
 .aic-radar-legend { display: flex; gap: 18px; margin-top: 10px; font-size: 11.5px; color: var(--mc-text-2); }
 .aic-radar-legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
 .aic-lg-rot { background: #34d399; }
-/* เส้นประในคำอธิบายกราฟ — คู่กับ .aic-lg-rot (เขียว) ต้องแยกออกจากกันได้
-   ใช้ --aic-hot (ฟ้า) แทนม่วง ให้อยู่ในชุดสีเดียวกับเส้นจริงบนกราฟ */
-.aic-lg-exp { background: repeating-linear-gradient(90deg, var(--aic-hot) 0 4px, transparent 4px 7px); height: 2px !important; }
+/* เส้นประในคำอธิบายกราฟ "สัดส่วนพอร์ตคุณ" — สีเดียวกับเส้นประที่วาดจริงบนกราฟ (.aic-radar-exp ม่วง #a78bfa)
+   และแยกออกจาก .aic-lg-rot (เขียว) ได้ · เดิมเป็นฟ้า (--aic-hot) ซึ่งไม่ตรงกับรูปบนกราฟ */
+.aic-lg-exp { background: repeating-linear-gradient(90deg, #a78bfa 0 4px, transparent 4px 7px); height: 2px !important; }
 
 /* Value-chain exposure line */
 .aic-vc-exp { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--mc-border); font-size: 12px; }
@@ -369,3 +370,76 @@
 .aic-vc-node { scroll-margin-top: 84px; }
 @keyframes aicFlash { 0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.55); } 100% { box-shadow: 0 0 0 7px rgba(56, 189, 248, 0); } }
 .aic-vc-node.aic-flash > .aic-vc-card { animation: aicFlash 1.4s ease-out; border-color: var(--aic-hot); }
+
+/* ============================================================
+   Glass cards (glass-cards.css gc-2, loaded before this file · aic-5/aic-6 · 2026-11-22)
+   Every card on #aiCycleRoot wears .gc-card + a tone from a status the page already computes
+   (ai-cycle-page.js: confTone · dirTone · gradeTone · alignTone · levelTone · rotationTone; no status → gc-neutral).
+   The cards stay dark with white text in BOTH site themes, so inside them the mc-* / aic-* tokens are re-pointed
+   to the glass ink and every rule above reads on the glass without a rewrite. Status colours are lifted to
+   luminance >= 0.70 (>= 4.7:1 on the brightest pixel of every tone — the same values as Home).
+   Everything is scoped to #aiCycleRoot: mission-control-v2.css (shared with /home and /wave3) is not touched.
+   ============================================================ */
+#aiCycleRoot .gc-card {
+  --mc-text: var(--gc-ink);
+  --mc-text-2: var(--gc-ink-2);
+  --mc-muted: var(--gc-ink-2);
+  --mc-faint: var(--gc-ink-2);
+  --mc-border: var(--gc-line);
+  --mc-card: var(--gc-well);
+  --mc-bg: rgb(var(--gc-c));          /* solid: the ring hole / flow boxes / dots must hide what is under them */
+  --mc-red: #ffcfdb;
+  --aic-chip: var(--gc-well);          /* wells + row hovers darken, never lighten */
+  --aic-in: #7cf5c6;
+  --aic-hot: #bae6fd;
+  --aic-out: #ffd98a;
+  --aic-stable: var(--gc-ink-2);
+}
+/* gc-card is a flex column; the sections keep their block flow (margins, inline chips) */
+#aiCycleRoot .aic-sec.gc-card,
+#aiCycleRoot .aic-vc-card.gc-card,
+#aiCycleRoot .mc-empty.gc-card { display: block; }
+#aiCycleRoot .aic-vc-card.gc-card { --gc-radius: 20px; }
+#aiCycleRoot .mc-empty.gc-card strong { color: var(--gc-ink); }
+
+/* the value chain heading sits on the page (theme ink), its layer cards are the glass */
+#aiCycleRoot .aic-sec-open > .aic-sec-head h2 { color: var(--app-text, var(--mc-text)); }
+#aiCycleRoot .aic-sec-open > .aic-sec-head p { color: var(--app-text-2, var(--mc-text-2)); }
+
+/* rings: white arc + white figure on the toned card (like the Equity Risk ring on /market-risk) — the tone carries the band */
+#aiCycleRoot .gc-card .aic-ring { background: conic-gradient(#fff var(--aic-ring-deg, 0deg), rgba(255, 255, 255, 0.14) 0); filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.28)); }
+#aiCycleRoot .gc-card .aic-ring-hole b { color: #fff; }
+
+/* bar / exposure tracks: light rails on the dark glass (fills keep their series colours) */
+#aiCycleRoot .gc-card .aic-bar,
+#aiCycleRoot .gc-card .aic-exp-track { background: rgba(255, 255, 255, 0.14); }
+
+/* figures on the glass: Inter 700 tabular (was 800 here and there) */
+#aiCycleRoot .gc-card .aic-rot-score,
+#aiCycleRoot .gc-card .aic-conv-score,
+#aiCycleRoot .gc-card .aic-vc-sc,
+#aiCycleRoot .gc-card .aic-metric b,
+#aiCycleRoot .gc-card .aic-vc-exp b,
+#aiCycleRoot .gc-card .aic-diff,
+#aiCycleRoot .gc-card .aic-psc-comp-head b,
+#aiCycleRoot .gc-card .aic-exp-nums,
+#aiCycleRoot .gc-card .aic-cl-metric b,
+#aiCycleRoot .gc-card .aic-nc-pct,
+#aiCycleRoot .gc-card .aic-td-score,
+#aiCycleRoot .gc-card .aic-phase-dur b,
+#aiCycleRoot .gc-card .aic-align-chip,
+#aiCycleRoot .gc-card .aic-flowrow-pp { font-family: var(--gc-num-font); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* inner blocks are wells on the glass (no second glass) */
+#aiCycleRoot .gc-card .aic-impact-card { background: var(--gc-well); }
+#aiCycleRoot .gc-card .aic-flow-box { fill: rgba(0, 0, 0, 0.32); }
+
+/* dimmed timeline names: ink-2 instead of opacity 0.6 (0.6 drops below 4.5:1 on the glass) */
+#aiCycleRoot .gc-card .aic-tl-past .aic-tl-name,
+#aiCycleRoot .gc-card .aic-tl-future .aic-tl-name { opacity: 1; color: var(--gc-ink-2); }
+#aiCycleRoot .gc-card .aic-rot-go { opacity: 1; }   /* the › stays ink-2 (≥ 4.5:1); hover still turns it sky + nudges it */
+
+/* Capital Rotation rows are role=button: a visible white ring inside the row (the old rule removed the outline) */
+#aiCycleRoot .gc-card .aic-rot-jump:focus-visible { outline: 2px solid var(--gc-focus); outline-offset: -2px; }
+/* the opportunity tables scroll inside the card; keep the focus ring inside the wrap's box */
+#aiCycleRoot .gc-card .aic-table-wrap:focus-visible { outline-offset: -2px; }

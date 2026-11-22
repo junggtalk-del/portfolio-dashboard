@@ -16,18 +16,43 @@
   function readSnapshot() { try { return (window.PortfolioDataSnapshot && window.PortfolioDataSnapshot.read && window.PortfolioDataSnapshot.read()) || null; } catch (e) { return null; } }
   function thb(v) { var n = Number(v); if (!isFinite(n) || n === 0) return "—"; return "฿" + (n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n.toLocaleString("en-US", { maximumFractionDigits: 0 })); }
 
+  // การ์ดแก้ว (glass-cards.css): สีการ์ด = สถานะที่หน้านี้/engine คำนวณอยู่แล้วเท่านั้น · ไม่มีสถานะ → gc-neutral (ไม่ประดิษฐ์สถานะใหม่)
+  //   tone ของ DIR = สีชิปทิศทางเดิม (เขียว หมุนเข้า · ฟ้า กลุ่มนำ · ส้ม หมุนออก · เทา ทรงตัว) → calm · normal · warning · neutral
   var DIR = {
-    in: { icon: "▲", label: "หมุนเข้า", cls: "aic-dir-in" }, hot: { icon: "●", label: "กลุ่มนำ", cls: "aic-dir-hot" },
-    out: { icon: "▼", label: "หมุนออก", cls: "aic-dir-out" }, stable: { icon: "▬", label: "ทรงตัว", cls: "aic-dir-stable" }
+    in: { icon: "▲", label: "หมุนเข้า", cls: "aic-dir-in", tone: "gc-calm" }, hot: { icon: "●", label: "กลุ่มนำ", cls: "aic-dir-hot", tone: "gc-normal" },
+    out: { icon: "▼", label: "หมุนออก", cls: "aic-dir-out", tone: "gc-warning" }, stable: { icon: "▬", label: "ทรงตัว", cls: "aic-dir-stable", tone: "gc-neutral" }
   };
   var STATUS = { over: { label: "Overweight", cls: "aic-over" }, under: { label: "Underweight", cls: "aic-under" }, balanced: { label: "Balanced", cls: "aic-balanced" } };
+  var GRADE_TONE = { A: "gc-calm", B: "gc-normal", C: "gc-warning", D: "gc-danger" };           // AI Portfolio Score (engine: ≥80 / ≥65 / ≥50 / ต่ำกว่า)
+  var LEVEL_TONE = { low: "gc-calm", medium: "gc-warning", high: "gc-danger" };                 // AI Concentration Risk (สีเดิม เขียว · ส้ม · แดง)
+  var ALIGN_TONE = { good: "gc-calm", warn: "gc-warning", risk: "gc-danger" };                   // tone ของการ์ด Alignment ที่ engine ให้ (≥70 / ≥50 / ต่ำกว่า)
 
-  function ring(pct, size, label) {
-    pct = Math.max(0, Math.min(100, pct == null ? 0 : pct)); size = size || 96;
-    var col = pct >= 75 ? "#34d399" : pct >= 55 ? "#38bdf8" : pct >= 40 ? "#f59e0b" : "#94a3b8";
-    return '<div class="aic-ring" style="width:' + size + 'px;height:' + size + 'px;background:conic-gradient(' + col + ' ' + (pct * 3.6) + 'deg,var(--mc-border) 0)">' +
-      '<div class="aic-ring-hole"><b style="color:' + col + '">' + pct + '<span>%</span></b>' + (label ? '<small>' + esc(label) + "</small>" : "") + "</div></div>";
+  function clampPct(pct) { return Math.max(0, Math.min(100, pct == null ? 0 : pct)); }
+  // แถบสีของวง (เดิม): ≥75 เขียว · ≥55 ฟ้า · ≥40 ส้ม · ต่ำกว่า เทา — สีวงและ tone ของการ์ด Confidence มาจากที่เดียวกัน
+  function ringBand(pct) {
+    return pct >= 75 ? { col: "#34d399", tone: "gc-calm" } : pct >= 55 ? { col: "#38bdf8", tone: "gc-normal" } : pct >= 40 ? { col: "#f59e0b", tone: "gc-warning" } : { col: "#94a3b8", tone: "gc-neutral" };
   }
+  function ring(pct, size, label) {
+    pct = clampPct(pct); size = size || 96;
+    var col = ringBand(pct).col;
+    // สี/มุมส่งเป็นตัวแปร CSS: นอกแก้ววาดสีแถบเดิม · บนการ์ดแก้ววาดวงขาว (สีการ์ดบอกสถานะแทน)
+    return '<div class="aic-ring" style="width:' + size + 'px;height:' + size + 'px;--aic-ring-col:' + col + ';--aic-ring-deg:' + (pct * 3.6) + 'deg">' +
+      '<div class="aic-ring-hole"><b class="gc-num">' + pct + '<span>%</span></b>' + (label ? '<small>' + esc(label) + "</small>" : "") + "</div></div>";
+  }
+  function confTone(pct) { return ringBand(clampPct(pct)).tone; }
+  function dirTone(direction) { return (DIR[direction] || DIR.stable).tone; }
+  function gradeTone(grade) { return GRADE_TONE[grade] || "gc-neutral"; }
+  // การ์ดพอร์ต (Exposure · Concentration · Rotation) มีสถานะเมื่อพอร์ตมีมูลค่า AI จริงเท่านั้น — ถือแต่สินทรัพย์นอกธีม AI
+  // (เช่น GLD อย่างเดียว) engine ให้ "ยังไม่มีข้อมูลพอร์ต AI" → neutral เหมือน AI Portfolio Score ไม่ใช่เขียว "ต่ำ"/"✅"
+  function aiHeld(R) { return !!(R && R.exposure && R.exposure.totalAiValue > 0); }
+  function levelTone(R) { var lv = aiHeld(R) && R.concentration ? R.concentration.level : null; return (lv && LEVEL_TONE[lv.key]) || "gc-neutral"; }
+  function alignTone(R) {
+    if (!aiHeld(R)) return "gc-neutral";
+    var a = (R.actions || []).filter(function (x) { return x && /^Alignment /.test(String(x.title || "")); })[0];
+    return (a && ALIGN_TONE[a.tone]) || "gc-neutral";
+  }
+  // Portfolio Rotation: สถานะเดียวที่หน้านี้แสดงคือ "✅ พอร์ตสอดคล้องกับวัฏจักรแล้ว" (มีพอร์ต AI แต่ไม่มีเส้นทางหมุน)
+  function rotationTone(R) { return aiHeld(R) && !(R.rotationPaths || []).length ? "gc-calm" : "gc-neutral"; }
   function bar(pct, tone) {
     pct = Math.max(0, Math.min(100, pct || 0));
     // ความยาวแถบคือตัวบอกค่าอยู่แล้ว สีจึงมีหน้าที่แค่แยกสองชุดออกจากกัน
@@ -39,8 +64,15 @@
     if (!list || !list.length) return "";
     return '<details class="aic-why"><summary>ทำไม?</summary><ul>' + list.map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("") + "</ul></details>";
   }
-  function sec(n, title, sub, body, extra) {
-    return '<section class="aic-sec"><div class="aic-sec-head"><span class="aic-sec-n">' + n + '</span><div><h2>' + esc(title) + "</h2>" + (sub ? "<p>" + esc(sub) + "</p>" : "") + "</div>" + (extra || "") + "</div>" + body + "</section>";
+  function secHead(n, title, sub, extra) {
+    return '<div class="aic-sec-head"><span class="aic-sec-n">' + n + '</span><div><h2>' + esc(title) + "</h2>" + (sub ? "<p>" + esc(sub) + "</p>" : "") + "</div>" + (extra || "") + "</div>";
+  }
+  function sec(n, title, sub, body, extra, tone) {
+    return '<section class="aic-sec gc-card ' + (tone || "gc-neutral") + '">' + secHead(n, title, sub, extra) + body + "</section>";
+  }
+  // หัวข้ออยู่บนพื้นหน้า ไม่ใช่การ์ด — ใช้เมื่อเนื้อในเป็นการ์ดแก้วเอง (ไม่ซ้อนแก้วในแก้ว)
+  function secOpen(n, title, sub, body) {
+    return '<section class="aic-sec aic-sec-open">' + secHead(n, title, sub) + body + "</section>";
   }
   function shortLayer(name) {
     var n = String(name);
@@ -91,10 +123,10 @@
   function render() {
     var root = document.getElementById(ROOT_ID);
     if (!root) return;
-    if (!window.AIRotationEngine || typeof window.AIRotationEngine.compute !== "function") { root.innerHTML = '<div class="mc-empty"><strong>AI Rotation Engine ไม่พร้อม</strong></div>'; return; }
+    if (!window.AIRotationEngine || typeof window.AIRotationEngine.compute !== "function") { root.innerHTML = '<div class="mc-empty gc-card gc-neutral"><strong>AI Rotation Engine ไม่พร้อม</strong></div>'; return; }
     var snap = readSnapshot(), R, now = new Date().toISOString();
     try { R = window.AIRotationEngine.compute(snap || {}, { now: now }); }
-    catch (e) { root.innerHTML = '<div class="mc-empty"><strong>คำนวณไม่สำเร็จ</strong><br>' + esc(String(e && e.message || e)) + "</div>"; return; }
+    catch (e) { root.innerHTML = '<div class="mc-empty gc-card gc-neutral"><strong>คำนวณไม่สำเร็จ</strong><br>' + esc(String(e && e.message || e)) + "</div>"; return; }
     var X = window.AICycleEnhance, enh = null;
     if (X) {
       var heldSet = {};
@@ -129,7 +161,7 @@
         ' <span class="aic-hist-tag">Historical Average Only</span>' +
         (dur.overrun ? '<div class="aic-dur-note">' + esc(dur.note) + "</div>" : "") + "</div>";
     }
-    return '<section class="aic-hero"><div class="aic-hero-left">' +
+    return '<section class="aic-hero gc-card ' + confTone(p.confidence) + '"><div class="aic-hero-left">' +
       '<div class="aic-eyebrow">AI Supercycle · Strategic Command Center</div>' +
       '<div class="aic-phase-now">เฟสปัจจุบัน</div><h1 class="aic-phase-title">' + esc(p.current.name) + "</h1>" +
       '<p class="aic-phase-thesis">' + esc(p.current.thesis) + "</p>" +
@@ -196,14 +228,15 @@
         '<span class="aic-diff ' + diffCls + '">' + (e.diffPp > 0 ? "+" : "") + e.diffPp + "pp</span>" +
         '<span class="aic-badge ' + (STATUS[e.status] ? STATUS[e.status].cls : "") + '">' + (STATUS[e.status] ? STATUS[e.status].label : "") + "</span></div>";
       return '<div class="aic-vc-node" id="aic-vc-node-' + esc(l.key) + '">' + (i < layers.length - 1 ? '<span class="aic-vc-line"></span>' : "") +
-        '<div class="aic-vc-card"><div class="aic-vc-top"><span class="aic-vc-order">' + l.order + '</span><b class="aic-vc-name">' + esc(l.name) + "</b>" +
+        '<div class="aic-vc-card gc-card ' + d.tone + '"><div class="aic-vc-top"><span class="aic-vc-order">' + l.order + '</span><b class="aic-vc-name">' + esc(l.name) + "</b>" +
         '<span class="aic-dir ' + d.cls + '">' + d.icon + " " + esc(l.trendLabel) + "</span></div>" +
         '<p class="aic-vc-thesis">' + esc(l.thesis) + "</p>" +
         '<div class="aic-vc-metrics"><div class="aic-metric"><span>Cycle Score</span>' + bar(l.cycleScore, "cyc") + "<b>" + l.cycleScore + "</b></div>" +
         '<div class="aic-metric"><span>Rotation</span>' + bar(l.rotationScore, "rot") + "<b>" + l.rotationScore + "</b></div></div>" +
         expLine + top + why(l.why) + "</div></div>";
     }).join("");
-    return sec(6, "AI Value Chain", "ห่วงโซ่คุณค่า AI จากต้นน้ำถึงปลายน้ำ — แต่ละชั้นมี Cycle Score, Rotation, Exposure และหุ้นที่เกี่ยวข้อง 5 ตัว เรียงตาม “คะแนนความเกี่ยวข้องกับ AI Value Chain” (0-100 · ยิ่งเป็น pure-play ยิ่งสูง · ไม่เกี่ยวกับ valuation/hype)",
+    // แต่ละชั้นเป็นการ์ดแก้วสีตามทิศทางการหมุนของชั้นนั้น → หัวข้อ section อยู่บนพื้นหน้า (ไม่ซ้อนแก้ว)
+    return secOpen(6, "AI Value Chain", "ห่วงโซ่คุณค่า AI จากต้นน้ำถึงปลายน้ำ — แต่ละชั้นมี Cycle Score, Rotation, Exposure และหุ้นที่เกี่ยวข้อง 5 ตัว เรียงตาม “คะแนนความเกี่ยวข้องกับ AI Value Chain” (0-100 · ยิ่งเป็น pure-play ยิ่งสูง · ไม่เกี่ยวกับ valuation/hype)",
       '<div class="aic-vc">' + rows + "</div>");
   }
 
@@ -217,7 +250,7 @@
     }).join("");
     return sec(7, "AI Portfolio Score", "พอร์ตวางตัวสอดคล้องกับวัฏจักร AI แค่ไหน — รวม Cycle + Rotation + Diversification",
       '<div class="aic-psc"><div class="aic-psc-ring">' + ring(p.score, 118, "เกรด " + p.grade) + "</div>" + '<div class="aic-psc-comps">' + comps + "</div></div>" + why(p.why),
-      '<span class="aic-align-chip">' + p.score + " / 100 · " + p.grade + "</span>");
+      '<span class="aic-align-chip">' + p.score + " / 100 · " + p.grade + "</span>", gradeTone(p.grade));
   }
 
   // ---- 8 · New Capital Allocation ----
@@ -243,7 +276,7 @@
       '<div class="aic-exp-summary">มูลค่า AI ' + thb(e.totalAiValue) + (e.nonAiValue ? " · นอกธีม AI " + thb(e.nonAiValue) : "") + "</div>" +
       '<div class="aic-exp-list">' + rows + "</div>" +
       why(["Alignment " + e.alignmentScore + " = 100 − ผลรวมส่วนต่างสัดส่วนจริงกับเป้า ÷ 2", "ขีดคือสัดส่วนเป้าตามวัฏจักร · แท่งคือสัดส่วนจริงของคุณ"]),
-      '<span class="aic-align-chip">Alignment ' + e.alignmentScore + "</span>");
+      '<span class="aic-align-chip">Alignment ' + e.alignmentScore + "</span>", alignTone(R));
   }
 
   // ---- 10 · AI Concentration Risk (over / under / missing / HHI / diversification) ----
@@ -263,7 +296,7 @@
       '<div class="aic-cl-group"><div class="aic-cl-lbl">Missing (ยังไม่มีในพอร์ต)</div><div class="aic-cl-chips">' + chips(cd.missing, "aic-miss") + "</div></div>";
     return sec(10, "AI Concentration Risk", "ความเสี่ยงกระจุกตัว — กลุ่มที่ถือหนักเกิน/น้อยเกิน/ยังไม่มี + Diversification, HHI และระดับความเสี่ยง",
       body + why(cd.why),
-      '<span class="aic-align-chip ' + lvlCls + '">Risk ' + cd.score + " · " + cd.level.label + "</span>");
+      '<span class="aic-align-chip ' + lvlCls + '">Risk ' + cd.score + " · " + cd.level.label + "</span>", levelTone(R));
   }
 
   // ---- 11 · Portfolio Impact ----
@@ -294,7 +327,7 @@
         why(p.why) + "</div>";
     }).join("");
     return sec(12, "Portfolio Rotation", "การหมุนพอร์ตจริง (แทน Increase/Reduce) — ทยอยย้ายน้ำหนักจากกลุ่มที่เกิน/หมุนออก ไปกลุ่มที่หมุนเข้า พร้อมเหตุผลเชิงปัจจัยพื้นฐาน (เช่น GPU ↓ Networking)",
-      '<div class="aic-flows">' + body + "</div>");
+      '<div class="aic-flows">' + body + "</div>", "", rotationTone(R));
   }
 
   // ---- 13 · Opportunity Ranking (Already Owned / New) ----
@@ -302,7 +335,7 @@
     if (!R.opportunities.length) return "";
     var owned = R.opportunities.filter(function (o) { return o.owned; });
     var fresh = R.opportunities.filter(function (o) { return !o.owned; });
-    function table(list) {
+    function table(list, label) {
       if (!list.length) return '<div class="aic-empty-inline">— ไม่มี —</div>';
       var rows = list.map(function (o, i) {
         return "<tr" + (o.owned ? ' class="aic-opp-owned"' : "") + "><td>" + (i + 1) + "</td>" +
@@ -311,11 +344,12 @@
           '<td class="aic-td-score">' + bar(o.finalPct, "cyc") + " " + o.finalPct + "</td>" +
           '<td class="aic-td-note">' + esc(o.note) + "</td></tr>";
       }).join("");
-      return '<div class="aic-table-wrap"><table class="aic-table"><thead><tr><th>#</th><th>Ticker</th><th>บริษัท</th><th>Layer</th><th>Opportunity</th><th>หมายเหตุ</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
+      // ตารางเลื่อนแนวนอนในกล่องของตัวเองได้ → กล่องรับโฟกัสคีย์บอร์ด (tabindex + aria-label ตาม gc-table-wrap)
+      return '<div class="aic-table-wrap gc-table-wrap" tabindex="0" role="region" aria-label="' + esc(label) + '"><table class="aic-table gc-table"><thead><tr><th>#</th><th>Ticker</th><th>บริษัท</th><th>Layer</th><th>Opportunity</th><th>หมายเหตุ</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
     }
     return sec(13, "Opportunity Ranking", "บริษัทเด่นในกลุ่มที่เงินหมุนเข้าแรงสุด — ใช้คะแนน AI Boom Universe (quality + momentum − hype − valuation) · ถืออยู่แล้วขึ้นก่อนเสมอ",
-      '<div class="aic-opp-group"><h3 class="aic-opp-h">✅ Already Owned <span>(' + owned.length + ")</span></h3>" + table(owned) + "</div>" +
-      '<div class="aic-opp-group"><h3 class="aic-opp-h">🔍 Potential New Opportunity <span>(' + fresh.length + ")</span></h3>" + table(fresh) + "</div>" +
+      '<div class="aic-opp-group"><h3 class="aic-opp-h">✅ Already Owned <span>(' + owned.length + ")</span></h3>" + table(owned, "ตาราง Already Owned เลื่อนซ้ายขวาได้") + "</div>" +
+      '<div class="aic-opp-group"><h3 class="aic-opp-h">🔍 Potential New Opportunity <span>(' + fresh.length + ")</span></h3>" + table(fresh, "ตาราง Potential New Opportunity เลื่อนซ้ายขวาได้") + "</div>" +
       why(["บริษัทที่ถืออยู่แสดงก่อน (แม้กลุ่มจะเริ่มหมุนออก จะได้ทบทวน) แล้วตามด้วยโอกาสใหม่", "Opportunity = quality + momentum − hype − valuation (สูตรเดียวกับ AI Boom Universe) แปลงเป็น 0-100"]));
   }
 
@@ -388,5 +422,6 @@
     window.addEventListener("portfolio-holdings-updated", render);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-  window.AICyclePage = { render: render };
+  // tones: ตัวแปลงสถานะ → สีการ์ดแก้ว (ให้เทสต์ scripts/ai-cycle-glass-test.js ตรวจ map ได้ตรง ๆ)
+  window.AICyclePage = { render: render, tones: { conf: confTone, dir: dirTone, grade: gradeTone, level: levelTone, align: alignTone, rotation: rotationTone } };
 })();

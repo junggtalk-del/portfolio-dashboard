@@ -1,7 +1,59 @@
-/* Asset 360 per-ticker page — builds on mission-control.css tokens */
-.asset-360 { display: flex; flex-direction: column; gap: 20px; }
+/* ==========================================================================
+   Asset 360 per-ticker page — builds on mission-control.css tokens
+   Glass cards (glass-cards.css gc-2, loaded before this file): every card on #asset360 is a .gc-card with ONE
+   tone from a status the page already computes (asset-page.js GC_* maps: signal state · Signal Score grade ·
+   daily change · Thesis Score · EMA / SMA200 / RSI / volume · stale data) — no status → gc-neutral.
+   The hero and the Technical Indicators heading sit on the page (theme colours); their tiles are glass.
+   Outside a card the --mc-* text tokens follow the theme (--app-*); inside a card they become glass ink
+   (--gc-ink / --gc-ink-2) — token map below. Status colours on the glass are lifted to luminance >= 0.70
+   (>= 4.5:1 on every tone). Candle / volume / EMA colours of the chart keep their meaning.
+   ========================================================================== */
+.asset-360 {
+  display: flex; flex-direction: column; gap: 20px;
+  /* on the page (outside a card) text follows the theme — --mc-muted (#64748b) is under 4.5:1 on both page backgrounds */
+  --mc-text: var(--app-text); --mc-text-2: var(--app-text-2); --mc-muted: var(--app-text-2); --mc-faint: var(--app-text-2);
+}
 
+/* -------------------------------------------------- glass (glass-cards.css) */
+/* inside a glass card the shared tokens become glass ink (both themes) · status colours lifted for the glass ·
+   the site tokens are remapped too: the thesis panel's inline styles and the shared chips (signal-state-chip,
+   ts-chip, sq-card) read them */
+.asset-360 .gc-card {
+  --mc-text: var(--gc-ink);
+  --mc-text-2: var(--gc-ink);
+  --mc-muted: var(--gc-ink-2);
+  --mc-faint: var(--gc-ink-2);
+  --mc-border: var(--gc-line);
+  --mc-border-active: var(--gc-rim);
+  --mc-card: var(--gc-well);
+  --mc-elevated: var(--gc-well);
+  --mc-cyan: #a5f3fc;
+  --mc-emerald: #7cf5c6;
+  --mc-red: #ffcfdb;
+  --mc-amber: #ffd98a;
+  --app-text: var(--gc-ink);
+  --app-text-2: var(--gc-ink-2);
+  --app-muted: var(--gc-ink-2);
+  --app-border: var(--gc-line);
+  --app-card: #14141c;
+  --app-up: #7cf5c6;
+  --app-down: #ffcfdb;
+  --app-warn: #ffd98a;
+  --app-info: #bfe6ff;
+}
+/* the old surfaces under a glass card (blur, cyan mc-glow layer, white light-theme face of .mc-metric) are switched
+   off by mission-control.css itself (.mc-card.gc-card · .mc-glow.gc-card::before · .mc-metric:not(.gc-card)) */
+/* #a360Load keeps mc-btn mc-btn-primary: their hover lift + cyan glow (0,2,0) beat gc-btn — same fix as /home */
+.asset-360 .mc-btn.gc-btn:hover { transform: none; box-shadow: inset 0 0 0 1px var(--gc-btn-rim, var(--app-muted)); }
+
+/* -------------------------------------------------- hero (on the page) + its four glass tiles */
+.asset-360 .mc-page-hero { padding: 2px 2px 0; border: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; }
+html[data-theme="light"] .asset-360 .mc-page-hero { background: none; }
+.asset-360 .mc-page-hero::after { content: none; }
+.asset-360 .mc-page-hero .mc-eyebrow { color: var(--app-text-2); }
 .a360-hero-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.asset-360 .mc-metric .mc-value { margin: 4px 0 0; line-height: 1.15; overflow-wrap: anywhere; }
+.asset-360 .mc-metric .mc-value.gc-num { font-weight: 700; white-space: normal; }
 .a360-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .a360-tag {
   font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
@@ -9,7 +61,14 @@
   background: color-mix(in srgb, var(--mc-card), var(--mc-cyan) 14%);
   border: 1px solid color-mix(in srgb, var(--mc-border), var(--mc-cyan) 40%);
 }
+.asset-360 .gc-card .a360-tag { color: var(--gc-ink); background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.16); }
+/* hero tags sit on the light page: cyan text is ~2:1 there — theme text, cyan tint + rim kept */
+html[data-theme="light"] .asset-360 .mc-page-hero .a360-tag { color: var(--app-text-2); }
 
+/* -------------------------------------------------- panels */
+.asset-360 .mc-panel-head { flex-wrap: wrap; }
+/* a panel whose cells are glass tiles: the wrapper sits on the page (keeps its classes, loses the card face) */
+.asset-360 .mc-card.a360-tiles { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .a360-main-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 16px; align-items: start; }
 
 /* chart */
@@ -19,49 +78,55 @@
 .a360-ylabel { position: absolute; right: 2px; transform: translateY(-50%); font-size: 10px; color: var(--mc-muted); pointer-events: none; font-variant-numeric: tabular-nums; }
 .a360-srlabel { position: absolute; left: 4px; transform: translateY(-118%); font-size: 9.5px; font-weight: 700; pointer-events: none; }
 .a360-xlabel { position: absolute; bottom: 0; transform: translateX(-50%); font-size: 9px; color: var(--mc-faint); pointer-events: none; white-space: nowrap; }
-.a360-range { display: flex; gap: 4px; flex-wrap: wrap; }
-.a360-range button {
-  background: transparent; border: 1px solid var(--mc-border); color: var(--mc-muted);
-  border-radius: 8px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: inherit;
-}
-.a360-range button.is-active { color: var(--mc-text); border-color: var(--mc-border-active); background: rgba(34, 211, 238, 0.1); }
+/* range = gc-btn gc-btn-ghost pills · the selected one (is-active) takes the white gc-btn face */
+.a360-range { display: flex; gap: 6px; flex-wrap: wrap; }
+.asset-360 .a360-range .gc-btn { padding: 6px 12px; font-size: 12px; }
+.asset-360 .a360-range .gc-btn.is-active { background: #fff; box-shadow: none; color: #0b0b12; font-weight: 700; }
 .a360-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 11.5px; color: var(--mc-muted); }
 .a360-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .a360-legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
 
-/* indicator grid */
+/* cells: inside a glass card .a360-ind is a dark well (mission-control.css face through the token map);
+   in Technical Indicators each cell is itself a glass tile (gc-card gc-tile) */
 .a360-ind-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-.a360-ind { background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 14px; padding: 14px; }
 .a360-ind h4 { margin: 0 0 8px; font-size: 12px; color: var(--mc-text-2); font-weight: 600; }
-.a360-ind .a360-big { font-size: 20px; font-weight: 800; }
+.a360-ind .a360-big { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .a360-ind .a360-sub { font-size: 11.5px; color: var(--mc-muted); margin-top: 2px; }
-.a360-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
+.asset-360 .a360-ind.gc-tile h4 { margin: 0 0 2px; }
+.a360-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 3px 0; }
 .a360-row span { color: var(--mc-muted); }
-.a360-row strong { color: var(--mc-text); }
+.a360-row strong { color: var(--mc-text); font-variant-numeric: tabular-nums; }
 
-/* support / resistance */
+/* support / resistance (renderer kept; not on the page today) */
 .a360-sr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .a360-sr { background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 14px; padding: 14px; }
 .a360-sr.is-support { border-color: color-mix(in srgb, var(--mc-border), var(--mc-emerald) 35%); }
 .a360-sr.is-resistance { border-color: color-mix(in srgb, var(--mc-border), var(--mc-red) 35%); }
 .a360-sr h4 { margin: 0 0 6px; font-size: 12px; color: var(--mc-text-2); }
-.a360-sr .a360-level { font-size: 22px; font-weight: 800; }
+.a360-sr .a360-level { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .a360-sr .a360-dist { font-size: 12px; }
 .a360-sr-list { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
 .a360-sr-list .a360-row small { color: var(--mc-faint); font-size: 10.5px; }
 .a360-disclaimer { font-size: 11px; color: var(--mc-faint); margin-top: 10px; }
 
-/* tables */
-.a360-table { width: 100%; border-collapse: collapse; }
-.a360-table th { text-align: left; font-size: 11px; color: var(--mc-muted); font-weight: 600; padding: 8px 6px; border-bottom: 1px solid var(--mc-border); }
-.a360-table td { font-size: 12.5px; padding: 9px 6px; border-bottom: 1px solid var(--mc-border); }
-.a360-table tr:last-child td { border-bottom: 0; }
-.a360-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* Signal History: .a360-table is a gc-table inside a gc-table-wrap (rules in glass-cards.css) · dates never break */
+.asset-360 .a360-table td:first-child { white-space: nowrap; }
 
 .a360-reasons { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .a360-reasons li { font-size: 12.5px; color: var(--mc-text-2); padding-left: 16px; position: relative; }
 .a360-reasons li::before { content: "▸"; position: absolute; left: 0; color: var(--mc-cyan); }
 .a360-conflict { font-size: 12px; color: var(--mc-amber); background: color-mix(in srgb, var(--mc-card), var(--mc-amber) 14%); border-radius: 8px; padding: 7px 10px; margin-top: 6px; }
+
+/* shared chips / Signal Quality card on the glass: the band colour stays on the tint, rim, ring and bars;
+   text sitting on the glass turns white or lifted so it keeps 4.5:1 on every tone */
+.asset-360 .gc-card .ts-chip { color: #fff; }
+.asset-360 .gc-card .sq-ring::before { background: #15151d; }
+.asset-360 .gc-card .sq-ring-num,
+.asset-360 .gc-card .sq-card-label,
+.asset-360 .gc-card .sq-action-banner strong { color: var(--gc-ink); }
+.asset-360 .gc-card .sq-gate-pass .sq-gate-status { color: #7cf5c6; }
+.asset-360 .gc-card .sq-gate-near .sq-gate-status { color: #ffd98a; }
+.asset-360 .gc-card .sq-gate-fail .sq-gate-status { color: #ffcfdb; }
 
 @media (max-width: 1100px) {
   .a360-hero-cards { grid-template-columns: repeat(2, 1fr); }

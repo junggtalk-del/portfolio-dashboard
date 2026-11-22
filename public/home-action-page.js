@@ -819,22 +819,22 @@
     var s = '<form class="ha-form" data-ha-form="' + id + '" novalidate>';
     if (f.mode === "edit") {
       s += '<div class="ha-form-row"><span>แก้คำตอบ · บันทึกใหม่เป็น <b>' + (done ? "ทำแล้ว" : "ไม่ทำ") + "</b></span>" +
-        '<button type="button" class="ha-b" data-ha-toggle="' + id + '">' + (done ? "เปลี่ยนเป็น ไม่ทำ" : "เปลี่ยนเป็น ทำแล้ว") + "</button></div>";
+        '<button type="button" class="ha-b gc-btn gc-btn-ghost" data-ha-toggle="' + id + '">' + (done ? "เปลี่ยนเป็น ไม่ทำ" : "เปลี่ยนเป็น ทำแล้ว") + "</button></div>";
     }
     if (done) {
-      s += '<label class="ha-field"><span>ราคาที่ทำ</span><input class="ha-in" name="execPrice" type="number" step="any" min="0" inputmode="decimal" autocomplete="off" value="' + esc(f.execPrice) + '"></label>';
+      s += '<label class="ha-field"><span>ราคาที่ทำ</span><input class="ha-in gc-field" name="execPrice" type="number" step="any" min="0" inputmode="decimal" autocomplete="off" value="' + esc(f.execPrice) + '"></label>';
       if (ev.side === "buy") {
         // Privacy Lock: จำนวนที่บันทึกไว้ไม่ลง HTML (privacy.js ซ่อนได้แค่ข้อความ ไม่ใช่ value ของช่องกรอก)
         var hide = amountHidden(f);
-        s += '<label class="ha-field is-wide"><span>เงินที่ซื้อ ฿</span><input class="ha-in" name="amount" type="number" step="any" min="0" inputmode="decimal" autocomplete="off" placeholder="' +
+        s += '<label class="ha-field is-wide"><span>เงินที่ซื้อ ฿</span><input class="ha-in gc-field" name="amount" type="number" step="any" min="0" inputmode="decimal" autocomplete="off" placeholder="' +
           (hide ? "ล็อกอยู่ — ใส่ใหม่ได้ถ้าต้องการ" : "เงินที่ซื้อ (บาท ใส่หรือไม่ก็ได้)") + '" value="' + (hide ? "" : esc(f.amount)) + '"></label>';
       }
     } else {
       s += '<span class="ha-form-note">บันทึกว่าไม่ได้ทำตามสัญญาณนี้ ไม่ต้องกรอกราคา</span>';
     }
     if (f.error) s += '<span class="ha-form-err" role="status">' + esc(f.error) + "</span>";
-    return s + '<span class="ha-btns"><button type="button" class="ha-b is-done" data-ha-confirm="' + id + '"' + dis() + ">บันทึก</button>" +
-      '<button type="button" class="ha-b" data-ha-cancel="' + id + '">ยกเลิก</button></span></form>';
+    return s + '<span class="ha-btns"><button type="button" class="ha-b is-done gc-btn" data-ha-confirm="' + id + '"' + dis() + ">บันทึก</button>" +
+      '<button type="button" class="ha-b gc-btn gc-btn-ghost" data-ha-cancel="' + id + '">ยกเลิก</button></span></form>';
   }
   function itemLineHtml(it) {
     var HA = HAE(), ev = it.event, id = HA.entryIdOf(ev);
@@ -843,11 +843,11 @@
     if (it.entry) {
       what = esc((HA.kindThai(ev.kind) || "สัญญาณกฎ " + ev.rule) + " · สัญญาณ " + ev.date) +
         ' · <b class="ha-ans">' + esc(answerText(it.entry)) + "</b>";
-      btns = '<button type="button" class="ha-b" data-ha-edit="' + esc(id) + '"' + dis() + ">แก้</button>";
+      btns = '<button type="button" class="ha-b gc-btn gc-btn-ghost" data-ha-edit="' + esc(id) + '"' + dis() + ">แก้</button>";
     } else {
       what = esc(eventText(ev, it.vis));
-      btns = '<button type="button" class="ha-b is-done" data-ha-done="' + esc(id) + '"' + dis() + ">ทำแล้ว</button>" +
-        '<button type="button" class="ha-b" data-ha-skip="' + esc(id) + '"' + dis() + ">ไม่ทำ</button>";
+      btns = '<button type="button" class="ha-b is-done gc-btn" data-ha-done="' + esc(id) + '"' + dis() + ">ทำแล้ว</button>" +
+        '<button type="button" class="ha-b gc-btn gc-btn-ghost" data-ha-skip="' + esc(id) + '"' + dis() + ">ไม่ทำ</button>";
     }
     // ฟอร์มกางอยู่ → ซ่อนปุ่มของบรรทัด (กดยกเลิกแล้วกลับมา) · บรรทัดที่ติ๊กแล้วไม่จางระหว่างแก้
     return '<div class="ha-rule' + (it.entry ? " is-answered" : "") + (f ? " is-editing" : "") + '" data-ha-rule="' + esc(ev.rule) + '">' +
@@ -906,7 +906,7 @@
     function tile(name, label, inner) {
       return '<div class="ha-kpi" data-ha-kpi="' + name + '"><span class="ha-kpi-k">' + esc(label) + "</span>" + inner + "</div>";
     }
-    function times(n) { return '<b class="ha-kpi-n">' + n + " ครั้ง</b>"; }
+    function times(n) { return '<b class="ha-kpi-n gc-num">' + n + " ครั้ง</b>"; }
     function line(text, dim) { return '<span class="ha-kpi-v' + (dim ? " is-dim" : "") + '">' + esc(text) + "</span>"; }
     function group(acc, total, avgLead, grp) {
       if (!acc.n) return times(total) + line(total ? "ยังไม่มีผล " + h + " วัน" : "—", true);
@@ -977,7 +977,7 @@
       '<td class="is-num">' + pctCell(row.status7, row.pct7, 7, row.date, today, loading) + "</td>" +
       '<td class="is-num">' + pctCell(row.status30, row.pct30, 30, row.date, today, loading) + "</td>" +
       '<td class="is-impact"><span class="ha-hist-imp">' + impactCell(row, entry, h, loading) + "</span>" +
-      '<button type="button" class="ha-b" data-ha-edit="' + esc(id) + '" data-ha-at="hist"' + dis() + ">แก้</button></td></tr>";
+      '<button type="button" class="ha-b gc-btn gc-btn-ghost" data-ha-edit="' + esc(id) + '" data-ha-at="hist"' + dis() + ">แก้</button></td></tr>";
     // ฟอร์มแก้ของแถวนี้ (ฟอร์มเดียวกับในการ์ด · handler เดียวกัน) กางเป็นแถวของตัวเองใต้แถว
     var f = state.form;
     if (f && f.id === id && formWhere() === "hist") {
@@ -1010,7 +1010,8 @@
     if (!sum.rows.length) {
       s += '<div class="ha-empty">ยังไม่มีสัญญาณที่บันทึกไว้ใน ' + HA.SUMMARY_DAYS + " วันหลังสุด</div>";
     } else {
-      s += '<div class="ha-histwrap"><table class="ha-hist"><thead><tr>' +
+      // ตารางบนแก้ว (gc-table) · กล่องเลื่อนซ้ายขวาเองได้ด้วยคีย์บอร์ด (tabindex + role region + aria-label ไม่มีเงิน)
+      s += '<div class="ha-histwrap gc-table-wrap" tabindex="0" role="region" aria-label="ประวัติสัญญาณ เลื่อนซ้ายขวาได้"><table class="ha-hist gc-table"><thead><tr>' +
         '<th scope="col">วันที่</th><th scope="col">หุ้น</th><th scope="col">กฎ</th><th scope="col">action</th><th scope="col">ตอบ</th>' +
         '<th scope="col" class="is-num">ราคาสัญญาณ</th><th scope="col" class="is-num">7 วัน</th><th scope="col" class="is-num">30 วัน</th>' +
         '<th scope="col">ผลต่อพอร์ต (' + h + " วัน)</th></tr></thead><tbody>";
@@ -1062,7 +1063,7 @@
     var body = "";
     if (state.docState === "error") {
       body += '<div class="ha-docerr" role="alert"><span>' + esc("ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ จึงยังติ๊กไม่ได้ — " + (state.docError || "ไม่ทราบสาเหตุ")) +
-        '</span><button type="button" class="mc-btn ha-btn" data-ha-docretry="1"' + (state.loading ? " disabled" : "") + ">ลองใหม่</button></div>";
+        '</span><button type="button" class="mc-btn ha-btn gc-btn" data-ha-docretry="1"' + (state.loading ? " disabled" : "") + ">ลองใหม่</button></div>";
     }
     if (state.syncNote) body += '<p class="ha-sync" role="status">' + esc(state.syncNote + (state.syncReason ? " · " + state.syncReason : "")) + "</p>";
     if (state.actionError) body += '<p class="ha-sync is-err" role="status">' + esc(state.actionError) + "</p>";
@@ -1091,10 +1092,11 @@
       ? '<span class="ha-count">รอติ๊ก <b>' + pending + "</b> รายการ" + (answered ? " · ติ๊กแล้ว " + answered : "") + "</span>"
       : "";
     var when = state.loading ? "กำลังดึงราคา…" : (state.loadedAt ? "คิดเมื่อ " + state.loadedAt.replace("T", " ") + " น. (เวลากรุงเทพ)" : "");
-    return '<section class="ha-box mc-fade" aria-labelledby="haTitle">' +
+    // การ์ดแก้ว (glass-cards.css): กล่องไม่มีสถานะของตัวเอง (ซื้อ/ขายปนกันต่อหุ้น) → gc-neutral · การ์ดหุ้นข้างในเป็นช่อง ไม่ซ้อนแก้ว
+    return '<section class="ha-box gc-card gc-neutral mc-fade" aria-labelledby="haTitle">' +
       '<div class="ha-head"><div class="ha-head-main"><h2 id="haTitle" class="ha-title">ต้องทำอะไรวันนี้</h2>' + count + "</div>" +
       '<div class="ha-tools"><span class="ha-when" role="status">' + esc(when) + "</span>" +
-      '<button type="button" class="mc-btn ha-btn" data-ha-refresh="1"' + (state.loading ? " disabled" : "") + ">ดึงราคาใหม่</button></div></div>" +
+      '<button type="button" class="mc-btn ha-btn gc-btn" data-ha-refresh="1"' + (state.loading ? " disabled" : "") + ">ดึงราคาใหม่</button></div></div>" +
       '<p class="ha-sub">ตามกฎที่คุณตั้งไว้ (EMA12/26 · SMA200 · ย่อ ≥' + depth + "%) ไม่ใช่คำแนะนำการลงทุน · แสดงเฉพาะสัญญาณใน " + days + " วันหลังสุด</p>" +
       body +
       '<p class="ha-foot">กฎชุดเดียวกับ Decision Journal (' + esc(E.RULES_VERSION) + ") · ราคาปิดของแท่งที่ปิดตลาดแล้ว · " +

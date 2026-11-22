@@ -339,7 +339,7 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
   // pm-foreign-sleeve Task 3: bump หน้า position (pp-14) + หน้าการ์ด (ac-2) · เอนจินการ์ด ไม่ได้แก้ คงเดิม
   //   final fix wave: หน้า position pp-15 (บรรทัดที่มาของผลตอบแทน) · CSS pp-14 (.pp-src)
   //   editor-follows-pm Task 1: หน้า position pp-16 (ผลตอบแทนจากเอกสารที่แปลงแล้ว · เอาหมายเหตุที่มาออก)
-  t("portfolio.html: acRoot sits between ppRoot and aaRoot · scripts engine→page after position-page · page pp-16 / card page ac-2 (engine ac-1) · css pp-14", HTML.indexOf('id="acRoot"') > HTML.indexOf('id="ppRoot"') && HTML.indexOf('id="acRoot"') < HTML.indexOf('id="aaRoot"') && /allocation-card-engine\.js\?v=20261107-ac-1"[\s\S]*allocation-card-page\.js\?v=20261109-ac-2"/.test(HTML) && HTML.indexOf("portfolio-position-page.js") < HTML.indexOf("allocation-card-engine.js") && /portfolio-position\.css\?v=20261109-pp-14"/.test(HTML) && /portfolio-position-page\.js\?v=20261109-pp-16"/.test(HTML));
+  t("portfolio.html: acRoot sits between ppRoot and aaRoot · scripts engine→page after position-page · page pp-17 / card page ac-3 (engine ac-1) · css pp-15 (glass cards)", HTML.indexOf('id="acRoot"') > HTML.indexOf('id="ppRoot"') && HTML.indexOf('id="acRoot"') < HTML.indexOf('id="aaRoot"') && /allocation-card-engine\.js\?v=20261107-ac-1"[\s\S]*allocation-card-page\.js\?v=20261122-ac-3"/.test(HTML) && HTML.indexOf("portfolio-position-page.js") < HTML.indexOf("allocation-card-engine.js") && /portfolio-position\.css\?v=20261122-pp-15"/.test(HTML) && /portfolio-position-page\.js\?v=20261122-pp-17"/.test(HTML));
   await flush(80);
   t("position page exposes last {R,data} and dispatched portfolio-position-rendered", !!W.PortfolioPositionPage.last && W.PortfolioPositionPage.last.R.available === true && dispatched.some(function (e) { return e.type === "portfolio-position-rendered"; }));
   t("card rendered from the same R: title + wealth equals the hero's ความมั่งคั่งรวม", /<h2 class="ac-title">Asset allocation<\/h2>/.test(html()) && /ความมั่งคั่งรวม ฿25\.0 ล้าน · 2026-Q3/.test(html()) && ppHtml().indexOf("25,000,000") >= 0);
@@ -657,7 +657,7 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
   var PM_SNAP = snapOf(FIX_PM, PM_HOLD), PM_SNAP_JSON = JSON.stringify(PM_SNAP);
   var PMI = boot({ fixture: FIX_PM, snapshot: PM_SNAP, extra: ["asset-allocation-engine.js"] }); await flush(80);
   function ppOf(I) { return I.els.ppRoot ? I.els.ppRoot.innerHTML : ""; }
-  function heroTotal(I) { var m = /<div class="pp-stat-n">(฿[0-9,]+)<\/div><div class="pp-stat-l">ความมั่งคั่งรวม/.exec(ppOf(I)); return m ? m[1] : null; }
+  function heroTotal(I) { var m = /<div class="pp-stat-n[^"]*">(฿[0-9,]+)<\/div><div class="pp-stat-l">ความมั่งคั่งรวม/.exec(ppOf(I)); return m ? m[1] : null; }
   function srcLabels(I) { return (ppOf(I).match(/data-pp-src="pm"/g) || []).length; }
   function footOf(I) { return (/<p class="ac-foot">([^<]*)<\/p>/.exec(I.html()) || ["", ""])[1]; }
   function subOf(I) { return (/<p class="ac-sub">([^<]*)<\/p>/.exec(I.html()) || ["", ""])[1]; }
@@ -720,7 +720,7 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
   function growSrcCount(I) { return (ppOf(I).match(/data-pp-grow-src/g) || []).length; }
   t("pm: no Editor-source note under the growth lines (ผลตอบแทนคิดจาก Quarterly Editor removed) · growth block sits right in the ความมั่งคั่งรวม stat",
     growSrcCount(PMI) === 0 && ppOf(PMI).indexOf("ผลตอบแทนคิดจาก Quarterly Editor") < 0 && ppOf(PMI).indexOf("หุ้นต่างประเทศใน Editor เป็นค่าที่กรอกเอง") < 0 &&
-    /<div class="pp-stat-l">ความมั่งคั่งรวม<\/div><div class="pp-grow">[\s\S]*?<\/div><\/div><div class="pp-stat">/.test(ppOf(PMI)),
+    /<div class="pp-stat-l">ความมั่งคั่งรวม<\/div><div class="pp-grow">[\s\S]*?<\/div><\/div><div class="pp-stat[ "]/.test(ppOf(PMI)),
     (/ความมั่งคั่งรวม<\/div>[\s\S]{0,120}/.exec(ppOf(PMI)) || [""])[0]);
   // บันทึกกรอบเงินสดจากการ์ด → GET สด → PUT เอกสารของ server (แถว Editor เดิม · ไม่มีแถวสังเคราะห์) + คง foreignSleeve
   PMI.click("data-ac-settings", "1"); PMI.setValue("min", "1"); PMI.setValue("max", "3"); PMI.click("data-ac-save", "1"); await flush(60);

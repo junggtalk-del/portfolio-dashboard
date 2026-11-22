@@ -509,16 +509,22 @@
   }
 
   // ---------------- ชิ้นส่วน UI ----------------
+  // การ์ดแก้ว (glass-cards.css gc-2): สีการ์ด = สถานะที่หน้านี้คิดอยู่แล้วเท่านั้น · ไม่มีสถานะ → gc-neutral
+  //   การ์ด "รอตรวจ" ที่มีรายการรอตรวจ (dr-stat--alert)                      → gc-warning
+  //   แถบเตือนข้อมูล dr-warn (ดึงไม่สำเร็จ · ไม่สด · สแกนไม่ครบ · เก็บไม่ได้)    → gc-warning
+  //   แท็บ Port อ่าน AI Portfolio Manager ไม่สำเร็จ (dr-pm-error)              → gc-danger
+  //   การ์ดสรุปอื่น · แถบกรอง · ตาราง · การ์ดว่าง · บันทึกครั้งแรก · วิธีอ่าน    → gc-neutral
+  // สีของป้ายในแถว (ใหม่ · รอตรวจ · มีตัวหาย · ในพอร์ต · ลงจาก ATH) อยู่ที่ชิป/ตัวเลข ไม่ใช่ทั้งการ์ด
   function summaryBlock() {
     var s = state.view.summary;
     // การ์ดธรรมดา: label + ตัวเลข + คำอธิบาย + ไอคอนในกล่องสี
     function card(label, value, hint, iconPath, tileCls, cardCls, extra) {
-      return '<div class="dr-stat' + (cardCls ? " " + cardCls : "") + '">' +
+      return '<div class="gc-card gc-neutral dr-stat' + (cardCls ? " " + cardCls : "") + '">' +
         '<div class="dr-stat__top">' +
         '<span class="dr-stat__label">' + esc(label) + "</span>" +
         '<span class="dr-tile' + (tileCls ? " " + tileCls : "") + '">' + ico(iconPath) + "</span>" +
         "</div>" +
-        '<span class="dr-stat__value">' + esc(value) + (extra || "") + "</span>" +
+        '<span class="gc-num dr-stat__value">' + esc(value) + (extra || "") + "</span>" +
         (hint ? '<span class="dr-stat__hint">' + esc(hint) + "</span>" : "");
     }
 
@@ -526,12 +532,12 @@
     var geos = E().groupCounts(state.view.assets, "geography");
     var topGeo = geos.length ? geos[0] : null;
     var pctTop = topGeo && s.totalAssets ? (topGeo.count / s.totalAssets * 100) : 0;
-    var hero = '<div class="dr-stat dr-stat--hero">' +
+    var hero = '<div class="gc-card gc-neutral dr-stat dr-stat--hero">' +
       '<div class="dr-stat__top">' +
       '<span class="dr-stat__label">DR ที่จดทะเบียนทั้งหมด</span>' +
       '<span class="dr-tile">' + ico(ICON.layers) + "</span>" +
       "</div>" +
-      '<span class="dr-stat__value">' + num(s.totalDrListings) + "</span>" +
+      '<span class="gc-num dr-stat__value">' + num(s.totalDrListings) + "</span>" +
       (topGeo
         ? '<div class="dr-split"><span style="width:' + pctTop.toFixed(1) + '%"></span></div>'
         : "") +
@@ -549,15 +555,15 @@
         s.missing ? "ไม่พบในการสแกนที่ครบ — ไม่ได้แปลว่าเพิกถอน" : "สแกนครบ ไม่พบการถอน",
         ICON.minus, "dr-tile--muted") + "</div>" +
       // การ์ด "รอตรวจ" มีปุ่มพาไปกรองทันที — ระดับ "ต้องทำ" ตาม highlight ladder
-      '<div class="dr-stat' + (s.needsReview ? " dr-stat--alert" : "") + '">' +
+      '<div class="gc-card ' + (s.needsReview ? "gc-warning dr-stat dr-stat--alert" : "gc-neutral dr-stat") + '">' +
       '<div class="dr-stat__top">' +
       '<span class="dr-stat__label">รอตรวจ</span>' +
       '<span class="dr-tile dr-tile--warning">' + ico(ICON.alert) + "</span>" +
       "</div>" +
-      '<span class="dr-stat__value">' + num(s.needsReview) + "</span>" +
+      '<span class="gc-num dr-stat__value">' + num(s.needsReview) + "</span>" +
       '<span class="dr-stat__hint">จัดประเภทไม่ได้จากข้อมูลทางการ</span>' +
       (s.needsReview
-        ? '<button type="button" class="dr-stat__cta" data-dr-goreview="1">ตรวจเลย ' +
+        ? '<button type="button" class="dr-stat__cta gc-btn gc-btn-ghost" data-dr-goreview="1">ตรวจเลย ' +
           ico(ICON.chevron) + "</button>"
         : "") +
       "</div>" +
@@ -570,26 +576,26 @@
     var m = state.meta || {};
     var out = "";
     if (state.error) {
-      out += '<div class="dr-warn">' + ico(ICON.alert) + "<div><b>ดึงข้อมูลไม่สำเร็จ</b> — " + esc(state.error) +
+      out += '<div class="dr-warn gc-card gc-warning">' + ico(ICON.alert) + "<div><b>ดึงข้อมูลไม่สำเร็จ</b> — " + esc(state.error) +
         (state.rows && state.rows.length
           ? "<br>กำลังแสดงรายการที่เก็บไว้ล่าสุด และ<b>ไม่ได้</b>อัปเดตสถานะใด ๆ"
           : "") + "</div></div>";
     } else if (m.degraded) {
-      out += '<div class="dr-warn">' + ico(ICON.alert) +
+      out += '<div class="dr-warn gc-card gc-warning">' + ico(ICON.alert) +
         "<div><b>ข้อมูลไม่สด</b> — " + esc(m.reason || "") + "</div></div>";
     }
     if (m.complete === false && !state.error) {
-      out += '<div class="dr-warn">' + ico(ICON.alert) +
+      out += '<div class="dr-warn gc-card gc-warning">' + ico(ICON.alert) +
         "<div>รอบนี้ไม่ใช่การสแกนที่ครบทั้งทะเบียน — จะไม่ตัดสินว่า DR ตัวใดหายไป</div></div>";
     }
     if (state.syncResult && state.syncResult.isBaseline && state.syncResult.applied) {
-      out += '<div class="dr-note-block">' + ico(ICON.info) +
+      out += '<div class="dr-note-block gc-card gc-neutral">' + ico(ICON.info) +
         "<div><b>นี่คือการบันทึกครั้งแรก</b> — รายการทั้งหมดถือเป็น <b>ฐานตั้งต้น</b> " +
         "ไม่ใช่ของที่เพิ่งออกใหม่ · ตัวเลข “จดทะเบียนใหม่” นับจากวันจดทะเบียนจริงของ SET " +
         "ไม่ใช่วันที่ระบบเห็นครั้งแรก</div></div>";
     }
     if (state.storageNote) {
-      out += '<div class="dr-warn">' + ico(ICON.alert) + "<div>" + esc(state.storageNote) + "</div></div>";
+      out += '<div class="dr-warn gc-card gc-warning">' + ico(ICON.alert) + "<div>" + esc(state.storageNote) + "</div></div>";
     }
     return out;
   }
@@ -598,13 +604,13 @@
     var f = state.filters;
     var geos = E().groupCounts(state.view.assets, "geography");
     var types = E().groupCounts(state.view.assets, "instrumentType");
-    var g = '<select class="dr-select" data-dr-f="geo"><option value="">ทุกตลาด</option>';
+    var g = '<select class="dr-select gc-field" data-dr-f="geo"><option value="">ทุกตลาด</option>';
     for (var i = 0; i < geos.length; i++) {
       g += '<option value="' + esc(geos[i].key) + '"' + (f.geo === geos[i].key ? " selected" : "") +
         ">" + esc(geos[i].key) + " (" + geos[i].count + ")</option>";
     }
     g += "</select>";
-    var t = '<select class="dr-select" data-dr-f="type"><option value="">ทุกประเภท</option>';
+    var t = '<select class="dr-select gc-field" data-dr-f="type"><option value="">ทุกประเภท</option>';
     for (var j = 0; j < types.length; j++) {
       t += '<option value="' + esc(types[j].key) + '"' + (f.type === types[j].key ? " selected" : "") +
         ">" + esc(E().TYPE_TH[types[j].key] || types[j].key) + " (" + types[j].count + ")</option>";
@@ -612,14 +618,14 @@
     t += "</select>";
     // กลุ่มอุตสาหกรรม
     var secs = E().groupCounts(state.view.assets, "sectorTh");
-    var sc = '<select class="dr-select" data-dr-f="sector"><option value="">ทุกกลุ่มธุรกิจ</option>';
+    var sc = '<select class="dr-select gc-field" data-dr-f="sector"><option value="">ทุกกลุ่มธุรกิจ</option>';
     for (var si = 0; si < secs.length; si++) {
       sc += '<option value="' + esc(secs[si].key) + '"' + (f.sector === secs[si].key ? " selected" : "") +
         ">" + esc(secs[si].key) + " (" + secs[si].count + ")</option>";
     }
     sc += "</select>";
 
-    var gr = '<select class="dr-select" data-dr-f="group">' +
+    var gr = '<select class="dr-select gc-field" data-dr-f="group">' +
       '<option value="none"' + (state.group === "none" ? " selected" : "") + ">ไม่จัดกลุ่ม</option>" +
       '<option value="sectorTh"' + (state.group === "sectorTh" ? " selected" : "") + ">จัดกลุ่มตามธุรกิจ</option>" +
       '<option value="geography"' + (state.group === "geography" ? " selected" : "") + ">จัดกลุ่มตามตลาด</option>" +
@@ -637,10 +643,10 @@
         esc(label) + ' <span class="dr-chip__count">' + count + "</span></button>";
     }
     // เรียงลำดับย้ายไปที่หัวคอลัมน์แล้ว (กดที่หัวตารางได้ทุกคอลัมน์)
-    return '<div class="dr-filterbar">' +
+    return '<div class="dr-filterbar gc-card gc-neutral">' +
       '<label class="dr-search">' +
       '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICON.search + "</svg>" +
-      '<input class="dr-input" type="search" data-dr-f="q" ' +
+      '<input class="dr-input gc-field" type="search" data-dr-f="q" ' +
       'placeholder="ค้นหา ชื่อ · สัญลักษณ์ · DR · ผู้ออก" value="' + esc(f.q) + '" /></label>' +
       g + t + sc + gr +
       '<span class="dr-filterbar__sep"></span>' +
@@ -670,11 +676,11 @@
       else if (!s || s.state === "error") need++;
     }
     if (run && run.running) {
-      return '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm" data-dr-loadstats="1">' +
+      return '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm gc-btn gc-btn-ghost" data-dr-loadstats="1">' +
         "หยุด (" + run.done + "/" + run.total + ")</button>";
     }
     if (need > 0) {
-      return '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm" data-dr-loadstats="1">' +
+      return '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm gc-btn gc-btn-ghost" data-dr-loadstats="1">' +
         ico(ICON.download) + "โหลดราคา " + need + " ตัว</button>";
     }
     if (have > 0) {
@@ -708,7 +714,7 @@
       if (Object.prototype.hasOwnProperty.call(state.ignored, kk) && state.ignored[kk]) ignCount++;
     }
     var ignBtn = ignCount
-      ? '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-toggleignored="1">' +
+      ? '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm gc-btn gc-btn-ghost" data-dr-toggleignored="1">' +
         (state.showIgnored ? "ซ่อนที่ไม่สนใจ (" + ignCount + ")" : "แสดงที่ไม่สนใจ (" + ignCount + ")") +
         "</button>"
       : "";
@@ -720,7 +726,7 @@
       "</span>" +
       '<span class="dr-results__right">' + ignBtn + priceBtn +
       (active.length
-        ? '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clearfilters="1">ล้างตัวกรอง</button>'
+        ? '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm gc-btn gc-btn-ghost" data-dr-clearfilters="1">ล้างตัวกรอง</button>'
         : "") +
       "</span></div>";
   }
@@ -748,10 +754,11 @@
   // เพราะเป็นตัวที่ราคาน่าเชื่อถือที่สุดในกลุ่ม — ตัวอื่นดูได้ในตารางข้างล่าง
   function kpiStrip(a, priced) {
     var q = state.quotes[a.canonicalKey];
+    // ตัวเลขจริง = gc-num (Inter 700 tabular) · ช่องที่ยังไม่มีค่า (dr-kpi--muted) เป็นข้อความไทย จึงไม่ใช้
     function box(label, value, cls) {
       return '<div class="dr-kpi' + (cls ? " " + cls : "") + '">' +
         '<div class="dr-kpi__label">' + esc(label) + "</div>" +
-        '<div class="dr-kpi__value">' + value + "</div></div>";
+        '<div class="dr-kpi__value' + (cls === "dr-kpi--muted" ? "" : " gc-num") + '">' + value + "</div></div>";
     }
     var unit = function (u) { return '<small>' + esc(u) + "</small>"; };
 
@@ -805,7 +812,7 @@
       var pos = Math.max(0, Math.min(100, 50 + (rep.premiumPct / 5) * 50));
       premBox = '<div class="dr-kpi dr-kpi--focus' + (neg ? " is-neg" : "") + '">' +
         '<div class="dr-kpi__label">ต่างจากทฤษฎี</div>' +
-        '<div class="dr-kpi__value">' + (rep.premiumPct > 0 ? "+" : "") +
+        '<div class="dr-kpi__value gc-num">' + (rep.premiumPct > 0 ? "+" : "") +
         rep.premiumPct.toFixed(2) + "%</div>" +
         '<div class="dr-gauge" style="color:var(--' + (neg ? "negative" : "positive") + ')">' +
         '<i style="left:' + pos.toFixed(1) + '%"></i></div></div>';
@@ -897,7 +904,7 @@
       kpiStrip(a, priced) +
       '<p class="dr-detail__title">DR ที่อ้างอิง ' + esc(a.underlyingSymbol || "—") +
       ' <span class="dr-count">' + a.drCount + "</span></p>" +
-      '<div class="dr-tablewrap"><table class="dr-table"><thead><tr>' +
+      '<div class="dr-tablewrap"><table class="dr-table gc-table"><thead><tr>' +
       "<th>DR</th><th>ผู้ออก</th>" +
       '<th class="dr-num-cell">อัตราแปลงสภาพ</th>' +
       '<th class="dr-num-cell">ราคาตามทฤษฎี</th><th class="dr-num-cell">ราคาตลาด</th>' +
@@ -911,7 +918,7 @@
       "<b>ไม่ใช่สัญญาณซื้อขาย</b></span></p>" +
       over +
       '<div class="dr-detail__foot">' + srcLink +
-      '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm" data-dr-edit="' +
+      '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm gc-btn gc-btn-ghost" data-dr-edit="' +
       esc(a.canonicalKey) + '">' + ico(ICON.edit) + "แก้ไขการจัดกลุ่ม</button>" +
       "</div>" + editForm(a) + "</div></td></tr>";
   }
@@ -921,23 +928,23 @@
     var o = state.overrides[a.canonicalKey] || {};
     var types = [E().TYPE.STOCK, E().TYPE.ETF_INDEX, E().TYPE.ETF_SECTOR, E().TYPE.ETF_BOND,
       E().TYPE.ETF_COMMODITY, E().TYPE.FUND_OTHER, E().TYPE.UNKNOWN];
-    var sel = '<select data-dr-ov="instrumentType"><option value="">— ใช้ค่าจากแหล่ง —</option>';
+    var sel = '<select class="gc-field" data-dr-ov="instrumentType"><option value="">— ใช้ค่าจากแหล่ง —</option>';
     for (var i = 0; i < types.length; i++) {
       sel += '<option value="' + esc(types[i]) + '"' +
         (o.instrumentType === types[i] ? " selected" : "") + ">" + esc(E().TYPE_TH[types[i]]) + "</option>";
     }
     sel += "</select>";
     return '<div class="dr-edit" data-dr-form="' + esc(a.canonicalKey) + '">' +
-      "<label>ชื่อที่ใช้แสดง <input type=\"text\" data-dr-ov=\"canonicalName\" value=\"" +
+      "<label>ชื่อที่ใช้แสดง <input class=\"gc-field\" type=\"text\" data-dr-ov=\"canonicalName\" value=\"" +
       esc(o.canonicalName || "") + '" placeholder="' + esc(a.sourceValues.canonicalName || "") + '" /></label>' +
-      "<label>ตลาด/ภูมิภาค <input type=\"text\" data-dr-ov=\"geography\" value=\"" +
+      "<label>ตลาด/ภูมิภาค <input class=\"gc-field\" type=\"text\" data-dr-ov=\"geography\" value=\"" +
       esc(o.geography || "") + '" placeholder="' + esc(a.sourceValues.geography) + '" /></label>' +
       "<label>ประเภท " + sel + "</label>" +
-      "<label>บันทึก <input type=\"text\" data-dr-ov=\"note\" value=\"" + esc(o.note || "") + '" /></label>' +
+      "<label>บันทึก <input class=\"gc-field\" type=\"text\" data-dr-ov=\"note\" value=\"" + esc(o.note || "") + '" /></label>' +
       '<div class="dr-edit-btns">' +
-      '<button type="button" class="dr-btn dr-btn--primary dr-btn--sm" data-dr-save="' + esc(a.canonicalKey) + '">บันทึก</button>' +
-      '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clear="' + esc(a.canonicalKey) + '">ล้างค่าที่แก้</button>' +
-      '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-cancel="1">ปิด</button>' +
+      '<button type="button" class="dr-btn dr-btn--primary dr-btn--sm gc-btn" data-dr-save="' + esc(a.canonicalKey) + '">บันทึก</button>' +
+      '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm gc-btn gc-btn-ghost" data-dr-clear="' + esc(a.canonicalKey) + '">ล้างค่าที่แก้</button>' +
+      '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm gc-btn gc-btn-ghost" data-dr-cancel="1">ปิด</button>' +
       "</div>" +
       '<div class="dr-edit-note">ค่าที่แก้จะไม่ถูกเขียนทับเมื่อโหลดข้อมูลใหม่ และข้อมูลต้นทางยังเก็บไว้ครบ</div>' +
       "</div>";
@@ -1271,28 +1278,28 @@
   function portBody() {
     var pm = state.pm;
     var rows = markedAssets(state.port);
-    var retry = '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm" data-dr-pmretry="1">' +
+    var retry = '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm gc-btn gc-btn-ghost" data-dr-pmretry="1">' +
       ico(ICON.refresh) + "อ่านจาก AI Portfolio Manager ใหม่</button>";
     var pmLink = '<a class="dr-pm-link" href="/portfolio-manager">เปิด AI Portfolio Manager</a>';
     if (pm.state === "error") {
-      return '<section class="dr-card dr-empty-tab dr-pm-error">' +
+      return '<section class="dr-card dr-empty-tab dr-pm-error gc-card gc-danger">' +
         "<h3>อ่านหุ้นจาก AI Portfolio Manager ไม่สำเร็จ</h3>" +
         "<p>" + esc(pm.error || "ไม่ทราบสาเหตุ") + " — แท็บนี้จึงยังไม่รู้ว่าพอร์ตมีหุ้นอะไร</p>" +
         '<p class="dr-pm-actions">' + retry + "</p></section>";
     }
     if (pm.state !== "ok") {
-      return '<section class="dr-card dr-empty-tab">' +
+      return '<section class="dr-card dr-empty-tab gc-card gc-neutral">' +
         "<h3>กำลังอ่านหุ้นจาก AI Portfolio Manager…</h3>" +
         "<p>แท็บนี้แสดง DR ของหุ้นที่ติดธงแดงในกลุ่มหุ้นต่างประเทศของ AI Portfolio Manager</p></section>";
     }
     if (!pm.holdings.length) {
-      return '<section class="dr-card dr-empty-tab">' +
+      return '<section class="dr-card dr-empty-tab gc-card gc-neutral">' +
         "<h3>ยังไม่มีหุ้นธงแดงในกลุ่มหุ้นต่างประเทศใน AI Portfolio Manager</h3>" +
         "<p>เพิ่มหรือติดธงแดงหุ้นที่ AI Portfolio Manager แล้วกลับมาโหลดใหม่ แท็บนี้จะตามให้เอง</p>" +
         '<p class="dr-pm-actions">' + pmLink + " " + retry + "</p></section>";
     }
     if (state.loading && !(state.view.assets || []).length) {
-      return '<section class="dr-card dr-empty-tab">' +
+      return '<section class="dr-card dr-empty-tab gc-card gc-neutral">' +
         "<h3>กำลังโหลดทะเบียน DR…</h3>" +
         "<p>ได้หุ้นจาก AI Portfolio Manager แล้ว " + pm.holdings.length + " ตัว รอทะเบียน DR เพื่อจับคู่</p></section>";
     }
@@ -1301,7 +1308,7 @@
       ? '<p class="dr-pm-unmatched">ไม่มี DR ไทยอ้างอิง <b>' + un.length + "</b> ตัว: " + esc(un.join(" · ")) + "</p>"
       : "";
     if (!rows.length) {
-      return '<section class="dr-card dr-empty-tab">' +
+      return '<section class="dr-card dr-empty-tab gc-card gc-neutral">' +
         "<h3>หุ้นใน AI Portfolio Manager " + pm.holdings.length + " ตัว ยังไม่มี DR ไทยอ้างอิงเลย</h3>" +
         unLine +
         '<p class="dr-pm-actions">' + pmLink + " " + retry + "</p></section>";
@@ -1336,7 +1343,7 @@
   function markedBody(map, label, verb) {
     var rows = markedAssets(map);
     if (!rows.length) {
-      return '<section class="dr-card dr-empty-tab">' +
+      return '<section class="dr-card dr-empty-tab gc-card gc-neutral">' +
         "<h3>ยังไม่ได้เลือกรายการเข้า " + esc(label) + "</h3>" +
         "<p>ไปที่แท็บ <b>DR ทั้งหมด</b> แล้วติ๊กช่อง <b>" + esc(label) +
         "</b> ท้ายแถวของตัวที่" + esc(verb) + " รายการจะมารวมกันที่นี่</p>" +
@@ -1346,7 +1353,7 @@
       rows.length + "</b> รายการ · ไม่ขึ้นกับตัวกรอง</span>" +
       // ปุ่มโหลดราคาต้องมีที่นี่ด้วย ไม่งั้นแท็บนี้เห็นราคาเป็น "—" แล้วกดอะไรไม่ได้
       priceButton(rows) +
-      '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm" data-dr-clearpicks="1">ล้างทั้งหมด</button>' +
+      '<button type="button" class="dr-btn dr-btn--ghost dr-btn--sm gc-btn gc-btn-ghost" data-dr-clearpicks="1">ล้างทั้งหมด</button>' +
       "</div>" + tableBlock(rows, true);
   }
 
@@ -1383,17 +1390,17 @@
   function emptyState() {
     var c = culpritFilter();
     if (!c) {
-      return '<div class="dr-empty"><strong>ไม่มีรายการที่ตรงกับตัวกรอง</strong>' +
+      return '<div class="dr-empty gc-card gc-neutral"><strong>ไม่มีรายการที่ตรงกับตัวกรอง</strong>' +
         "ลองล้างตัวกรองหรือเปลี่ยนคำค้น</div>";
     }
     var what = state.filters.q
       ? "คำค้น “" + esc(state.filters.q) + "”"
       : "รายการที่เหลือ";
-    return '<div class="dr-empty"><strong>ไม่มีรายการที่ตรงกับตัวกรอง</strong>' +
+    return '<div class="dr-empty gc-card gc-neutral"><strong>ไม่มีรายการที่ตรงกับตัวกรอง</strong>' +
       what + " มี <b>" + c.found + "</b> รายการอยู่ แต่ถูกตัดออกด้วยตัวกรอง <b>" +
       esc(c.label) + (c.value ? " = " + esc(c.value) : "") + "</b>" +
       '<div class="dr-empty-act">' +
-      '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm" data-dr-offfilter="' +
+      '<button type="button" class="dr-btn dr-btn--secondary dr-btn--sm gc-btn gc-btn-ghost" data-dr-offfilter="' +
       esc(c.key) + '">ปิดตัวกรอง ' + esc(c.label) + "</button>" +
       "</div></div>";
   }
@@ -1403,7 +1410,10 @@
     if (!list.length) {
       return emptyState();
     }
-    var head = '<div class="dr-card dr-tablewrap"><table class="dr-table"><thead><tr>' +
+    // การ์ดแก้วไม่เลื่อนเอง — gc-table-wrap ข้างในเลื่อนซ้ายขวา (tabindex ให้คีย์บอร์ดเลื่อนได้)
+    var head = '<div class="dr-card dr-tablewrap gc-card gc-neutral">' +
+      '<div class="gc-table-wrap" tabindex="0" aria-label="ตาราง DR (เลื่อนซ้าย-ขวาได้)">' +
+      '<table class="dr-table gc-table"><thead><tr>' +
       '<th style="width:40px"></th>' +
       th("สินทรัพย์อ้างอิง", "name") +
       th("ตลาด", "geo") + th("กลุ่มธุรกิจ", "sector") +
@@ -1420,7 +1430,7 @@
 
     // ตาราง Top pick ไม่จัดกลุ่ม — เป็นลิสต์สั้น ๆ ที่เลือกมาเองอยู่แล้ว
     if (isPick || state.group === "none") {
-      return head + assetRows(list) + "</tbody></table></div>";
+      return head + assetRows(list) + "</tbody></table></div></div>";
     }
     // จัดกลุ่ม
     var field = state.group;
@@ -1446,7 +1456,7 @@
         "<b>ไม่สนใจ</b> · " + ignoredList.length + " สินทรัพย์</td></tr>" +
         assetRows(ignoredList);
     }
-    return head + body + "</tbody></table></div>";
+    return head + body + "</tbody></table></div></div>";
   }
 
   // ---------------- render ----------------
@@ -1456,14 +1466,14 @@
 
     if (state.loading && !state.view) {
       root.innerHTML = headerBlock() +
-        '<div class="dr-body"><div class="dr-empty"><strong>กำลังดึงทะเบียน DR จาก SET…</strong></div></div>';
+        '<div class="dr-body"><div class="dr-empty gc-card gc-neutral"><strong>กำลังดึงทะเบียน DR จาก SET…</strong></div></div>';
       wire(root);
       return;
     }
     if (!state.view) {
       root.innerHTML = headerBlock() +
         '<div class="dr-body">' + freshnessBlock() +
-        '<div class="dr-empty"><strong>ยังไม่มีข้อมูล</strong>' +
+        '<div class="dr-empty gc-card gc-neutral"><strong>ยังไม่มีข้อมูล</strong>' +
         (state.error ? esc(state.error) : "") + "</div></div>";
       wire(root);
       return;
@@ -1534,18 +1544,18 @@
       '<div class="dr-hero__meta">' + metaBits + "</div>" +
       "</div>" +
       '<div class="dr-hero__actions">' +
-      '<button type="button" class="dr-btn dr-btn--primary" data-dr-reload="1">' +
+      '<button type="button" class="dr-btn dr-btn--primary gc-btn" data-dr-reload="1">' +
       ico(ICON.refresh) + (state.loading ? "กำลังโหลด…" : "โหลดใหม่") + "</button>" +
-      '<button type="button" class="dr-btn dr-btn--secondary" data-dr-export="1">' +
+      '<button type="button" class="dr-btn dr-btn--secondary gc-btn gc-btn-ghost" data-dr-export="1">' +
       ico(ICON.download) + "ส่งออก</button>" +
-      '<button type="button" class="dr-btn dr-btn--secondary" data-dr-import="1">' +
+      '<button type="button" class="dr-btn dr-btn--secondary gc-btn gc-btn-ghost" data-dr-import="1">' +
       ico(ICON.upload) + "นำเข้า</button>" +
       "</div></section>";
   }
 
   function footBlock() {
     var m = state.meta || {};
-    return '<div class="dr-foot"><h3>วิธีอ่านหน้านี้</h3>' +
+    return '<div class="dr-foot gc-card gc-neutral"><h3>วิธีอ่านหน้านี้</h3>' +
       "<p><b>วิธีอ่าน:</b> “DR ที่จดทะเบียน” คือจำนวนสัญลักษณ์ DR · " +
       "“สินทรัพย์อ้างอิง” คือจำนวนบริษัท/กองทุนที่ถูกอ้างถึง สองตัวนี้ไม่เท่ากันเพราะ" +
       "สินทรัพย์หนึ่งตัวมี DR ได้หลายตัวจากคนละผู้ออก</p>" +

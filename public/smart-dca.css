@@ -1,7 +1,14 @@
 /* ============================================================
-   Smart DCA — decision-tool page (compact, no poster).
-   Reuses mission-control theme tokens (--mc-*) so light/dark
-   themes both work. Namespace: .sdca-*
+   Smart DCA — decision-tool page (compact, no poster). Namespace: .sdca-*
+   Glass cards (glass-cards.css gc-2, loaded before this file): every card on the page
+   is a .gc-card with ONE tone taken from a status the page already computes
+   (smart-dca-page.js GC_ZONE_TONE · GC_OUTCOME_TONE · gcPnlTone; the rest gc-neutral).
+   This file lays the cards out and styles what sits ON the glass — it never paints a
+   card face, a gc-btn or a gc-field. Off the glass (page header, section heads, notes)
+   it keeps the mission-control / site theme tokens so light and dark both work.
+   Colour on the glass: text is glass ink (the --mc-* map below); zone colours ride on
+   non-text marks (dots, the current-row ring, chart lines/strip, legend) or under dark
+   ink (the ×N pills); up/down text is lifted to luminance >= 0.70 (as on /portfolio-manager).
    ============================================================ */
 :root {
   --sdca-chip-bg: rgba(148, 163, 184, 0.10);
@@ -12,79 +19,95 @@
 }
 [data-theme="light"] { --sdca-chip-bg: rgba(100, 116, 139, 0.08); --sdca-track: rgba(100, 116, 139, 0.18); }
 
+/* inside a glass card the shared --mc-* tokens (this file + mission-control.css .mc-empty) become glass ink — both themes */
+#sdcaRoot .gc-card {
+  --mc-text: var(--gc-ink);
+  --mc-text-2: var(--gc-ink);
+  --mc-muted: var(--gc-ink-2);
+  --mc-border: var(--gc-line);
+  --mc-border-active: var(--gc-rim-strong);
+  --mc-card: var(--gc-well);
+  --sdca-chip-bg: var(--gc-fill);
+  --sdca-track: rgba(255, 255, 255, 0.12);
+  --sdca-up: #7cf5c6;
+  --sdca-down: #ffcfdb;
+}
+/* cards whose content mixes text runs and inline tags stay block (gc-card is a flex column) */
+#sdcaRoot .mc-empty.gc-card { display: block; }
+
 .sdca-page { padding: 22px 26px 60px; max-width: 1100px; margin: 0 auto; color: var(--mc-text); }
 .sdca-page * { box-sizing: border-box; }
 .sdca-dim { color: var(--mc-muted); font-size: 11.5px; }
 .sdca-up { color: var(--sdca-up); }
 .sdca-down { color: var(--sdca-down); }
 
-/* -------------------------------------------------- §0 header */
+/* -------------------------------------------------- §0 header (on the page) */
 .sdca-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
 .sdca-title { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
 .sdca-sub { margin: 4px 0 0; color: var(--mc-text-2); font-size: 13px; }
-.sdca-btn { border: 1px solid var(--mc-border); background: var(--sdca-chip-bg); color: var(--mc-text); font-family: inherit; font-size: 12.5px; font-weight: 700; border-radius: 9px; padding: 8px 14px; cursor: pointer; }
-.sdca-btn:hover { border-color: var(--mc-border-active); }
-.sdca-btn:disabled { opacity: 0.6; cursor: wait; }
 
-/* fallback-mode banner */
-.sdca-banner { border: 1px solid var(--mc-border-warning, rgba(245, 158, 11, 0.45)); background: rgba(245, 158, 11, 0.08); color: var(--mc-text); border-radius: 12px; padding: 11px 14px; font-size: 12.5px; margin-bottom: 16px; }
+/* fallback-mode / oversell banner: gc-card gc-strip gc-warning — a text bar, so block */
+.sdca-banner { display: block; margin-bottom: 16px; font-size: 12.5px; }
 
-/* -------------------------------------------------- §1 verdict hero */
-.sdca-hero { border: 1px solid var(--mc-border); border-radius: 18px; background: var(--mc-card-glow), var(--mc-card); padding: 20px 24px; margin-bottom: 18px; }
+/* -------------------------------------------------- §1 verdict hero (gc-card, tone = MVRV zone) */
+.sdca-hero { margin-bottom: 18px; }
 .sdca-hero-grid { display: grid; grid-template-columns: auto 1fr auto; gap: 22px; align-items: center; }
 .sdca-hero-main { min-width: 0; }
-.sdca-mult { font-size: 64px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.sdca-mult { line-height: 1; } /* gc-num gc-num-xl: Inter 700, tabular, white */
 .sdca-zone-name { font-size: 15px; font-weight: 800; }
+.sdca-zone-name .sdca-zdot { margin-right: 8px; vertical-align: 0; }
 .sdca-suggest { font-size: 19px; font-weight: 600; margin-top: 6px; }
-.sdca-suggest b { font-weight: 800; font-variant-numeric: tabular-nums; }
-.sdca-pause { color: var(--sdca-warn); font-weight: 800; font-size: 16px; }
+.sdca-suggest b { letter-spacing: -0.01em; }
+.sdca-pause { font-weight: 800; font-size: 16px; }
 .sdca-hero-meta { margin-top: 7px; font-size: 12.5px; color: var(--mc-text-2); font-variant-numeric: tabular-nums; }
 .sdca-hero-controls { display: flex; flex-direction: column; gap: 10px; min-width: 172px; }
 .sdca-ctrl { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 700; color: var(--mc-text-2); }
-.sdca-ctrl input, .sdca-ctrl select, .sdca-inline select { border: 1px solid var(--mc-border); background: var(--mc-card); color: var(--mc-text); font-family: inherit; font-size: 13px; border-radius: 9px; padding: 8px 10px; }
-.sdca-ctrl input:focus, .sdca-ctrl select:focus, .sdca-inline select:focus { outline: none; border-color: var(--mc-border-active); }
 .sdca-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 14px; }
-.sdca-chip { font-size: 11px; font-weight: 700; border: 1px solid var(--mc-border); background: var(--sdca-chip-bg); color: var(--mc-text-2); border-radius: 999px; padding: 3px 10px; font-variant-numeric: tabular-nums; }
-.sdca-chip-warn { color: var(--sdca-warn); border-color: rgba(245, 158, 11, 0.4); }
+.sdca-chips .gc-chip { white-space: normal; } /* long source chips wrap inside the card at 390px */
 
-/* -------------------------------------------------- blocks */
+/* chips off the glass (journal heading on the page) keep the page face; on the glass they are gc-chip */
+.sdca-chip:not(.gc-chip) { font-size: 11px; font-weight: 700; border: 1px solid var(--mc-border); background: var(--sdca-chip-bg); color: var(--mc-text-2); border-radius: 999px; padding: 3px 10px; font-variant-numeric: tabular-nums; }
+.sdca-chip-warn:not(.gc-chip) { color: var(--sdca-warn); border-color: rgba(245, 158, 11, 0.4); }
+.sdca-chip-done:not(.gc-chip) { color: var(--sdca-up); border-color: rgba(52, 211, 153, 0.4); }
+[data-theme="light"] .sdca-chip-warn:not(.gc-chip) { color: #b45309; }
+[data-theme="light"] .sdca-chip-done:not(.gc-chip) { color: #047857; }
+
+/* -------------------------------------------------- blocks: heading on the page (gc-section-h), content on glass */
 .sdca-block { margin-bottom: 20px; }
 .sdca-block-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.sdca-block-head h2 { margin: 0; font-size: 16.5px; font-weight: 800; }
-.sdca-block-sub { font-size: 12px; color: var(--mc-muted); font-variant-numeric: tabular-nums; }
-.sdca-inline { font-size: 12px; font-weight: 700; color: var(--mc-text-2); display: inline-flex; align-items: center; gap: 7px; }
-.sdca-inline select { padding: 5px 8px; font-size: 12px; }
+.sdca-block-head h2 { margin: 0; }
+.sdca-block-sub { font-size: 12px; color: var(--app-text-2, var(--mc-muted)); font-variant-numeric: tabular-nums; }
+.sdca-inline { font-size: 12px; font-weight: 700; color: var(--app-text-2, var(--mc-text-2)); display: inline-flex; align-items: center; gap: 7px; }
+.sdca-inline select { padding: 5px 10px; font-size: 12px; }
 
-/* -------------------------------------------------- §2 zone ladder */
-.sdca-ladder { border: 1px solid var(--mc-border); border-radius: 15px; background: var(--mc-card); padding: 6px 14px; }
-.sdca-zrow { display: grid; grid-template-columns: 14px minmax(112px, auto) 52px 1fr auto; gap: 12px; align-items: center; padding: 9px 8px; border-bottom: 1px solid var(--mc-border); font-size: 13px; }
+/* -------------------------------------------------- §2 zone ladder (gc-card gc-neutral — the rules, no status) */
+.sdca-ladder { padding: 8px 14px; }
+.sdca-zrow { display: grid; grid-template-columns: 14px minmax(112px, auto) 64px 1fr auto; gap: 12px; align-items: center; padding: 9px 8px; border-bottom: 1px solid var(--mc-border); font-size: 13px; }
 .sdca-zrow:last-child { border-bottom: 0; }
 .sdca-zrow.is-current { border-radius: 10px; border-bottom-color: transparent; font-weight: 600; }
 .sdca-zdot { width: 11px; height: 11px; border-radius: 4px; display: inline-block; }
 .sdca-zrange { font-variant-numeric: tabular-nums; color: var(--mc-text-2); font-weight: 600; }
-.sdca-zmult { font-variant-numeric: tabular-nums; font-size: 14px; }
+/* ×N pill: the zone colour is its face (inline style), dark ink on it */
+.sdca-zmult { justify-self: start; min-width: 46px; padding: 2px 9px; border-radius: 999px; color: #0b0b12; font-size: 13px; font-weight: 700; line-height: 1.4; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sdca-zthai { color: var(--mc-text-2); font-size: 12.5px; }
-.sdca-znow { font-size: 11px; font-weight: 800; white-space: nowrap; }
+.sdca-znow { font-size: 11px; font-weight: 800; white-space: nowrap; } /* gc-pill: white "now" marker */
 
 .sdca-info-btn { border: 1px solid var(--mc-border); background: var(--sdca-chip-bg); color: var(--mc-text-2); width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 13px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; font-family: inherit; padding: 0; }
 .sdca-info-btn:hover { color: var(--mc-text); border-color: var(--mc-border-active); }
 
-/* -------------------------------------------------- §3 backtest compare */
+/* -------------------------------------------------- §3 backtest compare (tone = 🏆 winner · diff strip = Smart DCA win/lose) */
 .sdca-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.sdca-cmp-card { border: 1px solid var(--mc-border); border-radius: 15px; background: var(--mc-card); padding: 14px 16px; }
-.sdca-cmp-card.is-winner { border-color: var(--sdca-up); box-shadow: inset 0 0 0 1px var(--sdca-up); }
 .sdca-cmp-title { font-size: 13.5px; font-weight: 800; }
-.sdca-cmp-roi { font-size: 26px; font-weight: 800; margin-top: 6px; font-variant-numeric: tabular-nums; }
-.sdca-cmp-roi-l { font-size: 10.5px; color: var(--mc-muted); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.sdca-cmp-roi { margin-top: 8px; } /* gc-num gc-num-s; sdca-up / sdca-down colour it (lifted on glass) */
+.sdca-cmp-roi-l { margin-top: 4px; font-size: 10.5px; color: var(--mc-muted); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .sdca-cmp-rows { margin-top: 10px; border-top: 1px dashed var(--mc-border); padding-top: 8px; }
 .sdca-cmp-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 3px 0; color: var(--mc-text-2); }
 .sdca-cmp-row b { color: var(--mc-text); font-variant-numeric: tabular-nums; font-weight: 700; }
 .sdca-cmp-note { margin-top: 8px; font-size: 11px; color: var(--mc-muted); }
-.sdca-diff { margin-top: 12px; border: 1px solid var(--mc-border); border-radius: 12px; background: var(--sdca-chip-bg); padding: 10px 14px; font-size: 12.5px; font-weight: 600; }
-.sdca-note { margin: 10px 0 0; font-size: 11px; color: var(--mc-muted); line-height: 1.6; }
+.sdca-diff { display: block; margin-top: 12px; font-size: 12.5px; font-weight: 600; }
+.sdca-note { margin: 10px 0 0; font-size: 11px; color: var(--app-text-2, var(--mc-muted)); line-height: 1.6; }
 
-/* -------------------------------------------------- §4 chart */
-.sdca-chart-card { border: 1px solid var(--mc-border); border-radius: 15px; background: var(--mc-card); padding: 14px 16px; }
+/* -------------------------------------------------- §4 chart (gc-card gc-neutral; zone colours unchanged) */
 .sdca-chart-card svg { width: 100%; height: auto; display: block; }
 .sdca-grid { stroke: var(--sdca-track); stroke-width: 1; }
 .sdca-axis { fill: var(--mc-muted); font-size: 11px; font-family: inherit; }
@@ -92,11 +115,11 @@
 .sdca-leg { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
 .sdca-leg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
-/* -------------------------------------------------- §5 methodology */
-.sdca-method { margin-top: 22px; font-size: 11.5px; color: var(--mc-muted); line-height: 1.7; border: 1px dashed var(--mc-border); border-radius: 12px; padding: 12px 14px; }
+/* -------------------------------------------------- §5 methodology (gc-card gc-neutral — mixed inline text → block) */
+.sdca-method { display: block; margin-top: 22px; font-size: 11.5px; color: var(--mc-muted); line-height: 1.7; }
 .sdca-method b { color: var(--mc-text-2); }
 
-/* -------------------------------------------------- modal */
+/* -------------------------------------------------- modal (appended to <body>, off the glass) */
 .sdca-modal-back { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.72); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
 .sdca-modal { width: 100%; max-width: 560px; background: var(--mc-bg); border: 1px solid var(--mc-border); border-radius: 16px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5); padding: 18px 20px; }
 .sdca-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
@@ -111,37 +134,34 @@
 /* -------------------------------------------------- responsive */
 @media (max-width: 720px) {
   .sdca-page { padding: 16px 12px 48px; }
-  .sdca-hero { padding: 16px; }
   .sdca-hero-grid { grid-template-columns: 1fr; gap: 12px; }
   .sdca-mult { font-size: 52px; }
-  .sdca-hero-controls { flex-direction: row; }
-  .sdca-ctrl { flex: 1; }
+  .sdca-hero-controls { flex-direction: row; min-width: 0; }
+  .sdca-ctrl { flex: 1; min-width: 0; }
   .sdca-compare { grid-template-columns: 1fr; }
-  .sdca-zrow { grid-template-columns: 12px auto 44px 1fr; }
+  .sdca-zrow { grid-template-columns: 12px auto 58px 1fr; }
   .sdca-znow { display: none; }
 }
 
 /* -------------------------------------------------- DCA journal */
-.sdca-chip-done { color: var(--sdca-up); border-color: rgba(52, 211, 153, 0.4); }
-.sdca-j-tools { margin-left: auto; display: inline-flex; gap: 8px; }
-.sdca-btn-file { display: inline-flex; align-items: center; cursor: pointer; }
-.sdca-btn-primary { background: var(--mc-border-active); border-color: var(--mc-border-active); color: #fff; }
+.sdca-j-tools { margin-left: auto; display: inline-flex; flex-wrap: wrap; gap: 8px; }
+/* tiles: gc-card gc-tile (tone = กำไร/ขาดทุน where the tile has one) */
 .sdca-j-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
-.sdca-j-card { border: 1px solid var(--mc-border); border-radius: 12px; background: var(--mc-card); padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
 .sdca-j-card span { font-size: 10.5px; color: var(--mc-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
-.sdca-j-card b { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .sdca-j-card i { font-style: normal; font-size: 11px; font-weight: 700; color: var(--mc-muted); }
-.sdca-sellplan { border: 1px dashed var(--mc-border); border-radius: 11px; padding: 9px 12px; font-size: 12.5px; color: var(--mc-text-2); margin-bottom: 12px; }
-.sdca-sellplan.is-active { border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.08); color: var(--mc-text); }
-.sdca-j-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; border: 1px solid var(--mc-border); border-radius: 12px; padding: 12px; background: var(--mc-card); }
+/* sell plan: gc-card gc-warning when active (expensive zone + BTC held), else gc-neutral — text with <b> → block */
+.sdca-sellplan { display: block; margin-bottom: 12px; padding: 12px 16px; font-size: 12.5px; }
+/* entry form: gc-card gc-neutral laid out as a wrapping row; fields are gc-field, submit gc-btn */
+.sdca-j-form { flex-direction: row; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .sdca-j-form label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; color: var(--mc-text-2); }
-.sdca-j-form input, .sdca-j-form select { border: 1px solid var(--mc-border); background: var(--mc-bg); color: var(--mc-text); font-family: inherit; font-size: 13px; border-radius: 8px; padding: 7px 9px; min-width: 120px; }
+.sdca-j-form .gc-field { min-width: 120px; }
 .sdca-j-btc { font-size: 12px; color: var(--mc-muted); font-variant-numeric: tabular-nums; min-width: 130px; padding-bottom: 8px; }
-.sdca-j-list { margin-top: 12px; display: flex; flex-direction: column; }
+.sdca-j-list { margin-top: 12px; padding: 6px 14px; }
+.sdca-j-empty { font-size: 12px; }
 .sdca-j-row { display: grid; grid-template-columns: 88px 40px auto auto 1fr auto auto; gap: 12px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--mc-border); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .sdca-j-row:last-child { border-bottom: 0; }
-.sdca-j-row.is-sell { background: rgba(244, 63, 94, 0.04); }
+.sdca-j-row.is-sell { background: rgba(244, 63, 94, 0.08); }
 .sdca-j-zone { font-size: 11px; color: var(--mc-muted); text-align: right; }
-.sdca-mini-del { border: 1px solid var(--mc-border); background: transparent; color: var(--mc-muted); font-family: inherit; font-size: 11px; border-radius: 7px; padding: 3px 9px; cursor: pointer; }
+.sdca-mini-del { border: 1px solid var(--gc-rim, var(--mc-border)); background: transparent; color: var(--mc-muted); font-family: inherit; font-size: 11px; border-radius: 7px; padding: 3px 9px; cursor: pointer; }
 .sdca-mini-del:hover { color: var(--sdca-down); border-color: var(--sdca-down); }
 @media (max-width: 720px) { .sdca-j-row { grid-template-columns: 1fr auto auto; row-gap: 2px; } .sdca-j-zone { display: none; } }

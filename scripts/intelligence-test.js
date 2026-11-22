@@ -358,7 +358,8 @@ console.log("== UI: §16 บน /thesis render จริง ==");
   t("§16 render ออกมา", typeof html16 === "string" && html16.length > 500, html16.length);
   t("§16 มีเลข section 16", html16.indexOf('th-sec-n">16<') >= 0);
   t("§16 มี executive summary hero", html16.indexOf("th-ii-hero") >= 0);
-  t("§16 มีการ์ดสรุป 6 ใบ", (html16.match(/th-vx-card"/g) || []).length >= 6);
+  // การ์ดสรุปเป็น tile แก้วแล้ว (glass cards 2026-11) — นับ tile โดยตรง ไม่ปนกับการ์ดย่อยในลิ้นชัก (th-vx-card เปล่า)
+  t("§16 มีการ์ดสรุป 6 ใบ", (html16.match(/class="th-vx-card gc-card gc-tile /g) || []).length >= 6);
   t("§16 มีตาราง pillar", html16.indexOf("Thesis Health — หลักฐานราย pillar") >= 0);
   t("§16 มี matrix svg", html16.indexOf("th-ii-matrix") >= 0);
   t("§16 มีป้าย historical context ไม่ใช่คำพยากรณ์", html16.indexOf("ไม่ใช่คำพยากรณ์") >= 0);

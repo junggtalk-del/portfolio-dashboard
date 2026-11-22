@@ -71,6 +71,27 @@
   function input(id) { return document.getElementById(id); }
   function metricOf(series) { return series && series.type === "mayer" ? "Mayer" : "MVRV"; }
 
+  // ---------------------------------------------------------- glass cards (glass-cards.css) — tone = a status this page already computes
+  // MVRV/Mayer zone (same 8 keys in both tables): ตัวคูณ > 1 (ถูก → DCA เพิ่ม) calm · ×1 โซนปกติ normal ·
+  // ×0.5/×0.25 (เริ่มแพง/ร้อนแรง) warning · ×0 ยูโฟเรีย (พัก DCA) danger · ไม่มีโซน → neutral
+  var GC_ZONE_TONE = { fire: "gc-calm", deep: "gc-calm", accum: "gc-calm", early: "gc-calm", base: "gc-normal", rich: "gc-warning", hot: "gc-warning", euphoria: "gc-danger" };
+  // backtest: Smart DCA ชนะ DCA ปกติ (ROI สูงกว่า) → calm · แพ้ ("ROI แย่กว่า") → danger · เท่ากัน → neutral
+  var GC_OUTCOME_TONE = { win: "gc-calm", lose: "gc-danger" };
+  function gcTone(map, key) { return key != null && Object.prototype.hasOwnProperty.call(map, key) ? map[key] : "gc-neutral"; }
+  // กำไร/ขาดทุน ที่หน้าระบายสี sdca-up/sdca-down อยู่แล้ว → calm/danger · ไม่มีตัวเลข → neutral
+  function gcPnlTone(v) { return v == null || !Number.isFinite(Number(v)) ? "gc-neutral" : Number(v) >= 0 ? "gc-calm" : "gc-danger"; }
+
+  // ---------------------------------------------------------- Privacy Lock (privacy.js)
+  // privacy.js ซ่อน ฿ ในข้อความ แต่ไม่แตะค่าใน <input> → ตอนล็อก ช่องเงิน DCA (#sdcaBase · #sdcaJThb) วาดว่าง + placeholder เอง
+  // (กติกาเดียวกับ AI Portfolio Manager) · ราคา BTC (#sdcaJPrice) เป็นราคาตลาด ไม่ซ่อน
+  var LOCKED_PH = "ล็อกอยู่ — ใส่ค่าใหม่ได้";
+  function privacyLocked() {
+    try { return !!(window.PortfolioPrivacy && typeof window.PortfolioPrivacy.isLocked === "function" && window.PortfolioPrivacy.isLocked()); }
+    catch (e) { return false; }
+  }
+  function moneyValueAttr(v, locked) { return ' value="' + (locked ? "" : esc(v)) + '"' + (locked ? ' placeholder="' + esc(LOCKED_PH) + '"' : ""); }
+  function isBlank(v) { return String(v == null ? "" : v).replace(/^\s+|\s+$/g, "") === ""; }
+
   // ---------------------------------------------------------- settings
   function loadSettings() {
     var s = { base: 1000, freq: "weekly", startYear: "2020" };
@@ -168,7 +189,7 @@
     var focusId = document.activeElement ? document.activeElement.id : null;
     var html = headerHtml();
     if (state.source === "ohlc") {
-      html += '<div class="sdca-banner">⚠️ โหมดสำรอง: ใช้ Mayer Multiple (ราคา ÷ MA200) แทน MVRV เพราะเชื่อมต่อ Coin Metrics ไม่ได้</div>';
+      html += '<div class="sdca-banner gc-card gc-strip gc-warning">⚠️ โหมดสำรอง: ใช้ Mayer Multiple (ราคา ÷ MA200) แทน MVRV เพราะเชื่อมต่อ Coin Metrics ไม่ได้</div>';
     }
     html += heroHtml(cur, series);
     html += ladderHtml(series, cur);
@@ -185,13 +206,13 @@
   }
 
   function loadingHtml() {
-    return '<div class="mc-empty"><strong>กำลังโหลด Smart DCA…</strong>' +
+    return '<div class="mc-empty gc-card gc-neutral"><strong>กำลังโหลด Smart DCA…</strong>' +
       '<div class="sdca-dim" style="margin-top:6px">ดึงประวัติ MVRV จาก Coin Metrics (ครั้งแรกใช้เวลาสักครู่ จากนั้น cache รายวัน)</div></div>';
   }
   function errorHtml() {
-    return '<div class="mc-empty"><strong>โหลดข้อมูล Smart DCA ไม่สำเร็จ</strong>' +
+    return '<div class="mc-empty gc-card gc-neutral"><strong>โหลดข้อมูล Smart DCA ไม่สำเร็จ</strong>' +
       '<div class="sdca-dim" style="margin-top:6px">' + esc(state.error || "ไม่ทราบสาเหตุ") + "</div>" +
-      '<button id="sdcaRetry" class="sdca-btn" type="button" style="margin-top:12px">ลองใหม่</button></div>';
+      '<button id="sdcaRetry" class="sdca-btn gc-btn" type="button" style="margin-top:12px">ลองใหม่</button></div>';
   }
 
   // -------------------------------------------------- §0 header
@@ -200,7 +221,7 @@
       '<h1 class="sdca-title">🪙 Smart DCA</h1>' +
       '<p class="sdca-sub">DCA บิทคอยน์แบบฉลาด — ซื้อมากตอนถูก ซื้อน้อยตอนแพง ตามโซน MVRV · กติกาโปร่งใส ตรวจสอบได้</p>' +
       "</div>" +
-      '<button id="sdcaReload" class="sdca-btn" type="button"' + (state.loading ? " disabled" : "") + ">" +
+      '<button id="sdcaReload" class="sdca-btn gc-btn gc-btn-ghost" type="button"' + (state.loading ? " disabled" : "") + ">" +
       (state.loading ? "กำลังโหลด…" : "โหลดข้อมูลใหม่") + "</button></header>";
   }
 
@@ -215,22 +236,23 @@
     if (cur.mult === 0) {
       suggest = '<div class="sdca-suggest sdca-pause">พัก DCA งวดนี้ — สะสมเงินสดรอโซนที่ถูกกว่า</div>';
     } else {
-      suggest = '<div class="sdca-suggest">งวดนี้แนะนำ DCA ≈ <b>' + thb(cur.suggest) + "</b></div>";
+      suggest = '<div class="sdca-suggest">งวดนี้แนะนำ DCA ≈ <b class="gc-num">' + thb(cur.suggest) + "</b></div>";
     }
 
     var chips = "";
     var bz = buyZoneScore();
-    if (bz != null) chips += '<span class="sdca-chip">🎯 BTC Buy Zone Score: ' + bz + "/100</span>";
+    if (bz != null) chips += '<span class="sdca-chip gc-chip gc-chip-flat">🎯 BTC Buy Zone Score: ' + bz + "/100</span>";
     var vd = cur.valueDate != null ? daysAgo(cur.valueDate) : cur.staleDays;
-    if (vd != null) chips += '<span class="sdca-chip">ข้อมูล ' + esc(metricOf(series)) + " ล่าสุด D-" + vd + "</span>";
-    chips += '<span class="sdca-chip">' + (state.source === "ohlc" ? "แหล่งข้อมูล: ราคาในระบบ (/api/ohlc)" : "แหล่งข้อมูล: Coin Metrics Community") + "</span>";
-    if (cur.neutralFallback) chips += '<span class="sdca-chip sdca-chip-warn">ไม่มีข้อมูล valuation — ใช้ ×1 ชั่วคราว</span>';
+    if (vd != null) chips += '<span class="sdca-chip gc-chip gc-chip-flat">ข้อมูล ' + esc(metricOf(series)) + " ล่าสุด D-" + vd + "</span>";
+    chips += '<span class="sdca-chip gc-chip gc-chip-flat">' + (state.source === "ohlc" ? "แหล่งข้อมูล: ราคาในระบบ (/api/ohlc)" : "แหล่งข้อมูล: Coin Metrics Community") + "</span>";
+    if (cur.neutralFallback) chips += '<span class="sdca-chip sdca-chip-warn gc-chip gc-chip-risk">ไม่มีข้อมูล valuation — ใช้ ×1 ชั่วคราว</span>';
 
-    return '<section class="sdca-hero">' +
+    // the card's tone carries the zone; on the glass the text is white and the zone colour rides on the dot
+    return '<section class="sdca-hero gc-card ' + gcTone(GC_ZONE_TONE, zone ? zone.key : null) + '">' +
       '<div class="sdca-hero-grid">' +
-        '<div class="sdca-mult" style="color:' + color + '">×' + cur.mult + "</div>" +
+        '<div class="sdca-mult gc-num gc-num-xl">×' + cur.mult + "</div>" +
         '<div class="sdca-hero-main">' +
-          '<div class="sdca-zone-name" style="color:' + color + '">' + esc(zone ? zone.thai : "ยังไม่มีข้อมูลโซน — ใช้ตัวคูณปกติ") + "</div>" +
+          '<div class="sdca-zone-name"><i class="sdca-zdot" style="background:' + color + '"></i>' + esc(zone ? zone.thai : "ยังไม่มีข้อมูลโซน — ใช้ตัวคูณปกติ") + "</div>" +
           suggest +
           '<div class="sdca-hero-meta">BTC ' + usd(cur.price) +
             (cur.value != null ? " · " + esc(metric) + " " + nf(cur.value, 2) : "") +
@@ -238,8 +260,8 @@
           "</div>" +
         "</div>" +
         '<div class="sdca-hero-controls">' +
-          '<label class="sdca-ctrl">เงิน DCA ต่องวด (฿)<input id="sdcaBase" type="number" min="100" step="100" value="' + settings.base + '" /></label>' +
-          '<label class="sdca-ctrl">ความถี่<select id="sdcaFreq">' +
+          '<label class="sdca-ctrl">เงิน DCA ต่องวด (฿)<input id="sdcaBase" class="gc-field" type="number" min="100" step="100"' + moneyValueAttr(settings.base, privacyLocked()) + " /></label>" +
+          '<label class="sdca-ctrl">ความถี่<select id="sdcaFreq" class="gc-field">' +
             '<option value="weekly"' + (settings.freq === "weekly" ? " selected" : "") + ">รายสัปดาห์</option>" +
             '<option value="monthly"' + (settings.freq === "monthly" ? " selected" : "") + ">รายเดือน</option>" +
           "</select></label>" +
@@ -266,17 +288,18 @@
       return '<div class="sdca-zrow' + (isCur ? " is-current" : "") + '"' + style + ">" +
         '<i class="sdca-zdot" style="background:' + z.color + '"></i>' +
         '<span class="sdca-zrange">' + esc(rangeTxt(z, metric)) + "</span>" +
-        '<b class="sdca-zmult" style="color:' + z.color + '">×' + z.mult + "</b>" +
+        // zone colour as the pill's face (dark ink on it ≥ 5:1 for every zone) — red/orange text on the glass was < 4.5:1
+        '<b class="sdca-zmult" style="background:' + z.color + '">×' + z.mult + "</b>" +
         '<span class="sdca-zthai">' + esc(z.thai) + "</span>" +
-        (isCur ? '<span class="sdca-znow" style="color:' + z.color + '">◀ ตอนนี้</span>' : "") +
+        (isCur ? '<span class="sdca-znow gc-pill">◀ ตอนนี้</span>' : "") +
       "</div>";
     }).join("");
     return '<section class="sdca-block"><div class="sdca-block-head">' +
-      "<h2>📏 ตารางโซน — กติกาทั้งหมดของ Smart DCA</h2>" +
+      '<h2 class="gc-section-h">📏 ตารางโซน — กติกาทั้งหมดของ Smart DCA</h2>' +
       '<button id="sdcaInfo" class="sdca-info-btn" type="button" aria-label="อธิบายกติกา Smart DCA">ⓘ</button>' +
       (cur && cur.value != null ? '<span class="sdca-block-sub">ค่า ' + esc(metric) + " ปัจจุบัน " + nf(cur.value, 2) + "</span>" : "") +
       "</div>" +
-      '<div class="sdca-ladder">' + rows + "</div></section>";
+      '<div class="sdca-ladder gc-card gc-neutral">' + rows + "</div></section>";
   }
 
   // -------------------------------------------------- §3 backtest
@@ -286,9 +309,10 @@
 
   function cmpCard(title, side, winner, buysOverride, note) {
     var roiTxt = side.roiPct == null ? "—" : (side.roiPct >= 0 ? "+" : "") + nf(side.roiPct, 1) + "%";
-    return '<div class="sdca-cmp-card' + (winner ? " is-winner" : "") + '">' +
+    // tone = the page's own 🏆 mark (is-winner) → calm · the other card has no status of its own → neutral
+    return '<div class="sdca-cmp-card' + (winner ? " is-winner" : "") + " gc-card " + (winner ? "gc-calm" : "gc-neutral") + '">' +
       '<div class="sdca-cmp-title">' + (winner ? "🏆 " : "") + esc(title) + "</div>" +
-      '<div class="sdca-cmp-roi ' + (side.roiPct != null && side.roiPct < 0 ? "sdca-down" : "sdca-up") + '">' + roiTxt + "</div>" +
+      '<div class="sdca-cmp-roi gc-num gc-num-s ' + (side.roiPct != null && side.roiPct < 0 ? "sdca-down" : "sdca-up") + '">' + roiTxt + "</div>" +
       '<div class="sdca-cmp-roi-l">ROI</div>' +
       '<div class="sdca-cmp-rows">' +
         cmpRow("เงินลงทุนรวม", usd(side.invested)) +
@@ -300,7 +324,8 @@
     "</div>";
   }
 
-  function diffHtml(bt) {
+  // outcome: "win" | "lose" | null — Smart DCA vs DCA ปกติ, as decided in backtestHtml (smartWins / plainWins)
+  function diffHtml(bt, outcome) {
     var d = bt.diff || {};
     var parts = [];
     if (d.avgCostPct != null) {
@@ -314,19 +339,19 @@
     if (d.roiPp != null) {
       parts.push(d.roiPp >= 0 ? "ROI ดีกว่า +" + nf(d.roiPp, 1) + "pp" : "ROI แย่กว่า " + nf(d.roiPp, 1) + "pp");
     }
-    return parts.length ? '<div class="sdca-diff">Smart DCA ' + parts.join(" · ") + "</div>" : "";
+    return parts.length ? '<div class="sdca-diff gc-card gc-strip ' + gcTone(GC_OUTCOME_TONE, outcome) + '">Smart DCA ' + parts.join(" · ") + "</div>" : "";
   }
 
   function backtestHtml(bt) {
     var yearOpts = YEARS.map(function (y) {
       return '<option value="' + y + '"' + (settings.startYear === y ? " selected" : "") + ">" + y + "</option>";
     }).join("");
-    var head = '<div class="sdca-block-head"><h2>🧪 Backtest — DCA ปกติ vs Smart DCA</h2>' +
-      '<label class="sdca-inline">เริ่มทดสอบปี<select id="sdcaYear">' + yearOpts + "</select></label>";
+    var head = '<div class="sdca-block-head"><h2 class="gc-section-h">🧪 Backtest — DCA ปกติ vs Smart DCA</h2>' +
+      '<label class="sdca-inline">เริ่มทดสอบปี<select id="sdcaYear" class="gc-field">' + yearOpts + "</select></label>";
 
     if (!bt || !bt.ok) {
       return '<section class="sdca-block">' + head + "</div>" +
-        '<div class="sdca-chart-card sdca-dim">ข้อมูลไม่พอสำหรับช่วงที่เลือก (' + esc((bt && bt.reason) || "no-data") + ") — ลองเลือกปีเริ่มต้นอื่น</div></section>";
+        '<div class="sdca-chart-card sdca-dim gc-card gc-neutral">ข้อมูลไม่พอสำหรับช่วงที่เลือก (' + esc((bt && bt.reason) || "no-data") + ") — ลองเลือกปีเริ่มต้นอื่น</div></section>";
     }
 
     var freqLabel = bt.freq === "monthly" ? "รายเดือน" : "รายสัปดาห์";
@@ -346,7 +371,7 @@
         cmpCard("DCA ปกติ", P, plainWins, "", "") +
         cmpCard("Smart DCA", S, smartWins, buysTxt, note) +
       "</div>" +
-      diffHtml(bt) +
+      diffHtml(bt, smartWins ? "win" : plainWins ? "lose" : null) +
       '<p class="sdca-note">หมายเหตุ: ตัวเลข backtest คำนวณเป็น USD (BTC/USD) — สัดส่วน ROI และ % ต่างๆ ไม่ขึ้นกับสกุลเงิน · เงินงวด ฿ ในช่องตั้งค่าถูกใช้เป็นจำนวนเดียวกันในหน่วย USD เพื่อการเปรียบเทียบ</p>' +
     "</section>";
   }
@@ -441,9 +466,9 @@
     }).join("");
 
     return '<section class="sdca-block"><div class="sdca-block-head">' +
-      "<h2>📈 ราคา BTC ระบายสีตามโซน (log scale)</h2>" +
+      '<h2 class="gc-section-h">📈 ราคา BTC ระบายสีตามโซน (log scale)</h2>' +
       '<span class="sdca-block-sub">' + esc(bt.startDate) + " → " + esc(bt.endDate) + "</span></div>" +
-      '<div class="sdca-chart-card">' +
+      '<div class="sdca-chart-card gc-card gc-neutral">' +
         '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="ราคา BTC ระบายสีตามโซน valuation">' + svg + "</svg>" +
         '<div class="sdca-legend">' + legend + "</div>" +
       "</div></section>";
@@ -476,34 +501,37 @@
     // sell plan (mirror ladder) — only in expensive zones
     var zoneKey = cur && cur.zone ? cur.zone.key : null;
     var plan = window.SmartDCA.sellPlanFor(zoneKey, settings.base);
+    // tone: the page's own amber "is-active" (expensive zone + BTC held) → warning · the two plain notes → neutral
     var planHtml;
     if (plan && sum.btcHeld > 0) {
-      planHtml = '<div class="sdca-sellplan is-active">🔔 โซน <b>' + esc(cur.zone.thai) + "</b> — แผน DCA ขาย: ทยอยขาย ≈ <b>" + thb(plan.amount) + "</b>/งวด (×" + plan.mult + " ของเงินงวด)"
+      planHtml = '<div class="sdca-sellplan is-active gc-card gc-warning">🔔 โซน <b>' + esc(cur.zone.thai) + "</b> — แผน DCA ขาย: ทยอยขาย ≈ <b>" + thb(plan.amount) + "</b>/งวด (×" + plan.mult + " ของเงินงวด)"
         + (sum.avgCost != null && priceThbNow != null ? " · ราคาตอนนี้ " + (priceThbNow >= sum.avgCost ? "สูงกว่า" : "ต่ำกว่า") + "ต้นทุนเฉลี่ย " + nf(Math.abs(priceThbNow / sum.avgCost - 1) * 100, 1) + "%" : "") + "</div>";
     } else if (plan) {
-      planHtml = '<div class="sdca-sellplan">โซนแพงแล้ว แต่ยังไม่มี BTC ในสมุดบันทึก — บันทึกการซื้อก่อน</div>';
+      planHtml = '<div class="sdca-sellplan gc-card gc-neutral">โซนแพงแล้ว แต่ยังไม่มี BTC ในสมุดบันทึก — บันทึกการซื้อก่อน</div>';
     } else {
-      planHtml = '<div class="sdca-sellplan">ยังไม่ถึงโซนขาย (rich/hot/euphoria) — สะสมตามแผนซื้อด้านบน แผนขายจะโผล่เมื่อ ' + esc(metricOf(state.series)) + " เข้าโซนแพง</div>";
+      planHtml = '<div class="sdca-sellplan gc-card gc-neutral">ยังไม่ถึงโซนขาย (rich/hot/euphoria) — สะสมตามแผนซื้อด้านบน แผนขายจะโผล่เมื่อ ' + esc(metricOf(state.series)) + " เข้าโซนแพง</div>";
     }
 
+    // tiles: กำไร/ขาดทุน (unrealized on มูลค่าตอนนี้ · realized on กำไรที่ขายแล้ว) → calm/danger · the rest → neutral
+    var TILE = "sdca-j-card gc-card gc-tile ";
     var cards = '<div class="sdca-j-cards">' +
-      '<div class="sdca-j-card"><span>BTC คงเหลือ</span><b>' + nf(sum.btcHeld, 8) + "</b></div>" +
-      '<div class="sdca-j-card"><span>ต้นทุนเฉลี่ย/BTC</span><b>' + (sum.avgCost != null ? thb(sum.avgCost) : "—") + "</b></div>" +
-      '<div class="sdca-j-card"><span>ต้นทุนคงเหลือ</span><b>' + thb(sum.costRemaining) + "</b></div>" +
-      '<div class="sdca-j-card"><span>มูลค่าตอนนี้</span><b>' + (valueNow != null ? thb(valueNow) : "—") + "</b>" +
+      '<div class="' + TILE + 'gc-neutral"><span>BTC คงเหลือ</span><b class="gc-num gc-num-xs">' + nf(sum.btcHeld, 8) + "</b></div>" +
+      '<div class="' + TILE + 'gc-neutral"><span>ต้นทุนเฉลี่ย/BTC</span><b class="gc-num gc-num-xs">' + (sum.avgCost != null ? thb(sum.avgCost) : "—") + "</b></div>" +
+      '<div class="' + TILE + 'gc-neutral"><span>ต้นทุนคงเหลือ</span><b class="gc-num gc-num-xs">' + thb(sum.costRemaining) + "</b></div>" +
+      '<div class="' + TILE + gcPnlTone(unrlPct != null ? unrl : null) + '"><span>มูลค่าตอนนี้</span><b class="gc-num gc-num-xs">' + (valueNow != null ? thb(valueNow) : "—") + "</b>" +
         (unrlPct != null ? '<i class="' + (unrl >= 0 ? "sdca-up" : "sdca-down") + '">' + (unrl >= 0 ? "+" : "") + nf(unrlPct, 1) + "%</i>" : (sum.btcHeld > 0 ? "<i>รออัตรา USD/THB</i>" : "")) + "</div>" +
-      (sum.sells > 0 ? '<div class="sdca-j-card"><span>กำไรที่ขายแล้ว</span><b class="' + (sum.realizedPnl >= 0 ? "sdca-up" : "sdca-down") + '">' + (sum.realizedPnl >= 0 ? "+" : "") + thb(sum.realizedPnl) + "</b></div>" : "") +
+      (sum.sells > 0 ? '<div class="' + TILE + gcPnlTone(sum.realizedPnl) + '"><span>กำไรที่ขายแล้ว</span><b class="gc-num gc-num-xs ' + (sum.realizedPnl >= 0 ? "sdca-up" : "sdca-down") + '">' + (sum.realizedPnl >= 0 ? "+" : "") + thb(sum.realizedPnl) + "</b></div>" : "") +
       "</div>";
 
     var prefillPrice = priceThbNow != null ? Math.round(priceThbNow) : "";
     var prefillBuy = cur && cur.ok && cur.mult > 0 ? cur.suggest : settings.base;
-    var form = '<form id="sdcaJForm" class="sdca-j-form">' +
-      '<label>วันที่<input type="date" id="sdcaJDate" value="' + today() + '" required /></label>' +
-      '<label>ประเภท<select id="sdcaJSide"><option value="buy">ซื้อ (DCA)</option><option value="sell">ขาย (DCA ขาย)</option></select></label>' +
-      '<label>จำนวนเงิน (฿)<input type="number" id="sdcaJThb" min="1" step="any" value="' + esc(prefillBuy) + '" required /></label>' +
-      '<label>ราคา BTC (฿/BTC)<input type="number" id="sdcaJPrice" min="1" step="any" value="' + esc(prefillPrice) + '" placeholder="เช่น 2200000" required /></label>' +
+    var form = '<form id="sdcaJForm" class="sdca-j-form gc-card gc-neutral">' +
+      '<label>วันที่<input type="date" id="sdcaJDate" class="gc-field" value="' + today() + '" required /></label>' +
+      '<label>ประเภท<select id="sdcaJSide" class="gc-field"><option value="buy">ซื้อ (DCA)</option><option value="sell">ขาย (DCA ขาย)</option></select></label>' +
+      '<label>จำนวนเงิน (฿)<input type="number" id="sdcaJThb" class="gc-field" min="1" step="any"' + moneyValueAttr(prefillBuy, privacyLocked()) + " required /></label>" +
+      '<label>ราคา BTC (฿/BTC)<input type="number" id="sdcaJPrice" class="gc-field" min="1" step="any" value="' + esc(prefillPrice) + '" placeholder="เช่น 2200000" required /></label>' +
       '<span class="sdca-j-btc" id="sdcaJBtcPreview"></span>' +
-      '<button type="submit" class="sdca-btn sdca-btn-primary">บันทึก</button>' +
+      '<button type="submit" class="sdca-btn sdca-btn-primary gc-btn">บันทึก</button>' +
     "</form>";
 
     var rows = entries.slice().sort(function (a, b) { return String(b.date || "").localeCompare(String(a.date || "")); })
@@ -520,14 +548,14 @@
       }).join("");
 
     return '<section class="sdca-block"><div class="sdca-block-head">' +
-      "<h2>📒 บันทึก DCA จริงของฉัน</h2>" + periodDoneChip(entries) +
+      '<h2 class="gc-section-h">📒 บันทึก DCA จริงของฉัน</h2>' + periodDoneChip(entries) +
       (state.fx ? '<span class="sdca-block-sub">USD/THB ' + nf(state.fx, 2) + " (ECB)</span>" : "") +
-      '<span class="sdca-j-tools"><button type="button" class="sdca-btn" id="sdcaJExport">Export CSV</button>' +
-      '<label class="sdca-btn sdca-btn-file">Import CSV<input type="file" id="sdcaJImport" accept=".csv" hidden /></label></span>' +
+      '<span class="sdca-j-tools"><button type="button" class="sdca-btn gc-btn gc-btn-ghost" id="sdcaJExport">Export CSV</button>' +
+      '<label class="sdca-btn sdca-btn-file gc-btn gc-btn-ghost">Import CSV<input type="file" id="sdcaJImport" accept=".csv" hidden /></label></span>' +
       "</div>" +
-      (sum.oversell ? '<div class="sdca-banner">⚠️ มีรายการขายมากกว่า BTC ที่บันทึกไว้ — ระบบตัดเท่าที่ถือจริง ตรวจสอบรายการย้อนหลัง</div>' : "") +
+      (sum.oversell ? '<div class="sdca-banner gc-card gc-strip gc-warning">⚠️ มีรายการขายมากกว่า BTC ที่บันทึกไว้ — ระบบตัดเท่าที่ถือจริง ตรวจสอบรายการย้อนหลัง</div>' : "") +
       cards + planHtml + form +
-      (rows ? '<div class="sdca-j-list">' + rows + "</div>" : '<div class="sdca-dim" style="margin-top:10px">ยังไม่มีรายการ — บันทึกการ DCA ครั้งแรกของคุณด้านบน (เก็บในเครื่องนี้ · Export CSV เพื่อสำรอง)</div>') +
+      (rows ? '<div class="sdca-j-list gc-card gc-neutral">' + rows + "</div>" : '<div class="sdca-dim sdca-j-empty gc-card gc-neutral" style="margin-top:10px">ยังไม่มีรายการ — บันทึกการ DCA ครั้งแรกของคุณด้านบน (เก็บในเครื่องนี้ · Export CSV เพื่อสำรอง)</div>') +
       '<div class="sdca-note">ข้อมูลเก็บใน browser เครื่องนี้เท่านั้น (localStorage) — กด Export CSV เก็บสำรองไว้เสมอ · ต้นทุนคิดแบบถัวเฉลี่ย (average cost) · แผนขายเป็นกติกากระจกของตารางโซน: rich ×0.5 · hot ×1 · euphoria ×2 ของเงินงวด ไม่ใช่คำสั่งซื้อขาย</div>' +
     "</section>";
   }
@@ -584,7 +612,7 @@
 
   // -------------------------------------------------- §5 methodology + disclaimer
   function methodHtml() {
-    return '<section class="sdca-method">' +
+    return '<section class="sdca-method gc-card gc-neutral">' +
       "<b>แหล่งข้อมูลและวิธีคิด:</b> Coin Metrics Community API (MVRV — ฟรี อัปเดตช้ากว่าราคา 1–2 วัน) · โหมดสำรอง: Mayer Multiple (ราคา ÷ MA200) คำนวณจากราคาในระบบ · กติกาทั้งหมดคือตารางโซนด้านบน ไม่มีการทำนาย ไม่มีสูตรลับ · ตัวเลข backtest คำนวณเป็น USD (BTC/USD)<br />" +
       "⚠️ เครื่องมือนี้ช่วยวางแผน DCA ตามกติกาที่โปร่งใสเท่านั้น ไม่ใช่คำแนะนำการลงทุน — ผลตอบแทนในอดีตไม่การันตีผลลัพธ์ในอนาคต" +
       "</section>";
@@ -642,7 +670,11 @@
         var v = Number(baseEl.value);
         if (Number.isFinite(v) && v >= 100) { settings.base = Math.round(v); saveSettings(); updateSuggestOnly(); }
       });
-      baseEl.addEventListener("change", function () { render(); });
+      baseEl.addEventListener("change", function () {
+        // ล็อกอยู่ ช่องวาดว่าง: เว้นว่าง = ใช้ค่าเดิม (ไม่บันทึก ไม่วาดใหม่) · พิมพ์ค่าใหม่ = บันทึกตามปกติ (แบบช่องเงินของ PM)
+        if (privacyLocked() && isBlank(baseEl.value)) return;
+        render();
+      });
     }
     var freqEl = document.getElementById("sdcaFreq");
     if (freqEl) freqEl.addEventListener("change", function () {
@@ -675,10 +707,10 @@
       input("sdcaJPrice").addEventListener("input", updPreview);
       var sideSel = input("sdcaJSide");
       if (sideSel) sideSel.addEventListener("change", function () {
-        // prefill: buy → suggested DCA amount, sell → zone sell-plan amount (if any)
+        // prefill: buy → suggested DCA amount, sell → zone sell-plan amount (if any) · ล็อกอยู่ → ว่าง (ไม่เผยยอดเงินในช่อง)
         var cur = state.series ? window.SmartDCA.current(state.series, { base: settings.base }) : null;
         var plan = cur && cur.zone ? window.SmartDCA.sellPlanFor(cur.zone.key, settings.base) : null;
-        input("sdcaJThb").value = sideSel.value === "sell" ? (plan ? plan.amount : settings.base) : (cur && cur.mult > 0 ? cur.suggest : settings.base);
+        input("sdcaJThb").value = privacyLocked() ? "" : sideSel.value === "sell" ? (plan ? plan.amount : settings.base) : (cur && cur.mult > 0 ? cur.suggest : settings.base);
         updPreview();
       });
       updPreview();
@@ -705,6 +737,8 @@
     if (ae && /^sdca(Base|Freq|Year)$/.test(ae.id || "")) return;
     render();
   });
+  // privacy.js ยิง "portfolio-privacy-changed" บน document ตอนล็อก/ปลดล็อก → วาดใหม่ให้ช่องเงินว่าง/มีค่าตามสถานะ (แบบ PM)
+  document.addEventListener("portfolio-privacy-changed", function () { render(); });
 
   function boot() { loadData(false); loadFx(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

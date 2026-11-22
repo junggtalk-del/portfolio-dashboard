@@ -1,15 +1,26 @@
+/* ============================================================
+   Backtest Lab — page styles (backtest-3 · 2026-11 glass cards)
+   Glass cards (glass-cards.css gc-2, loaded before this file): the setup panel, the tab strip, every result
+   card, both chart cards and both table cards are .gc-card with ONE tone from a status the page already
+   computes (backtest-page.js gcTone / periodStatus): good → gc-calm · warn → gc-warning · bad → gc-danger ·
+   no status → gc-neutral. Result sections are page-level blocks: heading = gc-section-h, cards inside.
+   Outside a card the page tokens follow the theme (--app-*); inside a card they become glass ink (map below).
+   ============================================================ */
 :root {
   --bg: var(--app-bg);
-  --panel: var(--app-card);
   --ink: var(--app-text);
-  --muted: var(--app-muted);
+  --muted: var(--app-text-2);
   --line: var(--app-border);
   --navy: var(--app-text);
-  --accent: var(--app-accent);
-  --green: var(--app-up);
-  --red: var(--app-down);
-  --amber: var(--app-warn);
   --shadow: var(--app-shadow);
+}
+
+/* inside a glass card the page tokens become glass ink (both site themes — the glass stays dark) */
+.backtest-shell .gc-card {
+  --ink: var(--gc-ink);
+  --navy: var(--gc-ink);
+  --muted: var(--gc-ink-2);
+  --line: var(--gc-line);
 }
 
 * { box-sizing: border-box; }
@@ -24,10 +35,6 @@ body {
   font-family: "Noto Sans Thai", system-ui, sans-serif;
 }
 
-button,
-input,
-select { font: inherit; }
-
 h1,
 h2,
 h3,
@@ -39,6 +46,7 @@ p { margin-top: 0; }
   padding: 28px 0 40px;
 }
 
+/* ---- legacy top bar (the app shell hides it and shows its own page hero) ---- */
 .backtest-topbar {
   display: flex;
   align-items: flex-start;
@@ -65,9 +73,7 @@ h1 {
 }
 
 .backtest-subtitle,
-.backtest-warning,
-.panel-heading p,
-.setup-status {
+.backtest-warning {
   color: var(--muted);
   line-height: 1.55;
 }
@@ -91,28 +97,24 @@ h1 {
   gap: 8px;
 }
 
-.backtest-nav a,
-.tab-button,
-.secondary-button,
-.run-button {
+.backtest-nav a {
   min-height: 42px;
   padding: 9px 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--app-card);
   color: var(--navy);
-  cursor: pointer;
   font-weight: 800;
   text-decoration: none;
 }
 
-.backtest-nav a.is-active,
-.tab-button.is-active {
+.backtest-nav a.is-active {
   background: var(--app-accent);
   color: #fff;
   box-shadow: var(--app-shadow);
 }
 
+/* ---- layout: setup panel | results ---- */
 .backtest-layout {
   display: grid;
   grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
@@ -120,67 +122,53 @@ h1 {
   align-items: start;
 }
 
-.setup-panel,
-.result-section,
-.chart-card {
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
-  background: var(--app-card);
-  box-shadow: var(--shadow);
-}
-
+/* ---- setup panel (gc-card gc-neutral) · fields = gc-field · buttons = gc-btn / gc-btn-ghost ---- */
 .setup-panel {
   position: sticky;
   top: 16px;
-  display: flex;
-  flex-direction: column;
   gap: 13px;
-  padding: 16px;
 }
 
-.panel-heading h2 {
-  margin-bottom: 4px;
-  color: var(--navy);
-  font-size: 1.12rem;
+.setup-panel .panel-heading h2 {
+  margin: 0 0 4px;
+  color: var(--gc-ink);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
-.panel-heading p {
-  margin-bottom: 0;
-  font-size: 0.9rem;
+.setup-panel .panel-heading p {
+  margin: 0;
+  color: var(--gc-ink-2);
+  font-size: 12.5px;
+  line-height: 1.55;
 }
 
-label {
+.setup-panel label {
   display: grid;
   gap: 6px;
-  color: var(--navy);
-  font-size: 0.9rem;
-  font-weight: 800;
+  min-width: 0;
+  color: var(--gc-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
-input,
-select {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--app-elevated);
-  color: var(--ink);
+.setup-panel .gc-field { width: 100%; }
+.setup-panel select.gc-field[multiple] { padding: 6px; }
+.setup-panel select.gc-field[multiple] option { padding: 6px 8px; }
+/* the glass paints every <option> dark (#14141c), which also hides Chrome's selection colour — give the
+   chosen rows their own light fill so the picked tickers / strategies stay visible */
+.setup-panel select.gc-field[multiple] option:checked {
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.26));
+  color: #fff;
   font-weight: 700;
 }
-
-input { min-height: 42px; padding: 8px 10px; }
-select { padding: 8px 10px; }
-select[multiple] option { padding: 7px; }
 
 .form-grid.two {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-}
-
-.run-button {
-  border-color: var(--app-accent);
-  background: var(--app-accent);
-  color: #fff;
 }
 
 .button-stack,
@@ -189,196 +177,160 @@ select[multiple] option { padding: 7px; }
   gap: 8px;
 }
 
-.export-grid {
-  grid-template-columns: 1fr;
-}
-
-.export-grid .secondary-button {
-  min-height: 38px;
-  padding: 8px 10px;
-  font-size: 0.84rem;
-}
-
-.secondary-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
+.export-grid { grid-template-columns: 1fr; }
+.button-stack .gc-btn,
+.export-grid .gc-btn { width: 100%; }
 
 .setup-status {
   margin: 0;
-  font-size: 0.86rem;
+  color: var(--gc-ink-2);
+  font-size: 12.5px;
+  line-height: 1.55;
 }
 
+/* ---- results ---- */
 .results-panel {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 16px;
+  gap: 26px;
 }
 
-.tab-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--app-card);
+/* tab strip (gc-card gc-strip gc-neutral): ghost pills, the active one white like gc-btn */
+.tab-row { gap: 8px; }
+.tab-row .tab-button.gc-btn-ghost.is-active,
+.tab-row .tab-button.gc-btn-ghost.is-active:hover {
+  background: #fff;
+  box-shadow: none;
+  color: #0b0b12;
+  font-weight: 700;
 }
 
+/* a result section is a page-level block: heading on the page (gc-section-h), cards inside */
 .result-section {
-  padding: 16px;
+  min-width: 0;
+  scroll-margin-top: 16px;
 }
 
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
   gap: 12px;
-  margin-top: 14px;
 }
-
-.metric-card {
-  min-height: 118px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--app-card);
-}
-
-.metric-card span,
-.metric-card small {
-  display: block;
-  color: var(--muted);
-}
-
-.metric-card strong {
-  display: block;
-  margin: 8px 0 3px;
-  color: var(--navy);
-  font-size: 1.7rem;
-  line-height: 1.05;
-}
-
-.metric-card.good strong { color: var(--green); }
-.metric-card.bad strong { color: var(--red); }
-.metric-card.warn strong { color: var(--amber); }
 
 .period-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
-.period-card {
-  padding: 13px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--app-elevated);
+.period-grid:empty { display: none; }
+.summary-grid > *,
+.period-grid > * { min-width: 0; }
+.summary-grid > .empty-box { grid-column: 1 / -1; }
+
+/* metric tile (gc-card gc-tile + tone): label · figure (gc-num, scales down in a narrow tile) · note */
+.metric-card { min-height: 118px; }
+
+.metric-card span,
+.metric-card small {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.45;
 }
 
+.metric-card span {
+  color: var(--gc-ink);
+  font-weight: 600;
+}
+
+.metric-card small { color: var(--gc-ink-2); }
+
+.metric-card strong {
+  display: block;
+  margin: 4px 0 2px;
+}
+
+.metric-card .gc-num { font-size: min(26px, 15cqi); }
+
+/* period tile (gc-card gc-tile + tone) */
 .period-card strong {
   display: block;
-  margin-bottom: 6px;
-  color: var(--navy);
-}
-
-.period-card p {
-  margin: 3px 0;
-  color: var(--muted);
-  font-size: 0.87rem;
-}
-
-.period-card.is-warning {
-  border-color: var(--app-down);
-  background: var(--app-elevated);
-}
-
-.chart-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.chart-card {
-  padding: 14px;
-  box-shadow: none;
-}
-
-.chart-card h3 {
-  margin-bottom: 10px;
-  color: var(--navy);
-  font-size: 1rem;
-}
-
-canvas {
-  width: 100%;
-  max-width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--app-card);
-}
-
-.table-wrap {
-  width: 100%;
-  margin-top: 14px;
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-
-table {
-  width: 100%;
-  min-width: 860px;
-  border-collapse: collapse;
-  background: var(--app-card);
-}
-
-th,
-td {
-  padding: 11px 12px;
-  border-bottom: 1px solid var(--line);
-  text-align: left;
-  vertical-align: top;
-  white-space: nowrap;
-}
-
-th {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-td {
-  color: var(--ink);
-  font-size: 0.88rem;
+  margin-bottom: 4px;
+  color: var(--gc-ink);
+  font-size: 13.5px;
   font-weight: 700;
 }
 
-tr.is-selected {
-  background: var(--app-accent-soft);
+.period-card p {
+  margin: 2px 0 0;
+  color: var(--gc-ink-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
 }
+
+.period-card p:first-of-type {
+  color: var(--gc-ink);
+  font-weight: 600;
+}
+
+/* empty / loading / failed message (gc-card gc-neutral) — one text run, so a block, not a flex column */
+.empty-box.gc-card {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* charts (gc-card gc-neutral): the canvas draws on a dark well; drawdown keeps its red (it means loss) */
+.chart-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.chart-card h3 {
+  margin: 0 0 10px;
+  color: var(--gc-ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.chart-card canvas {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 14px;
+  background: var(--gc-well);
+}
+
+/* tables (gc-card gc-neutral > gc-table-wrap > gc-table): the wrap scrolls sideways inside the card */
+.table-wrap.gc-card { padding: 10px 8px 8px; }
+.table-wrap .gc-table { min-width: 860px; }
+.table-wrap .gc-table th,
+.table-wrap .gc-table td { white-space: nowrap; }
+/* the scroll box is flush with the card's padding edge: keep its focus ring inside the rounded clip */
+.table-wrap .gc-table-wrap:focus-visible { outline-offset: -2px; }
+
+.gc-table tbody tr.is-selected > * { background: rgba(255, 255, 255, 0.1); }
+.gc-table tbody tr.is-selected > :first-child { box-shadow: inset 3px 0 0 #fff; }
 
 .ranking-button {
+  padding: 0;
   border: 0;
   background: transparent;
-  color: var(--navy);
+  color: var(--gc-ink);
   cursor: pointer;
   font: inherit;
-  font-weight: 900;
+  font-weight: 700;
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-.empty-box {
-  padding: 16px;
-  border: 1px dashed var(--line);
-  border-radius: 8px;
-  background: var(--app-elevated);
-  color: var(--muted);
-  font-weight: 800;
-}
+.ranking-button:hover { text-decoration-thickness: 2px; }
 
 @media (max-width: 920px) {
   .backtest-topbar,
@@ -386,6 +338,8 @@ tr.is-selected {
     display: flex;
     flex-direction: column;
   }
+
+  .backtest-layout { align-items: stretch; }
 
   .backtest-nav {
     justify-content: flex-start;
@@ -404,6 +358,6 @@ tr.is-selected {
   }
 
   .form-grid.two {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }

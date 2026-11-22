@@ -1,6 +1,11 @@
 /* ============================================================
    Bitcoin Intelligence (Phase 2) — tab + research-terminal UI.
    Uses the shared mc-* theme vars; scoped bi-* classes.
+   Glass cards (glass-cards.css gc-2): every section is a .gc-card — tone from the status the tab already computes
+   (bitcoin-intelligence-page.js GC_TONE: verdict · forecast bias · interpretation · playbook stance), the rest
+   gc-neutral. Inside a card the --mc-* tokens are glass ink (bitcoin-monitor.css, #btcRoot .gc-card), so the
+   rules below read on the glass in both site themes; glass-only adjustments are at the end of this file.
+   The dead heroSection / dnaSection (.mcx-hero, mission-control-v2.css) are not rendered and stay untouched.
    ============================================================ */
 
 /* ---- Monitor tab switcher ---- */
@@ -126,7 +131,8 @@
 .bi-dq strong { font-size: 15px; font-weight: 800; }
 
 /* ---- Load / refresh state ---- */
-.bi-refreshbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; padding: 10px 14px; background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 12px; }
+/* a glass strip (gc-card gc-strip gc-neutral) — face, rim and radius come from glass-cards.css */
+.bi-refreshbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; padding: 10px 14px; }
 .bi-rb-info { font-size: 12px; color: var(--mc-muted); }
 .bi-rb-info b { font-weight: 800; }
 .bi-rb-status { font-size: 12.5px; color: var(--mc-cyan); font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
@@ -177,7 +183,8 @@
 .bi-cyc-subhead { font-size: 12.5px; font-weight: 700; color: var(--mc-text-2); margin: 4px 0 10px; }
 .bi-cyc-simrow, .bi-cyc-path { display: grid; grid-template-columns: 1.5fr 1.4fr auto auto; align-items: center; gap: 9px; font-size: 12px; padding: 5px 0; }
 .bi-cyc-path { grid-template-columns: 20px 1.4fr 1.3fr auto auto; }
-.bi-cyc-sim-name, .bi-cyc-path-name { color: var(--mc-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* names wrap in their column (were cut with an ellipsis: up to 177px of each similarity / path name was never shown) */
+.bi-cyc-sim-name, .bi-cyc-path-name { min-width: 0; color: var(--mc-text-2); overflow-wrap: anywhere; }
 .bi-cyc-sim-bar { height: 8px; border-radius: 5px; background: rgba(148,163,184,.14); overflow: hidden; }
 .bi-cyc-sim-bar i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--mc-cyan), var(--mc-teal)); }
 .bi-cyc-simrow b, .bi-cyc-path b { font-variant-numeric: tabular-nums; font-weight: 800; }
@@ -241,7 +248,9 @@
 .bi-pb-r { background: var(--mc-red); }
 .bi-pb-risk-lbl, .bi-pb-cf-lbl { flex: 1; }
 .bi-pb-risk-val, .bi-pb-cf-val { color: var(--mc-muted); font-variant-numeric: tabular-nums; }
-.bi-pb-risk-st { font-weight: 800; font-size: 11px; width: 52px; text-align: right; }
+/* the status word shares the dot's colour class (.bi-pb-g/y/r paint a background) — the word keeps only the colour,
+   else it was text on its own colour (1:1, invisible) */
+.bi-pb-risk-st { font-weight: 800; font-size: 11px; width: 52px; text-align: right; background: none; }
 .bi-pb-risk-st.bi-pb-g { color: var(--mc-emerald); } .bi-pb-risk-st.bi-pb-y { color: var(--mc-amber); } .bi-pb-risk-st.bi-pb-r { color: var(--mc-red); }
 .bi-pb-cf b { font-weight: 800; width: 56px; text-align: right; }
 /* transitions */
@@ -266,7 +275,8 @@
 .bi-pb-dont-col { border-left: 3px solid var(--mc-red); }
 .bi-pb-do { color: var(--mc-emerald); } .bi-pb-dont { color: var(--mc-red); }
 /* examples */
-.bi-pb-exs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; }
+/* up to 5 examples in one row when they fit, wrapping instead of overflowing the (nested) glass card */
+.bi-pb-exs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 9px; }
 .bi-pb-ex { border: 1px solid var(--mc-border); border-radius: 10px; padding: 9px 10px; }
 .bi-pb-ex-head { display: flex; justify-content: space-between; align-items: center; }
 .bi-pb-ex-head b { font-size: 12.5px; font-weight: 800; }
@@ -275,7 +285,6 @@
 .bi-pb-ex-row { display: flex; flex-direction: column; gap: 2px; font-size: 11.5px; }
 .bi-pb-ex-row b { font-weight: 800; }
 .bi-pb-ex-out { margin-top: 6px; font-size: 11px; font-weight: 700; color: var(--mc-text-2); border-top: 1px solid var(--mc-border); padding-top: 5px; }
-@media (max-width: 860px) { .bi-pb-exs { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 720px) { .bi-pb-grid { grid-template-columns: 1fr; } .bi-pb-stats { grid-template-columns: repeat(2, 1fr); } .bi-pb-hero-metrics { gap: 14px; } }
 
 /* ==================== Decision-first Refactor ==================== */
@@ -308,7 +317,9 @@
 .bi-sim2-bar b { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--mc-cyan), var(--mc-teal)); }
 .bi-sim2-val { width: 44px; text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
 /* Section 3 — Most Similar Cases (cards) */
-.bi-cases-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+/* one rule at every width: as many 232px+ columns as the card holds (a case card needs 204–227px). The fixed 5/3/2
+   column counts could not shrink below that and the glass (overflow:hidden) cut cases + their Replay buttons off */
+.bi-cases-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 232px), 1fr)); gap: 10px; }
 .bi-case { text-align: left; cursor: pointer; border: 1px solid var(--mc-border); border-radius: 12px; padding: 12px; background: rgba(255,255,255,.015); color: inherit; font: inherit; transition: border-color .15s, transform .15s; }
 .bi-case:hover { border-color: var(--mc-cyan); transform: translateY(-2px); }
 .bi-case-top { display: flex; justify-content: space-between; align-items: baseline; }
@@ -325,7 +336,8 @@
 .bi-ov-leg { display: inline-flex; align-items: center; gap: 6px; } .bi-ov-leg i { width: 16px; height: 3px; border-radius: 2px; }
 /* Section 5 — Historical Outcome */
 .bi-out-head { font-size: 14px; margin-bottom: 12px; } .bi-out-head b { font-size: 20px; font-weight: 900; }
-.bi-out-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 9px; }
+/* 6 cells in one row when they fit, wrapping instead of overflowing the (nested, narrower) glass card */
+.bi-out-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 110px), 1fr)); gap: 9px; }
 .bi-out-cell { border: 1px solid var(--mc-border); border-radius: 11px; padding: 11px; text-align: center; }
 .bi-out-cell small { display: block; font-size: 10.5px; color: var(--mc-muted); margin-bottom: 5px; }
 .bi-out-cell strong { font-size: 20px; font-weight: 900; font-variant-numeric: tabular-nums; }
@@ -361,7 +373,8 @@
 .bi-lib-v-bull { color: var(--mc-emerald); } .bi-lib-v-bear { color: var(--mc-red); } .bi-lib-v-muted { color: var(--mc-muted); }
 @media (max-width: 760px) { .bi-lib-cols2 { display: none; } .bi-lib-row2 { grid-template-columns: 1fr auto; row-gap: 4px; } .bi-lib-row2 .bi-lib-wr { grid-column: 1 / -1; } }
 /* Section 7 — Pattern Combination */
-.bi-combo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; }
+/* as many 220px+ combo cards per row as fit (fixed 3 / 2 columns ran +29px at 981 and +146px at 390) */
+.bi-combo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 11px; }
 .bi-combo { border: 1px solid var(--mc-border); border-radius: 12px; padding: 13px 14px; border-left-width: 4px; }
 .bi-combo.bull { border-left-color: var(--mc-emerald); } .bi-combo.bear { border-left-color: var(--mc-red); }
 .bi-combo-name { font-size: 12.5px; font-weight: 700; line-height: 1.4; margin-bottom: 10px; min-height: 34px; }
@@ -369,7 +382,8 @@
 .bi-combo-stats small { display: block; font-size: 9.5px; color: var(--mc-muted); } .bi-combo-stats b { font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; }
 /* Section 8 — Historical Replay modal */
 .bi-modal { position: fixed; inset: 0; z-index: 200; background: rgba(2,6,12,.72); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 20px; }
-.bi-modal-card { width: min(620px, 96vw); max-height: 90vh; overflow: auto; background: var(--mc-panel, #0f172a); border: 1px solid var(--mc-border); border-radius: 16px; padding: 20px 22px; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+/* a glass card (gc-card gc-neutral): face / rim / radius from glass-cards.css; it still scrolls inside */
+.bi-modal-card { width: min(620px, 96vw); max-height: 90vh; overflow: auto; padding: 20px 22px; }
 .bi-modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
 .bi-modal-head h3 { margin: 0 0 3px; font-size: 18px; font-weight: 800; }
 .bi-modal-x { background: none; border: 1px solid var(--mc-border); color: var(--mc-muted); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 14px; flex: none; }
@@ -435,8 +449,8 @@
 .bi-fc-cl-h span { display: block; font-size: 10px; color: var(--mc-muted); }
 @media (max-width: 720px) { .bi-fc-cls { grid-template-columns: 1fr; } }
 /* ---- Verdict box ---- */
-.bi-vd { border-left: 5px solid var(--mc-border); }
-.bi-vd.bi-decision-bull { border-left-color: var(--mc-emerald); } .bi-vd.bi-decision-bear { border-left-color: var(--mc-red); } .bi-vd.bi-decision-warn { border-left-color: var(--mc-amber); }
+/* the verdict card's glass tone = the decision tone (the old 5px left stripe is gone) */
+.bi-vd.gc-card { border-left-width: 1px; border-left-color: rgba(255, 255, 255, 0.09); }
 .bi-vd-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; margin-bottom: 12px; }
 .bi-vd-head .mc-eyebrow { width: 100%; margin: 0; }
 .bi-vd-word { font-size: 30px; font-weight: 900; letter-spacing: -.5px; }
@@ -493,5 +507,27 @@
 .bi-fc-m-shape { font-size: 10.5px; color: var(--mc-muted); margin: 3px 0 7px; }
 .bi-fc-m-fwd { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--mc-muted); }
 .bi-fc-m-fwd b { display: block; font-size: 12px; font-weight: 800; }
-@media (max-width: 980px) { .bi-cases-grid { grid-template-columns: repeat(3, 1fr); } .bi-out-grid { grid-template-columns: repeat(3, 1fr); } .bi-combo-grid { grid-template-columns: repeat(2, 1fr); } .bi-fc-matches { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px) { .bi-cases-grid { grid-template-columns: repeat(2, 1fr); } .bi-sim2-lbl { width: 130px; } .bi-lib-cols, .bi-lib-row { grid-template-columns: 2fr 1fr 1.5fr 1fr; } .bi-fc-outcomes { grid-template-columns: 1fr; } }
+@media (max-width: 980px) { .bi-fc-matches { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .bi-sim2-lbl { width: 130px; } .bi-lib-cols, .bi-lib-row { grid-template-columns: 2fr 1fr 1.5fr 1fr; } .bi-fc-outcomes { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   Glass (glass-cards.css gc-2 · 2026-11-22) — token map lives in bitcoin-monitor.css (#btcRoot .gc-card)
+   ============================================================ */
+/* sections nested in 🔬 Research keep their own spacing inside the research card. Their tables / matrices are wider
+   than a phone or tablet card (Chrome, fix round 1: similarity +53…+295 · matrix +16…+226 · combo +29…+146 · probability
+   +81 · overlay +29 · heatmap +5 at 981–390px) — they scroll sideways inside their own card instead of being cut by
+   the glass; where the content fits (>= 1024px) nothing changes */
+#btcRoot .bi-research-body > .gc-card { margin-bottom: 0; overflow-x: auto; overflow-y: hidden; }
+/* case buttons are wells on the glass; hover darkens + white rim, no lift */
+#btcRoot .gc-card .bi-case { background: var(--gc-well); }
+#btcRoot .gc-card .bi-case:hover { transform: none; border-color: rgba(255, 255, 255, 0.45); }
+/* phase badges keep their categorical phase colour (same as the cycle charts) on a dark backing */
+#btcRoot .gc-card .bi-cyc-badge { background: rgba(0, 0, 0, 0.35); }
+/* figures on the glass: Inter 700 tabular */
+#btcRoot .gc-card .bi-vd-chip b,
+#btcRoot .gc-card .bi-stat strong,
+#btcRoot .gc-card .bi-fc-oc2 b,
+#btcRoot .gc-card .bi-case-ret b,
+#btcRoot .gc-card .bi-rank-big { font-family: var(--gc-num-font); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* the hover tooltip lives on <body> (outside #btcRoot) on a dark face — give it light ink in both themes */
+.bi-chart-tip { --mc-text: #f5f5fa; --mc-muted: rgba(245, 245, 250, 0.8); --mc-cyan: #a5f3fc; color-scheme: dark; }

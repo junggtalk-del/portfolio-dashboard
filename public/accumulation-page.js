@@ -127,6 +127,14 @@
     };
   }
 
+  // ---------------- การ์ดแก้ว (glass-cards.css) — สีการ์ด = สถานะที่หน้าคำนวณอยู่แล้ว (ไม่สร้างสถานะใหม่) ----------------
+  //   การ์ดจัดอันดับ (.acc-card): ประเภทจังหวะย่อ dip.key — 4 ระดับเดียวกับแถบนับบนหัวหน้า
+  //     🟢 healthy → gc-calm · 🟡 macro → gc-normal · 🟠 wait → gc-warning · 🔴 review → gc-danger
+  //   กล่องคำแนะนำ (.acc-rec bull/watch/bear) คงสีของตัวเองบนการ์ด · แถบเลขส่วนประกอบคงสีตามช่วงคะแนนเดิม
+  //   ไม่มีสถานะ (แถบนับ · กล่องชิปตัวที่ยังไม่จัดอันดับ · ข้อความว่าง/กำลังโหลด) → gc-neutral
+  var GC_DIP_TONE = { healthy: "gc-calm", macro: "gc-normal", wait: "gc-warning", review: "gc-danger" };
+  function gcTone(map, key) { return key != null && Object.prototype.hasOwnProperty.call(map, key) ? map[key] : "gc-neutral"; }
+
   // ---------------- render ----------------
   function partBars(parts) {
     return parts.map(function (p) {
@@ -147,10 +155,10 @@
     var expTxt = e.exp.held
       ? (e.exp.pct != null ? "ถืออยู่ " + e.exp.pct.toFixed(1) + "% ของ" + esc(e.exp.basis) + " (เพดาน " + MAX_BUCKET_PCT + "%)" : "ถืออยู่ (" + esc(e.exp.basis || "") + " — ยังไม่ตั้ง Quarterly)")
       : "ยังไม่ได้ถือ";
-    return '<article class="acc-card' + (rank <= 3 ? " acc-card-top" : "") + '">' +
-      '<div class="acc-head"><span class="acc-rank">#' + rank + '</span>' +
+    return '<article class="acc-card' + (rank <= 3 ? " acc-card-top" : "") + " gc-card " + gcTone(GC_DIP_TONE, e.dip && e.dip.key) + '">' +
+      '<div class="acc-head"><span class="acc-rank gc-pill' + (rank <= 3 ? "" : " gc-pill-ghost") + '">#' + rank + '</span>' +
       '<div class="acc-title"><a class="acc-sym" href="' + detail + '">' + esc(e.ticker) + "</a><small>" + esc(e.name) + "</small></div>" +
-      '<div class="acc-score" title="Accumulation Score — สูตรเดียวกับหน้า AI Portfolio Manager และป้าย Acc บน Home"><b>' + (e.score == null ? "—" : e.score) + '</b><span>/100 · Acc</span></div></div>' +
+      '<div class="acc-score" title="Accumulation Score — สูตรเดียวกับหน้า AI Portfolio Manager และป้าย Acc บน Home"><b class="gc-num gc-num-s">' + (e.score == null ? "—" : e.score) + '</b><span>/100 · Acc</span></div></div>' +
       '<div class="acc-line">' + e.dip.icon + ' <b>' + esc(e.dip.label) + "</b> — " + esc(e.dip.thai) +
       (e.dd != null ? ' · ย่อ ' + e.dd.toFixed(1) + '%' : "") + "</div>" +
       (e.intel ? '<div class="acc-intel"><span>' + e.intel.health.icon + " " + esc(e.intel.health.key) + "</span><span title=\"Business vs Price\">" + e.intel.divergence.icon + " " + esc(e.intel.divergence.key) + "</span><span title=\"Investment Readiness — ไม่ใช่คำสั่งซื้อขาย\">" + e.intel.readiness.icon + " " + esc(e.intel.readiness.label) + "</span></div>" : "") +
@@ -169,8 +177,8 @@
     if (!root) return;
     var snapshot = readSnapshot();
     var TE = window.ThesisEngine, TD = window.ThesisData;
-    if (!TE || !TD || !window.PMEngine) { root.innerHTML = '<div class="mc-empty"><strong>Thesis/PM Engine ไม่พร้อม</strong> — refresh หน้านี้</div>'; return; }
-    if (!snapshot) { root.innerHTML = header(null) + '<div class="mc-empty"><strong>ยังไม่มี Data Snapshot</strong><br>กด Load Latest Data ก่อน — คะแนน Mega Trend/Macro/Timing ต้องใช้ราคาจริง</div>'; return; }
+    if (!TE || !TD || !window.PMEngine) { root.innerHTML = '<div class="mc-empty gc-card gc-neutral"><strong>Thesis/PM Engine ไม่พร้อม</strong> — refresh หน้านี้</div>'; return; }
+    if (!snapshot) { root.innerHTML = header(null) + '<div class="mc-empty gc-card gc-neutral"><strong>ยังไม่มี Data Snapshot</strong><br>กด Load Latest Data ก่อน — คะแนน Mega Trend/Macro/Timing ต้องใช้ราคาจริง</div>'; return; }
 
     var uni = universePool(snapshot);
     var buckets = window.PMEngine.quarterlyBuckets(snapshot);
@@ -188,22 +196,23 @@
     var top = entries.slice(0, 10);
     var rest = entries.slice(10);
     root.innerHTML = header(counts) +
-      '<section class="acc-sec"><h2>🏆 Top 10 Accumulation Opportunities</h2><p>จัดอันดับด้วย Accumulation Score — น้ำหนัก Thesis 40 · Business Growth vs ราคา (ถ่วงน้ำหนัก 2-5 ปี · ปีล่าสุดมากกว่า) 25 · Timing 20 · Valuation 15 (ถอด Macro/ดอกเบี้ย/Mega Trend คำนวณออก — มุมมอง AI Megatrend คุณตัดสินใจเองที่หน้า AI Portfolio Manager · เทคนิคเป็นเครื่องมือจับจังหวะ ไม่ใช่ตัวตัดสิน)</p>' +
+      '<section class="acc-sec"><div class="acc-sec-h gc-section-h"><h2>🏆 Top 10 Accumulation Opportunities</h2><p>จัดอันดับด้วย Accumulation Score — น้ำหนัก Thesis 40 · Business Growth vs ราคา (ถ่วงน้ำหนัก 2-5 ปี · ปีล่าสุดมากกว่า) 25 · Timing 20 · Valuation 15 (ถอด Macro/ดอกเบี้ย/Mega Trend คำนวณออก — มุมมอง AI Megatrend คุณตัดสินใจเองที่หน้า AI Portfolio Manager · เทคนิคเป็นเครื่องมือจับจังหวะ ไม่ใช่ตัวตัดสิน)</p></div>' +
       (top.length ? '<div class="acc-grid">' + top.map(function (e, i) { return card(e, i + 1); }).join("") + "</div>"
-        : '<div class="mc-empty">ยังไม่มีตัวที่ประเมินได้ — กด Load Latest Data</div>') + "</section>" +
-      (rest.length ? '<section class="acc-sec"><h2>อันดับที่เหลือ</h2><div class="acc-grid">' + rest.map(function (e, i) { return card(e, i + 11); }).join("") + "</div></section>" : "") +
-      '<section class="acc-sec acc-uncovered"><h2>ยังไม่จัดอันดับ (' + uncovered.length + ' ตัว — ไม่มี Investment Thesis)</h2>' +
-      '<p>หลักการของหน้านี้: <b>ไม่แนะนำสะสมจากเทคนิคเดี่ยว ๆ</b> — ตัวที่ยังไม่มี thesis จึงไม่ถูกจัดอันดับ · เพิ่มด้วย <code>/thesis-update TICKER</code> ใน Claude Code</p>' +
-      '<div class="acc-chips">' + uncovered.map(function (u) { return '<a class="acc-chip" href="/asset/' + encodeURIComponent(u.ticker) + '">' + esc(u.ticker) + "</a>"; }).join("") + "</div></section>" +
+        : '<div class="mc-empty gc-card gc-neutral">ยังไม่มีตัวที่ประเมินได้ — กด Load Latest Data</div>') + "</section>" +
+      (rest.length ? '<section class="acc-sec"><h2 class="gc-section-h">อันดับที่เหลือ</h2><div class="acc-grid">' + rest.map(function (e, i) { return card(e, i + 11); }).join("") + "</div></section>" : "") +
+      '<section class="acc-sec acc-uncovered"><div class="acc-sec-h gc-section-h"><h2>ยังไม่จัดอันดับ (' + uncovered.length + ' ตัว — ไม่มี Investment Thesis)</h2>' +
+      '<p>หลักการของหน้านี้: <b>ไม่แนะนำสะสมจากเทคนิคเดี่ยว ๆ</b> — ตัวที่ยังไม่มี thesis จึงไม่ถูกจัดอันดับ · เพิ่มด้วย <code>/thesis-update TICKER</code> ใน Claude Code</p></div>' +
+      '<div class="acc-chips gc-card gc-strip gc-neutral">' + uncovered.map(function (u) { return '<a class="acc-chip gc-pill gc-pill-ghost" href="/asset/' + encodeURIComponent(u.ticker) + '">' + esc(u.ticker) + "</a>"; }).join("") + "</div></section>" +
       '<footer class="acc-foot">📎 Universe เดียวกับ Action Center (store เดียวกัน — sync เสมอ) · engine: Thesis / Market Regime / Rate Headwind (สูตรกลางใน PM engine) · deterministic ไม่มี LLM · ไม่ใช่คำแนะนำการลงทุน</footer>';
   }
 
   function header(counts) {
-    var strip = counts ? '<div class="acc-strip">' +
-      '<span class="acc-pill">🟢 Healthy <b>' + counts.healthy + "</b></span>" +
-      '<span class="acc-pill">🟡 Macro <b>' + counts.macro + "</b></span>" +
-      '<span class="acc-pill">🟠 Wait <b>' + counts.wait + "</b></span>" +
-      '<span class="acc-pill">🔴 Review <b>' + counts.review + "</b></span></div>" : "";
+    // แถบนับ = แก้ว gc-neutral แถบเดียว (สีของแต่ละประเภทอยู่ที่ไอคอน) — ป้าย gc-pill-ghost · ตัวเลข gc-num
+    var strip = counts ? '<div class="acc-strip gc-card gc-strip gc-neutral">' +
+      '<span class="acc-pill gc-pill gc-pill-ghost">🟢 Healthy <b class="gc-num">' + counts.healthy + "</b></span>" +
+      '<span class="acc-pill gc-pill gc-pill-ghost">🟡 Macro <b class="gc-num">' + counts.macro + "</b></span>" +
+      '<span class="acc-pill gc-pill gc-pill-ghost">🟠 Wait <b class="gc-num">' + counts.wait + "</b></span>" +
+      '<span class="acc-pill gc-pill gc-pill-ghost">🔴 Review <b class="gc-num">' + counts.review + "</b></span></div>" : "";
     return '<header class="acc-header"><h1>🧺 Accumulation Center</h1>' +
       '<p>จังหวะย่อตัวไหนควรค่าแก่การสะสมวันนี้ — ทุกคำแนะนำรวม Thesis · Business Growth vs ราคา (ถ่วงน้ำหนัก 2-5 ปี) · พื้นฐาน · Timing · Valuation · สัดส่วนพอร์ต</p>' + strip + "</header>";
   }

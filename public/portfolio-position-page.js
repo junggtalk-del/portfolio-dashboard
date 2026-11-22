@@ -56,6 +56,16 @@
       annualPct: typeof tg.annualPct === "number" ? tg.annualPct : null
     };
   }
+  // การ์ดแก้ว (glass-cards.css): สีการ์ด = สถานะที่หน้านี้คิดอยู่แล้ว · ไม่มีสถานะ → gc-neutral (ไม่ประดิษฐ์สถานะใหม่)
+  //   ความมั่งคั่งรวม: แถว record.whole ของไตรมาสที่แสดง (คำ เกินเป้า / ตามเป้า / ต่ำกว่าเป้า ในบล็อก 3 บรรทัด)
+  //     ahead → calm · on → normal · behind → warning (อำพันแบบ .pp-grow-st.is-behind — ตามหลังเป้าไม่ใช่ความผิด)
+  //   ไม่มี engine / ไตรมาสนี้เทียบไม่ได้ → บรรทัด QoQ เดิม: pp-up → calm · pp-down → danger · ไม่มีไตรมาสก่อนหน้า → neutral
+  var GC_GROW_TONE = { ahead: "gc-calm", on: "gc-normal", behind: "gc-warning" };
+  function wealthTone(RG, T) {
+    if (RG && RG.available) return GC_GROW_TONE[RG.status] || "gc-neutral";
+    if (T && T.qoq) return T.qoq.thb >= 0 ? "gc-calm" : "gc-danger";
+    return "gc-neutral";
+  }
   function signedPctOf(x) { return (x >= 0 ? "+" : "−") + Math.abs(x * 100).toFixed(1) + "%"; }
   function moneyOf(x) { return x < 0 ? "−" + thb(-x) : thb(x); }
   // 3 บรรทัดคู่กันเสมอ — ไม่ต้องกดสลับ · ทุกบรรทัดบอกที่มาของตัวเลข
@@ -216,7 +226,7 @@
     var msg = R.reason === "no-quarterly" || R.reason === "no-snapshot"
       ? 'ยังไม่มีข้อมูลพอร์ตรายไตรมาส — เริ่มจากกรอกสินทรัพย์ของคุณใน <a href="/">Quarterly Editor</a> ก่อน แล้วหน้านี้จะสรุปสัดส่วนให้อัตโนมัติ'
       : 'โหลดข้อมูลไม่สำเร็จ (' + esc(R.reason || "") + ") — ลองกด Load Latest Data";
-    return '<section class="pp-hero"><div class="pp-hero-inner">' +
+    return '<section class="pp-hero"><div class="pp-hero-inner gc-card gc-neutral">' +
       '<div class="pp-hero-emoji">📊</div>' +
       '<h1 class="pp-title">Portfolio Position</h1>' +
       '<p class="pp-sub">ภาพจริงของพอร์ต: สัดส่วน มูลค่า ไส้ใน และสภาวะของแต่ละสินทรัพย์</p>' +
@@ -241,16 +251,20 @@
     var growthLine = RG && RG.available
       ? growthBlock(RG)
       : qoqLine + (RG && RG.reason ? '<div class="pp-stat-s pp-dim">ไม่รวมเงินเติม: ' + esc(RG.reason) + "</div>" : "");
+    // .pp-hero = ตัวห่อบนพื้นหน้า: หัว (gc-section-h) · 3 ช่องเป็นการ์ดแก้วของตัวเอง · แถบลงทุน/เงินสดเป็นการ์ดแถบ
+    var tile = "pp-stat gc-card gc-tile ", num = "pp-stat-n gc-num gc-num-s";
     return '<section class="pp-hero"><div class="pp-hero-inner">' +
-      '<div class="pp-hero-head"><div><h1 class="pp-title">📊 Portfolio Position</h1>' +
+      '<div class="pp-hero-head gc-section-h"><div><h1 class="pp-title">📊 Portfolio Position</h1>' +
       '<p class="pp-sub">ไตรมาส <b>' + esc(R.quarterKey) + '</b> · ' + esc(count) + " รายการใน Quarterly Editor" + (pm ? " · " + srcTag() : "") + (ago ? " · อัปเดต " + esc(ago) : "") + '</p></div></div>' +
       '<div class="pp-stats">' +
-        '<div class="pp-stat"><div class="pp-stat-n">' + thb(T.total) + '</div><div class="pp-stat-l">ความมั่งคั่งรวม</div>' + growthLine + '</div>' +
-        '<div class="pp-stat"><div class="pp-stat-n">' + pct(T.investedPct) + '</div><div class="pp-stat-l">ลงทุนจริง</div><div class="pp-stat-s">' + thb(T.investedSum) + '</div></div>' +
-        '<div class="pp-stat"><div class="pp-stat-n">' + pct(T.cashPct) + '</div><div class="pp-stat-l">เงินสด/ยังไม่ลงทุน</div><div class="pp-stat-s">' + thb(T.cashSum) + '</div></div>' +
+        '<div class="' + tile + wealthTone(RG, T) + '"><div class="' + num + '">' + thb(T.total) + '</div><div class="pp-stat-l">ความมั่งคั่งรวม</div>' + growthLine + '</div>' +
+        '<div class="' + tile + 'gc-neutral"><div class="' + num + '">' + pct(T.investedPct) + '</div><div class="pp-stat-l">ลงทุนจริง</div><div class="pp-stat-s">' + thb(T.investedSum) + '</div></div>' +
+        '<div class="' + tile + 'gc-neutral"><div class="' + num + '">' + pct(T.cashPct) + '</div><div class="pp-stat-l">เงินสด/ยังไม่ลงทุน</div><div class="pp-stat-s">' + thb(T.cashSum) + '</div></div>' +
       '</div>' +
-      '<div class="pp-invbar" title="ลงทุนจริง ' + pct(T.investedPct) + ' · เงินสด ' + pct(T.cashPct) + '"><i style="width:' + Math.max(0, Math.min(100, T.investedPct)) + '%"></i></div>' +
-      '<div class="pp-invbar-cap"><span>ลงทุนจริง ' + pct(T.investedPct) + '</span><span>เงินสด ' + pct(T.cashPct) + '</span></div>' +
+      '<div class="pp-invstrip gc-card gc-tile gc-neutral">' +
+        '<div class="pp-invbar" title="ลงทุนจริง ' + pct(T.investedPct) + ' · เงินสด ' + pct(T.cashPct) + '"><i style="width:' + Math.max(0, Math.min(100, T.investedPct)) + '%"></i></div>' +
+        '<div class="pp-invbar-cap"><span>ลงทุนจริง ' + pct(T.investedPct) + '</span><span>เงินสด ' + pct(T.cashPct) + '</span></div>' +
+      '</div>' +
     '</div></section>';
   }
 
@@ -262,7 +276,8 @@
       segs += '<i style="width:' + b.pct + '%;background:' + b.color + '" title="' + esc(b.label) + " " + pct(b.pct) + '"></i>';
       legend += '<span class="pp-leg"><i style="background:' + b.color + '"></i>' + esc(b.label) + " <b>" + pct(b.pct) + "</b></span>";
     });
-    return '<section class="pp-block"><div class="pp-block-head"><h2>สัดส่วนพอร์ตตอนนี้</h2><span class="pp-block-sub">ตามมูลค่าจริงจาก Quarterly Editor' + (pm ? " · " + srcTag() : "") + "</span></div>" +
+    // ไม่มีสถานะ → gc-neutral · สีแท่งเป็นสีประจำประเภทสินทรัพย์ (คงเดิม)
+    return '<section class="pp-block gc-card gc-neutral"><div class="pp-block-head"><h2>สัดส่วนพอร์ตตอนนี้</h2><span class="pp-block-sub">ตามมูลค่าจริงจาก Quarterly Editor' + (pm ? " · " + srcTag() : "") + "</span></div>" +
       '<div class="pp-alloc">' + segs + '</div><div class="pp-legend">' + legend + "</div></section>";
   }
 

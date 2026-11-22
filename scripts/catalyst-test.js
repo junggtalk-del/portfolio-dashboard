@@ -919,7 +919,8 @@ console.log("== หน้าเว็บ: Radar + Detail render จริง =="
       var css = fs.readFileSync(PUB + "/catalyst-hunter.css", "utf8");
       var m = /\.ch-sec-primary \{[^}]*\}/.exec(css);
       var c2 = /\.ch-rare \{[^}]*\}/.exec(css);
-      return m && c2 && !/52, 211, 153/.test(m[0]) && !/52, 211, 153/.test(c2[0]);
+      // การ์ดแก้ว (2026-11): ch-sec-primary ไม่มีกฎหน้าตาของตัวเองแล้ว — สีอยู่ที่การ์ดแต่ละใบ · ถ้ากลับมามีต้องไม่เขียว
+      return (!m || !/52, 211, 153/.test(m[0])) && c2 && !/52, 211, 153/.test(c2[0]);
     })());
     t("CSS ไม่มีสไตล์ไทม์ไลน์ที่เลิกใช้แล้ว", (function () {
       var css = fs.readFileSync(PUB + "/catalyst-hunter.css", "utf8");

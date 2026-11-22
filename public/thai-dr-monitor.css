@@ -13,6 +13,12 @@
      4. สามระดับข้อความ: text → text-muted → text-subtle
      5. ไทยต้องมีที่หายใจ: line-height ≥ 1.55
      6. ตัวเลขชิดขวา tabular-nums
+
+   การ์ดแก้ว (2026-11-22 · glass-cards.css gc-2 โหลดก่อนไฟล์นี้): การ์ดทุกใบใน #drRoot เป็น .gc-card
+   หนึ่ง tone จากสถานะที่ thai-dr-page.js คิดอยู่แล้ว (ตาราง map อยู่เหนือ summaryBlock) · นอกการ์ด
+   (หัวหน้า · แท็บ · แถบผลการกรอง) ยังใช้ token ของหน้าตามธีม · ในการ์ด token เดิมกลายเป็นหมึกแก้ว
+   และสีสถานะของป้าย/ตัวเลขถูกยกให้สว่าง (ความสว่าง ≥ 0.70 → ≥ 4.5:1 บนทุก tone) — ดู "glass" ด้านล่าง
+   ปุ่ม = gc-btn / gc-btn-ghost · ช่องกรอก = gc-field · ตาราง = gc-table ใน gc-table-wrap
    ============================================================ */
 
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap");
@@ -84,6 +90,43 @@ html[data-theme="light"] .dr-page {
   --shadow-pop: 0 8px 24px rgba(16, 24, 40, 0.10);
 }
 
+/* ---------- glass: token ของหน้าบนการ์ดแก้ว (เหมือนกันทั้งสองธีม) ---------- */
+/* พื้นย่อย (--surface / --surface-2 / *-soft) มืดลงเสมอ — หมึกรองของแก้วได้ 4.5:1 พอดีที่จุดสว่างสุด จึงห้ามทำให้สว่างขึ้น */
+.dr-page .gc-card {
+  --text: var(--gc-ink);
+  --text-muted: var(--gc-ink-2);
+  --text-subtle: var(--gc-ink-2);
+  --surface: var(--gc-well);
+  --surface-2: rgba(0, 0, 0, 0.18);
+  --border: var(--gc-line);
+  --border-strong: rgba(255, 255, 255, 0.22);
+  --accent: #8ff0e0;
+  --accent-soft: rgba(6, 52, 46, 0.62);
+  --on-accent: #0b0b12;
+  --on-accent-muted: rgba(255, 255, 255, 0.16);
+  --positive: #7cf5c6;
+  --positive-soft: rgba(4, 44, 30, 0.62);
+  --negative: #ffcfdb;
+  --negative-soft: rgba(70, 6, 28, 0.62);
+  --warning: #ffd98a;
+  --warning-soft: rgba(66, 34, 4, 0.62);
+  --info: #9ee8ff;
+  --info-soft: rgba(6, 34, 62, 0.62);
+  --highlight: #ffe14d;
+  --highlight-soft: rgba(60, 48, 4, 0.55);
+  --violet: #e0d6ff;
+  --violet-soft: rgba(36, 22, 86, 0.62);
+  --font-sans: var(--gc-font);
+}
+.dr-page .gc-card :focus-visible { outline-color: #fff; }
+.dr-page .gc-card a { color: var(--gc-ink); text-decoration: underline; text-underline-offset: 3px; }
+/* ป้ายสถานะบนแก้ว: พื้นมืดอมสี + ขอบบาง ให้รูปชิปยังเห็น */
+.dr-page .gc-card .dr-badge,
+.dr-page .gc-card .dr-review,
+.dr-page .gc-card .dr-miss,
+.dr-page .gc-card .dr-ovr,
+.dr-page .gc-card .dr-ai { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+
 /* ---------- พื้นฐานของหน้า ---------- */
 .dr-page {
   font-family: var(--font-sans);
@@ -109,22 +152,9 @@ html[data-theme="light"] .dr-page {
 }
 
 /* ---------- ปุ่ม ---------- */
-.dr-btn {
-  display: inline-flex; align-items: center; gap: var(--space-2);
-  height: 36px; padding: 0 var(--space-4);
-  border-radius: var(--radius-md); border: 1px solid transparent;
-  font: 500 14px/20px var(--font-sans); cursor: pointer; white-space: nowrap;
-  text-decoration: none; transition: background .15s, border-color .15s, color .15s;
-}
+/* หน้าตามาจาก gc-btn (หลัก = ขาวทึบ) / gc-btn-ghost (รอง · โปร่ง) — ที่นี่เหลือแค่ขนาดไอคอนและรุ่นเล็ก */
 .dr-btn .dr-ico { width: 16px; height: 16px; }
-.dr-btn--primary { background: var(--accent); color: var(--on-accent); font-weight: 600; }
-.dr-btn--primary:hover { filter: brightness(1.08); }
-.dr-btn--secondary { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
-.dr-btn--secondary:hover { border-color: var(--accent); color: var(--accent); }
-.dr-btn--ghost { background: transparent; color: var(--text-muted); }
-.dr-btn--ghost:hover { background: var(--surface-2); color: var(--text); }
-.dr-btn--sm { height: 30px; padding: 0 var(--space-3); font-size: 13px; border-radius: var(--radius-sm); }
-.dr-btn[disabled] { opacity: .45; cursor: not-allowed; }
+.dr-btn--sm { min-height: 32px; padding: 6px 12px; font-size: 12.5px; }
 
 /* ---------- badge ---------- */
 .dr-badge {
@@ -190,27 +220,26 @@ html[data-theme="light"] .dr-page {
 .dr-body { padding: 0 var(--space-8); display: flex; flex-direction: column; gap: var(--space-5); }
 
 /* ---------- คำเตือน / สถานะข้อมูล ---------- */
+/* dr-warn = gc-card gc-warning · dr-note-block = gc-card gc-neutral (พื้น/ขอบ/มุมมาจากแก้ว)
+   gc-card เป็นคอลัมน์ → ตั้งกลับเป็นแถว: ไอคอนซ้าย ข้อความขวา (ข้อความยาวห้ามตกไปใต้ไอคอน) */
 .dr-warn, .dr-note-block {
-  display: flex; gap: var(--space-3); align-items: flex-start;
-  padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+  --gc-radius: 20px;
+  flex-direction: row; gap: var(--space-3); align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
   font-size: 13px; line-height: 1.6;
 }
-.dr-warn { background: var(--warning-soft); color: var(--text); border: 1px solid transparent; }
-.dr-warn b { color: var(--warning); font-weight: 600; }
-.dr-note-block { background: var(--surface-2); color: var(--text-muted); }
+.dr-warn > div, .dr-note-block > div { flex: 1 1 auto; min-width: 0; }
+.dr-warn b { color: var(--gc-ink); font-weight: 700; }
+.dr-note-block { color: var(--text-muted); }
 .dr-note-block b { color: var(--text); font-weight: 600; }
 
 /* ---------- การ์ด KPI ---------- */
+/* แต่ละใบ = gc-card (tone จาก summaryBlock) · ตัวเลข = gc-num */
 .dr-stats {
   display: grid; gap: var(--space-4);
   grid-template-columns: 1.5fr repeat(4, 1fr) 1.25fr;
 }
-.dr-stat {
-  position: relative; background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius-lg);
-  padding: var(--space-4) var(--space-5);
-  display: flex; flex-direction: column; gap: 2px; min-width: 0;
-}
+.dr-stat { gap: 2px; }
 .dr-stat__top {
   display: flex; flex-direction: column-reverse; align-items: flex-start;
   gap: var(--space-3); margin-bottom: var(--space-1);
@@ -220,47 +249,27 @@ html[data-theme="light"] .dr-page {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 .dr-stat__value {
-  font: 600 30px/36px var(--font-sans); letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums; color: var(--text);
+  font-size: 30px; line-height: 36px;
   display: flex; align-items: baseline; gap: var(--space-2); flex-wrap: wrap;
 }
-.dr-stat__delta { font: 600 13px/20px var(--font-sans); color: var(--highlight); }
+.dr-stat__delta { font: 600 13px/20px var(--font-sans); letter-spacing: 0; color: var(--highlight); }
 .dr-stat__hint { font-size: 12px; line-height: 18px; color: var(--text-subtle); }
-/* hero — ตัวเลขเดียวที่หน้านี้นำด้วย */
-.dr-stat--hero { background: var(--accent); border-color: transparent; color: var(--on-accent); }
-.dr-stat--hero .dr-stat__label, .dr-stat--hero .dr-stat__hint { color: var(--on-accent-muted); }
-.dr-stat--hero .dr-stat__value {
-  color: var(--on-accent); font-size: 44px; line-height: 48px; letter-spacing: -0.03em;
-}
-.dr-stat--hero .dr-tile { background: var(--on-accent-muted); color: var(--accent); }
+/* hero — ตัวเลขเดียวที่หน้านี้นำด้วย (ใหญ่กว่า ไม่ใช่สีต่าง: ไม่มีสถานะ) */
+.dr-stat--hero .dr-stat__value { font-size: 44px; line-height: 48px; }
+/* แถบสัดส่วนตลาดใหญ่สุด — สีไม่มีความหมาย จึงเป็นเส้นขาวแบบ Macro */
 .dr-split {
   display: flex; height: 6px; border-radius: var(--radius-pill); overflow: hidden;
   margin: var(--space-3) 0 var(--space-1); background: var(--on-accent-muted);
 }
-.dr-split span { background: var(--on-accent); }
-.dr-stat--new { border-color: var(--highlight); }
+.dr-split span { background: #fff; }
+/* "ใหม่" = ทอง (highlight) ที่ตัวเลข — ป้ายของหน้า ไม่ใช่ระดับความเสี่ยง */
 .dr-stat--new .dr-stat__value { color: var(--highlight); }
-.dr-stat--alert { background: var(--warning-soft); border-color: transparent; }
-.dr-stat--alert .dr-stat__value { color: var(--warning); }
-.dr-stat--alert .dr-stat__hint { color: var(--text-muted); }
-.dr-stat__cta {
-  margin-top: var(--space-2); align-self: flex-start;
-  display: inline-flex; align-items: center; gap: 4px;
-  font: 600 13px/20px var(--font-sans); color: var(--warning);
-  background: none; border: 0; padding: 0; cursor: pointer;
-}
-.dr-stat__cta:hover { text-decoration: underline; }
+.dr-stat__cta { margin-top: var(--space-2); align-self: flex-start; min-height: 32px; padding: 6px 12px; font-size: 12.5px; }
+.dr-stat__cta .dr-ico { width: 14px; height: 14px; }
 
 /* ---------- ตัวกรอง ---------- */
-.dr-input, .dr-select {
-  height: 38px; border-radius: var(--radius-md);
-  border: 1px solid var(--border-strong); background: var(--surface);
-  color: var(--text); font: 400 14px/20px var(--font-sans); padding: 0 var(--space-3);
-}
-.dr-input:focus, .dr-select:focus {
-  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
-}
-.dr-input::placeholder { color: var(--text-subtle); }
+/* ช่องค้นหา + select = gc-field (พื้นหลุม ขอบ วงโฟกัส จากแก้ว) — ที่นี่เหลือขนาดและลูกศรของ select */
+.dr-input, .dr-select { height: 38px; padding: 0 var(--space-3); }
 .dr-select {
   appearance: none; padding-right: 32px; cursor: pointer;
   background-image:
@@ -275,10 +284,11 @@ html[data-theme="light"] .dr-page {
   position: absolute; left: 12px; top: 11px; width: 16px; height: 16px;
   stroke: var(--text-subtle); fill: none; stroke-width: 2; pointer-events: none;
 }
+/* gc-card gc-neutral · แก้วเป็นคอลัมน์ → ตั้งกลับเป็นแถวที่ขึ้นบรรทัดใหม่ได้ */
 .dr-filterbar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3);
-  padding: var(--space-3); background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  --gc-radius: 22px;
+  flex-direction: row; flex-wrap: wrap; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
 }
 .dr-filterbar__sep { width: 1px; height: 24px; background: var(--border); }
 .dr-chip {
@@ -297,6 +307,9 @@ html[data-theme="light"] .dr-page {
   background: var(--accent); border-color: transparent; color: var(--on-accent); font-weight: 600;
 }
 .dr-chip[aria-pressed="true"] .dr-chip__count { background: var(--on-accent); color: var(--accent); }
+/* บนแก้ว: chip ที่เปิดอยู่ = เม็ดขาว (แบบ gc-btn) ทุกชนิด รวม AI */
+.dr-page .gc-card .dr-chip[aria-pressed="true"] { background: #fff; border-color: transparent; color: #0b0b12; }
+.dr-page .gc-card .dr-chip[aria-pressed="true"] .dr-chip__count { background: #0b0b12; color: #fff; }
 .dr-chip--new .dr-chip__count { background: var(--highlight-soft); color: var(--highlight); }
 .dr-chip--warn .dr-chip__count { background: var(--warning-soft); color: var(--warning); }
 .dr-results {
@@ -306,32 +319,23 @@ html[data-theme="light"] .dr-page {
 .dr-results b { color: var(--text); font-weight: 600; }
 
 /* ---------- ตาราง ---------- */
+/* การ์ดตาราง = .dr-card.dr-tablewrap.gc-card (gc-neutral) — การ์ดไม่เลื่อนเอง ตัวเลื่อนคือ .gc-table-wrap ข้างใน
+   ตาราง = gc-table (ช่องไฟ เส้นคั่น หัวคอลัมน์ แถวที่ชี้) · ที่นี่เหลือสิ่งเฉพาะของหน้า */
 .dr-tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.dr-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
-.dr-table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 22px; }
-.dr-table thead th {
-  text-align: left; font: 600 12px/18px var(--font-sans); color: var(--text-muted);
-  padding: var(--space-3) var(--space-4); background: var(--surface-2); white-space: nowrap;
-}
-.dr-table thead th:first-child { border-top-left-radius: calc(var(--radius-lg) - 1px); }
-.dr-table thead th:last-child { border-top-right-radius: calc(var(--radius-lg) - 1px); }
+.dr-tablewrap.gc-card { --gc-radius: 22px; overflow: hidden; padding: var(--space-2) var(--space-3); }
+.dr-tablewrap.gc-card > .gc-table-wrap:focus-visible { outline-offset: -2px; }
 .dr-table th.dr-sortable { cursor: pointer; user-select: none; -webkit-user-select: none; }
 .dr-table th.dr-sortable:hover { color: var(--text); }
 .dr-table th.is-sorted { color: var(--accent); }
 .dr-arrow { font-size: .68rem; opacity: .9; }
-.dr-table td {
-  padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-}
-.dr-table tbody tr:last-child td { border-bottom: 0; }
-.dr-table .dr-num-cell { text-align: right; font-variant-numeric: tabular-nums; }
+.dr-table .dr-num-cell { text-align: right; font-family: var(--gc-num-font); font-variant-numeric: tabular-nums; }
 .dr-table tbody tr.dr-row { cursor: pointer; transition: background .12s; }
 .dr-table tbody tr.dr-row:hover td { background: var(--surface-2); }
 .dr-table tr.dr-row--new td { background: var(--highlight-soft); }
 .dr-table tr.dr-row.is-open td { background: var(--accent-soft); border-bottom-color: transparent; }
 .dr-asset { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
 .dr-cell-main { font-weight: 600; color: var(--text); }
-.dr-cell-sub { display: block; font-size: 13px; line-height: 20px; color: var(--text-muted); }
+.dr-cell-sub { display: block; font-size: 12px; line-height: 18px; color: var(--text-muted); }
 .dr-chev {
   display: inline-grid; place-items: center; width: 24px; height: 24px;
   border-radius: var(--radius-sm); color: var(--text-subtle);
@@ -350,13 +354,12 @@ html[data-theme="light"] .dr-page {
   font: 600 12px/1 var(--font-mono); color: var(--text); margin: 2px 4px 2px 0;
 }
 .dr-dash { color: var(--text-subtle); }
-.dr-group td {
-  background: var(--surface-2); font: 600 13px/20px var(--font-sans);
-  padding: var(--space-3) var(--space-4); color: var(--text);
-}
+.dr-group td { background: var(--surface-2); font: 600 13px/20px var(--font-sans); color: var(--text); }
 
 /* ---------- แถวที่กางออก ---------- */
 .dr-detail td { background: var(--accent-soft); padding: 0 var(--space-4) var(--space-4); }
+/* แถวแผงที่กางไม่เปลี่ยนสีตอนชี้ (gc-table ทำให้แถวที่ชี้มืดลง) */
+.dr-table tr.dr-detail:hover > td { background: var(--accent-soft); }
 .dr-detail__panel {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: var(--space-5);
@@ -367,10 +370,8 @@ html[data-theme="light"] .dr-page {
 }
 .dr-kpi { padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-2); }
 .dr-kpi__label { font: 500 12px/18px var(--font-sans); color: var(--text-muted); }
-.dr-kpi__value {
-  font: 600 20px/28px var(--font-sans); font-variant-numeric: tabular-nums;
-  color: var(--text); letter-spacing: -0.01em;
-}
+/* ตัวเลขจริง = gc-num (Inter 700 tabular) · ที่นี่แค่ขนาด */
+.dr-kpi__value { font-size: 20px; line-height: 28px; color: var(--text); letter-spacing: -0.01em; }
 .dr-kpi__value small { font-size: 13px; font-weight: 500; color: var(--text-muted); margin-left: 4px; }
 .dr-kpi--focus { background: var(--positive-soft); }
 .dr-kpi--focus .dr-kpi__value { color: var(--positive); }
@@ -393,10 +394,7 @@ html[data-theme="light"] .dr-page {
   display: flex; align-items: center; gap: var(--space-2);
   font: 600 14px/22px var(--font-sans); margin: 0 0 var(--space-2);
 }
-.dr-detail .dr-table thead th {
-  background: transparent; padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--border);
-}
+/* ตารางในแผงที่กาง: ไม่เอาพื้นเขียวของ .dr-detail td มาด้วย */
 .dr-detail .dr-table td { background: transparent; padding: var(--space-3); }
 .dr-note {
   display: flex; gap: var(--space-2); font-size: 12px; line-height: 18px;
@@ -447,12 +445,7 @@ html[data-theme="light"] .dr-page {
   display: flex; flex-direction: column; gap: var(--space-1);
   font: 500 12px/18px var(--font-sans); color: var(--text-muted); min-width: 0;
 }
-.dr-edit input, .dr-edit select {
-  height: 34px; padding: 0 var(--space-3); border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong); background: var(--surface);
-  color: var(--text); font: 400 14px/20px var(--font-sans); min-width: 0; max-width: 100%;
-}
-.dr-edit input:focus, .dr-edit select:focus { outline: none; border-color: var(--accent); }
+/* ช่องในฟอร์ม = gc-field (หน้าตาและวงโฟกัสจากแก้ว) */
 .dr-edit-btns { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 .dr-edit-note {
   grid-column: 1 / -1; font-size: 12px; line-height: 18px; color: var(--text-subtle);
@@ -465,11 +458,8 @@ html[data-theme="light"] .dr-page {
 .dr-ovr-note { margin-top: var(--space-2); font-size: 12px; color: var(--text-subtle); }
 
 /* ---------- วิธีอ่าน ---------- */
-.dr-foot {
-  margin-top: var(--space-2); padding: var(--space-5);
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-  font-size: 13px; color: var(--text-muted); line-height: 1.65;
-}
+/* gc-card gc-neutral — ข้อความรองของแก้ว (หมึก 2) · ตัวหนา/หัวข้อ = หมึกหลัก */
+.dr-foot { margin-top: var(--space-2); font-size: 13px; color: var(--text-muted); line-height: 1.65; }
 .dr-foot h3 { margin: 0 0 var(--space-3); font: 600 16px/24px var(--font-sans); color: var(--text); }
 .dr-foot p { margin: 0 0 var(--space-2); max-width: 86ch; }
 .dr-foot b { color: var(--text); font-weight: 600; }
@@ -477,10 +467,10 @@ html[data-theme="light"] .dr-page {
 .dr-foot a:hover { text-decoration: underline; }
 
 /* ---------- สถานะว่าง ---------- */
+/* gc-card gc-neutral · ข้อความปน <b> และปุ่ม → block (แก้วเป็น flex คอลัมน์ จะแตกข้อความเป็นแถว ๆ) */
 .dr-empty {
-  padding: var(--space-8) var(--space-5); text-align: center;
-  color: var(--text-muted); background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  display: block; padding: var(--space-8) var(--space-5); text-align: center;
+  color: var(--text-muted);
 }
 .dr-empty strong { display: block; color: var(--text); font-weight: 600; margin-bottom: var(--space-2); }
 
@@ -588,7 +578,8 @@ html[data-theme="light"] .dr-page {
 .dr-pm-unmatched b { color: var(--text); font-weight: 600; }
 .dr-pm-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; align-items: center; }
 .dr-pm-link { color: var(--accent); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
-.dr-pm-error h3 { color: var(--negative); }
+/* การ์ด gc-danger บอกว่าพังแล้ว — หัวข้อเป็นหมึกขาว (สีชมพูบนแก้วชมพูอ่านยาก) */
+.dr-pm-error h3 { color: var(--gc-ink); }
 
 /* ---- คอลัมน์ Top pick + ตารางแยก ---- */
 .dr-pick-col { width: 76px; text-align: center; }

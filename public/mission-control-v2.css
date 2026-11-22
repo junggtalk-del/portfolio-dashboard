@@ -9,11 +9,13 @@
 .mcx-ul li { font-size: 12.5px; color: var(--mc-text-2); line-height: 1.5; }
 .mcx-ul-warn li { color: var(--mc-amber); }
 
-/* ---- Hero: regime gauge ---- */
-.mcx-hero { display: flex; gap: 32px; align-items: center; padding: 30px 34px; border-radius: 22px;
+/* ---- Hero: regime gauge ----
+   :not(:where(.gc-card)) = the old skin only where the hero is NOT a glass card (Home's hero is; /bitcoin-monitor's
+   is not). :where() adds no specificity, so every page without .gc-card on the hero cascades exactly as before. */
+.mcx-hero:not(:where(.gc-card)) { display: flex; gap: 32px; align-items: center; padding: 30px 34px; border-radius: 22px;
   background: var(--mc-hero-grad, linear-gradient(135deg, rgba(99,102,241,.10), rgba(20,184,166,.06)));
   border: 1px solid var(--mc-border); position: relative; overflow: hidden; box-shadow: var(--mc-shadow); }
-.mcx-hero::after { content: ""; position: absolute; inset: 0; background: radial-gradient(600px 300px at 12% -10%, rgba(99,102,241,.16), transparent 60%); pointer-events: none; }
+.mcx-hero:not(:where(.gc-card))::after { content: ""; position: absolute; inset: 0; background: radial-gradient(600px 300px at 12% -10%, rgba(99,102,241,.16), transparent 60%); pointer-events: none; }
 .mcx-hero-gauge { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; z-index: 1; }
 .mcx-gauge-svg { display: block; filter: drop-shadow(0 0 18px rgba(99,102,241,.25)); }
 .mcx-gauge-num { font-size: 56px; font-weight: 800; letter-spacing: -0.02em; }
@@ -27,7 +29,7 @@
 .mcx-meta-cell small { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mc-muted); }
 .mcx-meta-cell strong { font-size: 18px; font-weight: 800; }
 .mcx-conf-high { color: var(--mc-emerald); } .mcx-conf-medium { color: var(--mc-amber); } .mcx-conf-low { color: var(--mc-red); }
-@media (max-width: 820px) { .mcx-hero { flex-direction: column; text-align: center; } .mcx-hero-meta { justify-content: center; } }
+@media (max-width: 820px) { .mcx-hero:not(:where(.gc-card)) { flex-direction: column; text-align: center; } .mcx-hero-meta { justify-content: center; } }
 
 /* ---- shared chips ---- */
 .mcx-pill { font-size: 10.5px; font-weight: 800; padding: 2px 9px; border-radius: 999px; letter-spacing: .02em; }
@@ -38,10 +40,8 @@
 .mcx-tr { font-weight: 800; font-size: 11px; }
 .mcx-tr-bull { color: var(--mc-emerald); } .mcx-tr-bear { color: var(--mc-red); } .mcx-tr-muted { color: var(--mc-muted); }
 
-/* ---- Today's Mission ---- */
+/* ---- Today's Mission ---- (mcx-acc-<tone> stays on Home's decision card as a hook; its colour is the glass tone now) */
 .mcx-mission { border-left: 3px solid var(--mc-border); }
-.mcx-acc-bull { border-left-color: var(--mc-emerald); } .mcx-acc-watch-bull { border-left-color: var(--mc-amber); }
-.mcx-acc-neutral { border-left-color: var(--mc-blue); } .mcx-acc-warn { border-left-color: var(--mc-amber); } .mcx-acc-bear { border-left-color: var(--mc-red); }
 .mcx-mission-big { font-size: 26px; font-weight: 800; margin: 8px 0 14px; letter-spacing: -0.01em; }
 .mcx-mission-big span { font-size: 15px; opacity: .8; font-weight: 700; }
 .mcx-mission-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -127,9 +127,8 @@
 .mcx-donut-label { font-size: 11px; color: var(--mc-muted); text-align: center; }
 
 /* ---- Regime history ---- */
-.mcx-hist-ranges { display: flex; gap: 4px; }
-.mcx-hist-ranges button { background: var(--mc-elevated); border: 1px solid var(--mc-border); color: var(--mc-muted); font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 8px; cursor: pointer; }
-.mcx-hist-ranges button.is-active { color: var(--mc-text); border-color: var(--mc-cyan); background: color-mix(in srgb, var(--mc-card), var(--mc-cyan) 12%); }
+/* range buttons are gc-btn (active = white) / gc-btn-ghost — glass-cards.css draws them */
+.mcx-hist-ranges { display: flex; flex-wrap: wrap; gap: 6px; }
 .mcx-hist { margin-top: 8px; }
 .mcx-hist-track { position: relative; height: 120px; background: linear-gradient(to top, rgba(239,68,68,.06), rgba(234,179,8,.05) 50%, rgba(34,197,94,.06)); border-radius: 10px; overflow: hidden; border: 1px solid var(--mc-border); }
 .mcx-hist-bar { position: absolute; bottom: 0; border-radius: 2px 2px 0 0; opacity: .9; }
@@ -143,16 +142,13 @@
 /* ============================================================
    Mission Control v2.1 — decision-first reorg
    ============================================================ */
-/* 1. Today's Decision hero */
-.mcx-decision { padding: 26px 30px; border-radius: 22px; background: var(--mc-hero-grad, linear-gradient(135deg, rgba(99,102,241,.10), rgba(20,184,166,.06))); border: 1px solid var(--mc-border); border-left: 4px solid var(--mc-border); position: relative; overflow: hidden; box-shadow: var(--mc-shadow); }
-.mcx-decision::after { content: ""; position: absolute; inset: 0; background: radial-gradient(620px 320px at 90% -20%, rgba(99,102,241,.14), transparent 60%); pointer-events: none; }
-.mcx-decision.mcx-acc-bull { border-left-color: var(--mc-emerald); } .mcx-decision.mcx-acc-watch-bull { border-left-color: var(--mc-amber); }
-.mcx-decision.mcx-acc-neutral { border-left-color: var(--mc-blue); } .mcx-decision.mcx-acc-warn { border-left-color: var(--mc-amber); } .mcx-decision.mcx-acc-bear { border-left-color: var(--mc-red); }
+/* 1. Today's Decision hero — a glass card (gc-card + tone from R.action.tone); only its roomier padding is set here */
+.mcx-decision { padding: 24px 28px; }
 .mcx-decision-top { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; position: relative; z-index: 1; }
 .mcx-decision-action { display: flex; flex-direction: column; gap: 1px; }
 .mcx-decision-action small { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--mc-muted); }
 .mcx-decision-action strong { font-size: 46px; font-weight: 800; line-height: 1.02; letter-spacing: -0.02em; }
-.mcx-decision-action span { font-size: 15px; font-weight: 700; opacity: .85; }
+.mcx-decision-action span { font-size: 15px; font-weight: 700; color: var(--mc-text-2); }
 .mcx-decision-score { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
 .mcx-ds-num { font-size: 52px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 .mcx-ds-regime { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
@@ -160,6 +156,7 @@
 .mcx-reason-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; position: relative; z-index: 1; }
 .mcx-reason-chip { font-size: 12.5px; font-weight: 600; color: var(--mc-text-2); background: color-mix(in srgb, var(--mc-card), transparent 12%); border: 1px solid var(--mc-border); padding: 5px 12px; border-radius: 999px; }
 @media (max-width: 700px) { .mcx-decision-action strong { font-size: 36px; } .mcx-decision-score { align-items: flex-start; text-align: left; } }
+@media (max-width: 600px) { .mcx-decision { padding: 18px; } }
 
 /* 2. Portfolio Alignment */
 .mcx-alg-hero { display: flex; align-items: center; gap: 22px; margin: 2px 0 16px; }
@@ -183,9 +180,11 @@
 .mcx-act-reasons { align-self: center; max-width: 46%; justify-content: flex-end; }
 .mcx-q-counterrow { opacity: .82; }
 .mcx-q-counter { font-weight: 800; color: var(--mc-amber); font-size: 11px; }
-.mcx-q-note { position: relative; z-index: 1; margin-top: 10px; font-size: 12px; line-height: 1.6; color: var(--mc-text-2); background: rgba(245,158,11,.07); border: 1px solid rgba(245,158,11,.28); border-radius: 10px; padding: 9px 13px; }
-.mcx-mkt-verdict { font-size: 14.5px; line-height: 1.6; border: 1px solid var(--mc-border); border-left-width: 5px; border-radius: 11px; padding: 11px 15px; margin-bottom: 14px; }
-.mcx-mkt-verdict b { font-weight: 900; }
+/* the note is a gc-callout gc-callout-dashed (yellow dashed = "careful" on the glass) */
+.mcx-q-note { position: relative; z-index: 1; margin-top: 10px; font-size: 12px; line-height: 1.6; }
+/* the verdict is a gc-callout led by the band's colour dot (.mcx-band-dot) */
+.mcx-mkt-verdict { font-size: 14px; line-height: 1.6; margin-bottom: 14px; }
+.mcx-mkt-verdict b { font-weight: 800; }
 .mcx-mkt-scale { display: flex; gap: 10px; font-size: 10.5px; font-weight: 700; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
 .mcx-mkt-sub { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--mc-muted); }
 /* money-flow measurement details */
@@ -207,12 +206,13 @@
 @media (max-width: 640px) { .mcx-flowd-head { display: none; } .mcx-flowd-row { grid-template-columns: 12px 1fr auto; } .mcx-flowd-src, .mcx-flowd-now { grid-column: 2 / -1; } }
 .mcx-act-qhead { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--mc-muted); margin: 14px 0 8px; padding-top: 12px; border-top: 1px solid var(--mc-border); }
 .mcx-q-none { font-size: 12.5px; color: var(--mc-muted); padding: 6px 2px; }
-.mcx-pf-warn { font-size: 11.5px; font-weight: 800; color: var(--mc-amber); border: 1px solid rgba(245,158,11,.35); background: rgba(245,158,11,.08); border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+/* .mcx-pf-warn is a gc-chip gc-chip-risk (yellow signal chip) — glass-cards.css draws it */
 .mcx-mkt { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center; margin-bottom: 12px; }
 .mcx-mkt-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .mcx-mkt-why { margin: 0; } .mcx-mkt-why li { font-size: 12.5px; line-height: 1.55; color: var(--mc-text-2); }
-.mcx-mkt-btc { font-size: 13px; font-weight: 600; color: var(--mc-text-2); text-decoration: none; border: 1px solid var(--mc-border); border-radius: 10px; padding: 8px 13px; align-self: flex-start; }
-.mcx-mkt-btc:hover { border-color: var(--mc-cyan); color: var(--mc-text); }
+/* .mcx-mkt-btc is a gc-btn gc-btn-ghost link; its text is ONE span (.mcx-mkt-btc-txt) that wraps by word on a phone */
+.mcx-mkt-btc { align-self: flex-start; justify-content: flex-start; white-space: normal; text-align: left; }
+#mcRoot .mcx-mkt-btc-txt { min-width: 0; }
 .mcx-mkt-btc b { font-weight: 800; color: var(--mc-text); }
 .mcx-pos { color: var(--mc-emerald) !important; } .mcx-neg { color: var(--mc-red) !important; }
 .mcx-mkt-histhead { display: flex; justify-content: space-between; align-items: center; margin: 4px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--mc-muted); }
@@ -221,14 +221,15 @@
 .mcx-more > summary::-webkit-details-marker { display: none; }
 .mcx-more > summary::before { content: "▸"; color: var(--mc-muted); font-size: 13px; }
 .mcx-more[open] > summary::before { content: "▾"; }
-.mcx-more-body { padding: 0 4px 8px; display: flex; flex-direction: column; gap: 16px; }
+.mcx-more-body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 16px; }
 .mcx-more-body > section, .mcx-more-body > .mcx-grid2 { margin: 0; }
 @media (max-width: 820px) { .mcx-mkt { grid-template-columns: 1fr; } .mcx-act-reasons { max-width: 100%; justify-content: flex-start; } }
 
 /* 2b. Portfolio Alignment — quarterly holdings view */
 .mcx-pf-hero { display: flex; flex-wrap: wrap; gap: 26px; margin: 2px 0 10px; }
 .mcx-pf-hero > div small { display: block; font-size: 11px; color: var(--mc-muted); }
-.mcx-pf-hero > div strong { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mcx-pf-hero > div small { margin-bottom: 6px; }
+.mcx-pf-hero > div strong { font-size: 24px; }   /* .gc-num: Inter 700 tabular, white */
 .mcx-pf-splitbar { height: 10px; border-radius: 6px; background: rgba(148,163,184,.16); overflow: hidden; margin-bottom: 16px; }
 .mcx-pf-splitbar i { display: block; height: 100%; background: var(--mc-cyan); border-radius: 6px; transition: width .8s cubic-bezier(.22,1,.36,1); }
 .mcx-pf-subhead { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--mc-muted); margin: 6px 0 8px; }
@@ -295,7 +296,7 @@
 .mcx-trend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 4px 0 14px; }
 .mcx-trend-cell { background: var(--mc-elevated); border: 1px solid var(--mc-border); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 1px; }
 .mcx-trend-cell small { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--mc-muted); }
-.mcx-trend-cell strong { font-size: 24px; font-weight: 800; line-height: 1.1; }
+.mcx-trend-cell strong { margin: 4px 0 3px; font-size: 24px; }   /* .gc-num */
 .mcx-trend-cell .mcx-arr-up, .mcx-trend-cell .mcx-arr-down, .mcx-trend-cell .mcx-arr-flat { font-size: 11px; font-weight: 800; }
 .mcx-trend-now { border-color: color-mix(in srgb, var(--mc-cyan) 40%, transparent); }
 @media (max-width: 620px) { .mcx-trend { grid-template-columns: repeat(2, 1fr); } }
@@ -311,24 +312,25 @@
 .mcx-pf4-note { font-size: 10.5px; color: var(--mc-muted); margin-bottom: 10px; }
 
 /* ---- thesis reload strip (earnings-aware curated-data nudge) ---- */
-.mcx-reload { border: 1px solid var(--mc-border); border-radius: 14px; background: var(--mc-card); padding: 12px 16px; margin-bottom: 18px; }
+/* a glass card: gc-danger when something "ควรโหลดใหม่", gc-warning when only "ใกล้ออกงบ" (mission-control-page.js) */
+.mcx-reload { padding: 14px 20px; margin-bottom: 18px; }
 .mcx-reload-head { font-size: 12px; font-weight: 800; letter-spacing: 0.02em; color: var(--mc-text-2); margin-bottom: 8px; }
 .mcx-reload-line { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 5px 0; }
 .mcx-reload-lbl { font-size: 11.5px; font-weight: 800; margin-right: 3px; }
 .mcx-reload-lbl.is-reload { color: var(--mc-rose, #f43f5e); }
 .mcx-reload-lbl.is-soon { color: var(--mc-amber, #f59e0b); }
-.mcx-reload-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; text-decoration: none; border-radius: 999px; padding: 4px 11px; border: 1px solid var(--mc-border); transition: transform 0.15s, border-color 0.15s; }
-.mcx-reload-chip:hover { transform: translateY(-1px); border-color: var(--mc-border-active); }
-.mcx-reload-chip em { font-style: normal; font-weight: 600; font-size: 10.5px; opacity: 0.85; }
-.mcx-reload-chip.mcx-reload-reload { color: var(--mc-rose, #f43f5e); background: rgba(244, 63, 94, 0.08); border-color: rgba(244, 63, 94, 0.35); }
-.mcx-reload-chip.mcx-reload-soon { color: var(--mc-amber, #f59e0b); background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.35); }
+/* chips are gc-btn links (ควรโหลดใหม่ = white, ใกล้ออกงบ = ghost) — only a tighter size here */
+.mcx-reload-chip { padding: 6px 13px; font-size: 12.5px; }
+.mcx-reload-chip em { font-style: normal; font-weight: 600; font-size: 11px; }
 .mcx-reload-foot { font-size: 10.5px; color: var(--mc-muted); margin-top: 8px; line-height: 1.5; }
 .mcx-reload-foot code { font-family: ui-monospace, monospace; font-size: 10px; background: rgba(148, 163, 184, 0.15); border-radius: 4px; padding: 1px 5px; }
 
 /* ---------------- home: กล่อง Action "ต้องทำอะไรวันนี้" (home-action-page.js) ----------------
    การ์ดต่อหุ้น เฉพาะตัวที่กฎเพิ่งพูดใน 3 วันหลังสุด · หัวการ์ด + บรรทัดกฎ 3 บรรทัด (ป้ายกฎ · ซื้อ/ขาย · ข้อความ · ปุ่ม)
-   สีมีความหมาย: ซื้อ = เขียว · ขาย = แดง · ไม่มีสัญญาณใหม่ = เทา · ติ๊กแล้ว = จาง · ดึงราคาไม่ได้ = แดงอ่อน */
-.ha-box { border: 1px solid var(--mc-border); border-radius: 22px; background: var(--mc-card); padding: 22px 26px; margin-bottom: 20px; box-shadow: var(--mc-shadow); }
+   สีมีความหมาย: ซื้อ = เขียว · ขาย = แดง · ไม่มีสัญญาณใหม่ = เทา · ติ๊กแล้ว = จาง · ดึงราคาไม่ได้ = แดงอ่อน
+   การ์ดแก้ว (2026-11-22): กล่อง = gc-card gc-neutral · การ์ดหุ้น/สรุป/ช่อง KPI = ช่องในการ์ด (--mc-* ถูกแมปเป็นหมึกแก้วใน #mcRoot .gc-card)
+   ปุ่ม = gc-btn (ทำแล้ว/บันทึก ขาว · อื่น ๆ ghost) · ช่องกรอก = gc-field · ตารางประวัติ = gc-table ใน gc-table-wrap */
+.ha-box { padding: 22px 26px; margin-bottom: 20px; }
 .ha-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .ha-head-main { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; min-width: 0; }
 .ha-title { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
@@ -358,7 +360,7 @@
 .ha-act.is-none { color: var(--mc-faint); font-weight: 600; }
 .ha-what { min-width: 0; font-size: 13px; line-height: 1.5; color: var(--mc-text); overflow-wrap: anywhere; }
 .ha-rule.is-quiet .ha-what { font-size: 12.5px; color: var(--mc-muted); }
-.ha-rule.is-answered { opacity: 0.6; }
+.ha-rule.is-answered { opacity: 0.75; }   /* still faded; 0.6 put ink-2 at 3.65:1 on the glass well (0.75 → 4.77:1) */
 .ha-rule.is-editing { opacity: 1; }
 .ha-ans { font-weight: 800; }
 /* ฟอร์ม inline ใต้บรรทัดกฎ (ทำแล้ว / แก้): กางเต็มบรรทัด · ช่องราคา · เงินที่ซื้อ (ฝั่งซื้อ) · บันทึก/ยกเลิก */
@@ -367,19 +369,17 @@
 .ha-form-row b { color: var(--mc-text); }
 .ha-form-note { font-size: 12.5px; line-height: 1.5; color: var(--mc-text-2); align-self: center; }
 .ha-field { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 700; color: var(--mc-text-2); }
-.ha-in { width: 150px; min-height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--mc-border); background: var(--mc-elevated); color: var(--mc-text); font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; }
+.ha-in { width: 150px; }   /* .gc-field draws the well, rim, focus ring */
 .ha-field.is-wide .ha-in { width: 240px; }
-.ha-in:focus-visible { outline: 2px solid var(--mc-cyan); outline-offset: 1px; }
 .ha-form-err { flex-basis: 100%; font-size: 12px; font-weight: 700; color: var(--mc-red); }
 .ha-form .ha-btns { margin-left: auto; }
 .ha-sync { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; color: var(--mc-amber); overflow-wrap: anywhere; }
 .ha-sync.is-err { color: var(--mc-red); }
 .ha-btns { display: flex; gap: 6px; justify-content: flex-end; }
-.ha-b { min-height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--mc-border); background: var(--mc-card); color: var(--mc-text); font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
-.ha-b:hover:not(:disabled) { border-color: var(--mc-border-active); }
-.ha-b:focus-visible { outline: 2px solid var(--mc-cyan); outline-offset: 2px; }
-.ha-b.is-done { color: var(--mc-emerald); border-color: color-mix(in srgb, var(--mc-emerald) 45%, transparent); }
-.ha-b:disabled { opacity: 0.45; cursor: not-allowed; }
+.ha-b { padding: 0 14px; font-size: 12.5px; }   /* .gc-btn (ทำแล้ว/บันทึก) / .gc-btn-ghost draw face, hover, focus ring, disabled */
+/* glass pills that keep mc-btn (ดึงราคาใหม่ · ลองใหม่ · the empty hero's Load Latest Data #mcxLoad): no .mc-btn lift,
+   no .mc-btn-primary cyan glow — the gc-btn rim instead */
+#mcRoot .mc-btn.gc-btn:hover { transform: none; box-shadow: inset 0 0 0 1px var(--gc-btn-rim, var(--app-muted)); }
 .ha-empty { font-size: 13px; line-height: 1.6; color: var(--mc-text-2); padding: 14px 16px; border-radius: 14px; border: 1px dashed var(--mc-border); }
 .ha-quiet, .ha-note { margin: 10px 2px 0; font-size: 12px; line-height: 1.6; color: var(--mc-muted); }
 .ha-err { margin-top: 8px; padding: 8px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.5; color: var(--mc-red); background: color-mix(in srgb, var(--mc-card), var(--mc-red) 9%); overflow-wrap: anywhere; }
@@ -400,12 +400,12 @@
 .ha-hz { display: inline-flex; border: 1px solid var(--mc-border); border-radius: 10px; overflow: hidden; }
 .ha-hz-b { min-height: 32px; padding: 0 14px; border: 0; background: transparent; color: var(--mc-text-2); font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
 .ha-hz-b + .ha-hz-b { border-left: 1px solid var(--mc-border); }
-.ha-hz-b[aria-pressed="true"] { background: var(--mc-card); color: var(--mc-text); }
+.ha-hz-b[aria-pressed="true"] { background: #fff; color: #0b0b12; }
 .ha-hz-b:focus-visible { outline: 2px solid var(--mc-cyan); outline-offset: -2px; }
 .ha-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .ha-kpi { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--mc-border); background: var(--mc-card); font-size: 12px; line-height: 1.45; color: var(--mc-text-2); }
 .ha-kpi-k { font-size: 11.5px; font-weight: 800; color: var(--mc-muted); }
-.ha-kpi-n { font-size: 18px; font-weight: 800; color: var(--mc-text); font-variant-numeric: tabular-nums; }
+.ha-kpi-n { font-size: 18px; }   /* .gc-num: Inter 700 tabular, white */
 .ha-kpi-v { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .ha-kpi-v.is-dim { color: var(--mc-muted); }
 .ha-kpi-m { font-size: 13px; font-weight: 800; color: var(--mc-text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -413,11 +413,10 @@
 .ha-kpi-rule b { color: var(--mc-text); }
 .ha-kpi-rule small { color: var(--mc-muted); }
 .ha-sum-note { margin: 10px 2px 12px; font-size: 11.5px; line-height: 1.6; color: var(--mc-muted); }
-.ha-histwrap { overflow-x: auto; }
-.ha-hist { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
-.ha-hist th { text-align: left; font-size: 11px; font-weight: 800; color: var(--mc-muted); padding: 6px 8px; border-bottom: 1px solid var(--mc-border); white-space: nowrap; }
-.ha-hist td { padding: 8px; border-bottom: 1px solid var(--mc-border); vertical-align: middle; color: var(--mc-text); }
-.ha-hist .is-num { text-align: right; white-space: nowrap; }
+.ha-histwrap { overflow-x: auto; }   /* + .gc-table-wrap (focus ring) */
+.ha-hist { font-size: 12.5px; }       /* + .gc-table: rows, header ink, dividers, darkening hover */
+.ha-hist th, .ha-hist td { padding: 8px; }
+.ha-hist .is-num { text-align: right; white-space: nowrap; font-family: var(--gc-num-font); }
 .ha-hist .is-date, .ha-hist .is-sym { white-space: nowrap; }
 .ha-hist .is-sym { font-weight: 800; }
 .ha-hist small { display: block; font-size: 10.5px; line-height: 1.4; color: var(--mc-muted); }
@@ -440,7 +439,7 @@
   .ha-hist-form .ha-form { position: sticky; left: 0; max-width: calc(100vw - 112px); box-sizing: border-box; }
 }
 @media (max-width: 600px) {
-  .ha-box { padding: 16px 14px; border-radius: 18px; }
+  .ha-box { padding: 16px 14px; }
   .ha-tools { width: 100%; }
   .ha-btn { min-height: 44px; flex: 1 1 auto; }
   .ha-card { padding: 2px 12px 4px; }
@@ -452,3 +451,82 @@
   .ha-field, .ha-form .ha-btns { flex: 1 1 100%; margin-left: 0; }
   .ha-in, .ha-field.is-wide .ha-in { width: 100%; min-height: 44px; font-size: 16px; }
 }
+
+/* ============================================================
+   Home on glass (glass-cards.css · 2026-11-22)
+   Every card in #mcRoot wears .gc-card + a tone from a status the page already computes (mission-control-page.js /
+   home-action-page.js). The cards stay dark with white text in BOTH site themes, so inside them the shared mc-*
+   tokens are re-pointed to the glass ink; every existing mcx-* / ha-* rule then reads on the glass without a rewrite.
+   Status colours are lifted to luminance >= 0.70 (>= 4.7:1 on the brightest pixel of every tone — Task 1 model).
+   Scoped to #mcRoot: this file is also injected on every other page (header regime chip) and used by
+   /ai-cycle and /wave3, none of which have #mcRoot.
+   ============================================================ */
+#mcRoot .gc-card {
+  --mc-text: var(--gc-ink);
+  --mc-text-2: var(--gc-ink-2);
+  --mc-muted: var(--gc-ink-2);
+  --mc-faint: var(--gc-ink-2);
+  --mc-border: var(--gc-line);
+  --mc-border-active: rgba(255, 255, 255, 0.45);
+  --mc-border-warning: rgba(255, 217, 138, 0.5);
+  --mc-elevated: var(--gc-well);
+  --mc-card: var(--gc-well);
+  --mc-bg: #0b0b12;
+  --mc-shadow: none;
+  --mc-emerald: #7cf5c6;
+  --mc-red: #ffcfdb;
+  --mc-rose: #ffcfdb;
+  --mc-amber: #ffd98a;
+  --mc-cyan: #a5f3fc;
+  --mc-teal: #99f6e4;
+  --mc-blue: #bae6fd;
+  --mc-violet: #ddd6fe;
+}
+/* panels inside a glass card are wells (no blur, no second glass) */
+#mcRoot .gc-card .mc-card { backdrop-filter: none; -webkit-backdrop-filter: none; }
+#mcRoot .gc-card .mc-panel-head h2 { color: var(--gc-ink); }
+
+/* hero (loading / no snapshot) */
+#mcRoot .mcx-hero.gc-card { align-items: center; padding: 30px 34px; }
+#mcRoot .mcx-hero.gc-card .mcx-hero-sub { margin-left: auto; margin-right: auto; }
+
+/* gauge: white arc + white number on the toned card (like the Equity Risk ring on /market-risk) */
+#mcRoot .gc-card .mcx-gauge-svg { filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.25)); }
+#mcRoot .gc-card .mcx-gauge-svg circle:first-of-type { stroke: rgba(255, 255, 255, 0.14); }
+#mcRoot .gc-card .mcx-gauge-svg circle + circle { stroke: #fff; }
+#mcRoot .gc-card .mcx-gauge-num { fill: #fff; font-family: var(--gc-num-font); font-weight: 700; letter-spacing: -0.03em; }
+/* the band's own colour survives as a dot (verdict · regime label) */
+#mcRoot .mcx-band-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 50%;
+  vertical-align: 0;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.16);
+}
+#mcRoot .gc-card .mcx-hero-band { margin-top: 2px; color: var(--gc-ink); }
+/* colour keys of the history bars: original colour as a dot, label in card ink */
+#mcRoot .mcx-sc { display: inline-flex; align-items: center; gap: 5px; color: var(--mc-text-2); }
+#mcRoot .mcx-sc > i { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; }
+#mcRoot .gc-card .mcx-hist-axis { gap: 10px; flex-wrap: wrap; }
+#mcRoot .gc-card .mcx-hist-track { background: rgba(0, 0, 0, 0.22); }
+/* invested-vs-cash bar: cyan had no meaning → white like the Macro bars (asset-type colours stay) */
+#mcRoot .gc-card .mcx-pf-splitbar { background: rgba(255, 255, 255, 0.14); }
+#mcRoot .gc-card .mcx-pf-splitbar i { background: #fff; box-shadow: 0 0 12px rgba(255, 255, 255, 0.35); }
+/* Lead–Lag steps: plain steps are ghost dots, the current step keeps its green (meaningful) */
+#mcRoot .gc-card .mcx-ll-dot { background: rgba(255, 255, 255, 0.14); color: var(--gc-ink); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22); }
+#mcRoot .gc-card .mcx-ll-active .mcx-ll-dot { background: var(--mc-emerald); color: #0b0b12; box-shadow: 0 0 14px rgba(124, 245, 198, 0.6); }
+/* the action queue rows / trend cells / summary tiles are wells (the token map gives them --gc-well) */
+#mcRoot .gc-card .mcx-q-item,
+#mcRoot .gc-card .mcx-trend-cell { border-radius: 14px; }
+#mcRoot .gc-card .mcx-reason-chip { background: var(--gc-fill); color: var(--gc-ink); }
+/* figures on the glass: Inter 700 tabular (was 800 here and there) */
+#mcRoot .gc-card .mcx-pf-pct,
+#mcRoot .gc-card .mcx-q-score,
+#mcRoot .gc-card .mcx-contrib-val,
+#mcRoot .gc-card .ha-px b,
+#mcRoot .gc-card .ha-hist-m,
+#mcRoot .gc-card .ha-kpi-m { font-family: var(--gc-num-font); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* dimmed rows stay >= 4.5:1 for ink-2 on the glass well (0.6 measured 3.65:1, 0.75 → 4.77:1) */
+#mcRoot .gc-card .mcx-contrib-off { opacity: 0.75; }

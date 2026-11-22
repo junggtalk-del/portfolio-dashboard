@@ -47,7 +47,8 @@
     }
     return lastA[1];
   }
-  function zoneOf(risk) { return risk == null ? "normal" : risk < 25 ? "calm" : risk < 50 ? "normal" : risk < 75 ? "warning" : "danger"; }
+  // no value → no zone ("") — the card stays gc-neutral (gcTone) and its pill reads "—", never a violet "ปกติ"
+  function zoneOf(risk) { return risk == null ? "" : risk < 25 ? "calm" : risk < 50 ? "normal" : risk < 75 ? "warning" : "danger"; }
   // momentum series: value now minus value `lag` bars ago (pct optional)
   function momSeries(c, lag, asPct) { var out = []; for (var i = 0; i < c.length; i++) { if (i < lag || !isFinite(c[i]) || !isFinite(c[i - lag])) out.push(null); else out.push(asPct ? (c[i] - c[i - lag]) / c[i - lag] * 100 : c[i] - c[i - lag]); } return out; }
 
@@ -230,24 +231,70 @@
   function macroGauges() { return [gaugeRates(), gaugeCurve(), gaugeLongBond(), gaugeDollar(), gaugeCredit(), gaugeBondVol()].filter(Boolean); }
 
   // ---------------------------------------------------------- views
+  // Glass cards (2026-11): every card wears the shared gc-* look from
+  // /glass-cards.css, coloured by its own tone. The mr-* classes stay on the
+  // same elements so hooks, copy and behaviour are unchanged. A missing value has no tone ("" from
+  // zoneOf / rateTone) → gc-neutral, as on every other page.
+  function gcTone(tone) { return "gc-" + (TONE_RANK.hasOwnProperty(tone) ? tone : "neutral"); }
+  // "5.40%" → 5.40 + <span class="gc-unit">%</span> — the text itself is unchanged
+  function numHtml(s) {
+    var str = String(s == null ? "" : s), m = /^([+\-−]?\d+(?:[.,]\d+)*)(\D.*)?$/.exec(str);
+    return m && m[2] ? esc(m[1]) + '<span class="gc-unit">' + esc(m[2]) + "</span>" : esc(str);
+  }
+  function chipOf(toward) { return "gc-chip " + (toward === "risk" ? "gc-chip-risk" : toward === "safe" ? "gc-chip-safe" : "gc-chip-flat"); }
+  function dirOf(toward) { return "gc-dir " + (toward === "risk" ? "gc-dir-risk" : toward === "safe" ? "gc-dir-safe" : "gc-dir-flat"); }
+  function infoBtn(key, label) {
+    return '<button class="mr-info gc-info" type="button" data-explain="' + key + '" aria-label="' + esc(label) + '">i</button>';
+  }
+  function cardHead(title, infoHtml, pill) {
+    return '<div class="mr-card-top gc-head"><span class="mr-card-title gc-title">' + title + "</span>" +
+      '<span class="mr-card-top-right gc-head-end">' + infoHtml + '<span class="mr-tone-pill gc-pill">' + esc(pill) + "</span></span></div>";
+  }
+
+  // sparkline: thin white line + faint area + dashed "now" line + glowing dot on the latest value.
+  // The svg stretches (preserveAspectRatio none), so the dot is placed in % of the box.
+  // `tone` stays in the signature for callers; the line is white on every tone.
+  var sparkSeq = 0;
   function spark(closes, tone) {
     if (!closes) return "";
     var pts = closes.slice(-63).filter(function (v) { return isFinite(v); });
     if (pts.length < 10) return "";
-    var min = Math.min.apply(null, pts), max = Math.max.apply(null, pts), range = max - min || 1, W = 96, H = 26;
-    var d = pts.map(function (v, i) { return (i === 0 ? "M" : "L") + (i / (pts.length - 1) * W).toFixed(1) + "," + (H - ((v - min) / range) * (H - 4) - 2).toFixed(1); }).join(" ");
-    var color = tone === "danger" ? "#f43f5e" : tone === "warning" ? "#f59e0b" : tone === "calm" ? "#34d399" : "#64748b";
-    return '<svg class="mr-spark" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none"><path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="1.6"/></svg>';
+    var W = 300, H = 64, X0 = 2, X1 = W - 8, TOP = 8, BOT = 10;
+    var min = Math.min.apply(null, pts), max = Math.max.apply(null, pts), range = max - min || 1;
+    var xy = pts.map(function (v, i) { return [X0 + i / (pts.length - 1) * (X1 - X0), TOP + (1 - (v - min) / range) * (H - TOP - BOT)]; });
+    var line = xy.map(function (p, i) { return (i === 0 ? "M" : "L") + p[0].toFixed(1) + "," + p[1].toFixed(1); }).join(" ");
+    var end = xy[xy.length - 1], ex = end[0].toFixed(1), id = "mrSparkFill" + (++sparkSeq);
+    return '<div class="gc-spark">' +
+      '<svg class="mr-spark" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+      '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
+      '<path class="gc-spark-area" d="' + line + " L" + ex + "," + H + " L" + X0 + "," + H + ' Z" fill="url(#' + id + ')"/>' +
+      '<line class="gc-spark-now" x1="' + ex + '" y1="0" x2="' + ex + '" y2="' + H + '" stroke="#fff" stroke-opacity="0.28" stroke-dasharray="2 3" vector-effect="non-scaling-stroke"/>' +
+      '<path class="gc-spark-line" d="' + line + '" fill="none" stroke="#fff" stroke-opacity="0.92" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' +
+      "</svg>" +
+      '<span class="gc-spark-dot" style="left:' + (end[0] / W * 100).toFixed(2) + "%;top:" + (end[1] / H * 100).toFixed(2) + '%"></span></div>';
   }
 
+  // 4-zone bar: segments light up to the knob's zone, knob sits at r% (r null = nothing lit).
+  // Boundaries match zoneOf: 25 / 50 / 75 already belong to the upper zone (r >= i*25).
+  var ZONES = ["calm", "normal", "warning", "danger"];
+  function zoneSegs(r) {
+    return ZONES.map(function (z, i) { return '<div class="mr-bar-seg mr-seg-' + z + " gc-zone-seg" + (r != null && r >= i * 25 ? " gc-lit" : "") + '"></div>'; }).join("");
+  }
   function zoneBar(risk) {
     if (risk == null) return "";
     var r = Math.max(0, Math.min(100, risk));
-    return '<div class="mr-bar">' +
-      '<div class="mr-bar-seg mr-seg-calm"></div><div class="mr-bar-seg mr-seg-normal"></div>' +
-      '<div class="mr-bar-seg mr-seg-warning"></div><div class="mr-bar-seg mr-seg-danger"></div>' +
-      '<div class="mr-bar-marker" style="left:' + r.toFixed(1) + '%"></div></div>' +
-      '<div class="mr-bar-labels"><span>ผ่อนคลาย</span><span>ปกติ</span><span>จับตา</span><span>เสี่ยง</span></div>';
+    return '<div class="gc-zone"><div class="mr-bar gc-zone-track">' + zoneSegs(r) +
+      '<div class="mr-bar-marker gc-knob" style="left:' + r.toFixed(1) + '%"></div></div>' +
+      '<div class="mr-bar-labels gc-zone-labels"><span>ผ่อนคลาย</span><span>ปกติ</span><span>จับตา</span><span>เสี่ยง</span></div></div>';
+  }
+
+  // score ring (0-100): white arc on a faint track, value in the middle
+  function scoreRing(risk, valueHtml) {
+    var r = Math.max(0, Math.min(100, risk)), C = 2 * Math.PI * 50;
+    return '<div class="gc-ring"><svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">' +
+      '<circle class="gc-ring-track" cx="60" cy="60" r="50" fill="none" stroke-width="10"/>' +
+      '<circle class="gc-ring-arc" cx="60" cy="60" r="50" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - r / 100)).toFixed(1) + '" transform="rotate(-90 60 60)"/>' +
+      '</svg><span class="gc-ring-value">' + valueHtml + "</span></div>";
   }
 
   function gaugeCard(g) {
@@ -255,16 +302,24 @@
     if (g.trend) {
       var tr = g.trend, trCls = tr.toward === "risk" ? "mr-tr-risk" : tr.toward === "safe" ? "mr-tr-safe" : "mr-tr-flat";
       var arw = tr.dir > 0 ? "▲" : tr.dir < 0 ? "▼" : "▬";
-      trHtml = '<span class="mr-trend ' + trCls + '">' + arw + " " + esc(tr.label) + "</span>";
+      trHtml = '<span class="mr-trend ' + trCls + " " + chipOf(tr.toward) + '">' + arw + " " + esc(tr.label) + "</span>";
     }
-    var info = g.key && EXPLAIN[g.key] ? '<button class="mr-info" type="button" data-explain="' + g.key + '" aria-label="คำอธิบาย ' + esc(g.title) + '">i</button>' : "";
-    return '<article class="mr-card mr-' + g.tone + '">' +
-      '<div class="mr-card-top"><span class="mr-card-title">' + g.icon + " " + esc(g.title) + '</span>' +
-      '<span class="mr-card-top-right">' + info + '<span class="mr-tone-pill">' + esc(TONE_TH[g.tone] || g.tone) + "</span></span></div>" +
-      zoneBar(g.risk) +
-      '<div class="mr-card-foot"><span class="mr-value">' + esc(g.value) + "</span>" + trHtml + spark(g.spark, g.tone) + "</div>" +
-      (g.valueSub ? '<div class="mr-sub">' + esc(g.valueSub) + "</div>" : "") +
-      '<div class="mr-meaning">' + esc(g.meaning) + "</div></article>";
+    var info = g.key && EXPLAIN[g.key] ? infoBtn(g.key, "คำอธิบาย " + g.title) : "";
+    var sub = g.valueSub ? '<div class="mr-sub gc-meta">' + esc(g.valueSub) + "</div>" : "";
+    var meaning = '<div class="mr-meaning gc-meaning">' + esc(g.meaning) + "</div>";
+    var body;
+    if (g.key === "score" && g.risk != null) {
+      // Equity Risk Score is a 0-100 score → ring, with its label + meaning beside it
+      body = '<div class="mr-card-foot mr-score-foot">' +
+        scoreRing(g.risk, '<span class="mr-value gc-num gc-num-s">' + numHtml(g.value) + "</span>") +
+        '<div class="mr-score-side">' + sub + meaning + "</div></div>";
+    } else {
+      body = '<div class="mr-card-foot"><span class="mr-value gc-num gc-num-m">' + numHtml(g.value) + "</span>" + trHtml + spark(g.spark, g.tone) + "</div>" +
+        sub + meaning;
+    }
+    return '<article class="mr-card mr-' + g.tone + " gc-card " + gcTone(g.tone) + '">' +
+      cardHead(g.icon + " " + esc(g.title), info, TONE_TH[g.tone] || g.tone || "—") +
+      zoneBar(g.risk) + body + "</article>";
   }
 
   var VIX_ANCHORS = [[12, 8], [15, 25], [20, 50], [25, 68], [30, 82], [45, 100]];
@@ -310,9 +365,9 @@
     { label: "VIXEQ−VIX", key: "vixeqSpread", d: 2, anchors: [[0, 25], [15, 50], [30, 68], [45, 88]], needVixeq: true }
   ];
   function miniBar(risk) {
-    if (risk == null) return '<div class="mr-minibar mr-minibar-empty"></div>';
+    if (risk == null) return '<div class="mr-minibar mr-minibar-empty gc-zone-track gc-zone-mini">' + zoneSegs(null) + "</div>";
     var r = Math.max(0, Math.min(100, risk));
-    return '<div class="mr-minibar"><div class="mr-bar-seg mr-seg-calm"></div><div class="mr-bar-seg mr-seg-normal"></div><div class="mr-bar-seg mr-seg-warning"></div><div class="mr-bar-seg mr-seg-danger"></div><div class="mr-bar-marker" style="left:' + r.toFixed(1) + '%"></div></div>';
+    return '<div class="mr-minibar gc-zone-track gc-zone-mini">' + zoneSegs(r) + '<div class="mr-bar-marker gc-knob" style="left:' + r.toFixed(1) + '%"></div></div>';
   }
   function equityRefStrip() {
     var m = state.api && state.api.metrics; if (!m) return "";
@@ -322,8 +377,8 @@
       var risk = v == null ? null : interp(v, def.anchors);
       var tone = risk == null ? "" : zoneOf(risk);
       var txt = v == null ? "—" : (def.suffix === "%" ? pct(v, def.d) : fmt(v, def.d));
-      return '<div class="mr-ref-cell"><span>' + esc(def.label) + '</span>' +
-        '<b class="mr-val-' + tone + '">' + esc(txt) + "</b>" + miniBar(risk) + "</div>";
+      return '<div class="mr-ref-cell gc-card gc-tile ' + gcTone(tone) + '"><span>' + esc(def.label) + '</span>' +
+        '<b class="mr-val-' + tone + ' gc-num gc-num-xs">' + numHtml(txt) + "</b>" + miniBar(risk) + "</div>";
     }).join("");
     return '<div class="mr-ref-title">ค่าอ้างอิงตลาดหุ้น (secondary) <button class="mr-info" type="button" data-explain="ref" aria-label="คำอธิบายค่าอ้างอิง">i</button></div><div class="mr-ref-strip">' + cells + "</div>";
   }
@@ -350,8 +405,10 @@
     var flags = (state.api && state.api.flags) || [];
     flags.forEach(function (f) { if (f.severity === "danger" || f.severity === "warning") items.push({ sev: f.severity === "danger" ? 2 : 1, text: (f.thai || f.label) + (f.detail ? " — " + f.detail : "") }); });
     items.sort(function (a, b) { return b.sev - a.sev; });
-    if (!items.length) return '<div class="mr-allclear">✅ ตอนนี้ไม่มีสัญญาณเตือนที่ต้องกังวลเป็นพิเศษ</div>';
-    return '<ul class="mr-warn-list">' + items.map(function (it) { return '<li class="' + (it.sev === 2 ? "mr-warn-danger" : "mr-warn-warning") + '">' + (it.sev === 2 ? "🔴" : "🟠") + " " + esc(it.text) + "</li>"; }).join("") + "</ul>";
+    if (!items.length) return '<div class="mr-allclear gc-card gc-calm">✅ ตอนนี้ไม่มีสัญญาณเตือนที่ต้องกังวลเป็นพิเศษ</div>';
+    // the list card takes the tone of its most severe row
+    return '<div class="mr-warn-card gc-card ' + gcTone(items[0].sev === 2 ? "danger" : "warning") + '"><ul class="mr-warn-list gc-list">' +
+      items.map(function (it) { return '<li class="' + (it.sev === 2 ? "mr-warn-danger" : "mr-warn-warning") + ' gc-list-row">' + (it.sev === 2 ? "🔴" : "🟠") + " " + esc(it.text) + "</li>"; }).join("") + "</ul></div>";
   }
 
   // ---------------------------------------------------------- Interest Rate Risk Monitor
@@ -377,7 +434,7 @@
   ];
 
   function rateStatus(def, y) { return y == null ? null : y >= def.alert ? "alert" : y >= def.caution ? "caution" : "healthy"; }
-  function rateTone(st) { return st === "alert" ? "danger" : st === "caution" ? "warning" : st === "healthy" ? "calm" : "normal"; }
+  function rateTone(st) { return st === "alert" ? "danger" : st === "caution" ? "warning" : st === "healthy" ? "calm" : ""; } // no yield → no tone (gc-neutral)
   function rateStatusLabel(st) { return st === "alert" ? "High Alert" : st === "caution" ? "Caution" : st === "healthy" ? "Healthy" : "—"; }
   function yieldSeries(def) { var s = def.get(); return s ? s.closes.map(yieldNorm) : null; }
   function rateTrend(c) {
@@ -561,26 +618,27 @@
     var momCls = mom ? ("mr-mom-" + mom.cls) : "mr-mom-flat";
     var impact = (st === "healthy" || st == null) ? "จำกัด — yield ยังไม่กดดัน valuation" : def.impact + " — แรงกดดัน valuation เพิ่มขึ้น";
     var thresh = "Healthy < " + def.caution.toFixed(2) + "% · Caution " + def.caution.toFixed(2) + "–" + (def.alert - 0.01).toFixed(2) + "% · High Alert ≥ " + def.alert.toFixed(2) + "%";
-    return '<article class="mr-card mr-' + tone + ' mr-rate-card">' +
-      '<div class="mr-card-top"><span class="mr-card-title">🏦 ' + esc(def.label) + "</span>" +
-      '<span class="mr-card-top-right"><button class="mr-info" type="button" data-explain="rateMonitor" aria-label="คำอธิบาย Interest Rate Risk Monitor">i</button>' +
-      '<span class="mr-tone-pill">' + esc(rateStatusLabel(st)) + "</span></span></div>" +
+    var momToward = mom && (mom.cls === "rapid" || mom.cls === "rising") ? "risk" : mom && mom.cls === "falling" ? "safe" : "flat";
+    var trToward = tr.cls === "mr-tr-risk" ? "risk" : tr.cls === "mr-tr-safe" ? "safe" : "flat";
+    // order: yield → its sparkline → the read-outs → small print → alert message
+    return '<article class="mr-card mr-' + tone + " mr-rate-card gc-card " + gcTone(tone) + '">' +
+      cardHead("🏦 " + esc(def.label), infoBtn("rateMonitor", "คำอธิบาย Interest Rate Risk Monitor"), rateStatusLabel(st)) +
       '<div class="mr-rate-figs">' +
-        '<div class="mr-rate-yield"><span class="mr-rate-num mr-val-' + tone + '">' + (y == null ? "—" : fmt(y, 2) + "%") + '</span><span class="mr-rate-cap">Current Yield</span></div>' +
-        '<div class="mr-rate-meta">' +
-          '<div class="mr-rate-row"><span>Momentum</span><b class="' + momCls + '">' + (mom ? esc(mom.label) + " · 7D " + bpsTxt(mom.d7) + " · 30D " + bpsTxt(mom.d30) : "—") + "</b></div>" +
-          '<div class="mr-rate-row"><span>Trend</span><b class="' + tr.cls + '">' + tr.arw + " " + esc(tr.label) + "</b></div>" +
-          '<div class="mr-rate-row"><span>Risk Level</span><b class="mr-val-' + tone + '">' + esc(rateStatusLabel(st)) + "</b></div>" +
-          '<div class="mr-rate-row"><span>Portfolio Impact</span><b>' + esc(impact) + "</b></div>" +
-        "</div>" +
+        '<div class="mr-rate-yield"><span class="mr-rate-num mr-val-' + tone + ' gc-num gc-num-l">' + (y == null ? "—" : numHtml(fmt(y, 2) + "%")) + '</span><span class="mr-rate-cap">Current Yield</span></div>' +
       "</div>" +
       spark(c, tone) +
+      '<div class="mr-rate-meta gc-dl">' +
+        '<div class="mr-rate-row gc-dl-row"><span>Momentum</span><b class="' + momCls + " " + dirOf(momToward) + '">' + (mom ? esc(mom.label) + " · 7D " + bpsTxt(mom.d7) + " · 30D " + bpsTxt(mom.d30) : "—") + "</b></div>" +
+        '<div class="mr-rate-row gc-dl-row"><span>Trend</span><b class="' + tr.cls + " " + dirOf(trToward) + '">' + tr.arw + " " + esc(tr.label) + "</b></div>" +
+        '<div class="mr-rate-row gc-dl-row"><span>Risk Level</span><b class="mr-val-' + tone + '">' + esc(rateStatusLabel(st)) + "</b></div>" +
+        '<div class="mr-rate-row gc-dl-row"><span>Portfolio Impact</span><b>' + esc(impact) + "</b></div>" +
+      "</div>" +
       // ส่ง series ดิบ (def.get()) ไม่ใช่ c — เพราะ c = yieldSeries(def) เป็น array ของตัวเลข
       // ที่ไม่มี .dates/.fetchedAt แล้ว (asOfLine จะคืนค่าว่างเงียบ ๆ)
       asOfLine(def.get()) +
-      (hist ? '<div class="mr-rate-hist">Historical: สูงกว่า ~<b>' + hist.pctile + "%</b> ของช่วง " + esc(hist.span) + " (กรอบ " + fmt(hist.min, 2) + "–" + fmt(hist.max, 2) + "%) <button class=\"mr-info\" type=\"button\" data-explain=\"rateHist\" aria-label=\"คำอธิบาย Historical Context\">i</button></div>" : "") +
+      (hist ? '<div class="mr-rate-hist">Historical: สูงกว่า ~<b>' + hist.pctile + "%</b> ของช่วง " + esc(hist.span) + " (กรอบ " + fmt(hist.min, 2) + "–" + fmt(hist.max, 2) + "%) " + infoBtn("rateHist", "คำอธิบาย Historical Context") + "</div>" : "") +
       '<div class="mr-rate-thresh">เกณฑ์: ' + esc(thresh) + "</div>" +
-      (msg ? '<div class="mr-rate-msg mr-rate-msg-' + tone + '">' + esc(msg) + "</div>" : "") +
+      (msg ? '<div class="mr-rate-msg mr-rate-msg-' + tone + ' gc-callout">' + esc(msg) + "</div>" : "") +
       "</article>";
   }
 
@@ -593,17 +651,20 @@
   };
   function headwindCard(hw) {
     var reasons = hw.reasons.length ? hw.reasons : ["ไม่มีเงื่อนไขเตือน — ระดับและโมเมนตัมของ yields ยังไม่เป็นลมต้าน"];
-    var early = hw.earlyWarnings.map(function (w) { return '<div class="mr-early-warn">' + esc(w) + "</div>"; }).join("");
-    return '<article class="mr-card mr-' + hw.tone + ' mr-headwind-card">' +
-      '<div class="mr-card-top"><span class="mr-card-title">🌬️ Interest Rate Headwind</span>' +
-      '<span class="mr-card-top-right"><button class="mr-info" type="button" data-explain="rateHeadwind" aria-label="คำอธิบาย Headwind Score">i</button>' +
-      '<span class="mr-tone-pill">' + esc(hw.level) + "</span></span></div>" +
-      '<div class="mr-hw-figs">' +
-        '<div class="mr-hw-main"><span class="mr-rate-num mr-val-' + hw.tone + '">' + esc(hw.level) + '</span><span class="mr-rate-cap">Headwind Strength: <b>' + esc(hw.strength) + "</b> · คะแนน " + hw.total + " (Level " + hw.levelPts + " + Momentum " + hw.momPts + " + Portfolio " + hw.sensPts + ")</span></div>" +
+    var early = hw.earlyWarnings.map(function (w) { return '<div class="mr-early-warn gc-callout gc-callout-dashed">' + esc(w) + "</div>"; }).join("");
+    // wide card: level + verdict on the left, the ✓ reasons on the right (stacks when narrow)
+    return '<article class="mr-card mr-' + hw.tone + " mr-headwind-card gc-card " + gcTone(hw.tone) + '">' +
+      cardHead("🌬️ Interest Rate Headwind", infoBtn("rateHeadwind", "คำอธิบาย Headwind Score"), hw.level) +
+      '<div class="mr-hw-split">' +
+        '<div class="mr-hw-lead">' +
+          '<div class="mr-hw-figs">' +
+            '<div class="mr-hw-main"><span class="mr-rate-num mr-val-' + hw.tone + ' gc-num gc-num-l">' + esc(hw.level) + '</span><span class="mr-rate-cap">Headwind Strength: <b>' + esc(hw.strength) + "</b> · คะแนน " + hw.total + " (Level " + hw.levelPts + " + Momentum " + hw.momPts + " + Portfolio " + hw.sensPts + ")</span></div>" +
+          "</div>" +
+          '<div class="mr-rate-msg mr-rate-msg-' + hw.tone + ' mr-hw-thai gc-callout">' + esc(HW_THAI[hw.level] || "") + "</div>" +
+          early +
+        "</div>" +
+        '<ul class="mr-hw-reasons gc-list">' + reasons.map(function (r) { return '<li class="gc-list-row">' + esc(r) + "</li>"; }).join("") + "</ul>" +
       "</div>" +
-      '<div class="mr-rate-msg mr-rate-msg-' + hw.tone + ' mr-hw-thai">' + esc(HW_THAI[hw.level] || "") + "</div>" +
-      early +
-      '<ul class="mr-hw-reasons">' + reasons.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + "</ul>" +
       "</article>";
   }
 
@@ -625,17 +686,15 @@
       : easing
         ? "เงื่อนไขการเงินระยะยาวกำลังผ่อนคลาย — ดอกเบี้ยยาวลดลง " + bpsTxt(d30y) + "/30 วัน ต้นทุนกู้ยืมระยะยาวถูกลง"
         : "เงื่อนไขการเงินระยะยาวทรงตัว — spread และระดับ yields ไม่เปลี่ยนอย่างมีนัยใน 30 วัน";
-    return '<article class="mr-card mr-' + tone + ' mr-curve-card">' +
-      '<div class="mr-card-top"><span class="mr-card-title">📐 Yield Curve Monitor (30Y − 10Y)</span>' +
-      '<span class="mr-card-top-right"><button class="mr-info" type="button" data-explain="rateCurve30" aria-label="คำอธิบาย Yield Curve Monitor">i</button>' +
-      '<span class="mr-tone-pill">' + (tightening ? "Tightening" : easing ? "Improving" : "Stable") + "</span></span></div>" +
-      '<div class="mr-impact-grid mr-curve-grid">' +
-        '<div class="mr-impact-cell"><span>10Y</span><b>' + fmt(y10, 2) + "%</b></div>" +
-        '<div class="mr-impact-cell"><span>30Y</span><b>' + fmt(y30, 2) + "%</b></div>" +
-        '<div class="mr-impact-cell"><span>Spread</span><b>' + fmt(spread, 2) + " pp</b></div>" +
-        '<div class="mr-impact-cell"><span>Trend (30D)</span><b>' + (dSpread == null ? "—" : bpsTxt(dSpread)) + "</b></div>" +
+    return '<article class="mr-card mr-' + tone + " mr-curve-card gc-card " + gcTone(tone) + '">' +
+      cardHead("📐 Yield Curve Monitor (30Y − 10Y)", infoBtn("rateCurve30", "คำอธิบาย Yield Curve Monitor"), tightening ? "Tightening" : easing ? "Improving" : "Stable") +
+      '<div class="mr-impact-grid mr-curve-grid gc-stats">' +
+        '<div class="mr-impact-cell gc-stat"><span>10Y</span><b>' + numHtml(fmt(y10, 2) + "%") + "</b></div>" +
+        '<div class="mr-impact-cell gc-stat"><span>30Y</span><b>' + numHtml(fmt(y30, 2) + "%") + "</b></div>" +
+        '<div class="mr-impact-cell gc-stat"><span>Spread</span><b>' + numHtml(fmt(spread, 2) + " pp") + "</b></div>" +
+        '<div class="mr-impact-cell gc-stat"><span>Trend (30D)</span><b>' + (dSpread == null ? "—" : numHtml(bpsTxt(dSpread))) + "</b></div>" +
       "</div>" +
-      '<div class="mr-meaning">' + esc(explain) + "</div></article>";
+      '<div class="mr-meaning gc-meaning">' + esc(explain) + "</div></article>";
   }
 
   // portfolio sensitivity V2 — real exposure percentages + overall LOW/MEDIUM/HIGH with the why
@@ -646,16 +705,15 @@
       ["Growth Exposure", sens.growth == null ? "—" : sens.growth + "%", expLevel(sens.growth)],
       ["Long Duration", sens.longDur == null ? "—" : sens.longDur + "%", expLevel(sens.longDur)]
     ];
-    return '<article class="mr-card mr-' + sens.tone + ' mr-impact-card">' +
-      '<div class="mr-card-top"><span class="mr-card-title">🎯 Portfolio Sensitivity</span>' +
-      '<span class="mr-card-top-right"><button class="mr-info" type="button" data-explain="rateSens" aria-label="คำอธิบาย Portfolio Sensitivity">i</button>' +
-      '<span class="mr-tone-pill">Overall ' + esc(sens.level) + "</span></span></div>" +
-      '<div class="mr-impact-grid">' +
-        rows.map(function (r) { return '<div class="mr-impact-cell"><span>' + esc(r[0]) + '</span><b class="mr-val-' + sens.tone + '">' + esc(r[1]) + '</b><i class="mr-exp-lvl">' + esc(r[2]) + "</i></div>"; }).join("") +
+    // (not rendered at the moment — the card was removed by user request; styled for when it returns)
+    return '<article class="mr-card mr-' + sens.tone + " mr-impact-card gc-card " + gcTone(sens.tone) + '">' +
+      cardHead("🎯 Portfolio Sensitivity", infoBtn("rateSens", "คำอธิบาย Portfolio Sensitivity"), "Overall " + sens.level) +
+      '<div class="mr-impact-grid gc-stats">' +
+        rows.map(function (r) { return '<div class="mr-impact-cell gc-stat"><span>' + esc(r[0]) + '</span><b class="mr-val-' + sens.tone + '">' + numHtml(r[1]) + '</b><i class="mr-exp-lvl">' + esc(r[2]) + "</i></div>"; }).join("") +
       "</div>" +
       '<div class="mr-impact-overall">Overall Sensitivity: <b class="mr-val-' + sens.tone + '">' + esc(sens.level) + "</b></div>" +
-      '<div class="mr-sub">' + esc(sens.why) + "</div>" +
-      '<div class="mr-rate-msg mr-rate-msg-' + sens.tone + '">' + esc(WHY_RATES_EN) + '<span class="mr-rate-why-th">' + esc(WHY_RATES_TH) + "</span></div>" +
+      '<div class="mr-sub gc-meta">' + esc(sens.why) + "</div>" +
+      '<div class="mr-rate-msg mr-rate-msg-' + sens.tone + ' gc-callout">' + esc(WHY_RATES_EN) + '<span class="mr-rate-why-th">' + esc(WHY_RATES_TH) + "</span></div>" +
       "</article>";
   }
 
@@ -665,9 +723,9 @@
       : hw.level === "MODERATE" ? ["Increase Monitoring", "Maintain Awareness"]
       : ["Maintain Awareness"];
     var tone = hw.tone === "danger" ? "danger" : hw.tone === "warning" ? "warning" : "calm";
-    return '<div class="mr-rate-actions mr-rate-actions-' + tone + '">' +
+    return '<div class="mr-rate-actions mr-rate-actions-' + tone + " gc-card gc-strip " + gcTone(tone) + '">' +
       '<span class="mr-rate-actions-lbl">แนวทางเชิงกลยุทธ์ (ไม่ใช่คำสั่งซื้อ/ขาย):</span>' +
-      actions.map(function (a) { return '<span class="mr-action-chip">' + esc(a) + "</span>"; }).join("") +
+      actions.map(function (a) { return '<span class="mr-action-chip gc-pill gc-pill-ghost">' + esc(a) + "</span>"; }).join("") +
       "</div>";
   }
 
@@ -744,22 +802,24 @@
     if (e >= 25) return { label: "ถือบางส่วน / ชะลอเพิ่ม", color: "#f59e0b", tone: "warning" };
     return { label: "ลดหนัก / ขายออกส่วนใหญ่", color: "#f43f5e", tone: "danger" };
   }
+  // funnel row: name + price-trend chip · white fill + knob at the exposure level · read-out.
+  // On the glass card every read-out is white; the zone is carried by the words (z.label)
+  // and the knob's place on the 4-zone rail, not by coloured text.
   function raBar(asset, e) {
     var z = exposureZone(e);
     var tr = assetTrend(state.macro[asset.tr], asset.volMult);
+    var trToward = tr && (tr.cls === "up1" || tr.cls === "up2") ? "safe" : tr && (tr.cls === "dn1" || tr.cls === "dn2") ? "risk" : "flat";
     var trHtml = tr
-      ? '<span class="mr-ra-trend mr-ratr-' + tr.cls + '">' + tr.arw + " " + esc(tr.label) + " · " + (tr.pct >= 0 ? "+" : "") + tr.pct.toFixed(1) + "%/" + tr.days + "วัน</span>"
-      : '<span class="mr-ra-trend mr-ratr-flat">▬ รอข้อมูลเทรนด์</span>';
+      ? '<span class="mr-ra-trend mr-ratr-' + tr.cls + " " + chipOf(trToward) + '">' + tr.arw + " " + esc(tr.label) + " · " + (tr.pct >= 0 ? "+" : "") + tr.pct.toFixed(1) + "%/" + tr.days + "วัน</span>"
+      : '<span class="mr-ra-trend mr-ratr-flat ' + chipOf("flat") + '">▬ รอข้อมูลเทรนด์</span>';
     return '<div class="mr-ra-row">' +
-      '<div class="mr-ra-head"><span class="mr-ra-name"><i style="background:' + asset.color + '"></i>' + esc(asset.label) + trHtml + '</span>' +
-      '<span class="mr-ra-read"><b style="color:' + z.color + '">' + e + "/100</b> · <span style=\"color:" + z.color + '">' + esc(z.label) + "</span></span></div>" +
-      '<div class="mr-ra-track">' +
-        '<span class="mr-ra-seg" style="width:25%;background:#f43f5e"></span>' +
-        '<span class="mr-ra-seg" style="width:25%;background:#f59e0b"></span>' +
-        '<span class="mr-ra-seg" style="width:25%;background:#a3e635"></span>' +
-        '<span class="mr-ra-seg" style="width:25%;background:#34d399"></span>' +
-        '<b class="mr-ra-marker" style="left:' + e + '%"></b>' +
+      '<div class="mr-ra-head"><span class="mr-ra-name"><i style="background:' + asset.color + '"></i>' + esc(asset.label) + "</span>" + trHtml + "</div>" +
+      '<div class="mr-ra-track gc-funnel-rail">' +
+        '<span class="mr-ra-seg"></span><span class="mr-ra-seg"></span><span class="mr-ra-seg"></span><span class="mr-ra-seg"></span>' +
+        '<span class="gc-funnel-fill" style="width:' + e + '%"></span>' +
+        '<b class="mr-ra-marker gc-knob" style="left:' + e + '%"></b>' +
       "</div>" +
+      '<span class="mr-ra-read"><b class="gc-num gc-num-s">' + numHtml(e + "/100") + "</b> · <span>" + esc(z.label) + "</span></span>" +
       '<div class="mr-ra-sub">ความไวต่อ macro (β ' + asset.beta.toFixed(2) + ")" + (asset.key === "set50" ? " · เทรนด์จากข้อมูลดัชนีไทยที่มีจำกัด (แบบหยาบ)" : "") + "</div>" +
     "</div>";
   }
@@ -772,21 +832,21 @@
     }
     var drivers = C.parts.slice(0, 3).map(function (p) { return esc(p.label) + " " + p.risk; }).join(" · ");
     var bars = RA_ASSETS.map(function (a) { return raBar(a, exposureOf(C.score, a.beta)); }).join("");
-    host.innerHTML = '<article class="mr-card mr-' + C.tone + ' mr-ra-card">' +
-      '<div class="mr-card-top"><span class="mr-card-title">🧭 Macro Risk → ระดับการถือสินทรัพย์เสี่ยง</span>' +
-      '<span class="mr-card-top-right"><button class="mr-info" type="button" data-explain="riskAsset" aria-label="คำอธิบาย Macro Risk Positioning">i</button>' +
-      '<span class="mr-tone-pill">Macro Risk ' + C.score + "/100</span></span></div>" +
-      '<div class="mr-ra-scale"><span>← ขายออก</span><span>ถือบางส่วน</span><span>ลงทุนได้</span><span>ลงเต็มส่วน →</span></div>' +
-      bars +
+    host.innerHTML = '<article class="mr-card mr-' + C.tone + " mr-ra-card gc-card " + gcTone(C.tone) + '">' +
+      cardHead("🧭 Macro Risk → ระดับการถือสินทรัพย์เสี่ยง", infoBtn("riskAsset", "คำอธิบาย Macro Risk Positioning"), "Macro Risk " + C.score + "/100") +
+      '<div class="mr-ra-funnel">' +
+        '<div class="mr-ra-scale"><span>← ขายออก</span><span>ถือบางส่วน</span><span>ลงทุนได้</span><span>ลงเต็มส่วน →</span></div>' +
+        bars +
+      "</div>" +
       '<div class="mr-ra-drivers">ตัวกดดันหลักตอนนี้: ' + drivers + ' <span class="mr-ra-cov">· ครอบคลุมข้อมูล ' + C.coverage + "%</span></div>" +
-      '<div class="mr-sub">มุมมองการวางน้ำหนักจากสภาพแวดล้อม macro เท่านั้น (0 = ไม่ควรถือเลย, 100 = ลงเงินได้เต็มแผน) — ไม่ใช่คำสั่งซื้อขาย ใช้ประกอบสัญญาณรายสินทรัพย์เสมอ</div>' +
+      '<div class="mr-sub gc-meta">มุมมองการวางน้ำหนักจากสภาพแวดล้อม macro เท่านั้น (0 = ไม่ควรถือเลย, 100 = ลงเงินได้เต็มแผน) — ไม่ใช่คำสั่งซื้อขาย ใช้ประกอบสัญญาณรายสินทรัพย์เสมอ</div>' +
       "</article>";
   }
 
   function render() {
     var gauges = macroGauges(), verdict = overallVerdict(gauges);
     var vEl = el("mrVerdict");
-    if (vEl) vEl.innerHTML = '<div class="mr-verdict mr-' + verdict.tone + '"><div class="mr-verdict-main"><span class="mr-verdict-dot"></span><b>' + esc(verdict.label) + "</b></div><div class=\"mr-verdict-detail\">" + esc(verdict.detail) + "</div></div>";
+    if (vEl) vEl.innerHTML = '<div class="mr-verdict mr-' + verdict.tone + " gc-card " + gcTone(verdict.tone) + '"><div class="mr-verdict-main"><span class="mr-verdict-dot gc-dot"></span><b>' + esc(verdict.label) + "</b></div><div class=\"mr-verdict-detail\">" + esc(verdict.detail) + "</div></div>";
     renderRiskAsset(gauges);
     renderRateMonitor();
     var mEl = el("mrMacroCards");
@@ -851,5 +911,6 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { loadAll(false); });
   else loadAll(false);
 
-  window.MacroDashboard = { render: render, macroGauges: macroGauges, interp: interp, zoneOf: zoneOf };
+  // spark / zoneBar are pure view helpers — exposed only so scripts/glass-cards-test.js can check them
+  window.MacroDashboard = { render: render, macroGauges: macroGauges, interp: interp, zoneOf: zoneOf, spark: spark, zoneBar: zoneBar };
 })();

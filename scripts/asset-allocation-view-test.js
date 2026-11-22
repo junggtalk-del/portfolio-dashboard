@@ -160,7 +160,7 @@ var PM_HOLD = [
   { canonicalSymbol: "AMD", isHolding: false, marketValue: 70000, portfolioBucket: "" }
 ];
 var SRC_LINE = '<div class="aa-stat-s"><span class="aa-muted" data-aa-src="pm">หุ้นต่างประเทศจาก AI Portfolio Manager</span></div>';
-function heroOf(h) { var m = /<div class="aa-stat-n">(฿[0-9,]+)<\/div><div class="aa-stat-l">มูลค่าพอร์ตรวม<\/div>/.exec(h); return m ? m[1] : null; }
+function heroOf(h) { var m = /<div class="aa-stat-n[^"]*">(฿[0-9,]+)<\/div><div class="aa-stat-l">มูลค่าพอร์ตรวม<\/div>/.exec(h); return m ? m[1] : null; }
 function srcCount(h) { return h.split('data-aa-src="pm"').length - 1; }
 function pmSection() {
   console.log("\n[11] หุ้นต่างประเทศจาก AI Portfolio Manager (โหมด pm)");
@@ -322,11 +322,11 @@ function holdingsDeferSection() {
     t("ลำดับถูกต้อง: สรุป → การ์ด → เกษียณ → ต้องทำเท่าไหร่ → จัดพอร์ต → ตั้งค่า → คุณภาพข้อมูล → วิธีคำนวณ",
       pos.every(function (p, i) { return i === 0 || p > pos[i - 1]; }), JSON.stringify(pos));
     t("ตารางรายไตรมาสอยู่ใต้การ์ดสรุปเสมอ", h.indexOf("ดูรายไตรมาสของพอร์ต") > h.indexOf("aa-cards"));
-    t("ตารางรายไตรมาสถูกพับไว้ใน <details>", /<details class="aa-details"><summary>ดูรายไตรมาส/.test(h));
+    t("ตารางรายไตรมาสถูกพับไว้ใน <details>", /<details class="aa-details[^"]*"><summary>ดูรายไตรมาส/.test(h));
 
     console.log("\n[2] ตอบ 5 คำถามได้ในหน้าจอแรก");
     t("Q1 เงินอยู่ไหน — มีการ์ดครบ 3 พอร์ต",
-      (h.match(/class="aa-card" data-port=/g) || []).length === 3, (h.match(/class="aa-card" data-port=/g) || []).length);
+      (h.match(/class="aa-card[^"]*" data-port=/g) || []).length === 3, (h.match(/class="aa-card[^"]*" data-port=/g) || []).length);
     t("Q1 มีชื่อพอร์ตไทยครบ", h.indexOf("ระยะสั้น") >= 0 && h.indexOf("ระยะกลาง") >= 0 && h.indexOf("ระยะยาว") >= 0);
     t("Q2 เป้าหมาย — แสดง 3%/ปี และ 6%/ปี", h.indexOf("3.0%/ปี") >= 0 && h.indexOf("6.0%/ปี") >= 0);
     t("Q3 ผลตอบแทนจริง — แสดงเป็นค่าประมาณพร้อม ~", /~[+−-]?\d/.test(h));
@@ -413,7 +413,7 @@ function holdingsDeferSection() {
         return h.indexOf('data-split="bitcoin::Bitcoin" data-port="' + p + '"') >= 0;
       }));
     t("ทุกสินทรัพย์มีแถวแบ่งสัดส่วน (4 ตัว)",
-      (h.match(/class="aa-arow" data-asset=/g) || []).length === 4, (h.match(/class="aa-arow" data-asset=/g) || []).length);
+      (h.match(/class="aa-arow[^"]*" data-asset=/g) || []).length === 4, (h.match(/class="aa-arow[^"]*" data-asset=/g) || []).length);
     t("มีปุ่มลัด 'ตั้งทั้งก้อน'", h.indexOf("ตั้งทั้งก้อน…") >= 0 && h.indexOf('data-assign="bitcoin::Bitcoin"') >= 0);
     t("ช่อง % ของ RMF-จัง แสดง 100 ในพอร์ตกลาง",
       /data-split="rmf-jang::RMF-จัง" data-port="mid" value="100"/.test(h));
@@ -439,7 +439,7 @@ function holdingsDeferSection() {
     t("หัวตารางทั้งพอร์ต: ต้นงวด · ปลายงวด · รวมเงินเติม · เงินเติม · ไม่รวมเงินเติม",
       /<th>ไตรมาส<\/th><th class="aa-rec-v">ต้นงวด<\/th><th class="aa-rec-v">ปลายงวด<\/th><th>รวมเงินเติม<\/th><th>เงินเติม<\/th><th>ไม่รวมเงินเติม<\/th>/.test(whole));
     // มือถือซ่อน .aa-rec-v ได้ก็ต่อเมื่อทุกแถวมี 6 ช่องเท่ากันและไม่มี colspan
-    var wholeTbl = (whole.match(/<table class="aa-table aa-rec aa-rec-whole">[\s\S]*?<\/table>/) || [""])[0];
+    var wholeTbl = (whole.match(/<table class="aa-table aa-rec aa-rec-whole[^"]*">[\s\S]*?<\/table>/) || [""])[0];
     var wholeTrs = wholeTbl.match(/<tr[^>]*>[\s\S]*?<\/tr>/g) || [];
     t("ทุกแถวในตารางทั้งพอร์ตมี 6 ช่องเท่ากัน ไม่มี colspan", wholeTrs.length >= 6 && wholeTbl.indexOf("colspan") < 0 &&
       wholeTrs.every(function (tr) { return (tr.match(/<t[dh][ >]/g) || []).length === 6; }),

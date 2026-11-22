@@ -15,12 +15,21 @@
     { key: "thailand", icon: "🇹🇭", label: "Thailand SET100 + mai", note: "หุ้นไทยตลาดหลัก" },
     { key: "crypto", icon: "🪙", label: "Crypto Top 20", note: "เหรียญ Market Cap สูงสุด (ไม่รวม stablecoin)" }
   ];
+  // Glass cards (glass-cards.css gc-2) — card tone = the setup/trigger status the engine already computed.
+  // Nothing new is derived here; `tone` below is the only map (scripts/wave3-glass-test.js locks it):
+  //   card                          status source              tone
+  //   Upcoming Setups card          asset.status               READY gc-calm (ดี) · WATCH gc-normal (ปกติ)
+  //   detail modal (one asset)      asset.status                 WAIT gc-warning (ระวัง) · INVALID gc-neutral
+  //   (INVALID = the page's grey ⚪ no-signal dot: no Wave 3 setup at all, not a danger state — controller ruling 2026-11-22)
+  //   hero · 4 universe sections · methodology note · empty state  — no status of their own → gc-neutral
+  //   (unknown / missing status → gc-neutral as well). Rows stay rows inside their section; their pill shows the status.
   var STATUS = {
-    READY: { label: "READY", cls: "w3-st-ready", dot: "🟢", desc: "ครบเงื่อนไข — คลื่นกำลังเริ่ม" },
-    WATCH: { label: "WATCH", cls: "w3-st-watch", dot: "🟡", desc: "ตั้งท่าเกือบครบ — รอทริกเกอร์" },
-    WAIT: { label: "WAIT", cls: "w3-st-wait", dot: "🟠", desc: "กำลังก่อตัว" },
-    INVALID: { label: "INVALID", cls: "w3-st-invalid", dot: "⚪", desc: "ยังไม่ผ่าน Trend Qualification" }
+    READY: { label: "READY", cls: "w3-st-ready", dot: "🟢", desc: "ครบเงื่อนไข — คลื่นกำลังเริ่ม", tone: "gc-calm" },
+    WATCH: { label: "WATCH", cls: "w3-st-watch", dot: "🟡", desc: "ตั้งท่าเกือบครบ — รอทริกเกอร์", tone: "gc-normal" },
+    WAIT: { label: "WAIT", cls: "w3-st-wait", dot: "🟠", desc: "กำลังก่อตัว", tone: "gc-warning" },
+    INVALID: { label: "INVALID", cls: "w3-st-invalid", dot: "⚪", desc: "ยังไม่ผ่าน Trend Qualification", tone: "gc-neutral" }
   };
+  function statusTone(st) { return Object.prototype.hasOwnProperty.call(STATUS, st) ? STATUS[st].tone : "gc-neutral"; }
   var QUALITY_DESC = { "A+": "Institutional-quality", "A": "Very strong", "B+": "Good", "B": "Developing", "C": "Weak" };
 
   // per-universe "show WAIT+INVALID" toggle state (UI-only; not persisted)
@@ -43,7 +52,7 @@
     r = Math.max(0, Math.min(100, r || 0)); size = size || 46;
     var band = r >= 75 ? "var(--w3-a)" : r >= 60 ? "var(--w3-b)" : r >= 45 ? "var(--w3-c)" : "var(--w3-d)";
     return '<span class="w3-ring" style="width:' + size + 'px;height:' + size + 'px;background:conic-gradient(' + band + ' ' + (r * 3.6) + 'deg,var(--w3-ring-bg) 0)">' +
-      '<span class="w3-ring-hole" style="color:' + band + '">' + r + '</span></span>';
+      '<span class="w3-ring-hole gc-num" style="color:' + band + '">' + r + '</span></span>';
   }
   function qualityBadge(q) { return '<span class="w3-q w3-q-' + (q || "C").replace("+", "p") + '" title="' + esc(QUALITY_DESC[q] || "") + '">' + esc(q || "C") + '</span>'; }
   function statusPill(st) { var s = STATUS[st] || STATUS.INVALID; return '<span class="w3-pill ' + s.cls + '" title="' + esc(s.desc) + '">' + s.dot + " " + s.label + "</span>"; }
@@ -76,13 +85,13 @@
   }
 
   function emptyState(title, sub) {
-    return '<section class="w3-hero"><div class="w3-hero-main"><div class="w3-hero-emoji">🌊</div>' +
+    return '<section class="w3-hero gc-card gc-neutral"><div class="w3-hero-main"><div class="w3-hero-emoji">🌊</div>' +
       '<h1 class="w3-hero-title">Wave 3 Setup</h1><p class="w3-hero-sub">' + esc(title) + '</p>' +
       '<p class="w3-empty-sub">' + sub + '</p></div></section>';
   }
 
   function heroStrip(w3, ready, watch, scanned) {
-    return '<section class="w3-hero">' +
+    return '<section class="w3-hero gc-card gc-neutral">' +
       '<div class="w3-hero-main">' +
         '<div class="w3-hero-emoji">🌊</div>' +
         '<div><h1 class="w3-hero-title">Wave 3 Setup</h1>' +
@@ -97,7 +106,7 @@
     '</section>';
   }
   function statBlock(n, label, cls, sub) {
-    return '<div class="w3-stat ' + cls + '"><div class="w3-stat-n">' + n + '</div><div class="w3-stat-l">' + esc(label) + '</div><div class="w3-stat-s">' + esc(sub) + '</div></div>';
+    return '<div class="w3-stat ' + cls + '"><div class="w3-stat-n gc-num gc-num-s">' + n + '</div><div class="w3-stat-l">' + esc(label) + '</div><div class="w3-stat-s">' + esc(sub) + '</div></div>';
   }
 
   // -------------------------------------------------------- Upcoming Setups
@@ -106,14 +115,14 @@
     var cards = upcoming.map(function (u) {
       var uni = uniLabel(u.universe);
       var wait = u.status === "READY" ? "กำลังเริ่ม ▶" : ("⏳ Waiting " + esc(u.waitingFor || "—"));
-      return '<button class="w3-up-card" data-sym="' + esc(u.symbol) + '" data-uni="' + esc(u.universe) + '">' +
+      return '<button class="w3-up-card gc-card gc-tile ' + statusTone(u.status) + '" data-sym="' + esc(u.symbol) + '" data-uni="' + esc(u.universe) + '">' +
         '<div class="w3-up-top">' + readinessRing(u.readiness, 40) + '<div class="w3-up-id"><b>' + esc(u.symbol) + '</b>' +
         '<span class="w3-up-uni">' + uni.icon + " " + esc(uni.label) + '</span></div>' + qualityBadge(u.quality) + '</div>' +
         '<div class="w3-up-bot">' + statusPill(u.status) + '<span class="w3-up-wait">' + wait + '</span></div>' +
         '</button>';
     }).join("");
     return '<section class="w3-block w3-up">' +
-      '<div class="w3-block-head"><h2>🔭 Upcoming Setups</h2><span class="w3-block-sub">สิ่งที่ “เกือบ” เข้าเงื่อนไข — ขาดอีกเพียง 1–2 ข้อ</span></div>' +
+      '<div class="w3-block-head gc-section-h"><h2>🔭 Upcoming Setups</h2><span class="w3-block-sub">สิ่งที่ “เกือบ” เข้าเงื่อนไข — ขาดอีกเพียง 1–2 ข้อ</span></div>' +
       '<div class="w3-up-scroll">' + cards + '</div></section>';
   }
 
@@ -142,7 +151,7 @@
     var toggle = hidden.length ? '<button class="w3-toggle" data-uni="' + esc(meta.key) + '">' +
       (isOpen ? "▲ ซ่อน WAIT + INVALID" : "▼ แสดง WAIT + INVALID (" + hidden.length + ")") + "</button>" : "";
 
-    return '<section class="w3-sec">' + head + body + toggle + "</section>";
+    return '<section class="w3-sec gc-card gc-neutral">' + head + body + toggle + "</section>";
   }
   function countChip(sec, field, label, cls) {
     var n = sec ? (sec[field] || 0) : 0;
@@ -164,12 +173,12 @@
         '<div class="w3-row-sub">' + uni.icon + " " + esc(a.name || a.symbol) + "</div></div>" +
       '<div class="w3-row-mid"><div class="w3-row-fib">' + esc(fibTxt) + '</div>' + histTxt + '</div>' +
       '<div class="w3-row-right">' + statusPill(a.status) + waitTxt + '</div>' +
-      '<span class="w3-row-price">' + fmtNum(a.price) + "</span>" +
+      '<span class="w3-row-price gc-num">' + fmtNum(a.price) + "</span>" +
       "</button>";
   }
 
   function methodologyNote() {
-    return '<div class="w3-method">🌊 เครื่องมือนี้<b>ไม่ได้ระบุว่า “นี่คือ Wave 3”</b> แต่ประเมิน <b>Wave 3 Readiness</b> จากกฎที่ตรวจสอบซ้ำได้ ' +
+    return '<div class="w3-method gc-card gc-neutral">🌊 เครื่องมือนี้<b>ไม่ได้ระบุว่า “นี่คือ Wave 3”</b> แต่ประเมิน <b>Wave 3 Readiness</b> จากกฎที่ตรวจสอบซ้ำได้ ' +
       '(Trend Qualification → ZigZag Swings → Fibonacci → Evidence Checklist). ตัวเลข Historical เป็นสถิติย้อนหลังของเงื่อนไขที่คล้ายกัน ไม่ใช่การพยากรณ์ราคา ' +
       'และไม่ใช่คำแนะนำซื้อ/ขาย · ประมวลผลเฉพาะตอนกด Load Latest Data</div>';
   }
@@ -210,7 +219,7 @@
     var statusLine = '<div class="w3-md-statusline ' + s.cls + '">' + s.dot + " <b>" + s.label + "</b> — " + esc(s.desc) +
       (a.waitingFor ? ' · ⏳ Waiting <b>' + esc(a.waitingFor) + "</b>" : "") + "</div>";
 
-    return '<div class="w3-modal" role="dialog" aria-modal="true">' + head + statusLine +
+    return '<div class="w3-modal gc-card ' + statusTone(a.status) + '" role="dialog" aria-modal="true">' + head + statusLine +
       '<div class="w3-md-body">' +
         trendCard(a) + fibCard(a) + evidenceCard(a) + readinessCard(a) + historicalCard(a) + targetsCard(a) + invalidationCard(a) + readingsCard(a) +
       '</div>' +
@@ -242,7 +251,7 @@
       trow("Wave 2 ต่ำสุด", fmtNum(w.w2 ? w.w2.endVal : null) + (w.w2 && w.w2.endDate ? ' <span class="w3-date">' + esc(w.w2.endDate) + "</span>" : "")) +
       trow("ราคาปัจจุบัน", fmtNum(w.currentVal)) +
       "</tbody></table>";
-    var fibBox = '<div class="w3-fibrow"><div><span class="w3-fib-big">' + f.retrace + '%</span><span class="w3-fib-cap">Retracement</span></div>' +
+    var fibBox = '<div class="w3-fibrow"><div><span class="w3-fib-big gc-num">' + f.retrace + '%</span><span class="w3-fib-cap">Retracement</span></div>' +
       '<div><b>' + f.ideal + '%</b><span class="w3-fib-cap">Ideal</span></div>' +
       '<div><b>±' + f.diff + '%</b><span class="w3-fib-cap">ห่างจาก Ideal</span></div>' +
       '<div>' + stars(f.stars) + '<span class="w3-fib-cap">' + esc(f.quality) + '</span></div></div>';
@@ -279,11 +288,11 @@
       "</div>";
     return card("📊 Historical Validation (" + h.horizon + " วันข้างหน้า)", g + '<div class="w3-card-note">สถิติของแท่งในอดีตที่เข้าเงื่อนไขทริกเกอร์คล้ายปัจจุบัน — ไม่ใช่การพยากรณ์</div>');
   }
-  function histCell(v, l) { return '<div class="w3-hist-cell"><div class="w3-hist-v">' + v + '</div><div class="w3-hist-l">' + esc(l) + "</div></div>"; }
+  function histCell(v, l) { return '<div class="w3-hist-cell"><div class="w3-hist-v gc-num">' + v + '</div><div class="w3-hist-l">' + esc(l) + "</div></div>"; }
 
   function targetsCard(a) {
     if (!a.targets || !a.targets.length) return "";
-    var rows = a.targets.map(function (t) { return '<div class="w3-tgt"><span class="w3-tgt-x">' + esc(t.label) + '</span><span class="w3-tgt-p">' + fmtNum(t.price) + "</span></div>"; }).join("");
+    var rows = a.targets.map(function (t) { return '<div class="w3-tgt"><span class="w3-tgt-x">' + esc(t.label) + '</span><span class="w3-tgt-p gc-num">' + fmtNum(t.price) + "</span></div>"; }).join("");
     return card("🎯 Historical Projection Levels", '<div class="w3-tgts">' + rows + '</div><div class="w3-card-note">Fibonacci Extension (127.2 / 161.8 / 261.8%) จาก Wave 1 — ระดับอ้างอิงเชิงสถิติ <b>ไม่ใช่การพยากรณ์เป้าหมาย</b></div>');
   }
 
@@ -320,5 +329,5 @@
   function init() { render(); window.addEventListener("portfolio-data-snapshot", render); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 
-  window.Wave3Page = { render: render };
+  window.Wave3Page = { render: render, statusTone: statusTone };
 })();

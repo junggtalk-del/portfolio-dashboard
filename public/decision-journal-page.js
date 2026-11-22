@@ -1066,9 +1066,16 @@
   function feelLook(key) { return FEEL_LOOK[key] || { hue: "slate", ico: "smile" }; }
   var ACT_HUE = { buy: "blue", sell: "violet", hold: "slate", none: "amber" };
 
+  // dj-8 (2026-11-22 · การ์ดแก้วทั้งเว็บ glass-cards.css): ทุกส่วนยกเว้นภาพรวม = การ์ดแก้วใบเดียว
+  //   ทั้งส่วนไม่มีสถานะเดียว (มีหลายสถานะปนกัน) → gc-neutral · สถานะอยู่ที่ชิป/ตัวเลขข้างใน (ตามกฎ/แหกกฎ · กำไร/ขาดทุน · ได้/พลาด)
+  //   การ์ดย่อยข้างใน (การ์ดทบทวน · กลุ่มสถิติ · ฟอร์มไม้ · ยอดรวม) เป็นหลุมบนแก้ว — ไม่มีแก้วซ้อนแก้ว
+  var GLASS_SECTION = "is-card gc-card gc-neutral";
+  // แถบเตือนบนภาพรวม: สถานะเดิมของหน้า is-bad → gc-danger · is-warn → gc-warning
+  function alertCls(kind) { return "dj-alert " + kind + " gc-card gc-strip " + (kind === "is-bad" ? "gc-danger" : "gc-warning"); }
+
   // opts = { cls, ico, hue, hideTitle, aside }
   //   ico/hue = ไอคอนสีหน้าหัวข้อ · hideTitle = หัวข้อมีไว้ให้โปรแกรมอ่านจอ (ภาพรวมไม่มีหัวข้อบนจอ)
-  //   aside = HTML ชิดขวาของแถวหัวข้อ (ตัวกรองของบันทึกทั้งหมด) · cls "is-card" = ทั้งส่วนเป็นการ์ดเดียว
+  //   aside = HTML ชิดขวาของแถวหัวข้อ (ตัวกรองของบันทึกทั้งหมด) · cls "is-card" = ทั้งส่วนเป็นการ์ดเดียว (GLASS_SECTION)
   function block(id, title, sub, body, opts) {
     var o = opts || {};
     var h2 = '<h2 id="' + id + 'H"' + (o.hideTitle ? ' class="dj-sr"' : "") + ">" + esc(title) + "</h2>";
@@ -1081,12 +1088,15 @@
     return '<section id="' + id + '" class="dj-block' + (o.cls ? " " + o.cls : "") + '" aria-labelledby="' + id + 'H">' + head + body + "</section>";
   }
   // กล่องตัวเลขสรุป: ไอคอนสี → ตัวเลข → ป้าย → บรรทัดเล็ก (n → l → s ติดกันเสมอ)
-  // o = { n, label, sub, hue, ico, nCls, href } · nCls = คลาสสีของตัวเลข (" dj-up") · href = ทั้งกล่องเป็นลิงก์
+  // o = { n, label, sub, hue, ico, nCls, href, tone } · nCls = คลาสสีของตัวเลข (" dj-up") · href = ทั้งกล่องเป็นลิงก์
+  //   dj-8: กล่อง = การ์ดแก้ว gc-tile · tone = สถานะที่หน้าคิดอยู่แล้ว (มีแค่กล่องกำไร/ขาดทุน — ดู pnlTone) · ไม่มีสถานะ = neutral
+  //   ตัวเลข = gc-num (Inter 700 tabular) ต่อท้ายคลาสเดิม
   function tileHtml(o) {
     var tag = o.href ? "a" : "div";
-    return "<" + tag + ' class="dj-tile' + (o.href ? " is-link" : "") + '" data-hue="' + o.hue + '"' + (o.href ? ' href="' + o.href + '"' : "") + ">" +
+    return "<" + tag + ' class="dj-tile' + (o.href ? " is-link" : "") + " gc-card gc-tile gc-" + (o.tone || "neutral") + '" data-hue="' + o.hue + '"' +
+      (o.href ? ' href="' + o.href + '"' : "") + ">" +
       '<span class="dj-ico">' + icon(o.ico) + "</span>" +
-      '<div class="dj-tile-n' + (o.nCls || "") + '">' + esc(o.n) + '</div><div class="dj-tile-l">' + esc(o.label) + "</div>" +
+      '<div class="dj-tile-n' + (o.nCls || "") + ' gc-num">' + esc(o.n) + '</div><div class="dj-tile-l">' + esc(o.label) + "</div>" +
       (o.sub ? '<div class="dj-tile-s">' + esc(o.sub) + "</div>" : "") +
       (o.href ? '<span class="dj-tile-go">' + icon("chevron") + "</span>" : "") +
       "</" + tag + ">";
@@ -1179,26 +1189,27 @@
     var head = syncPill() + (note ? '<span class="dj-sync-note">' + esc(note) + "</span>" : "");
     var alert = "";
     if (state.loadError) {
-      alert = '<div class="dj-alert is-bad" role="alert"><div class="dj-alert-text"><strong>โหลดบันทึกจากเซิร์ฟเวอร์ไม่สำเร็จ</strong>' +
+      alert = '<div class="' + alertCls("is-bad") + '" role="alert"><div class="dj-alert-text"><strong>โหลดบันทึกจากเซิร์ฟเวอร์ไม่สำเร็จ</strong>' +
         "<span>" + esc(state.loadError) + "</span>" +
         "<span>" + (state.serverLoaded && state.doc ? "ตัวเลขด้านล่างเป็นข้อมูลที่โหลดได้ครั้งก่อน" : "ยังไม่รู้ว่าบนเซิร์ฟเวอร์มีบันทึกอะไรบ้าง") + "</span></div>" +
-        '<button type="button" class="dj-btn" data-dj-reload="1">ลองโหลดอีกครั้ง</button></div>';
+        '<button type="button" class="dj-btn gc-btn" data-dj-reload="1">ลองโหลดอีกครั้ง</button></div>';
     }
     var pendingAlert = "";
     if ((state.draft || state.pendingDoc) && state.syncState !== "saving") {
       var isDraft = !!state.draft;
-      pendingAlert = '<div class="dj-alert ' + (isDraft ? "is-warn" : "is-bad") + '" role="alert"><div class="dj-alert-text">' +
+      pendingAlert = '<div class="' + alertCls(isDraft ? "is-warn" : "is-bad") + '" role="alert"><div class="dj-alert-text">' +
         "<strong>" + (isDraft ? "มีบันทึกที่ยังไม่ถึงเซิร์ฟเวอร์ (เก็บร่างไว้ในเครื่องนี้)" : "มีบันทึกที่ยังไม่ถึงเซิร์ฟเวอร์ และเก็บร่างในเครื่องนี้ไม่ได้") + "</strong>" +
         (state.syncReason ? "<span>สาเหตุ: " + esc(state.syncReason) + "</span>" : "") +
         "<span>" + (isDraft ? "ระบบจะลองส่งใหม่เมื่อเปิดหน้านี้ หรือกดลองส่งตอนนี้" : "อย่าเพิ่งปิดหน้านี้ กดลองส่งอีกครั้ง") + "</span></div>" +
-        '<button type="button" class="dj-btn" data-dj-retry="1">ลองส่งอีกครั้ง</button></div>';
+        '<button type="button" class="dj-btn gc-btn" data-dj-retry="1">ลองส่งอีกครั้ง</button></div>';
     }
     // ยังไม่เคยได้สำเนาจากเซิร์ฟเวอร์ → state.doc (ถ้ามี) คือร่างในเครื่องล้วน ๆ ห้ามแสดงเป็นยอดรวม
     var known = state.serverLoaded && !!state.doc;
     // รอทบทวน = คิวเดียวกับส่วน "ถึงกำหนดทบทวน" (dueList) · ระหว่างดึงราคาบอกว่ากำลังดึง (ตัวเลขอาจยังไม่ครบ)
     var dueN = known ? dueList().length : null;
     var dueLink = dueN
-      ? '<a class="dj-due" href="#djReview">' + icon("clock") + "<strong>รอทบทวน " + dueN + " รายการ</strong>" +
+      // แถบนี้ขึ้นเมื่อมีเรื่องรอทำ (สีเหลืองเดิมของหน้า) → gc-warning
+      ? '<a class="dj-due gc-card gc-strip gc-warning" href="#djReview">' + icon("clock") + "<strong>รอทบทวน " + dueN + " รายการ</strong>" +
         "<span>ผลจริงมาถึงแล้ว — ดูว่าคาดถูกไหม แล้วจดบทเรียนสั้น ๆ</span></a>"
       : "";
     // กล่องแรก "บันทึกทั้งหมด" เป็นลิงก์ไปไทม์ไลน์ · บรรทัดเล็กบอกจำนวนไม้จริงและคิวทบทวน
@@ -1242,9 +1253,12 @@
     if (!state.doc) return null;
     try { return D.stats(manualEntries(), state.outcomesById); } catch (e) { logError("คิดสถิติ", e); return null; }
   }
-  // สีของกล่อง = ป้ายจำหมวด · สีกำไร/ขาดทุนอยู่ที่ตัวเลข (ล็อกอยู่ = XXX ไม่ลงสี)
+  // สีไอคอนของกล่อง = ป้ายจำหมวด · สถานะกำไร/ขาดทุน = pnlCls ตัวเดียวกับตัวเลข (ล็อกอยู่ = XXX ไม่ลงสี)
+  //   dj-8: สถานะนั้นเป็นโทนของการ์ดแก้วด้วย กำไร → gc-calm · ขาดทุน → gc-danger · ศูนย์/ล็อกอยู่ → gc-neutral (สีบอกได้ว่ากำไรหรือขาดทุน)
+  var PNL_TONE = { " dj-up": "calm", " dj-down": "danger" };
+  function pnlTone(n) { return PNL_TONE[pnlCls(n)] || "neutral"; }
   function moneyTile(amount, currency, label, sub) {
-    return tileHtml({ n: moneySigned(amount, currency, true), nCls: pnlCls(amount), label: label, sub: sub, hue: "sky", ico: "barChart" });
+    return tileHtml({ n: moneySigned(amount, currency, true), nCls: pnlCls(amount), tone: pnlTone(amount), label: label, sub: sub, hue: "sky", ico: "barChart" });
   }
   // บรรทัดใต้ "ไม้เปิดอยู่": ชื่อสัญลักษณ์ (ไม่ใช่เงิน ล็อกอยู่ก็แสดงได้) — เดิมเขียนแค่ "สัญลักษณ์" อ่านแล้วไม่รู้ว่าหมายถึงอะไร
   function openSub(res) {
@@ -1305,7 +1319,7 @@
     var u = docUsage();
     if (!u || !u.warn) return "";
     var full = u.bytes > u.max;
-    return '<div class="dj-alert ' + (full ? "is-bad" : "is-warn") + '" role="status"><div class="dj-alert-text">' +
+    return '<div class="' + alertCls(full ? "is-bad" : "is-warn") + '" role="status"><div class="dj-alert-text">' +
       "<strong>พื้นที่บันทึกใช้ไปแล้ว " + esc(u.pct) + "%</strong>" +
       "<span>" + (full
         ? "เกินที่เซิร์ฟเวอร์รับแล้ว — บันทึกใหม่จะส่งไม่ได้ ส่งออกไฟล์สำรองไว้ก่อน (ส่วน “วิธีคิด” ด้านล่าง)"
@@ -1388,7 +1402,7 @@
     each(options, function (o) { if (o.value === cur) known = true; });
     if (cur && !known) options = options.concat([{ value: cur, label: cur }]);   // ค่าที่เลือกค้างไว้ต้องยังเห็น
     var h = '<div class="dj-field"><label class="dj-field-l" for="djFilter_' + key + '">' + esc(label) + "</label>" +
-      '<select id="djFilter_' + key + '" class="dj-select" data-dj-filter="' + key + '">' +
+      '<select id="djFilter_' + key + '" class="dj-select gc-field" data-dj-filter="' + key + '">' +
       '<option value=""' + (cur === "" ? " selected" : "") + ">ทั้งหมด</option>";
     each(options, function (o) {
       h += '<option value="' + esc(o.value) + '"' + (o.value === cur ? " selected" : "") + ">" + esc(o.label) + "</option>";
@@ -1413,7 +1427,7 @@
       filterSelect("feeling", "อารมณ์", feelOpts) +
       filterSelect("compliance", "ตามกฎ / แหกกฎ", compOpts) +
       filterSelect("action", "ทำอะไร", actOpts) +
-      (anyFilter() ? '<button type="button" class="dj-btn" data-dj-filter-clear="1">ล้างตัวกรอง</button>' : "") +
+      (anyFilter() ? '<button type="button" class="dj-btn gc-btn gc-btn-ghost" data-dj-filter-clear="1">ล้างตัวกรอง</button>' : "") +
       "</div>";
   }
 
@@ -1507,7 +1521,7 @@
     var sym = D.canonicalSymbol(e.symbol);
     var o = state.outcomesById[e.id];
     var err = sym ? state.priceErrBySymbol[sym] : null;
-    var retry = '<button type="button" class="dj-btn" data-dj-outcomes-retry="1">ลองดึงราคาอีกครั้ง</button>';
+    var retry = '<button type="button" class="dj-btn gc-btn gc-btn-ghost" data-dj-outcomes-retry="1">ลองดึงราคาอีกครั้ง</button>';
     if (!o || typeof o !== "object") {
       if (err) {
         return '<div class="dj-out"><div class="dj-out-msg is-bad"><span><strong>ดึงราคาไม่สำเร็จ</strong> · ' + esc(err) +
@@ -1564,10 +1578,10 @@
     var id = esc(e.id);
     if (state.confirmDelId === e.id) {
       return '<div class="dj-confirm" role="alert"><span>ลบบันทึกนี้? จะหายจากทุกเครื่องและกู้คืนไม่ได้ · ไม้จริงที่ผูกไว้ยังอยู่ในส่วนไม้จริง</span>' +
-        '<div class="dj-confirm-btns"><button type="button" class="dj-btn" data-dj-del-cancel="' + id + '">ยกเลิก</button>' +
-        '<button type="button" class="dj-btn dj-btn-danger" data-dj-del-confirm="' + id + '">ยืนยันลบ</button></div></div>';
+        '<div class="dj-confirm-btns"><button type="button" class="dj-btn gc-btn gc-btn-ghost" data-dj-del-cancel="' + id + '">ยกเลิก</button>' +
+        '<button type="button" class="dj-btn dj-btn-danger gc-btn gc-btn-ghost" data-dj-del-confirm="' + id + '">ยืนยันลบ</button></div></div>';
     }
-    return '<button type="button" class="dj-btn dj-btn-quiet" data-dj-del="' + id + '" aria-label="' +
+    return '<button type="button" class="dj-btn dj-btn-quiet gc-btn gc-btn-ghost" data-dj-del="' + id + '" aria-label="' +
       esc("ลบบันทึก " + sym + " " + (e.date || "")) + '">ลบ</button>';
   }
 
@@ -1728,7 +1742,7 @@
   function renderLog() {
     var D = E();
     var title = "บันทึกทั้งหมด";
-    var look = { ico: "list", hue: "indigo", cls: "is-card" };
+    var look = { ico: "list", hue: "indigo", cls: GLASS_SECTION };
     if (!state.doc) {
       var why = state.loading ? "กำลังโหลดบันทึก…" : "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ด้านบนของหน้า";
       return block("djLog", title, "", '<p class="dj-placeholder">' + esc(why) + "</p>", look);
@@ -1825,10 +1839,10 @@
       '<div class="dj-rv-ask"><span class="dj-field-l" id="' + esc("djRvAsk-" + e.id) + '">มองย้อนกลับไป การตัดสินใจครั้งนี้</span>' +
       '<div class="dj-rv-verdicts" role="group" aria-labelledby="' + esc("djRvAsk-" + e.id) + '">' + btns + "</div></div>" +
       '<div class="dj-field"><label class="dj-field-l" for="' + esc(lessonId(e.id)) + '">บทเรียน <span class="dj-field-h">(ไม่บังคับ)</span></label>' +
-      '<textarea id="' + esc(lessonId(e.id)) + '" class="dj-textarea" rows="3" placeholder="เช่น ตอนนั้นกลัวข่าว ทั้งที่กฎยังบอกว่าขาขึ้น">' +
+      '<textarea id="' + esc(lessonId(e.id)) + '" class="dj-textarea gc-field" rows="3" placeholder="เช่น ตอนนั้นกลัวข่าว ทั้งที่กฎยังบอกว่าขาขึ้น">' +
       esc(d.lesson) + "</textarea></div>" +
       msg +
-      '<div class="dj-actions dj-rv-save"><button type="button" class="dj-btn dj-btn-primary" data-dj-review-save="' + id + '"' +
+      '<div class="dj-actions dj-rv-save"><button type="button" class="dj-btn dj-btn-primary gc-btn" data-dj-review-save="' + id + '"' +
       (state.saving ? " disabled" : "") + ">บันทึกการทบทวน</button>" +
       '<span class="dj-field-h">บันทึกแล้วออกจากคิวนี้ บทเรียนไปอยู่ที่การ์ดใน “บันทึกทั้งหมด”</span></div>' +
       "</article>";
@@ -1850,7 +1864,7 @@
     if (!syms.length) return "";
     return '<div class="dj-out-msg is-bad dj-rv-warn"><span><strong>ดึงราคาไม่สำเร็จ</strong> · ' + esc(syms.join(", ")) +
       " — บันทึกที่ครบกำหนดของสัญลักษณ์นี้ยังขึ้นที่นี่ไม่ได้ จนกว่าจะได้ราคา</span>" +
-      '<button type="button" class="dj-btn" data-dj-outcomes-retry="1">ลองดึงราคาอีกครั้ง</button></div>';
+      '<button type="button" class="dj-btn gc-btn gc-btn-ghost" data-dj-outcomes-retry="1">ลองดึงราคาอีกครั้ง</button></div>';
   }
 
   function lastReviewNote() {
@@ -1861,7 +1875,7 @@
 
   function renderReview() {
     var title = "ถึงกำหนดทบทวน";
-    var look = { ico: "clock", hue: "amber" };
+    var look = { ico: "clock", hue: "amber", cls: GLASS_SECTION };
     var hidden = { ico: "clock", hue: "amber", cls: "dj-hidden" };
     renderedReviewIds = [];
     if (!state.doc) return block("djReview", title, "", "", hidden);
@@ -1952,8 +1966,9 @@
   }
   function personal(text) { return state.locked ? "XXX" : text; }
   // คลาสสีของกำไร/ขาดทุน — ล็อกอยู่ไม่ลงสี
+  //   ปัดแล้วเป็น 0 ที่ทศนิยมที่แสดง (|n| < 0.005) = ศูนย์: ไม้เท่าทุนบวกลบทศนิยมแล้วเหลือเศษเช่น 1.4e-14 → "$0.00" ห้ามขึ้นเขียว
   function pnlCls(n) {
-    if (state.locked || !isNum(n) || n === 0) return "";
+    if (state.locked || !isNum(n) || Math.abs(n) < 0.005) return "";
     return n > 0 ? " dj-up" : " dj-down";
   }
 
@@ -2281,12 +2296,12 @@
     var label = esc(sym + " " + (x.date || ""));
     if (state.tradeConfirmDelId === x.id) {
       return '<div class="dj-tconfirm" role="alert"><span>ลบไม้นี้?</span>' +
-        '<button type="button" class="dj-btn" data-dj-trade-del-cancel="' + id + '">ยกเลิก</button>' +
-        '<button type="button" class="dj-btn dj-btn-danger" data-dj-trade-del-confirm="' + id + '">ยืนยันลบ</button></div>';
+        '<button type="button" class="dj-btn gc-btn gc-btn-ghost" data-dj-trade-del-cancel="' + id + '">ยกเลิก</button>' +
+        '<button type="button" class="dj-btn dj-btn-danger gc-btn gc-btn-ghost" data-dj-trade-del-confirm="' + id + '">ยืนยันลบ</button></div>';
     }
     return '<div class="dj-trow-acts">' +
-      (state.locked ? "" : '<button type="button" class="dj-btn" data-dj-trade-edit="' + id + '" aria-label="แก้ไม้ ' + label + '">แก้</button>') +
-      '<button type="button" class="dj-btn dj-btn-quiet" data-dj-trade-del="' + id + '" aria-label="ลบไม้ ' + label + '">ลบ</button></div>';
+      (state.locked ? "" : '<button type="button" class="dj-btn gc-btn gc-btn-ghost" data-dj-trade-edit="' + id + '" aria-label="แก้ไม้ ' + label + '">แก้</button>') +
+      '<button type="button" class="dj-btn dj-btn-quiet gc-btn gc-btn-ghost" data-dj-trade-del="' + id + '" aria-label="ลบไม้ ' + label + '">ลบ</button></div>';
   }
 
   function tradesListHtml(trades, res) {
@@ -2333,7 +2348,7 @@
   }
 
   function tselect(id, options, cur, emptyLabel) {
-    var h = '<select id="' + id + '" class="dj-select">' +
+    var h = '<select id="' + id + '" class="dj-select gc-field">' +
       (emptyLabel !== null ? '<option value=""' + (cur === "" ? " selected" : "") + ">" + esc(emptyLabel) + "</option>" : "");
     each(options, function (o) {
       h += '<option value="' + esc(o.value) + '"' + (String(cur) === String(o.value) ? " selected" : "") + ">" + esc(o.label) + "</option>";
@@ -2369,24 +2384,24 @@
       ? "แก้ไม้ " + (D.canonicalSymbol(editing.symbol) || "") + " · " + String(editing.date || "")
       : "เพิ่มไม้ที่ซื้อหรือขายจริง";
     var btns = editing
-      ? '<button type="button" id="djTSubmit" class="dj-btn dj-btn-primary" data-dj-trade-update="' + esc(editing.id) + '"' + (state.saving ? " disabled" : "") + ">บันทึกการแก้ไข</button>" +
-        '<button type="button" class="dj-btn" data-dj-trade-edit-cancel="1">ยกเลิกการแก้</button>'
-      : '<button type="button" id="djTSubmit" class="dj-btn dj-btn-primary" data-dj-trade-add="1"' + (state.saving ? " disabled" : "") + ">เพิ่มไม้</button>";
+      ? '<button type="button" id="djTSubmit" class="dj-btn dj-btn-primary gc-btn" data-dj-trade-update="' + esc(editing.id) + '"' + (state.saving ? " disabled" : "") + ">บันทึกการแก้ไข</button>" +
+        '<button type="button" class="dj-btn gc-btn gc-btn-ghost" data-dj-trade-edit-cancel="1">ยกเลิกการแก้</button>'
+      : '<button type="button" id="djTSubmit" class="dj-btn dj-btn-primary gc-btn" data-dj-trade-add="1"' + (state.saving ? " disabled" : "") + ">เพิ่มไม้</button>";
     return '<div id="djTradeForm" class="dj-tform' + (editing ? " is-editing" : "") + '">' +
       '<div class="dj-tform-head"><h3 class="dj-sub-h">' + esc(title) + "</h3>" +
       '<span class="dj-field-h">ไม้ที่ทำไปแล้วจริงตามที่โบรกเกอร์แจ้ง · แก้หรือลบได้ภายหลัง</span></div>' +
       '<div class="dj-tform-grid">' +
-      fieldBox("djTDate", "วันที่", '<input id="djTDate" class="dj-input" type="date" value="' + esc(f.date || today) + '" max="' + esc(today) + '">', "") +
+      fieldBox("djTDate", "วันที่", '<input id="djTDate" class="dj-input gc-field" type="date" value="' + esc(f.date || today) + '" max="' + esc(today) + '">', "") +
       fieldBox("djTSymbol", "สัญลักษณ์",
-        '<input id="djTSymbol" class="dj-input" list="djSymbols" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="เช่น NVDA · PTT.BK · BTC" value="' + esc(f.symbol) + '">',
+        '<input id="djTSymbol" class="dj-input gc-field" list="djSymbols" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="เช่น NVDA · PTT.BK · BTC" value="' + esc(f.symbol) + '">',
         "หุ้นไทยลงท้าย .BK") +
       fieldBox("djTSide", "ซื้อหรือขาย", tselect("djTSide", sideOpts, f.side, "— เลือก —"), "") +
-      fieldBox("djTQty", "จำนวน", '<input id="djTQty" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.qty) + '">', "ใส่ทศนิยมได้ เช่น เศษของบิตคอยน์") +
-      fieldBox("djTPrice", "ราคาต่อหน่วย", '<input id="djTPrice" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.price) + '">', "") +
-      fieldBox("djTFee", "ค่าธรรมเนียม", '<input id="djTFee" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="' + esc(f.fee) + '">', "รวมภาษี · ว่าง = 0") +
+      fieldBox("djTQty", "จำนวน", '<input id="djTQty" class="dj-input is-num gc-field" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.qty) + '">', "ใส่ทศนิยมได้ เช่น เศษของบิตคอยน์") +
+      fieldBox("djTPrice", "ราคาต่อหน่วย", '<input id="djTPrice" class="dj-input is-num gc-field" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.price) + '">', "") +
+      fieldBox("djTFee", "ค่าธรรมเนียม", '<input id="djTFee" class="dj-input is-num gc-field" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="' + esc(f.fee) + '">', "รวมภาษี · ว่าง = 0") +
       fieldBox("djTCurrency", "สกุลเงิน", tselect("djTCurrency", curOpts, f.currency, "ตามตลาดของสัญลักษณ์"), ".BK = THB · อื่น ๆ = USD") +
       fieldBox("djTEntry", "ผูกกับบันทึก <span class=\"dj-field-h\">(ไม่บังคับ)</span>", tselect("djTEntry", entOpts, f.entryId, "ไม่ผูก"), "", "dj-tform-entry") +
-      fieldBox("djTNote", "หมายเหตุ <span class=\"dj-field-h\">(ไม่บังคับ)</span>", '<input id="djTNote" class="dj-input" type="text" autocomplete="off" value="' + esc(f.note) + '">', "", "dj-field-wide") +
+      fieldBox("djTNote", "หมายเหตุ <span class=\"dj-field-h\">(ไม่บังคับ)</span>", '<input id="djTNote" class="dj-input gc-field" type="text" autocomplete="off" value="' + esc(f.note) + '">', "", "dj-field-wide") +
       "</div>" +
       '<div id="djTFormMsgBox">' + tradeMsgHtml() + "</div>" +
       '<div class="dj-actions dj-tform-actions">' + btns +
@@ -2406,7 +2421,7 @@
 
   function renderTrades() {
     var title = "ไม้จริง";
-    var look = { ico: "arrows", hue: "sky" };
+    var look = { ico: "arrows", hue: "sky", cls: GLASS_SECTION };
     if (state.tradeEditId && !liveTradeById(state.tradeEditId)) state.tradeEditId = null;   // ไม้ที่แก้อยู่ถูกลบจากที่อื่น
     var parts = tradeParts();
     if (!parts) {
@@ -2483,7 +2498,7 @@
   function renderStats() {
     var D = E();
     var title = "สถิติ";
-    var look = { ico: "pie", hue: "violet" };
+    var look = { ico: "pie", hue: "violet", cls: GLASS_SECTION };
     var known = state.serverLoaded && !!state.doc;
     if (!known) {
       var why = state.loading ? "กำลังโหลดบันทึก…" : "ยังโหลดบันทึกจากเซิร์ฟเวอร์ไม่ได้ — ดูสถานะที่ด้านบนของหน้า";
@@ -2705,7 +2720,7 @@
     var out = "";
     each(all ? list : list.slice(0, HAO_ITEMS_MAX), function (r) { out += haoItemHtml(H, D, r, byId[r.id], hzs, shortest); });
     var more = list.length <= HAO_ITEMS_MAX ? "" :
-      '<button type="button" class="dj-btn dj-hao-more" data-dj-hao-more="1" aria-expanded="' + (all ? "true" : "false") + '">' +
+      '<button type="button" class="dj-btn dj-hao-more gc-btn gc-btn-ghost" data-dj-hao-more="1" aria-expanded="' + (all ? "true" : "false") + '">' +
       esc(all ? "ย่อ" : "ดูทั้งหมด (" + list.length + ")") + "</button>";
     return '<h3 class="dj-hao-ititle">รายตัว (ใหม่สุดก่อน)</h3><ol class="dj-hao-items">' + out + "</ol>" + more;
   }
@@ -2727,7 +2742,7 @@
   }
   function renderHaOutcome() {
     var D = E();
-    var look = { ico: "activity", hue: "teal" };
+    var look = { ico: "activity", hue: "teal", cls: GLASS_SECTION };
     var sub = '<span class="dj-block-note">ทุกสัญญาณที่บันทึกไว้ · ผลต่อพอร์ตเฉลี่ยนับจากราคาปิดวันสัญญาณ</span>';
     function card(body) { return block("djHaOut", HAO_TITLE, sub, body, look); }
     function note(text) { return card('<p class="dj-placeholder">' + esc(text) + "</p>"); }
@@ -2814,7 +2829,7 @@
   }
   // ใช้กับ 3 ช่องที่ต้องเลือกก่อนบันทึก (คาดว่า · ภายใน · ทำอะไร) จึงประกาศ aria-required ด้วย
   function selectHtml(id, name, options, cur, label) {
-    var h = '<select id="' + id + '" class="dj-select" data-dj-field="' + name + '" aria-label="' + esc(label) + '" aria-required="true">' +
+    var h = '<select id="' + id + '" class="dj-select gc-field" data-dj-field="' + name + '" aria-label="' + esc(label) + '" aria-required="true">' +
       '<option value=""' + (cur === "" || cur == null ? " selected" : "") + ">— เลือก —</option>";
     each(options, function (o) {
       h += '<option value="' + esc(o.value) + '"' + (String(cur) === String(o.value) ? " selected" : "") + ">" + esc(o.label) + "</option>";
@@ -2879,14 +2894,14 @@
       step(1, "blue", "ข้อมูลพื้นฐาน", "",
         '<div class="dj-form-grid">' +
         fieldBox("djSymbol", "สัญลักษณ์" + req,
-          '<input id="djSymbol" class="dj-input" list="djSymbols" data-dj-field="symbol" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-required="true" placeholder="เช่น NVDA · PTT.BK · BTC" value="' + esc(f.symbol) + '">' + dl,
+          '<input id="djSymbol" class="dj-input gc-field" list="djSymbols" data-dj-field="symbol" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-required="true" placeholder="เช่น NVDA · PTT.BK · BTC" value="' + esc(f.symbol) + '">' + dl,
           "หุ้นไทยลงท้าย .BK") +
         fieldBox("djDate", "วันที่ตัดสินใจ" + req,
-          '<input id="djDate" class="dj-input" type="date" data-dj-field="date" aria-required="true" value="' + esc(f.date || today) + '" max="' + esc(today) + '">', "") +
+          '<input id="djDate" class="dj-input gc-field" type="date" data-dj-field="date" aria-required="true" value="' + esc(f.date || today) + '" max="' + esc(today) + '">', "") +
         "</div>") +
       step(2, "green", "เห็นอะไร / ข่าวอะไร", "",
         '<div class="dj-field">' +
-        '<textarea id="djEvent" class="dj-textarea" rows="3" aria-labelledby="djStep2T" placeholder="เช่น ข่าวผลประกอบการ ตลาดลงแรง เพื่อนบอกต่อ">' + esc(f.event) + "</textarea></div>" +
+        '<textarea id="djEvent" class="dj-textarea gc-field" rows="3" aria-labelledby="djStep2T" placeholder="เช่น ข่าวผลประกอบการ ตลาดลงแรง เพื่อนบอกต่อ">' + esc(f.event) + "</textarea></div>" +
         fieldBox("", "ตอนนี้รู้สึก <span class=\"dj-field-h\">(เลือกได้หลายอัน)</span>",
           '<div class="dj-chips" role="group" aria-label="ตอนนี้รู้สึก">' + chips + "</div>", "", "dj-field-feel")) +
       step(3, "sky", "คาดว่าราคาจะไปทางไหน · ทำอะไร", "",
@@ -2904,27 +2919,27 @@
         '<input type="checkbox" id="djWithTrade" data-dj-field="withTrade"' + (f.withTrade ? " checked" : "") + ">" +
         "<span>บันทึกไม้จริงด้วย (ซื้อ/ขายไปแล้วจริง)</span></label>" +
         '<div id="djTradeFields" class="dj-trade-fields' + (f.withTrade && tradeOk ? "" : " dj-hidden") + '">' +
-        fieldBox("djQty", "จำนวน", '<input id="djQty" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.qty) + '">', "") +
-        fieldBox("djPrice", "ราคาต่อหน่วย", '<input id="djPrice" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.price) + '">', "") +
-        fieldBox("djFee", "ค่าธรรมเนียม", '<input id="djFee" class="dj-input is-num" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="' + esc(f.fee) + '">', "") +
-        fieldBox("djCurrency", "สกุลเงิน", '<select id="djCurrency" class="dj-select">' + curOpts + "</select>", "") +
+        fieldBox("djQty", "จำนวน", '<input id="djQty" class="dj-input is-num gc-field" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.qty) + '">', "") +
+        fieldBox("djPrice", "ราคาต่อหน่วย", '<input id="djPrice" class="dj-input is-num gc-field" type="text" inputmode="decimal" autocomplete="off" value="' + esc(f.price) + '">', "") +
+        fieldBox("djFee", "ค่าธรรมเนียม", '<input id="djFee" class="dj-input is-num gc-field" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="' + esc(f.fee) + '">', "") +
+        fieldBox("djCurrency", "สกุลเงิน", '<select id="djCurrency" class="dj-select gc-field">' + curOpts + "</select>", "") +
         "</div></div>" +
         "</div>") +
       step(4, "amber", "แผน / หมายเหตุ <span class=\"dj-step-opt\">(ไม่บังคับ)</span>", "",
         '<div class="dj-field">' +
-        '<textarea id="djPlan" class="dj-textarea is-short" rows="2" aria-labelledby="djStep4T" placeholder="เช่น ถ้าหลุดแนวรับจะทำอะไรต่อ">' + esc(f.plan) + "</textarea></div>") +
+        '<textarea id="djPlan" class="dj-textarea is-short gc-field" rows="2" aria-labelledby="djStep4T" placeholder="เช่น ถ้าหลุดแนวรับจะทำอะไรต่อ">' + esc(f.plan) + "</textarea></div>") +
       step(5, "violet", "ดูว่ากฎบอกอะไร", "ดึงราคาปิดแล้วบอกว่ากฎ 3 ข้อว่าอย่างไร — ต้องดูก่อนจึงบันทึกได้",
         '<div id="djRulePanel" class="dj-rule-panel" aria-live="polite">' + renderPanel() + "</div>") +
       "</div>" +
       '<div id="djFormMsgBox">' + formMsgHtml() + "</div>" +
       '<div class="dj-actions dj-save-row">' +
-      '<button type="button" id="djSaveBtn" class="dj-btn dj-btn-primary" data-dj-save="1"' + (canSave() ? "" : " disabled") + ">" +
+      '<button type="button" id="djSaveBtn" class="dj-btn dj-btn-primary gc-btn" data-dj-save="1"' + (canSave() ? "" : " disabled") + ">" +
       icon("save") + "<span>บันทึก</span></button>" +
-      '<button type="button" id="djPreviewBtn" class="dj-btn" data-dj-preview="1"' + (previewLoading() ? " disabled" : "") + ">" +
+      '<button type="button" id="djPreviewBtn" class="dj-btn gc-btn gc-btn-ghost" data-dj-preview="1"' + (previewLoading() ? " disabled" : "") + ">" +
       previewInner() + "</button>" +
       '<span id="djSaveStatus" class="dj-save-status">' + saveStatusInner() + "</span></div>";
     return block("djNew", "บันทึกใหม่", '<span class="dj-block-note">จดตอนที่ตัดสินใจ ก่อนรู้ผล — บันทึกแล้วแก้ไม่ได้</span>', form,
-      { ico: "plus", hue: "green", cls: "is-card" });
+      { ico: "plus", hue: "green", cls: GLASS_SECTION });
   }
 
   function saveStatusInner() {
@@ -3188,7 +3203,7 @@
       "</div></details>";
     var disclaimer = '<p class="dj-disclaimer">หน้านี้บอกแค่ว่ากฎที่คุณตั้งเองพูดว่าอะไร และราคาจริงเป็นอย่างไรภายหลัง — ไม่ใช่คำแนะนำการลงทุน</p>';
     return block("djMethod", "วิธีคิด", "", body + '<div id="djBackup" class="dj-backup">' + backupInner() + "</div>" + disclaimer,
-      { ico: "info", hue: "slate" });
+      { ico: "info", hue: "slate", cls: GLASS_SECTION });
   }
 
   // ---------------- สำรองข้อมูล: ส่งออก / นำเข้าไฟล์ .json (สเปก §6 · แบบ thai-dr-page.js) ----------------
@@ -3222,9 +3237,9 @@
       "<span>ส่งออกบันทึกและไม้จริงทั้งหมดเป็นไฟล์ .json · นำเข้าแล้วรวมกับของเดิมทีละรายการ — รายการเดียวกันใช้ฉบับที่แก้ล่าสุด (รวมถึงการลบ) รายการที่มีแค่ฝั่งเดียวเก็บไว้ทั้งหมด</span>" +
       (usage ? '<span class="dj-muted">' + esc(usage) + "</span>" : "") + "</div>" +
       '<div class="dj-backup-btns">' +
-      '<button type="button" class="dj-btn" data-dj-export="1"' + (!has || state.locked ? " disabled" : "") + ">ส่งออกไฟล์</button>" +
+      '<button type="button" class="dj-btn gc-btn gc-btn-ghost" data-dj-export="1"' + (!has || state.locked ? " disabled" : "") + ">ส่งออกไฟล์</button>" +
       // ระหว่างบันทึก ช่องไฟล์ถูกปิด — ป้ายที่มองเห็นต้องดูปิดด้วย ไม่งั้นกดแล้วเงียบ
-      '<label class="dj-btn dj-file' + (state.saving ? " is-disabled" : "") + '"' + (state.saving ? ' aria-disabled="true"' : "") +
+      '<label class="dj-btn dj-file' + (state.saving ? " is-disabled" : "") + ' gc-btn gc-btn-ghost"' + (state.saving ? ' aria-disabled="true"' : "") +
       '>นำเข้าไฟล์<input type="file" class="dj-file-input" accept=".json,application/json" data-dj-import="1"' +
       (state.saving ? " disabled" : "") + "></label></div>" +
       (state.locked ? '<p class="dj-note">ปลดล็อกความเป็นส่วนตัวก่อนส่งออก — ไฟล์มีจำนวนหน่วยและราคาไม้จริง</p>' : "") +
@@ -3504,7 +3519,7 @@
     if (!root) return;
     state.locked = privacyLocked();
     if (!E()) {
-      root.innerHTML = '<div class="dj-empty"><strong>โหลดส่วนคำนวณของหน้าไม่สำเร็จ</strong>ลองรีเฟรชหน้าอีกครั้ง</div>';
+      root.innerHTML = '<div class="dj-empty gc-card gc-neutral"><strong>โหลดส่วนคำนวณของหน้าไม่สำเร็จ</strong>ลองรีเฟรชหน้าอีกครั้ง</div>';
       return;
     }
     readForm();                                  // เก็บสิ่งที่พิมพ์ค้างไว้ก่อนวาดใหม่
