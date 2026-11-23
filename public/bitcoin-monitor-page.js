@@ -189,8 +189,10 @@
     bgeoOverlay("ssrProxy", "ssr", false);
     // new metrics that had no free source before
     bgeoOverlay("sopr", "sopr", true);
+    bgeoOverlay("rup", "rup", true);
     bgeoOverlay("lthSupply", "lthSupply", true);
     if (!("sopr" in ind)) { ind.sopr = null; meta.sopr = { source: null, date: null, freshness: "missing", referenceLinks: [], value: null }; }
+    if (!("rup" in ind)) { ind.rup = null; meta.rup = { source: null, date: null, freshness: "missing", referenceLinks: [], value: null }; }
     if (!("lthSupply" in ind)) { ind.lthSupply = null; meta.lthSupply = { source: null, date: null, freshness: "missing", referenceLinks: [], value: null }; }
 
     ind._meta = meta;
@@ -657,6 +659,8 @@
       dataSourcesAccordion(ind, bz) +
       `</div>`;
     wire();
+    ddWireSection();
+    ddRefreshModal();   // the big chart (outside #btcRoot) follows fresh data
   }
 
   function dailyChange(hist, price) {
@@ -817,7 +821,7 @@
     </div>`;
   }
   // ---------------------------------------------------------------- on-chain deep dive
-  // 6 exact on-chain cards (BGeometrics free API) with full Thai explanations:
+  // 7 exact on-chain cards (BGeometrics free API) with full Thai explanations:
   // คืออะไร / อ่านยังไง / วันนี้ / ข้อจำกัด + gauge bar + link to the full chart.
   const DD_COL = { green: "var(--mc-emerald)", gray: "var(--btc-dd-gray, #64748b)", amber: "var(--mc-amber)", red: "var(--mc-red)", blue: "var(--mc-blue)" }; // gray lifts on the glass (bitcoin-monitor.css)
   function ddFmtM(v) { return dn(v) ? Number((v / 1e6).toFixed(2)) + "M" : "—"; }
@@ -826,6 +830,7 @@
       key: "mvrvZScore", group: "ราคาถูกหรือแพง", title: "MVRV Z-Score",
       fmt: (v) => num(v, 2),
       gauge: { lo: -1, hi: 8, ticks: [-1, 0, 2, 5, 8], segs: [[2, "green"], [5, "gray"], [8, "red"]] },
+      bands: [[2, "green"], [5, "gray"], [7, "amber"], [Infinity, "red"]],   // trend-chart zones = the tag thresholds
       tag: (v) => v < 0 ? ["ถูกสุดขั้ว", "green"] : v < 2 ? ["ต่ำ", "green"] : v < 5 ? ["กลาง", "gray"] : v < 7 ? ["สูง", "amber"] : ["ยอดดอย", "red"],
       what: "MVRV ที่หารด้วยความผันผวนของมูลค่าตลาด ทำให้เอาคนละยุคมาเทียบกันได้ตรงๆ",
       how: "ต่ำกว่า 0 คือถูกสุดขั้ว 0–2 สะสม เกิน 7 คือโซนยอดดอยในอดีต",
@@ -835,6 +840,7 @@
     {
       key: "realizedPriceProxy", group: "ราคาถูกหรือแพง", title: "Realized Price",
       fmt: (v) => money(v),
+      axisFmt: (v) => "$" + Math.round(v / 1000) + "k",
       tag: () => ["เส้นฐาน", "blue"],
       what: "ต้นทุนเฉลี่ยของทั้งตลาด คิดจากราคาตอนที่แต่ละเหรียญขยับครั้งล่าสุด",
       how: "ไม่ใช่โซน แต่เป็นเส้นฐาน ถ้าราคาหลุดใต้เส้นนี้แปลว่าตลาดโดยรวมอยู่ใต้ต้นทุน",
@@ -846,6 +852,7 @@
       key: "nupl", group: "อารมณ์ตลาด", title: "NUPL",
       fmt: (v) => num(v, 2),
       gauge: { lo: 0, hi: 1, ticks: [0, 0.25, 0.5, 0.75, 1], segs: [[0.25, "green"], [0.5, "gray"], [0.75, "amber"], [1, "red"]] },
+      bands: [[0.25, "green"], [0.5, "gray"], [0.75, "amber"], [Infinity, "red"]],
       tag: (v) => v < 0 ? ["ยอมแพ้", "green"] : v < 0.25 ? ["ความหวัง", "green"] : v < 0.5 ? ["ลังเล", "gray"] : v < 0.75 ? ["เชื่อมั่น", "amber"] : ["ยูโฟเรีย", "red"],
       what: "สัดส่วนกำไรบนกระดาษของทั้งตลาดเทียบกับมูลค่าตลาด ใช้วัดว่าตลาดร้อนแค่ไหน",
       how: "ต่ำกว่า 0 ยอมแพ้ · 0–0.25 ความหวัง · 0.25–0.5 ลังเล · 0.5–0.75 เชื่อมั่น · เกิน 0.75 ยูโฟเรีย",
@@ -853,9 +860,24 @@
       chart: "https://charts.bgeometrics.com/nupl.html"
     },
     {
+      key: "rup", group: "อารมณ์ตลาด", title: "RUP",
+      fmt: (v) => num(v, 2),
+      // zones from BGeometrics' own 4-year series (2022-11 → 2026-11, verified 2026-11-23): bear lows 0.25–0.35
+      // (FTX 2022 · 2026) · 2024–25 bull 0.5–0.6 · tops 0.60–0.64 (Mar / Nov 2024) → 27% · 32% · 37% · 5% of days
+      gauge: { lo: 0.2, hi: 0.7, ticks: [0.2, 0.35, 0.5, 0.6, 0.7], segs: [[0.35, "green"], [0.5, "gray"], [0.6, "amber"], [0.7, "red"]] },
+      bands: [[0.35, "green"], [0.5, "gray"], [0.6, "amber"], [Infinity, "red"]],
+      tag: (v) => v < 0.35 ? ["กำไรบาง", "green"] : v < 0.5 ? ["กำไรปานกลาง", "gray"] : v < 0.6 ? ["กำไรหนา", "amber"] : ["กำไรล้น", "red"],
+      what: "Relative Unrealized Profit — กำไรบนกระดาษของเหรียญที่ตอนนี้มีกำไร รวมกันแล้วหารด้วยมูลค่าตลาด นับเฉพาะฝั่งกำไร (NUPL คือกำไรส่วนนี้ลบฝั่งที่ขาดทุนแล้ว)",
+      how: "ยิ่งสูง คนถือยิ่งมีกำไรรอขายเยอะ แรงขายทำกำไรมักตามมา · ต่ำกว่า 0.35 กำไรบาง (ระดับก้นตลาดหมีปี 2022 และ 2026) · 0.35–0.5 ปานกลาง · 0.5–0.6 กำไรหนา (ช่วงขาขึ้นปี 2024–25) · 0.6 ขึ้นไป กำไรล้น (ระดับยอดเดือนมี.ค. และ พ.ย. 2024)",
+      today: (v) => num(v, 2) + " = " + (v < 0.35 ? "กำไรในมือน้อย ระดับเดียวกับช่วงก้นตลาดหมีที่ผ่านมา" : v < 0.5 ? "กำไรในมือปานกลาง" : v < 0.6 ? "กำไรสะสมหนา แรงขายทำกำไรเริ่มมีน้ำหนัก" : "กำไรล้นระดับยอดของรอบที่แล้ว"),
+      limit: "เกณฑ์ตั้งจากข้อมูล 4 ปีของ BGeometrics ซึ่งมีแค่รอบเดียว และยอดของแต่ละรอบมักต่ำลงเรื่อยๆ อย่าใช้เป็นเพดานตายตัว · ไม่นับใน Buy Zone Score เพราะ NUPL ที่รวมกำไรส่วนนี้อยู่แล้วถูกนับไปแล้ว",
+      chart: "https://studio.glassnode.com/charts/indicators.UnrealizedProfit?a=BTC", chartLabel: "ดูกราฟย้อนหลังที่ Glassnode ↗"
+    },
+    {
       key: "sopr", group: "อารมณ์ตลาด", title: "SOPR",
       fmt: (v) => num(v, 2),
       gauge: { lo: 0.9, hi: 1.1, ticks: [0.9, 1, 1.1], segs: [[1, "green"], [1.1, "gray"]] },
+      bands: [[1, "green"], [1.03, "gray"], [Infinity, "amber"]],
       tag: (v) => v < 0.98 ? ["ยอมขายขาดทุน", "green"] : v < 1 ? ["ขายขาดทุนเล็กน้อย", "green"] : v <= 1.03 ? ["ขายมีกำไร", "gray"] : ["กำไรหนา ระวัง", "amber"],
       what: "เหรียญที่ขยับวันนี้ ขายที่ราคากำไรหรือขาดทุนเทียบกับตอนที่ได้มา",
       how: "เกิน 1 คือคนขายมีกำไร ต่ำกว่า 1 คือคนยอมขายขาดทุน ซึ่งมักเกิดตอนตลาดหมดแรง",
@@ -866,6 +888,7 @@
       key: "ssrProxy", group: "แรงซื้อในตลาด", title: "SSR",
       fmt: (v) => num(v, 2),
       gauge: { lo: 0, hi: 55, ticks: [0, 10, 25, 40, 55], segs: [[10, "green"], [25, "gray"], [40, "amber"], [55, "red"]] },
+      bands: [[10, "green"], [25, "gray"], [40, "amber"], [Infinity, "red"]],
       tag: (v) => v < 10 ? ["แรงซื้อเยอะ", "green"] : v < 25 ? ["ปกติ", "gray"] : v < 40 ? ["เริ่มตึง", "amber"] : ["แรงซื้อหมด", "red"],
       what: "Stablecoin Supply Ratio — มูลค่าตลาด Bitcoin หารด้วยมูลค่า Stablecoin ทั้งหมด วัดว่ามีเงินรอซื้อ (stablecoin) มากแค่ไหนเทียบกับ Bitcoin",
       how: "ยิ่งต่ำ = มี stablecoin เยอะเทียบ Bitcoin = แรงซื้อรอเข้าเยอะ · ยิ่งสูง = เงินรอซื้อน้อย แรงหมดแล้ว",
@@ -877,6 +900,7 @@
       key: "lthSupply", group: "พฤติกรรมนักลงทุน", title: "LTH Supply",
       fmt: (v) => ddFmtM(v),
       gauge: { lo: 12e6, hi: 20e6, ticks: [12e6, 15e6, 20e6], tickFmt: ddFmtM, segs: [[15e6, "gray"], [20e6, "green"]] },
+      bands: [[15e6, "gray"], [Infinity, "green"]], axisFmt: ddFmtM,
       tag: (v) => v >= 15e6 ? ["ถูกล็อกเยอะ", "green"] : ["ระดับกลาง", "gray"],
       what: "จำนวน Bitcoin ที่อยู่ในมือคนถือเกิน 155 วัน เทียบกับ ~19.9 ล้านเหรียญที่ขุดออกมาแล้วทั้งหมด",
       how: "ยิ่งสูงแปลว่าเหรียญยิ่งถูกล็อกไว้กับสายยาว เหลือหมุนในตลาดน้อย ดูทิศทางว่าเพิ่มหรือลดสำคัญกว่าตัวเลขนิ่งๆ",
@@ -902,39 +926,245 @@
     return `<div class="btc-dd-gauge"><div class="btc-dd-track">${segsHtml}<b style="left:${pos.toFixed(1)}%"></b></div><div class="btc-dd-ticks">${ticks}</div></div>`;
   }
 
+  // ---- trend charts: daily history from BtcOnchainLive.get().series (BGeometrics, ~4 years, IndexedDB)
+  // card key (ind.*) → series key (btc-onchain-live METRICS)
+  const DD_SERIES = { mvrvZScore: "mvrvZScore", realizedPriceProxy: "realizedPrice", nupl: "nupl", rup: "rup", sopr: "sopr", ssrProxy: "ssr", lthSupply: "lthSupply" };
+  const DD_RANGES = [["6M", 182, "6 เดือน"], ["1Y", 365, "1 ปี"], ["2Y", 730, "2 ปี"], ["4Y", 1461, "4 ปี"]];
+  const DD_RANGE_KEY = "btc_dd_range_v1";   // per-viewer convenience only
+  let ddRange = (() => { try { const v = Number(window.localStorage.getItem(DD_RANGE_KEY)); return DD_RANGES.some((r) => r[1] === v) ? v : 365; } catch (e) { return 365; } })();
+  let ddLastInd = null;          // the indicators the Deep Dive last rendered (the modal reads them)
+  let ddModalKey = null;         // card key shown in the big chart, null = closed
+  const ddOpenMore = {};         // "อ่านเพิ่ม" the viewer opened — kept across re-renders
+  const ddWin = {};              // card key → rows on screen (hover reads them)
+
+  function ddCfg(key) { return DD_CARDS.filter((c) => c.key === key)[0] || null; }
+  function ddSeries(cfg) {
+    const all = (window.BtcOnchainLive && window.BtcOnchainLive.get && window.BtcOnchainLive.get().series) || {};
+    const rows = all[DD_SERIES[cfg.key]];
+    return Array.isArray(rows) && rows.length > 1 ? rows : null;
+  }
+  // rows within `days` of the newest row (dates, not row counts — the series may have gaps)
+  function ddWindow(rows, days) {
+    if (!rows) return null;
+    const last = Date.parse(rows[rows.length - 1][0] + "T00:00:00Z");
+    const w = rows.filter((r) => Date.parse(r[0] + "T00:00:00Z") >= last - days * 86400000);
+    return w.length > 1 ? w : null;
+  }
+  function ddRangeName(days) { const r = DD_RANGES.filter((x) => x[1] === days)[0]; return r ? r[2] : days + " วัน"; }
+  function ddMonth(d) { try { return new Date(d + "T00:00:00Z").toLocaleDateString("th-TH", { month: "short", year: "2-digit", timeZone: "UTC" }); } catch (e) { return d.slice(0, 7); } }
+  function ddDay(d) { try { return new Date(d + "T00:00:00Z").toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit", timeZone: "UTC" }); } catch (e) { return d; } }
+  function ddDelta(cfg, w, days) {
+    const a = w[0][1], b = w[w.length - 1][1], d = b - a;
+    return `<div class="btc-dd-delta">${d >= 0 ? "▲" : "▼"} ${esc(cfg.fmt(Math.abs(d)))} ใน ${esc(ddRangeName(days))}</div>`;
+  }
+  // plot = SVG stretched to the box (lines keep their width via non-scaling-stroke) ·
+  // text, the end dot and the hover marks are HTML so nothing gets squashed
+  function ddChart(cfg, w, big) {
+    const vals = w.map((r) => r[1]);
+    let lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    const span = hi - lo || Math.abs(hi) || 1;
+    lo -= span * 0.08; hi += span * 0.08;
+    const Y = (v) => (1 - (v - lo) / (hi - lo)) * 100;
+    const X = (i) => i / (w.length - 1) * 1000;
+    let svg = "", prev = -Infinity;
+    (cfg.bands || []).forEach(([to, col]) => {
+      const a = Math.max(prev, lo), b = Math.min(to, hi);
+      if (b > a) svg += `<rect x="0" y="${Y(b).toFixed(2)}" width="1000" height="${(Y(a) - Y(b)).toFixed(2)}" style="fill:${DD_COL[col]}" opacity="0.16"/>`;
+      prev = to;
+    });
+    const edges = (cfg.bands || []).map((b) => b[0]).filter((t) => isFinite(t) && t > lo && t < hi);
+    const ticks = edges.length >= 2 ? edges : edges.length === 1 ? [lo + span * 0.08, edges[0], hi - span * 0.08] : [lo + span * 0.08, (lo + hi) / 2, hi - span * 0.08];
+    ticks.forEach((t) => { svg += `<line x1="0" x2="1000" y1="${Y(t).toFixed(2)}" y2="${Y(t).toFixed(2)}" stroke="rgba(255,255,255,0.10)" vector-effect="non-scaling-stroke"/>`; });
+    const d = w.map((r, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(r[1]).toFixed(2)).join("");
+    svg += `<path d="${d}" fill="none" stroke="#fff" stroke-width="${big ? 2 : 1.6}" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+    const fmtAxis = cfg.axisFmt || cfg.fmt;
+    const yl = ticks.map((t) => `<i style="top:${Y(t).toFixed(1)}%">${esc(fmtAxis(t))}</i>`).join("");
+    const xs = [0, Math.round((w.length - 1) / 3), Math.round((w.length - 1) * 2 / 3), w.length - 1];
+    const xl = xs.map((i) => `<i style="left:${(i / (w.length - 1) * 100).toFixed(1)}%">${esc(ddMonth(w[i][0]))}</i>`).join("");
+    const lastY = Y(w[w.length - 1][1]).toFixed(1);
+    return `<div class="btc-dd-chart${big ? " is-big" : ""}">
+        <div class="btc-dd-yl" aria-hidden="true">${yl}</div>
+        <div class="btc-dd-plot"${big ? "" : ` role="button" tabindex="0" data-dd-open="${esc(cfg.key)}" aria-label="ขยายกราฟ ${esc(cfg.title)} ย้อนหลัง ${esc(ddRangeName(ddRange))}"`} data-dd-key="${esc(cfg.key)}">
+          <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">${svg}</svg>
+          <span class="btc-dd-dot" style="left:100%;top:${lastY}%"></span>
+          <span class="btc-dd-cross" hidden></span><span class="btc-dd-tip" hidden></span>
+        </div>
+        <div class="btc-dd-xl" aria-hidden="true">${xl}</div>
+      </div>`;
+  }
+  function ddRangeBar(id) {
+    return `<div class="btc-dd-range" id="${id}" role="group" aria-label="ช่วงเวลาของกราฟ">${DD_RANGES.map(([lab, days]) =>
+      `<button type="button" data-dd-range="${days}" aria-pressed="${days === ddRange}"${days === ddRange ? ' class="is-on"' : ""}>${lab}</button>`).join("")}</div>`;
+  }
+  function ddTagHtml(tag) { return tag ? `<span class="btc-dd-tag" style="color:${DD_COL[tag[1]]};border-color:${DD_COL[tag[1]]}">${esc(tag[0])}</span>` : ""; }
+
   function ddCard(cfg, ind) {
     const M = (ind._meta || {})[cfg.key] || {};
     const v = ind[cfg.key];
     const has = dn(v);
     const tag = has ? cfg.tag(v) : null;
-    const rows = [];
-    rows.push(["คืออะไร", cfg.what]);
-    rows.push(["อ่านยังไง", cfg.how]);
-    if (has) rows.push(["วันนี้", cfg.today(v, ind)]);
-    const rowsHtml = rows.map(([l, t]) => `<div class="btc-dd-row"><span>${esc(l)}</span><p>${esc(t)}</p></div>`).join("") +
-      (cfg.limit ? `<div class="btc-dd-row btc-dd-limit"><span>ข้อจำกัด</span><p>${esc(cfg.limit)}</p></div>` : "");
+    const w = ddWindow(ddSeries(cfg), ddRange);
+    if (w) ddWin[cfg.key] = w; else delete ddWin[cfg.key];
+    const row = (l, t, cls) => `<div class="btc-dd-row${cls || ""}"><span>${esc(l)}</span><p>${esc(t)}</p></div>`;
+    const more = row("คืออะไร", cfg.what) + row("อ่านยังไง", cfg.how) + (cfg.limit ? row("ข้อจำกัด", cfg.limit, " btc-dd-limit") : "");
     const src = has && M.source
       ? `ที่มา: <b>${esc(M.source)}</b> ${freshBadge(M.freshness)}${M.date ? ` · ${esc(fmtDate(M.date))}` : ""}${M.proxy ? ' · <em>proxy</em>' : ""}`
       : `${freshBadge("missing")} · ยังไม่มีข้อมูลอัตโนมัติ — ดูกราฟที่ BGeometrics`;
+    // trend chart when the history is in; until then the zone gauge (first day / history not fetched yet)
+    const visual = w ? ddDelta(cfg, w, ddRange) + ddChart(cfg, w, false)
+      : (has ? ddGauge(cfg.gauge, v) : "") + `<p class="btc-dd-nohist">กราฟย้อนหลังจะขึ้นหลังดึงข้อมูลรายวันครั้งถัดไป</p>`;
     // tone = the tag colour the card shows (no value / baseline tag → no status)
     return `<div class="mc-card btc-dd-card${has ? "" : " btc-ind-empty"} gc-card gc-tile ${tag ? gcTone(GC_DD_TONE, tag[1]) : "gc-neutral"}">
       <div class="btc-dd-kicker">${esc(cfg.group)}</div>
       <div class="btc-dd-top"><span class="btc-dd-title">${esc(cfg.title)}</span>
-        <span class="btc-dd-right"><b class="btc-dd-value">${has ? cfg.fmt(v) : "—"}</b>${tag ? `<span class="btc-dd-tag" style="color:${DD_COL[tag[1]]};border-color:${DD_COL[tag[1]]}">${esc(tag[0])}</span>` : ""}</span></div>
-      ${has ? ddGauge(cfg.gauge, v) : ""}
-      <div class="btc-dd-rows">${rowsHtml}</div>
-      <div class="btc-dd-foot"><a href="${esc(cfg.chart)}" target="_blank" rel="noopener noreferrer">ดูกราฟย้อนหลังเต็มที่ BGeometrics ↗</a><span class="btc-dd-src">${src}</span></div>
+        <span class="btc-dd-right"><b class="btc-dd-value">${has ? cfg.fmt(v) : "—"}</b>${ddTagHtml(tag)}</span></div>
+      ${visual}
+      ${has ? `<div class="btc-dd-rows">${row("วันนี้", cfg.today(v, ind))}</div>` : ""}
+      <details class="btc-dd-more" data-dd-more="${esc(cfg.key)}"${ddOpenMore[cfg.key] ? " open" : ""}><summary>อ่านเพิ่ม — คืออะไร · อ่านยังไง${cfg.limit ? " · ข้อจำกัด" : ""}</summary><div class="btc-dd-rows">${more}</div></details>
+      <div class="btc-dd-foot"><a href="${esc(cfg.chart)}" target="_blank" rel="noopener noreferrer">${esc(cfg.chartLabel || "ดูกราฟย้อนหลังเต็มที่ BGeometrics ↗")}</a><span class="btc-dd-src">${src}</span></div>
     </div>`;
   }
 
+  // why some charts are missing + when the page tries again by itself (BtcOnchainLive retries hourly)
+  function ddStatus() {
+    const live = (window.BtcOnchainLive && window.BtcOnchainLive.get && window.BtcOnchainLive.get()) || {};
+    if (DD_CARDS.every((c) => ddWindow(ddSeries(c), ddRange))) return "";
+    const at = live.retryAt ? new Date(live.retryAt).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) : null;
+    const again = at ? ` · หน้านี้จะลองใหม่เองเวลา ${at} น. ไม่ต้องกดอะไร` : "";
+    let msg = "";
+    if (live.loading) msg = "กำลังดึงข้อมูลย้อนหลังจาก BGeometrics…";
+    else if (live.error === "rate-limited") msg = "ยังดึงกราฟย้อนหลังได้ไม่ครบ — BGeometrics ให้ใช้ฟรีชั่วโมงละ 10 ครั้ง วันละ 15 ครั้ง และตอนนี้ครบโควตาแล้ว" + again;
+    else if (live.error === "unreachable") msg = "ยังดึงกราฟย้อนหลังได้ไม่ครบ — ติดต่อ BGeometrics ไม่สำเร็จ" + again;
+    else if (at) msg = `จะดึงข้อมูลย้อนหลังเวลา ${at} น.`;
+    return msg ? `<p class="btc-dd-status" role="status">${esc(msg)}</p>` : "";
+  }
+
   function onchainDeepDive(ind) {
+    ddLastInd = ind;
     // one continuous grid (3 cols on wide screens) — the group name renders as a
     // kicker chip on each card instead of separate half-empty group rows
     const body = `<div class="btc-dd-grid">${DD_CARDS.map((c) => ddCard(c, ind)).join("")}</div>`;
-    return `<section class="mc-card mc-panel mc-fade gc-card gc-neutral">
-      <div class="mc-panel-head"><div><h2>🧬 On-chain Deep Dive</h2><span class="mc-sub">ค่า exact จาก BGeometrics (bitcoin-data.com · ฟรี · อัปเดตรายวัน D-1/D-2) — MVRV-Z · Realized Price · NUPL · SOPR · SSR · LTH Supply</span></div></div>
+    return `<section class="mc-card mc-panel mc-fade gc-card gc-neutral" id="btcDeepDive">
+      <div class="mc-panel-head"><div><h2>🧬 On-chain Deep Dive</h2><span class="mc-sub">ค่า exact จาก BGeometrics (bitcoin-data.com · ฟรี · ข้อมูลฟรีช้าราว 7 วัน) — MVRV-Z · Realized Price · NUPL · RUP · SOPR · SSR · LTH Supply · กดที่กราฟเพื่อขยาย</span></div>${ddRangeBar("btcDdRange")}</div>
+      ${ddStatus()}
       ${body}
     </section>`;
+  }
+
+  // ---- big chart (click a card chart) — mounted on <body> so a page re-render does not close it
+  function ddModalHtml() {
+    const cfg = ddCfg(ddModalKey), ind = ddLastInd || {};
+    if (!cfg) return "";
+    const v = ind[cfg.key], has = dn(v), tag = has ? cfg.tag(v) : null;
+    const w = ddWindow(ddSeries(cfg), ddRange);
+    if (w) ddWin["modal:" + cfg.key] = w;
+    const tabs = DD_CARDS.map((c) => `<button type="button" role="tab" data-dd-tab="${esc(c.key)}" aria-selected="${c.key === cfg.key}"${c.key === cfg.key ? ' class="is-on"' : ""}>${esc(c.title)}</button>`).join("");
+    return `<div class="btc-dd-modal-back" data-dd-close></div>
+      <div class="btc-dd-modal-card gc-card ${tag ? gcTone(GC_DD_TONE, tag[1]) : "gc-neutral"}" role="dialog" aria-modal="true" aria-labelledby="btcDdModalTitle">
+        <div class="btc-dd-modal-head">
+          <div><div class="btc-dd-kicker">${esc(cfg.group)}</div><h3 class="btc-dd-title" id="btcDdModalTitle">${esc(cfg.title)}</h3></div>
+          <span class="btc-dd-right"><b class="btc-dd-value">${has ? cfg.fmt(v) : "—"}</b>${ddTagHtml(tag)}</span>
+          <button type="button" class="btc-dd-close" data-dd-close aria-label="ปิดกราฟ">✕</button>
+        </div>
+        <div class="btc-dd-modal-bar"><div class="btc-dd-tabs" role="tablist" aria-label="เลือกค่าที่จะดู">${tabs}</div>${ddRangeBar("btcDdModalRange")}</div>
+        ${w ? ddDelta(cfg, w, ddRange) + ddChart(cfg, w, true) : `<p class="btc-dd-nohist">ยังไม่มีข้อมูลย้อนหลังของ ${esc(cfg.title)} — จะขึ้นหลังดึงข้อมูลรายวันครั้งถัดไป</p>`}
+        ${has ? `<div class="btc-dd-rows"><div class="btc-dd-row"><span>วันนี้</span><p>${esc(cfg.today(v, ind))}</p></div></div>` : ""}
+      </div>`;
+  }
+  let ddReturnFocus = null;
+  function ddModalEl() {
+    let el = document.getElementById("btcDdModal");
+    if (!el && document.body) {
+      el = document.createElement("div");
+      el.id = "btcDdModal"; el.className = "btc-dd-modal"; el.hidden = true;
+      document.body.appendChild(el);
+      el.addEventListener("click", ddModalClick);
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") { e.preventDefault(); ddClose(); }
+        else if (e.key === "Tab") {   // keep focus inside the dialog
+          const f = [].slice.call(el.querySelectorAll("button"));
+          if (!f.length) return;
+          if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+          else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+        }
+      });
+      ddWireHover(el);
+    }
+    return el;
+  }
+  function ddOpen(key, from) {
+    if (!ddCfg(key)) return;
+    ddModalKey = key; ddReturnFocus = from || null;
+    const el = ddModalEl(); if (!el) return;
+    el.innerHTML = ddModalHtml(); el.hidden = false;
+    document.documentElement.classList.add("btc-dd-lock");
+    const c = el.querySelector(".btc-dd-close"); if (c) c.focus();
+  }
+  function ddRefreshModal() {
+    if (!ddModalKey) return;
+    const el = document.getElementById("btcDdModal");
+    if (!el || el.hidden) return;
+    const focusedTab = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute("data-dd-tab");
+    el.innerHTML = ddModalHtml();
+    const back = focusedTab ? el.querySelector(`[data-dd-tab="${focusedTab}"]`) : el.querySelector(".btc-dd-close");
+    if (back) back.focus();
+  }
+  function ddClose() {
+    const el = document.getElementById("btcDdModal");
+    if (el) { el.hidden = true; el.innerHTML = ""; }
+    document.documentElement.classList.remove("btc-dd-lock");
+    const key = ddModalKey; ddModalKey = null;
+    const again = key && root.querySelector(`[data-dd-open="${key}"]`);
+    if (again) again.focus(); else if (ddReturnFocus && ddReturnFocus.focus) ddReturnFocus.focus();
+  }
+  function ddSetRange(days) {
+    if (!DD_RANGES.some((r) => r[1] === days) || days === ddRange) return;
+    ddRange = days;
+    try { window.localStorage.setItem(DD_RANGE_KEY, String(days)); } catch (e) {}
+    const sec = document.getElementById("btcDeepDive");
+    if (sec && ddLastInd) { sec.outerHTML = onchainDeepDive(ddLastInd); ddWireSection(); }
+    ddRefreshModal();
+  }
+  function ddModalClick(e) {
+    if (e.target.closest("[data-dd-close]")) { ddClose(); return; }
+    const tab = e.target.closest("[data-dd-tab]");
+    if (tab) { ddModalKey = tab.getAttribute("data-dd-tab"); ddRefreshModal(); return; }
+    const r = e.target.closest("[data-dd-range]");
+    if (r) ddSetRange(Number(r.getAttribute("data-dd-range")));
+  }
+  // hover: a dashed marker + date/value at the nearest day (rows from ddWin)
+  function ddWireHover(host) {
+    host.addEventListener("mousemove", (e) => {
+      const plot = e.target.closest && e.target.closest(".btc-dd-plot"); if (!plot) return;
+      const key = plot.getAttribute("data-dd-key"), big = !!plot.closest(".btc-dd-modal");
+      const w = ddWin[(big ? "modal:" : "") + key], cfg = ddCfg(key);
+      if (!w || !cfg) return;
+      const r = plot.getBoundingClientRect(); if (!r.width) return;
+      const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      const i = Math.round(f * (w.length - 1)), x = (i / (w.length - 1) * 100).toFixed(2) + "%";
+      const cross = plot.querySelector(".btc-dd-cross"), tip = plot.querySelector(".btc-dd-tip");
+      if (cross) { cross.hidden = false; cross.style.left = x; }
+      if (tip) { tip.hidden = false; tip.style.left = x; tip.textContent = ddDay(w[i][0]) + " · " + cfg.fmt(w[i][1]); tip.classList.toggle("is-left", f > 0.7); }
+    });
+    host.addEventListener("mouseout", (e) => {
+      const plot = e.target.closest && e.target.closest(".btc-dd-plot");
+      if (plot && !plot.contains(e.relatedTarget)) plot.querySelectorAll(".btc-dd-cross,.btc-dd-tip").forEach((n) => { n.hidden = true; });
+    });
+  }
+  function ddWireSection() {
+    const sec = document.getElementById("btcDeepDive"); if (!sec) return;
+    sec.addEventListener("click", (e) => {
+      const r = e.target.closest("[data-dd-range]");
+      if (r) { ddSetRange(Number(r.getAttribute("data-dd-range"))); return; }
+      const p = e.target.closest("[data-dd-open]");
+      if (p) ddOpen(p.getAttribute("data-dd-open"), p);
+    });
+    sec.addEventListener("keydown", (e) => {
+      const p = e.target.closest && e.target.closest("[data-dd-open]");
+      if (p && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); ddOpen(p.getAttribute("data-dd-open"), p); }
+    });
+    sec.querySelectorAll("details[data-dd-more]").forEach((d) => d.addEventListener("toggle", () => { ddOpenMore[d.getAttribute("data-dd-more")] = d.open; }));
+    ddWireHover(sec);
   }
 
   function cyclePanel(ind, bz) {

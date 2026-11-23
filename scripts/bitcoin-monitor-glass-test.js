@@ -37,7 +37,7 @@ t("order: mission-control.css → glass-cards.css → bitcoin-monitor.css → bi
 t("Inter 700 is loaded (numbers are Inter 700 tabular)", /fonts\.googleapis\.com\/css2\?family=Inter:wght@[^"&]*700/.test(HTML));
 var CSS_BM = read("bitcoin-monitor.css"), CSS_BI = read("bitcoin-intelligence.css");
 t("no dot-matrix / LED numeral font in the page CSS", !/doto|dot-?matrix|\bLED\b|DSEG/i.test(CSS_BM + CSS_BI));
-t("glass token map: inside #btcRoot .gc-card the --mc-* ink is the glass ink + lifted hues", /#btcRoot \.gc-card \{[^}]*--mc-text: var\(--gc-ink\);[^}]*--mc-muted: var\(--gc-ink-2\);[^}]*--mc-emerald: #7cf5c6;/.test(CSS_BM));
+t("glass token map: inside #btcRoot .gc-card (and the Deep Dive big chart on <body>) the --mc-* ink is the glass ink + lifted hues", /#btcRoot \.gc-card,\s*\.btc-dd-modal \.gc-card \{[^}]*--mc-text: var\(--gc-ink\);[^}]*--mc-muted: var\(--gc-ink-2\);[^}]*--mc-emerald: #7cf5c6;/.test(CSS_BM));
 // the shell switches its own decorations off under glass (2026-11-22 integration) — no page copy of those rules any more
 var CSS_MC = read("mission-control.css").replace(/\/\*[\s\S]*?\*\//g, "");
 t("light theme cannot repaint the hero / tiles white: mission-control.css's light .mc-page-hero / .mc-metric faces skip .gc-card (no page copy)",
@@ -152,26 +152,26 @@ function chunks(html, opener) { return html.split(opener).slice(1).map(function 
 function cardsAfter(html, opener) { return html.split(opener).slice(1); }
 
 var ZONE_TONE = { "ต่ำกว่ามูลค่า": "gc-calm", "ปกติ": "gc-normal", "แพง": "gc-warning", "ร้อนเกินไป": "gc-danger", "ไม่มีข้อมูล": "gc-neutral" };
-var DD_TONE = { "ถูกสุดขั้ว": "gc-calm", "ต่ำ": "gc-calm", "ยอมแพ้": "gc-calm", "ความหวัง": "gc-calm", "ยอมขายขาดทุน": "gc-calm", "ขายขาดทุนเล็กน้อย": "gc-calm", "แรงซื้อเยอะ": "gc-calm", "ถูกล็อกเยอะ": "gc-calm",
-  "กลาง": "gc-normal", "ลังเล": "gc-normal", "ขายมีกำไร": "gc-normal", "ปกติ": "gc-normal", "ระดับกลาง": "gc-normal",
-  "สูง": "gc-warning", "เชื่อมั่น": "gc-warning", "กำไรหนา ระวัง": "gc-warning", "เริ่มตึง": "gc-warning",
-  "ยอดดอย": "gc-danger", "ยูโฟเรีย": "gc-danger", "แรงซื้อหมด": "gc-danger", "เส้นฐาน": "gc-neutral" };
+var DD_TONE = { "ถูกสุดขั้ว": "gc-calm", "ต่ำ": "gc-calm", "ยอมแพ้": "gc-calm", "ความหวัง": "gc-calm", "ยอมขายขาดทุน": "gc-calm", "ขายขาดทุนเล็กน้อย": "gc-calm", "แรงซื้อเยอะ": "gc-calm", "ถูกล็อกเยอะ": "gc-calm", "กำไรบาง": "gc-calm",
+  "กลาง": "gc-normal", "ลังเล": "gc-normal", "ขายมีกำไร": "gc-normal", "ปกติ": "gc-normal", "ระดับกลาง": "gc-normal", "กำไรปานกลาง": "gc-normal",
+  "สูง": "gc-warning", "เชื่อมั่น": "gc-warning", "กำไรหนา ระวัง": "gc-warning", "เริ่มตึง": "gc-warning", "กำไรหนา": "gc-warning",
+  "ยอดดอย": "gc-danger", "ยูโฟเรีย": "gc-danger", "แรงซื้อหมด": "gc-danger", "กำไรล้น": "gc-danger", "เส้นฐาน": "gc-neutral" };
 var COLOR_TONE = { "var(--mc-emerald)": "gc-calm", "var(--mc-blue)": "gc-normal", "var(--mc-amber)": "gc-warning", "var(--mc-red)": "gc-danger" };
 var BZ_TONE = { bull: "gc-calm", neutral: "gc-normal", warn: "gc-warning", bear: "gc-danger" };
 
 var SCENARIOS = {
   cheap: { tech: { latestClose: 60000, ema12: 61000, ema26: 59000, sma200: 55000, rsi14: 45, volumeRatio: 1.1, latestDate: ymd(Date.now()) },
     api: { mvrvRatio: 0.8, puellMultiple: 0.4, fearGreed: 15, fundingRate: -0.01, openInterest: 3e10, takerBuySellRatio: 1.1, longShortRatio: 1.5 },
-    bgeo: { mvrvZScore: -0.5, nupl: -0.1, realizedPrice: 45000, sopr: 0.97, ssr: 5, lthSupply: 16e6 } },
+    bgeo: { mvrvZScore: -0.5, nupl: -0.1, realizedPrice: 45000, sopr: 0.97, ssr: 5, rup: 0.15, lthSupply: 16e6 } },
   mid: { tech: { latestClose: 70000, ema12: 69000, ema26: 70500, sma200: 72000, rsi14: 50, volumeRatio: 1, latestDate: ymd(Date.now()) },
     api: { mvrvRatio: 1.5, puellMultiple: 1.0, fearGreed: 50, fundingRate: 0.005 },
-    bgeo: { mvrvZScore: 3, nupl: 0.3, realizedPrice: 50000, sopr: 1.02, ssr: 15, lthSupply: 14e6 } },
+    bgeo: { mvrvZScore: 3, nupl: 0.3, realizedPrice: 50000, sopr: 1.02, ssr: 15, rup: 0.35, lthSupply: 14e6 } },
   warm: { tech: { latestClose: 90000, ema12: 91000, ema26: 88000, sma200: 70000, rsi14: 62, volumeRatio: 1, latestDate: ymd(Date.now()) },
     api: { mvrvRatio: 2.5, puellMultiple: 2, fearGreed: 60, fundingRate: 0.02 },
-    bgeo: { mvrvZScore: 6, nupl: 0.6, realizedPrice: 52000, sopr: 1.05, ssr: 30, lthSupply: 14e6 } },
+    bgeo: { mvrvZScore: 6, nupl: 0.6, realizedPrice: 52000, sopr: 1.05, ssr: 30, rup: 0.6, lthSupply: 14e6 } },
   hot: { tech: { latestClose: 110000, ema12: 112000, ema26: 105000, sma200: 80000, rsi14: 78, volumeRatio: 1.3, latestDate: ymd(Date.now()) },
     api: { mvrvRatio: 3.8, puellMultiple: 4.5, fearGreed: 90, fundingRate: 0.07 },
-    bgeo: { mvrvZScore: 7.5, nupl: 0.8, realizedPrice: 55000, sopr: 1.05, ssr: 45, lthSupply: 14e6 } }
+    bgeo: { mvrvZScore: 7.5, nupl: 0.8, realizedPrice: 55000, sopr: 1.05, ssr: 45, rup: 0.8, lthSupply: 14e6 } }
 };
 var seen = { metric: {}, dd: {}, hero: {}, bz: {} };
 Object.keys(SCENARIOS).forEach(function (name) {
@@ -197,7 +197,7 @@ Object.keys(SCENARIOS).forEach(function (name) {
     seen.dd[got] = 1;
     if (!/\bgc-card\b/.test(cls) || !/\bgc-tile\b/.test(cls) || got !== want) bad.push(title + ": " + tag + " → " + got + " (want " + want + ")");
   });
-  t(name + ": 6 Deep Dive tiles — tone = their tag colour", n === 6 && bad.length === 0, bad);
+  t(name + ": 7 Deep Dive tiles (incl. RUP) — tone = their tag colour", n === 7 && bad.length === 0, bad);
 
   // hero tiles: tone agrees with the colour the tile already paints (price: no status)
   bad = []; n = 0;
