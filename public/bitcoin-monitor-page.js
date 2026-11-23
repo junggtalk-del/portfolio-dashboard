@@ -841,6 +841,7 @@
       key: "realizedPriceProxy", group: "ราคาถูกหรือแพง", title: "Realized Price",
       fmt: (v) => money(v),
       axisFmt: (v) => "$" + Math.round(v / 1000) + "k",
+      priceSameAxis: true,   // big chart: BTC price on the same $ axis — above / below the market's cost basis
       tag: () => ["เส้นฐาน", "blue"],
       what: "ต้นทุนเฉลี่ยของทั้งตลาด คิดจากราคาตอนที่แต่ละเหรียญขยับครั้งล่าสุด",
       how: "ไม่ใช่โซน แต่เป็นเส้นฐาน ถ้าราคาหลุดใต้เส้นนี้แปลว่าตลาดโดยรวมอยู่ใต้ต้นทุน",
@@ -957,11 +958,59 @@
     const a = w[0][1], b = w[w.length - 1][1], d = b - a;
     return `<div class="btc-dd-delta">${d >= 0 ? "▲" : "▼"} ${esc(cfg.fmt(Math.abs(d)))} ใน ${esc(ddRangeName(days))}</div>`;
   }
+  // ---- BTC price for the big chart (no BGeometrics quota): the Intelligence tab's daily
+  // history (IndexedDB "btc_intelligence_history_v1", 2014→) when it is recent enough,
+  // else our own /api/ohlc (Yahoo). Loaded the first time the big chart opens.
+  const DD_PRICE_ON_KEY = "btc_dd_price_on_v1";   // per-viewer convenience: show the price line
+  let ddShowPrice = (() => { try { return window.localStorage.getItem(DD_PRICE_ON_KEY) !== "0"; } catch (e) { return true; } })();
+  let ddPrice = null;            // { "YYYY-MM-DD": close }
+  let ddPriceState = "idle";     // idle · loading · ready · failed
+  const ddWinPrice = {};         // "modal:<key>" → closes aligned to ddWin rows (hover reads them)
+  function ddIso(ms) { return new Date(ms).toISOString().slice(0, 10); }
+  function ddPriceLoad() {
+    if (ddPriceState !== "idle") return;
+    ddPriceState = "loading";
+    const need = ddIso(Date.now() - 1461 * 86400000), fresh = ddIso(Date.now() - 8 * 86400000);
+    const bc = window.BigCache && typeof window.BigCache.get === "function" ? window.BigCache : null;
+    const cached = bc ? bc.get("btc_intelligence_history_v1").then((o) => o, () => null) : Promise.resolve(null);
+    cached.then((o) => {
+      if (o && Array.isArray(o.d) && Array.isArray(o.c) && o.d.length && o.d[0] <= need && o.d[o.d.length - 1] >= fresh) return { d: o.d, c: o.c };
+      return fetch(`/api/ohlc?symbol=BTC-USD&start=${need}`, { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          const bars = (j && Array.isArray(j.bars)) ? j.bars : [];
+          return { d: bars.map((b) => String(b.date).slice(0, 10)), c: bars.map((b) => Number(b.close)) };
+        });
+    }).then((p) => {
+      const map = {};
+      (p && p.d || []).forEach((d, i) => { const c = p.c[i]; if (typeof c === "number" && isFinite(c) && c > 0) map[d] = c; });
+      ddPrice = Object.keys(map).length ? map : null;
+      ddPriceState = ddPrice ? "ready" : "failed";
+      ddRefreshModal();
+    }, () => { ddPriceState = "failed"; ddRefreshModal(); });
+  }
+  // close on each chart day (or up to 3 days before — a missing candle must not break the line)
+  function ddAlignPrice(w) {
+    if (!ddPrice) return null;
+    const out = w.map((r) => {
+      let t = Date.parse(r[0] + "T00:00:00Z");
+      for (let k = 0; k < 4; k++, t -= 86400000) { const c = ddPrice[ddIso(t)]; if (c) return c; }
+      return null;
+    });
+    return out.some((c) => c != null) ? out : null;
+  }
+  function ddUsd(v) { return "$" + Math.round(v).toLocaleString("en-US"); }
+  function ddUsdK(v) { return v >= 1000 ? "$" + Math.round(v / 1000) + "k" : "$" + Math.round(v); }
+
   // plot = SVG stretched to the box (lines keep their width via non-scaling-stroke) ·
-  // text, the end dot and the hover marks are HTML so nothing gets squashed
-  function ddChart(cfg, w, big) {
+  // text, the end dot and the hover marks are HTML so nothing gets squashed ·
+  // pv (big chart only) = BTC closes aligned to the rows: orange line on its own right axis,
+  // or on the left axis when the metric is itself a USD price (cfg.priceSameAxis)
+  function ddChart(cfg, w, big, pv) {
     const vals = w.map((r) => r[1]);
-    let lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    const pvals = pv ? pv.filter((c) => c != null) : [];
+    const same = !!(pv && pvals.length && cfg.priceSameAxis);
+    let lo = Math.min.apply(null, same ? vals.concat(pvals) : vals), hi = Math.max.apply(null, same ? vals.concat(pvals) : vals);
     const span = hi - lo || Math.abs(hi) || 1;
     lo -= span * 0.08; hi += span * 0.08;
     const Y = (v) => (1 - (v - lo) / (hi - lo)) * 100;
@@ -975,6 +1024,21 @@
     const edges = (cfg.bands || []).map((b) => b[0]).filter((t) => isFinite(t) && t > lo && t < hi);
     const ticks = edges.length >= 2 ? edges : edges.length === 1 ? [lo + span * 0.08, edges[0], hi - span * 0.08] : [lo + span * 0.08, (lo + hi) / 2, hi - span * 0.08];
     ticks.forEach((t) => { svg += `<line x1="0" x2="1000" y1="${Y(t).toFixed(2)}" y2="${Y(t).toFixed(2)}" stroke="rgba(255,255,255,0.10)" vector-effect="non-scaling-stroke"/>`; });
+    // BTC price: drawn under the metric line (the metric stays on top)
+    let yr = "";
+    if (pv && pvals.length) {
+      let PY = Y;
+      if (!same) {
+        let pLo = Math.min.apply(null, pvals), pHi = Math.max.apply(null, pvals);
+        const pSpan = pHi - pLo || pHi || 1;
+        pLo -= pSpan * 0.08; pHi += pSpan * 0.08;
+        PY = (v) => (1 - (v - pLo) / (pHi - pLo)) * 100;
+        yr = [pLo + pSpan * 0.08, (pLo + pHi) / 2, pHi - pSpan * 0.08].map((t) => `<i style="top:${PY(t).toFixed(1)}%">${esc(ddUsdK(t))}</i>`).join("");
+      }
+      let pd = "", gap = true;
+      pv.forEach((c, i) => { if (c == null) { gap = true; return; } pd += (gap ? "M" : "L") + X(i).toFixed(1) + " " + PY(c).toFixed(2); gap = false; });
+      svg += `<path class="btc-dd-price" d="${pd}" fill="none" stroke="#f7931a" stroke-width="1.6" stroke-linejoin="round" opacity="0.9" vector-effect="non-scaling-stroke"/>`;
+    }
     const d = w.map((r, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(r[1]).toFixed(2)).join("");
     svg += `<path d="${d}" fill="none" stroke="#fff" stroke-width="${big ? 2 : 1.6}" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
     const fmtAxis = cfg.axisFmt || cfg.fmt;
@@ -982,13 +1046,13 @@
     const xs = [0, Math.round((w.length - 1) / 3), Math.round((w.length - 1) * 2 / 3), w.length - 1];
     const xl = xs.map((i) => `<i style="left:${(i / (w.length - 1) * 100).toFixed(1)}%">${esc(ddMonth(w[i][0]))}</i>`).join("");
     const lastY = Y(w[w.length - 1][1]).toFixed(1);
-    return `<div class="btc-dd-chart${big ? " is-big" : ""}">
+    return `<div class="btc-dd-chart${big ? " is-big" : ""}${yr ? " has-right" : ""}">
         <div class="btc-dd-yl" aria-hidden="true">${yl}</div>
         <div class="btc-dd-plot"${big ? "" : ` role="button" tabindex="0" data-dd-open="${esc(cfg.key)}" aria-label="ขยายกราฟ ${esc(cfg.title)} ย้อนหลัง ${esc(ddRangeName(ddRange))}"`} data-dd-key="${esc(cfg.key)}">
           <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">${svg}</svg>
           <span class="btc-dd-dot" style="left:100%;top:${lastY}%"></span>
           <span class="btc-dd-cross" hidden></span><span class="btc-dd-tip" hidden></span>
-        </div>
+        </div>${yr ? `<div class="btc-dd-yr" aria-hidden="true">${yr}</div>` : ""}
         <div class="btc-dd-xl" aria-hidden="true">${xl}</div>
       </div>`;
   }
@@ -1060,6 +1124,16 @@
     const v = ind[cfg.key], has = dn(v), tag = has ? cfg.tag(v) : null;
     const w = ddWindow(ddSeries(cfg), ddRange);
     if (w) ddWin["modal:" + cfg.key] = w;
+    const pv = w && ddShowPrice ? ddAlignPrice(w) : null;
+    if (pv) ddWinPrice["modal:" + cfg.key] = pv; else delete ddWinPrice["modal:" + cfg.key];
+    const priceNote = !ddShowPrice ? "" : ddPriceState === "loading" || ddPriceState === "idle" ? "กำลังโหลดราคา BTC…"
+      : ddPriceState === "failed" ? "โหลดราคา BTC ไม่สำเร็จ" : !pv ? "ไม่มีราคา BTC ในช่วงนี้" : "";
+    const legend = w ? `<div class="btc-dd-legend">
+          <span class="btc-dd-key"><i class="is-metric"></i>${esc(cfg.title)}</span>
+          ${ddShowPrice && pv ? `<span class="btc-dd-key"><i class="is-price"></i>ราคา BTC (USD${cfg.priceSameAxis ? " · แกนเดียวกัน" : " · แกนขวา"})</span>` : ""}
+          ${priceNote ? `<span class="btc-dd-pnote">${esc(priceNote)}</span>` : ""}
+          <button type="button" class="btc-dd-ptoggle" data-dd-price aria-pressed="${ddShowPrice}">${ddShowPrice ? "ซ่อนราคา BTC" : "แสดงราคา BTC"}</button>
+        </div>` : "";
     const tabs = DD_CARDS.map((c) => `<button type="button" role="tab" data-dd-tab="${esc(c.key)}" aria-selected="${c.key === cfg.key}"${c.key === cfg.key ? ' class="is-on"' : ""}>${esc(c.title)}</button>`).join("");
     return `<div class="btc-dd-modal-back" data-dd-close></div>
       <div class="btc-dd-modal-card gc-card ${tag ? gcTone(GC_DD_TONE, tag[1]) : "gc-neutral"}" role="dialog" aria-modal="true" aria-labelledby="btcDdModalTitle">
@@ -1069,7 +1143,7 @@
           <button type="button" class="btc-dd-close" data-dd-close aria-label="ปิดกราฟ">✕</button>
         </div>
         <div class="btc-dd-modal-bar"><div class="btc-dd-tabs" role="tablist" aria-label="เลือกค่าที่จะดู">${tabs}</div>${ddRangeBar("btcDdModalRange")}</div>
-        ${w ? ddDelta(cfg, w, ddRange) + ddChart(cfg, w, true) : `<p class="btc-dd-nohist">ยังไม่มีข้อมูลย้อนหลังของ ${esc(cfg.title)} — จะขึ้นหลังดึงข้อมูลรายวันครั้งถัดไป</p>`}
+        ${w ? ddDelta(cfg, w, ddRange) + legend + ddChart(cfg, w, true, pv) : `<p class="btc-dd-nohist">ยังไม่มีข้อมูลย้อนหลังของ ${esc(cfg.title)} — จะขึ้นหลังดึงข้อมูลรายวันครั้งถัดไป</p>`}
         ${has ? `<div class="btc-dd-rows"><div class="btc-dd-row"><span>วันนี้</span><p>${esc(cfg.today(v, ind))}</p></div></div>` : ""}
       </div>`;
   }
@@ -1098,6 +1172,7 @@
     if (!ddCfg(key)) return;
     ddModalKey = key; ddReturnFocus = from || null;
     const el = ddModalEl(); if (!el) return;
+    if (ddShowPrice) ddPriceLoad();
     el.innerHTML = ddModalHtml(); el.hidden = false;
     document.documentElement.classList.add("btc-dd-lock");
     const c = el.querySelector(".btc-dd-close"); if (c) c.focus();
@@ -1106,9 +1181,13 @@
     if (!ddModalKey) return;
     const el = document.getElementById("btcDdModal");
     if (!el || el.hidden) return;
-    const focusedTab = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute("data-dd-tab");
+    // keep focus on the control the viewer used (tab · range · price toggle) across the re-render
+    const a = document.activeElement, get = (n) => (a && a.getAttribute ? a.getAttribute(n) : null);
+    const sel = get("data-dd-tab") ? `[data-dd-tab="${get("data-dd-tab")}"]`
+      : get("data-dd-range") ? `#btcDdModalRange [data-dd-range="${get("data-dd-range")}"]`
+      : a && a.hasAttribute && a.hasAttribute("data-dd-price") ? "[data-dd-price]" : ".btc-dd-close";
     el.innerHTML = ddModalHtml();
-    const back = focusedTab ? el.querySelector(`[data-dd-tab="${focusedTab}"]`) : el.querySelector(".btc-dd-close");
+    const back = el.querySelector(sel) || el.querySelector(".btc-dd-close");
     if (back) back.focus();
   }
   function ddClose() {
@@ -1131,6 +1210,12 @@
     if (e.target.closest("[data-dd-close]")) { ddClose(); return; }
     const tab = e.target.closest("[data-dd-tab]");
     if (tab) { ddModalKey = tab.getAttribute("data-dd-tab"); ddRefreshModal(); return; }
+    if (e.target.closest("[data-dd-price]")) {
+      ddShowPrice = !ddShowPrice;
+      try { window.localStorage.setItem(DD_PRICE_ON_KEY, ddShowPrice ? "1" : "0"); } catch (err) {}
+      if (ddShowPrice) ddPriceLoad();
+      ddRefreshModal(); return;
+    }
     const r = e.target.closest("[data-dd-range]");
     if (r) ddSetRange(Number(r.getAttribute("data-dd-range")));
   }
@@ -1146,7 +1231,9 @@
       const i = Math.round(f * (w.length - 1)), x = (i / (w.length - 1) * 100).toFixed(2) + "%";
       const cross = plot.querySelector(".btc-dd-cross"), tip = plot.querySelector(".btc-dd-tip");
       if (cross) { cross.hidden = false; cross.style.left = x; }
-      if (tip) { tip.hidden = false; tip.style.left = x; tip.textContent = ddDay(w[i][0]) + " · " + cfg.fmt(w[i][1]); tip.classList.toggle("is-left", f > 0.7); }
+      const pv = big ? ddWinPrice["modal:" + key] : null;
+      const price = pv && pv[i] != null ? " · BTC " + ddUsd(pv[i]) : "";
+      if (tip) { tip.hidden = false; tip.style.left = x; tip.textContent = ddDay(w[i][0]) + " · " + cfg.title + " " + cfg.fmt(w[i][1]) + price; tip.classList.toggle("is-left", f > 0.6); }
     });
     host.addEventListener("mouseout", (e) => {
       const plot = e.target.closest && e.target.closest(".btc-dd-plot");

@@ -306,6 +306,15 @@ function pageTests() {
   t("the big chart (on <body>) gets the glass token map", /#btcRoot \.gc-card,\s*\.btc-dd-modal \.gc-card \{/.test(CSS));
   t("hover marks hide with [hidden] even though they are absolutely positioned", /\.btc-dd-cross\[hidden\], \.btc-dd-tip\[hidden\] \{ display: none; \}/.test(CSS));
   t("focus rings for the chart, range, tabs and close button", /\.btc-dd-plot:focus-visible/.test(CSS) && /\.btc-dd-close:focus-visible/.test(CSS));
+  console.log("== big chart: BTC price overlay (verified in Chrome by the probe; here the wiring) ==");
+  t("price comes from the Intelligence tab's IndexedDB history when it covers 4 years up to ~a week ago, else our /api/ohlc — never BGeometrics", /bc\.get\("btc_intelligence_history_v1"\)/.test(SRC_BM) && /o\.d\[0\] <= need && o\.d\[o\.d\.length - 1\] >= fresh/.test(SRC_BM) && /\/api\/ohlc\?symbol=BTC-USD&start=\$\{need\}/.test(SRC_BM) && !/bitcoin-data\.com[^"\n]*price/.test(SRC_BM));
+  t("price loads lazily — only when the big chart opens with the price line on", /if \(ddShowPrice\) ddPriceLoad\(\);\s*el\.innerHTML = ddModalHtml\(\)/.test(SRC_BM) && SRC_BM.indexOf("ddPriceLoad()") > 0 && !/function init\(\) \{[^}]*ddPriceLoad/.test(SRC_BM));
+  t("a missing candle is bridged by up to 3 days back (no broken line)", /for \(let k = 0; k < 4; k\+\+, t -= 86400000\)/.test(SRC_BM));
+  t("Realized Price shares the $ axis with the price; other metrics get a right axis", /priceSameAxis: true/.test(SRC_BM) && /has-right/.test(SRC_BM) && /btc-dd-yr/.test(SRC_BM));
+  t("price line drawn under the metric line, orange, non-scaling stroke", /class="btc-dd-price" d="\$\{pd\}" fill="none" stroke="#f7931a"[^>]*vector-effect="non-scaling-stroke"/.test(SRC_BM) && SRC_BM.indexOf('class="btc-dd-price"') < SRC_BM.indexOf('stroke="#fff" stroke-width="${big ? 2 : 1.6}"'));
+  t("hover in the big chart shows the BTC close of that day", /" · BTC " \+ ddUsd\(pv\[i\]\)/.test(SRC_BM));
+  t("price toggle: aria-pressed, remembered per viewer (btc_dd_price_on_v1), focus kept on it", /data-dd-price aria-pressed="\$\{ddShowPrice\}"/.test(SRC_BM) && /DD_PRICE_ON_KEY = "btc_dd_price_on_v1"/.test(SRC_BM) && /hasAttribute\("data-dd-price"\) \? "\[data-dd-price\]"/.test(SRC_BM));
+  t("legend + right axis + dark plot well styled", /\.btc-dd-legend \{/.test(CSS) && /\.btc-dd-chart\.is-big\.has-right \{ grid-template-columns: 60px minmax\(0, 1fr\) 54px; \}/.test(CSS) && /\.btc-dd-modal \.btc-dd-plot \{ cursor: crosshair; background: rgba\(5, 8, 20, 0\.45\); \}/.test(CSS));
   t("page code: Escape closes, Tab stays inside the dialog, focus returns to the chart", /e\.key === "Escape"/.test(SRC_BM) && /e\.key === "Tab"/.test(SRC_BM) && /again\.focus\(\)/.test(SRC_BM) && /aria-modal="true"/.test(SRC_BM));
 }
 

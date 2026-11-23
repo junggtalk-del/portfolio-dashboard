@@ -214,7 +214,18 @@
 .btc-dd-yl i, .btc-dd-xl i { position: absolute; font: 600 10px var(--gc-num-font, Inter), sans-serif; font-style: normal; color: var(--mc-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .btc-dd-yl i { right: 0; transform: translateY(-50%); }
 .btc-dd-plot { position: relative; border-radius: 8px; background: rgba(0, 0, 0, 0.16); cursor: zoom-in; }
-.btc-dd-modal .btc-dd-plot { cursor: crosshair; }
+.btc-dd-modal .btc-dd-plot { cursor: crosshair; background: rgba(5, 8, 20, 0.45); }   /* dark well: the orange price line reads on every tone */
+.btc-dd-chart.is-big.has-right { grid-template-columns: 60px minmax(0, 1fr) 54px; }
+.btc-dd-yr { position: relative; }
+.btc-dd-yr i { position: absolute; left: 4px; transform: translateY(-50%); font: 600 10px var(--gc-num-font, Inter), sans-serif; font-style: normal; color: #ffd3a1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.btc-dd-legend { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; font-size: 12px; color: var(--mc-text-2); margin-top: -4px; }
+.btc-dd-key { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.btc-dd-key i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; }
+.btc-dd-key i.is-metric { background: #fff; }
+.btc-dd-key i.is-price { background: #f7931a; }
+.btc-dd-pnote { color: var(--mc-muted); }
+.btc-dd-ptoggle { margin-left: auto; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(0, 0, 0, 0.2); color: #fff; font: 700 12px var(--gc-num-font, Inter), sans-serif; padding: 5px 11px; min-height: 30px; border-radius: 999px; cursor: pointer; }
+.btc-dd-ptoggle:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .btc-dd-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
 .btc-dd-dot { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.18), 0 0 12px rgba(255, 255, 255, 0.6); pointer-events: none; }
 .btc-dd-cross { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed rgba(255, 255, 255, 0.65); pointer-events: none; }
@@ -250,6 +261,7 @@ html.btc-dd-lock { overflow: hidden; }
   .btc-dd-modal { padding: 8px; }
   .btc-dd-modal-card { padding: 14px; max-height: calc(100vh - 16px); }
   .btc-dd-chart.is-big { grid-template-columns: 50px minmax(0, 1fr); grid-template-rows: 240px 20px; }
+  .btc-dd-chart.is-big.has-right { grid-template-columns: 46px minmax(0, 1fr) 44px; }
   .btc-dd-modal-head .btc-dd-value { font-size: 24px; }
 }
 
