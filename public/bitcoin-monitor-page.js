@@ -1034,6 +1034,8 @@
     let msg = "";
     if (live.loading) msg = "กำลังดึงข้อมูลย้อนหลังจาก BGeometrics…";
     else if (live.error === "rate-limited") msg = "ยังดึงกราฟย้อนหลังได้ไม่ครบ — BGeometrics ให้ใช้ฟรีชั่วโมงละ 10 ครั้ง วันละ 15 ครั้ง และตอนนี้ครบโควตาแล้ว" + again;
+    // a 429 reaches the browser without a CORS header → it looks like a dropped connection
+    else if (live.error === "blocked") msg = "ยังดึงกราฟย้อนหลังได้ไม่ครบ — BGeometrics ไม่ตอบ ส่วนใหญ่เป็นเพราะโควตาฟรี (ชั่วโมงละ 10 ครั้ง วันละ 15 ครั้ง) หมด หรือเน็ตหลุด" + again;
     else if (live.error === "unreachable") msg = "ยังดึงกราฟย้อนหลังได้ไม่ครบ — ติดต่อ BGeometrics ไม่สำเร็จ" + again;
     else if (at) msg = `จะดึงข้อมูลย้อนหลังเวลา ${at} น.`;
     return msg ? `<p class="btc-dd-status" role="status">${esc(msg)}</p>` : "";

@@ -163,6 +163,19 @@ async function loaderTests() {
   g = m.live.get(); c = cacheOf(store);
   t("a later full success clears the error and the retry time", g.error === null && g.retryAt === null && c.err === null && c.tried.length === 7, { g: { error: g.error, retryAt: g.retryAt }, c: c.err });
 
+  console.log("== loader: in a browser the 429 has no CORS header → fetch throws → stop at once ==");
+  store = { btc_bgeo_v1: JSON.stringify({ u: D1, at: "x", metrics: V1, eps: {}, lastAttempt: Date.now() - 5 * 3600000 }) };
+  var thrown = [];
+  var ctx5 = { console: console, JSON: JSON, Promise: Promise, Date: Date, Object: Object, Array: Array, Math: Math,
+    localStorage: { getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; }, setItem: function (k, v) { store[k] = String(v); } },
+    CustomEvent: function (n) { this.type = n; }, dispatchEvent: function () {},
+    fetch: function (url) { thrown.push(String(url).split("/v1/")[1].split("?")[0]); return Promise.reject(new TypeError("Failed to fetch")); } };
+  ctx5.window = ctx5; vm.createContext(ctx5); vm.runInContext(SRC_LIVE, ctx5, { filename: "btc-onchain-live.js" });
+  await ctx5.BtcOnchainLive.load(false);
+  c = cacheOf(store);
+  t("a thrown fetch (CORS-less 429 / offline) → ONE request, not 8 (seen live 2026-11-23)", thrown.join() === "mvrv-zscore", thrown);
+  t("…error \"blocked\" kept for the page, retry in an hour, yesterday's values stay", ctx5.BtcOnchainLive.get().error === "blocked" && c.err === "blocked" && ctx5.BtcOnchainLive.get().retryAt > Date.now() + 3500000 && c.metrics.nupl.value === 0.39, c);
+
   console.log("== loader: a metric answers 404 ==");
   store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: TODAY, at: "x", metrics: V1, lastAttempt: Date.now() - 2 * 3600000, tried: ["mvrvZScore", "realizedPrice", "nupl", "sopr", "ssr", "lthSupply"] }) };
   m = makeLive(store, { "nup": 404 }, {});
@@ -280,6 +293,7 @@ function pageTests() {
   var at = new Date(2026, 10, 23, 11, 22).getTime();
   var hRl = runMonitor(Object.assign({}, BASE, { rup: 0.52 }), {}, null, { error: "rate-limited", retryAt: at });
   t("quota used up → one status line: limits named + the retry time + no action needed", /<p class="btc-dd-status" role="status">ยังดึงกราฟย้อนหลังได้ไม่ครบ — BGeometrics ให้ใช้ฟรีชั่วโมงละ 10 ครั้ง วันละ 15 ครั้ง และตอนนี้ครบโควตาแล้ว · หน้านี้จะลองใหม่เองเวลา 11:22 น\. ไม่ต้องกดอะไร<\/p>/.test(hRl), (/btc-dd-status[^<]*<\/p>|btc-dd-status[^]*?<\/p>/.exec(hRl) || [""])[0].slice(0, 300));
+  t("blocked (browser-side 429 without CORS) → says it is most likely the free quota", /BGeometrics ไม่ตอบ ส่วนใหญ่เป็นเพราะโควตาฟรี \(ชั่วโมงละ 10 ครั้ง วันละ 15 ครั้ง\) หมด หรือเน็ตหลุด · หน้านี้จะลองใหม่เองเวลา 11:22 น\./.test(runMonitor(BASE, {}, null, { error: "blocked", retryAt: at })));
   t("unreachable → its own wording", /ติดต่อ BGeometrics ไม่สำเร็จ · หน้านี้จะลองใหม่เองเวลา 11:22 น\./.test(runMonitor(BASE, {}, null, { error: "unreachable", retryAt: at })));
   t("loading → \"กำลังดึงข้อมูลย้อนหลัง…\"", /กำลังดึงข้อมูลย้อนหลังจาก BGeometrics…/.test(runMonitor(BASE, {}, null, { loading: true })));
   t("all 7 charts in → no status line", !/btc-dd-status/.test(runMonitor(Object.assign({}, BASE, { rup: 0.52 }), SERIES, null, { error: "rate-limited", retryAt: at })));

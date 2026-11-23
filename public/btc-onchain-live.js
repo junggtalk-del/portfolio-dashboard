@@ -128,7 +128,12 @@
         var rows = parseSeries(await res.json(), part.pick);
         if (!rows.length) return null;
         lists.push(rows);
-      } catch (e) { return null; }                     // network/CORS — give up quietly
+      } catch (e) {
+        // In a browser a 429 arrives WITHOUT a CORS header, so it surfaces here as a network
+        // error — indistinguishable from offline. Either way the next request would fail too:
+        // stop the whole run (seen 2026-11-23: 8 blocked requests in a row while the quota was out).
+        return { blocked: true };
+      }
     }
     var series = sumByDate(lists);
     if (!series.length) return null;
@@ -170,7 +175,7 @@
     for (var i = 0; i < toFetch.length; i++) {
       var k = toFetch[i];
       var r = await fetchMetric(METRICS[k]);
-      if (r && r.rateLimited) { limited = true; break; }
+      if (r && (r.rateLimited || r.blocked)) { limited = r.rateLimited ? "rate-limited" : "blocked"; break; }
       done.push(k);
       if (r && r.value != null) {
         out[k] = { value: r.value, date: r.date }; got += 1;
@@ -178,7 +183,7 @@
       }
     }
     var triedNow = (fresh && !force ? tried : []).concat(done);   // pending ∩ tried = ∅
-    var err = limited ? "rate-limited" : got < done.length ? "unreachable" : null;
+    var err = limited || (got < done.length ? "unreachable" : null);
 
     if (got > 0) {
       // merge over yesterday's values so a partial day never loses metrics
