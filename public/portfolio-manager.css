@@ -205,6 +205,9 @@
 /* 170px = room for the locked placeholder "ล็อกอยู่ — ใส่ค่าใหม่ได้" (same width as the cash field) */
 .pm-mv-inp { width: 170px; text-align: right; }
 .pm-rm-btn { margin-left: 5px; }
+/* มูลค่าปรับตามราคาปิด (holding-revalue.js) — บรรทัดเล็กใต้ช่องมูลค่า */
+.pm-mv-auto { display: block; max-width: 220px; margin: 4px 0 0 auto; font-size: 11px; line-height: 1.4; font-weight: 600; color: var(--gc-ink-2, var(--mc-muted)); text-align: right; white-space: normal; }
+.pm-mv-auto.is-warn { color: #ffd98a; }
 .pm-addform { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; padding: 11px 14px; border-radius: 16px; background: var(--gc-well); border: 1px dashed rgba(255, 255, 255, 0.25); font-size: 13px; }
 #pmAddTicker { width: 150px; text-transform: uppercase; }
 #pmAddAmount { width: 140px; text-align: right; }

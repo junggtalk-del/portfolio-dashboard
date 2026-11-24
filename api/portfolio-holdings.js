@@ -101,6 +101,9 @@ function detectAssetType(symbol, fallback = "") {
 }
 
 function toNullableNumber(value) {
+  // Number(null) / Number("") are 0 — an empty field must stay empty (2026-11-24: quantity /
+  // latest_price null were stored as 0; a 0 anchor price would read as "anchored" forever)
+  if (value === null || value === undefined || (typeof value === "string" && value.trim() === "")) return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
@@ -125,7 +128,7 @@ function sanitizeHolding(input) {
     quantity,
     average_cost: averageCost,
     cost_value: costValue,
-    market_value: isHolding ? marketValue : 0,
+    market_value: isHolding ? (marketValue ?? 0) : 0,
     currency: input?.currency || "THB",
     latest_price: toNullableNumber(input?.latest_price ?? input?.latestPrice),
     latest_price_date: input?.latest_price_date || input?.latestPriceDate || null,

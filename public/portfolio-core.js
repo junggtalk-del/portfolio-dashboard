@@ -81,6 +81,9 @@
   }
 
   function toNumberOrNull(value) {
+    // Number(null) / Number("") are 0 — an empty field must stay empty, not become 0
+    // (2026-11-24: every save turned quantity null → 0, and costValue = 0 × averageCost = 0)
+    if (value === null || value === undefined || (typeof value === "string" && value.trim() === "")) return null;
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
   }
@@ -229,6 +232,40 @@
     return clean;
   }
 
+  // One read-modify-write of /api/portfolio-holdings at a time in this tab (a typed value and the
+  // daily revalue in holding-revalue.js must not interleave and overwrite each other — 2026-11-24).
+  let holdingsChain = Promise.resolve();
+  function withHoldingsLock(task) {
+    const run = holdingsChain.then(() => task(), () => task());
+    holdingsChain = run.catch(() => {});
+    return run;
+  }
+
+  // Row-level save (2026-11-24): GET the server list fresh, change ONE row, PUT only that row — the
+  // server upserts per canonical_symbol and never deletes, so a stale local list can no longer
+  // overwrite other rows (saveHoldings PUTs the whole local list). find(list) → index or -1 ·
+  // mutate(row | null) → the new row. Throws when the server cannot be read or written; the local
+  // copy changes only after the server took the row (a failed save must not show as saved).
+  function updateHolding(find, mutate) {
+    return withHoldingsLock(async () => {
+      const response = await fetch("/api/portfolio-holdings", { cache: "no-store" });
+      if (!response.ok) throw new Error(`holdings request failed (${response.status})`);
+      const payload = await response.json();
+      const list = dedupeHoldings(payload?.data);
+      const idx = find(list);
+      const next = normalizeHolding(mutate(idx >= 0 ? list[idx] : null));
+      if (idx >= 0) list[idx] = next; else list.push(next);
+      const put = await fetch("/api/portfolio-holdings", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ data: [next] })
+      });
+      if (!put.ok) throw new Error(`Unable to save portfolio holding (${put.status})`);
+      writeLocalHoldings(list);
+      return list;
+    });
+  }
+
   function holdingsMap(holdings) {
     return new Map(dedupeHoldings(holdings).map((holding) => [holding.canonicalSymbol, holding]));
   }
@@ -355,6 +392,8 @@
     dedupeHoldings,
     loadHoldings,
     saveHoldings,
+    updateHolding,
+    withHoldingsLock,
     readLocalHoldings,
     writeLocalHoldings,
     holdingsMap,

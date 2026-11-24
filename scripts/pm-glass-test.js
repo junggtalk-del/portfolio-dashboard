@@ -400,7 +400,8 @@ function maskedScreen(h) {
     mu.length === 4 && mu.every(function (e) { return attr(e.open, "value") === MVX[attr(e.open, "data-pm-mv")] && attr(e.open, "placeholder") == null; }), mu.map(function (e) { return attr(e.open, "data-pm-mv") + "=" + attr(e.open, "value"); }));
 })();
 
-// ---- the [data-pm-mv] change handler (bind() for real, a fake #pmRoot · PortfolioCore.saveHoldings recorded) ----
+// ---- the [data-pm-mv] change handler (bind() for real, a fake #pmRoot · the list PortfolioCore.updateHolding
+//      would send recorded — since 2026-11-24 the page saves ONE row via updateHolding, not the whole list) ----
 (function () {
   function fakeRoot(h) {
     var handlers = [];
@@ -433,7 +434,13 @@ function maskedScreen(h) {
   var saves = [];
   window.PortfolioCore = {
     readLocalHoldings: function () { return [{ canonicalSymbol: "NVDA", assetName: "NVIDIA", isHolding: true, marketValue: 435000, portfolioBucket: "foreign-stock" }]; },
-    saveHoldings: function (list) { saves.push(JSON.parse(JSON.stringify(list))); return null; }
+    // records the list after the page's find/mutate — the promise never settles (no follow-up sync in this vm)
+    updateHolding: function (find, mutate) {
+      var list = this.readLocalHoldings(), i = find(list), next = mutate(i >= 0 ? list[i] : null);
+      if (i >= 0) list[i] = next; else list.push(next);
+      saves.push(JSON.parse(JSON.stringify(list)));
+      return new Promise(function () {});
+    }
   };
   try {
     PV.locked = true; mod.setView("all");
@@ -526,7 +533,7 @@ console.log("== 6 · portfolio-manager.html ==");
 (function () {
   var HTML = read("portfolio-manager.html");
   function ver(f) { var m = new RegExp(f.replace(/[.]/g, "\\.") + "\\?v=([^\"]+)\"").exec(HTML); return m ? m[1] : null; }
-  t("portfolio-manager.css → 20261122-pm-14 · portfolio-manager-page.js → 20261122-pm-34", ver("/portfolio-manager.css") === "20261122-pm-14" && ver("/portfolio-manager-page.js") === "20261122-pm-34",
+  t("portfolio-manager.css → 20261124-pm-15 · portfolio-manager-page.js → 20261124-pm-35", ver("/portfolio-manager.css") === "20261124-pm-15" && ver("/portfolio-manager-page.js") === "20261124-pm-35",
     [ver("/portfolio-manager.css"), ver("/portfolio-manager-page.js")]);
   var iM = HTML.indexOf("/mission-control.css?v="), iG = HTML.indexOf("/glass-cards.css?v=20261121-gc-2"), iP = HTML.indexOf("/portfolio-manager.css?v=");
   t("ลำดับ: mission-control.css → glass-cards.css (gc-2) → portfolio-manager.css", iM > 0 && iG > iM && iP > iG, [iM, iG, iP]);

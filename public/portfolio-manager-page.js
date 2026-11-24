@@ -751,30 +751,72 @@
     var snap = readSnapshot();
     return ((snap && snap.portfolioHoldings && snap.portfolioHoldings.data) || []).slice();
   }
+  // บรรทัดเล็กใต้ช่องมูลค่า: มูลค่านี้ปรับตามราคาปิดวันไหน / ทำไมยังไม่ปรับ (holding-revalue.js) — ไม่มีตัวเงิน
+  function mvAutoNote(ticker) {
+    var HR = window.HoldingRevalue;
+    if (!HR || !HR.eligible) return "";
+    var key = canonical(ticker), row = null;
+    holdingsNow().forEach(function (h) { if (!row && canonical(h.canonicalSymbol) === key) row = h; });
+    if (!row && key === "GOOG") holdingsNow().forEach(function (h) { if (!row && canonical(h.canonicalSymbol) === "GOOGL") row = h; });
+    if (!row || !HR.eligible(row)) return "";
+    var last = HR.lastResult ? HR.lastResult() : null;
+    var symU = canonical(row.canonicalSymbol);
+    // the database dropped the anchor columns → values cannot follow the price (needs latest_price / latest_price_date)
+    if (last && last.anchorLost && last.anchorLost.indexOf(symU) >= 0) {
+      return '<span class="pm-mv-auto is-warn">⚠ ฐานข้อมูลยังไม่มีช่องเก็บราคาอ้างอิง (latest_price) — มูลค่าจะยังไม่ขยับตามราคา</span>';
+    }
+    var why = last && last.skipped ? last.skipped[symU] : null;
+    if (why && last.at && (!row.updatedAt || last.at > row.updatedAt)) {
+      var msg = /^big-move:/.test(why) ? "⚠ ราคาเปลี่ยน " + why.split(":")[1] + "% จากวันที่กรอก (อาจแตกหุ้น) — ยังไม่ปรับ ตรวจแล้วกรอกมูลค่าใหม่"
+        : why === "no-fx" ? "ยังไม่ปรับ — ดึงอัตราแลกเปลี่ยน USD/THB ไม่ได้"
+        : why === "no-price" ? "ยังไม่ปรับ — ไม่มีราคาปิดของหุ้นตัวนี้ (กด Load Latest Data)"
+        : why === "stale-price" ? "จะเริ่มปรับตามราคาเมื่อกด Load Latest Data หลังจากกรอกมูลค่า"
+        : "ยังไม่ปรับตามราคา";
+      return '<span class="pm-mv-auto is-warn">' + esc(msg) + "</span>";
+    }
+    var d = row.latestPriceDate ? String(row.latestPriceDate).slice(0, 10) : null;
+    if (!d) return '<span class="pm-mv-auto">จะเริ่มปรับตามราคาเมื่อกด Load Latest Data หลังจากกรอกมูลค่า</span>';
+    var label = d;
+    try { label = new Date(d + "T00:00:00Z").toLocaleDateString("th-TH", { day: "numeric", month: "short", timeZone: "UTC" }); } catch (e) { }
+    return '<span class="pm-mv-auto">ปรับตามราคาปิด ' + esc(label) + " (USD/THB)</span>";
+  }
   // hold=true → ตั้ง/แก้มูลค่า · hold=false → เอาออกจากพอร์ต (เก็บเป็น watchlist เหมือนพฤติกรรมเดิมของ AC)
+  // บันทึกทีละแถว (2026-11-24): ดึงรายการล่าสุดจาก server → แก้แถวเดียว → ส่งขึ้นเฉพาะแถวนั้น
+  //   (เดิมส่งรายการทั้งชุดจากสำเนาในเครื่อง — สำเนาเก่าทับแถวอื่นบน server ได้)
+  // มูลค่าที่พิมพ์ = จุดตั้งต้นใหม่ของการปรับตามราคา (holding-revalue.js): ล้าง latestPrice/latestPriceDate
+  //   → รอบถัดไปจำราคาปิดปัจจุบันเป็นฐานโดยไม่ขยับมูลค่า
   function saveHoldingAmount(symbol, amount, hold) {
     var core = window.PortfolioCore;
-    if (!core || !core.saveHoldings) { alert("PortfolioCore ไม่พร้อม — refresh หน้าก่อน"); return; }
+    if (!core || !core.updateHolding) { alert("PortfolioCore ไม่พร้อม — refresh หน้าก่อน"); return; }
     var key = canonical(symbol);
-    var holdings = holdingsNow();
-    var idx = -1;
-    holdings.forEach(function (h, i) { if (idx < 0 && canonical(h.canonicalSymbol || h.ticker) === key) idx = i; });
-    if (idx < 0 && key === "GOOG") holdings.forEach(function (h, i) { if (idx < 0 && canonical(h.canonicalSymbol || h.ticker) === "GOOGL") idx = i; });
-    var base = idx >= 0 ? holdings[idx]
-      : (core.normalizeHolding ? core.normalizeHolding({ symbol: key, assetName: key, assetType: "" }) : { canonicalSymbol: key, assetName: key });
-    var next = Object.assign({}, base, {
-      isHolding: !!hold,
-      watchlistOnly: !hold,
-      marketValue: hold ? Math.max(0, fin(amount) || 0) : 0,
-      portfolioBucket: base.portfolioBucket || "foreign-stock",
-      updatedAt: new Date().toISOString()
-    });
-    if (idx >= 0) holdings[idx] = next; else holdings.push(next);
-    var saved = null;
-    try { saved = core.saveHoldings(holdings); } catch (e) { /* local เขียนแล้ว sync server ทีหลัง — core จัดการเอง */ }
+    var find = function (list) {
+      var idx = -1;
+      list.forEach(function (h, i) { if (idx < 0 && canonical(h.canonicalSymbol || h.ticker) === key) idx = i; });
+      if (idx < 0 && key === "GOOG") list.forEach(function (h, i) { if (idx < 0 && canonical(h.canonicalSymbol || h.ticker) === "GOOGL") idx = i; });
+      return idx;
+    };
+    var mutate = function (row) {
+      var base = row || (core.normalizeHolding ? core.normalizeHolding({ symbol: key, assetName: key, assetType: "" }) : { canonicalSymbol: key, assetName: key });
+      return Object.assign({}, base, {
+        isHolding: !!hold,
+        watchlistOnly: !hold,
+        marketValue: hold ? Math.max(0, fin(amount) || 0) : 0,
+        portfolioBucket: base.portfolioBucket || "foreign-stock",
+        latestPrice: null,
+        latestPriceDate: null,
+        updatedAt: new Date().toISOString()
+      });
+    };
     // core ยิง "portfolio-holdings-updated" → หน้า re-render อัตโนมัติ
     // บันทึกรายการหุ้นสำเร็จ → ตั้งเวลาเขียนแถวหุ้นต่างประเทศของไตรมาสล่าสุดเป็นค่า PM (หน่วง รวมการแก้ติด ๆ กันเป็นรอบเดียว)
-    if (saved && typeof saved.then === "function") saved.then(scheduleRowSync, function () { /* บันทึกรายการหุ้นไม่สำเร็จ — ไม่เขียนแถว */ });
+    //   + ตั้งจุดตั้งต้นการปรับตามราคาให้มูลค่าที่เพิ่งพิมพ์
+    core.updateHolding(find, mutate).then(function () {
+      scheduleRowSync();
+      if (window.HoldingRevalue && window.HoldingRevalue.run) window.HoldingRevalue.run();
+    }, function () {
+      alert("บันทึกมูลค่า " + key + " ไม่สำเร็จ — ติดต่อ server ไม่ได้ ลองใหม่อีกครั้ง");
+      render();
+    });
   }
   function kbTickersNotHeld(heldRows) {
     var held = {};
@@ -1038,7 +1080,7 @@
       //   (เว้นว่างตอนล็อก = ไม่บันทึก · พิมพ์ค่าใหม่ = บันทึกตามปกติ — ดู bind [data-pm-mv]) · ปลดล็อก → onPrivacyChanged วาดค่าคืน
       return '<td class="pm-num gc-cell-num" data-pv-skip="1"><input class="pm-mv-inp gc-field" type="number" min="0" step="any" inputmode="decimal" value="' + (mvLocked ? "" : (p.marketValue || 0)) + '" data-pm-mv="' + esc(r.ticker) + '"' +
         (mvLocked ? ' placeholder="' + esc(CASH_LOCKED_PH) + '"' : "") + ' title="แก้มูลค่า (บาท) แล้ว Enter/คลิกออก เพื่อบันทึก">' +
-        '<button type="button" class="pm-rm-btn gc-btn gc-btn-ghost" data-pm-remove="' + esc(r.ticker) + '" title="เอาออกจากพอร์ต (เก็บเป็น watchlist)">✕</button></td>';
+        '<button type="button" class="pm-rm-btn gc-btn gc-btn-ghost" data-pm-remove="' + esc(r.ticker) + '" title="เอาออกจากพอร์ต (เก็บเป็น watchlist)">✕</button>' + mvAutoNote(r.ticker) + '</td>';
     };
     // ---- 2 มุม: ทั้งพอร์ต vs เฉพาะหุ้นรายตัว ----
     // มุมที่ 2 = กรองรายชื่อออกมาเฉพาะหุ้นรายตัว — น้ำหนักทุกช่องยังอิงฐาน
@@ -1749,6 +1791,15 @@
   // ธงแดง/มูลค่าเปลี่ยนจาก Action Center → snapshot ยิง event นี้ (ไม่ใช่ data-snapshot)
   window.addEventListener("portfolio-data-snapshot", onSnapshotWritten);
   window.addEventListener("portfolio-holdings-updated", render);
+  // มูลค่าหุ้นขยับตามราคาปิด (holding-revalue.js) → เขียนแถวหุ้นต่างประเทศของไตรมาสล่าสุดตาม เหมือนตอนแก้มือ
+  //   ขยับบนหน้านี้ → event · ขยับบนหน้าอื่น (Load Latest Data ที่ /home ฯลฯ) → ธงใน localStorage → boot() ซิงก์ให้
+  window.addEventListener("holdings-revalued", function (e) {
+    var ch = (e && e.detail && e.detail.changes) || [];
+    if (ch.some(function (c) { return c.kind === "revalue"; })) {
+      if (window.HoldingRevalue && window.HoldingRevalue.takeSyncFlag) window.HoldingRevalue.takeSyncFlag();
+      scheduleRowSync();
+    }
+  });
   window.addEventListener("portfolio-allocation-saved", onAllocationSaved);
   window.addEventListener("focus", refreshOnFocus);
   // privacy.js ยิง "portfolio-privacy-changed" บน document
@@ -1764,6 +1815,8 @@
     ensurePortfolioFetched();   // เอกสารพอร์ตสด — snapshot.portfolioStatus เป็นแค่สำเนาตอน Load Latest Data
     syncPmSettings(false);      // ค่าตั้งจาก server (?doc=pm) · ย้ายจากเครื่องครั้งแรก · ส่งค่าที่ค้างจากรอบก่อน
     if (bootDraft) persistCash(bootDraft.cash, bootDraft);
+    // มูลค่าหุ้นขยับตามราคาบนหน้าอื่นมาแล้ว → แถวหุ้นต่างประเทศของไตรมาสยังเป็นยอดเก่า → ซิงก์ (ไม่ตรงเท่านั้นถึง PUT)
+    if (window.HoldingRevalue && window.HoldingRevalue.takeSyncFlag && window.HoldingRevalue.takeSyncFlag()) scheduleRowSync();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.PortfolioManagerPage = { render: render, persistCash: persistCash, normalizePmSetting: normalizePmSetting };

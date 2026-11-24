@@ -218,6 +218,7 @@ function boot(opts) {
   var dom = mkDom();
   var gets = 0;
   var server = clone(o.fixture || FIX);
+  var serverHoldings = null;   // /api/portfolio-holdings (lazy: starts as the device's list)
   function flagv(name) { try { return o.flags ? o.flags()[name] : undefined; } catch (e) { return undefined; } }
   function flag(name) { return !!flagv(name); }
   var slowOnce = o.slowFirstGet || 0;
@@ -259,11 +260,23 @@ function boot(opts) {
     fetch: function (url, init) {
       var u = String(url);
       fetches.push({ url: u, method: (init && init.method) || "GET", cache: init && init.cache });
-      // final fix wave [2a]: PortfolioCore.saveHoldings → PUT /api/portfolio-holdings (GET ยังเป็น 404 ตามเดิม)
-      if (u === "/api/portfolio-holdings" && init && init.method === "PUT") {
-        holdingsPuts.push(JSON.parse(init.body));
-        if (flag("failHoldingsPut")) return respond(false, 500, { error: "boom" });
-        return respond(true, 200, { ok: true });
+      // final fix wave [2a]: PortfolioCore.saveHoldings → PUT /api/portfolio-holdings
+      // 2026-11-24: the page saves ONE row via PortfolioCore.updateHolding = GET the server list fresh → PUT that row,
+      //   so the fake server now serves GET (the device's list as its starting state) and merges PUT rows by symbol
+      if (u === "/api/portfolio-holdings") {
+        if (!serverHoldings) { try { serverHoldings = JSON.parse(store["portfolioHoldingsDraft"] || "null"); } catch (e) { serverHoldings = null; } serverHoldings = serverHoldings || clone(HOLDINGS); }
+        if (init && init.method === "PUT") {
+          var putBody = JSON.parse(init.body);
+          holdingsPuts.push(putBody);
+          if (flag("failHoldingsPut")) return respond(false, 500, { error: "boom" });
+          (putBody.data || []).forEach(function (row) {
+            var at = -1;
+            serverHoldings.forEach(function (h, i) { if (at < 0 && h.canonicalSymbol === row.canonicalSymbol) at = i; });
+            if (at >= 0) serverHoldings[at] = row; else serverHoldings.push(row);
+          });
+          return respond(true, 200, { ok: true });
+        }
+        return respond(true, 200, { data: clone(serverHoldings) });
       }
       // ค่าตั้งของหน้า (?doc=pm) เป็นเอกสารแยก — ไม่ใช่เอกสารพอร์ต · ชุดนี้ไม่มีค่าตั้งในเครื่อง → server ว่าง ไม่มีอะไรต้องย้าย
       //   (พฤติกรรมของ ?doc=pm ล็อกที่ scripts/pm-settings-sync-test.js)
@@ -391,8 +404,8 @@ function hasFromPM(body) { return JSON.stringify(body).indexOf("fromPM") >= 0; }
 function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || []).filter(function (a) { return a.type === "foreign-stock"; }); }
 
 (async function main() {
-  t("portfolio-manager.html: page pm-34 (glass cards · PM settings on the server · ?doc=pm · per-change ops) · css pm-14 · foreign-sleeve.js before the PM engine/page",
-    /portfolio-manager-page\.js\?v=20261122-pm-34"/.test(HTML) && /portfolio-manager\.css\?v=20261122-pm-14"/.test(HTML) &&
+  t("portfolio-manager.html: page pm-35 (glass cards · PM settings on the server · ?doc=pm · per-change ops · one-row holdings save + values follow the close) · css pm-15 · foreign-sleeve.js before the PM engine/page",
+    /portfolio-manager-page\.js\?v=20261124-pm-35"/.test(HTML) && /portfolio-manager\.css\?v=20261124-pm-15"/.test(HTML) &&
     HTML.indexOf("foreign-sleeve.js") > 0 && HTML.indexOf("foreign-sleeve.js") < HTML.indexOf("portfolio-manager-engine.js"));
   t("index.html loads app.js?v=20261122-app-15", /\/app\.js\?v=20261122-app-15"/.test(read("index.html")));
 

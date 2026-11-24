@@ -788,6 +788,11 @@
     // Wave 3 Setup engine — available wherever Load Latest Data can run, so the snapshot
     // loader can extend snapshot.wave3. Reuses BitcoinIntelligence.Indicators; load after it.
     ensureScript("/wave3-engine.js?v=20261110-w3-2");
+    // AI Portfolio Manager values follow the daily close (holding-revalue.js) — on every page, so Load
+    // Latest Data anywhere moves them once and every page reads the same value. It runs by itself after
+    // load / after each new snapshot, waits for window.PortfolioCore, and is a no-op when nothing is due.
+    ensureScript("/portfolio-core.js?v=20261124-core-5");
+    ensureScript("/holding-revalue.js?v=20261124-hr-1");
 
     const activePath = window.location.pathname;
 
