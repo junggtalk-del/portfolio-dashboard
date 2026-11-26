@@ -241,6 +241,17 @@
     return run;
   }
 
+  // One read-modify-write of /api/portfolio (the portfolio document) at a time in this tab — the server
+  // only takes the whole document, so two GET→PUT cycles that interleave lose one change (2026-11-25:
+  // btc-value.js writes the bitcoin row after Load Latest Data while the Editor / PM page / allocation
+  // cards may be saving). Same shape as withHoldingsLock; a task must not take this lock again inside.
+  let docChain = Promise.resolve();
+  function withDocLock(task) {
+    const run = docChain.then(() => task(), () => task());
+    docChain = run.catch(() => {});
+    return run;
+  }
+
   // Row-level save (2026-11-24): GET the server list fresh, change ONE row, PUT only that row — the
   // server upserts per canonical_symbol and never deletes, so a stale local list can no longer
   // overwrite other rows (saveHoldings PUTs the whole local list). find(list) → index or -1 ·
@@ -394,6 +405,7 @@
     saveHoldings,
     updateHolding,
     withHoldingsLock,
+    withDocLock,
     readLocalHoldings,
     writeLocalHoldings,
     holdingsMap,

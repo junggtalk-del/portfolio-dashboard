@@ -533,7 +533,7 @@ console.log("== 6 · portfolio-manager.html ==");
 (function () {
   var HTML = read("portfolio-manager.html");
   function ver(f) { var m = new RegExp(f.replace(/[.]/g, "\\.") + "\\?v=([^\"]+)\"").exec(HTML); return m ? m[1] : null; }
-  t("portfolio-manager.css → 20261124-pm-15 · portfolio-manager-page.js → 20261124-pm-35", ver("/portfolio-manager.css") === "20261124-pm-15" && ver("/portfolio-manager-page.js") === "20261124-pm-35",
+  t("portfolio-manager.css → 20261124-pm-15 · portfolio-manager-page.js → 20261125-pm-36", ver("/portfolio-manager.css") === "20261124-pm-15" && ver("/portfolio-manager-page.js") === "20261125-pm-36",
     [ver("/portfolio-manager.css"), ver("/portfolio-manager-page.js")]);
   var iM = HTML.indexOf("/mission-control.css?v="), iG = HTML.indexOf("/glass-cards.css?v=20261121-gc-2"), iP = HTML.indexOf("/portfolio-manager.css?v=");
   t("ลำดับ: mission-control.css → glass-cards.css (gc-2) → portfolio-manager.css", iM > 0 && iG > iM && iP > iG, [iM, iG, iP]);

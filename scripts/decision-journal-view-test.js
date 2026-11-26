@@ -646,7 +646,7 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     while ((m = re.exec(body)) !== null) out.push(m[1]);
     return out.join("|") === ["/technical-indicators.js?v=20260617-action-priority", "/decision-journal-engine.js?v=20261030-dj-5",
       "/home-action-engine.js?v=20261119-ha-2", "/decision-journal-page.js?v=20261122-dj-9", "/big-cache.js?v=20261110-bc-2",
-      "/app-navigation.js?v=20261124-nav-36"].join("|");
+      "/app-navigation.js?v=20261125-nav-37"].join("|");
   })());
   t("lang th + viewport", /<html lang="th">/.test(dj) && /name="viewport"[^>]*width=device-width/.test(dj));
 
@@ -785,9 +785,10 @@ section("files: HTML · CSS · nav · rewrite · privacy · versions (Task 8)", 
     // nav-34 (2026-11-22): ฉีด mission-control-v2.css เวอร์ชัน mcx-12 (การ์ดแก้วของ Home)
     // nav-35 (2026-11-22): ฉีด mission-control.css เวอร์ชัน mc-11 (ไม่ทาหน้าขาวธีมสว่างบนการ์ดแก้ว · ซ่อน Retry Failed ตอนไม่มีตัวล้มเหลว)
     // nav-36 (2026-11-24): ฉีด portfolio-core.js + holding-revalue.js ทุกหน้า (มูลค่าหุ้นใน PM ขยับตามราคาปิด)
-    t("every HTML that references app-navigation.js uses 20261124-nav-36",
-      navRefs.length >= 19 && navRefs.every(function (f) { return /app-navigation\.js\?v=20261124-nav-36"/.test(readPub(f)) && !/app-navigation\.js\?v=(?!20261124-nav-36")/.test(readPub(f)); }),
-      navRefs.filter(function (f) { return !/app-navigation\.js\?v=20261124-nav-36"/.test(readPub(f)); }));
+    // nav-37 (2026-11-25): + btc-value.js (Bitcoin กรอกเป็นจำนวน BTC · มูลค่าบาทตามราคา)
+    t("every HTML that references app-navigation.js uses 20261125-nav-37",
+      navRefs.length >= 19 && navRefs.every(function (f) { return /app-navigation\.js\?v=20261125-nav-37"/.test(readPub(f)) && !/app-navigation\.js\?v=(?!20261125-nav-37")/.test(readPub(f)); }),
+      navRefs.filter(function (f) { return !/app-navigation\.js\?v=20261125-nav-37"/.test(readPub(f)); }));
     t("every HTML that references privacy.js uses 20261025-pv-2",
       pvRefs.length >= 19 && pvRefs.every(function (f) { return /privacy\.js\?v=20261025-pv-2"/.test(readPub(f)) && !/privacy\.js\?v=(?!20261025-pv-2")/.test(readPub(f)); }),
       pvRefs.filter(function (f) { return !/privacy\.js\?v=20261025-pv-2"/.test(readPub(f)); }));

@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/glass-cards.css?v=20261121-gc-2" />
-    <link rel="stylesheet" href="/styles.css?v=20261122-qe-6" />
+    <link rel="stylesheet" href="/styles.css?v=20261126-qe-7" />
       <link rel="stylesheet" href="/app-navigation.css?v=20260618-nav-2" />
       <script src="/api-auth.js?v=20260620-auth-1"></script>
       <script src="/privacy.js?v=20261025-pv-2"></script>
@@ -186,7 +186,7 @@
           <form class="asset-form gc-card gc-neutral" id="assetForm">
             <div class="form-header">
               <h2 id="formTitle">เพิ่มรายการพอร์ต</h2>
-              <p>กรอกมูลค่าปัจจุบันเป็นบาทได้ทุกสินทรัพย์ รวมถึง Bitcoin</p>
+              <p>กรอกมูลค่าปัจจุบันเป็นบาท · Bitcoin กรอกเป็นจำนวน BTC แล้วระบบแปลงเป็นบาทตามราคาล่าสุด</p>
             </div>
 
             <label>
@@ -211,6 +211,12 @@
             <label class="manual-value-field">
               มูลค่าปัจจุบัน (บาท)
               <input class="gc-field" id="valueInput" name="value" type="number" min="0" step="any" placeholder="250000" />
+            </label>
+
+            <label class="btc-qty-field is-hidden">
+              จำนวน BTC (รวมเงินรอซื้อที่คิดเป็น BTC)
+              <input class="gc-field" id="btcQtyInput" name="btcQty" type="number" min="0" step="any" inputmode="decimal" placeholder="0.5" />
+              <small id="btcQtyNote"></small>
             </label>
 
             <label class="invested-percent-field">
@@ -272,7 +278,8 @@
       </section>
     </main>
     <script src="/foreign-sleeve.js?v=20261109-fs-4"></script>
-    <script src="/app.js?v=20261122-app-15"></script>
-<script src="/app-navigation.js?v=20261124-nav-36"></script>
+    <script src="/btc-value.js?v=20261125-btc-1"></script>
+    <script src="/app.js?v=20261125-app-16"></script>
+<script src="/app-navigation.js?v=20261125-nav-37"></script>
   </body>
 </html>

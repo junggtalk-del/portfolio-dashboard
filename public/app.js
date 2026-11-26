@@ -21,6 +21,12 @@ const PM_DELETE_TITLE_TH = "แก้มูลค่าที่หน้า AI 
 const PM_QUARTER_ENDED_TH = "ไตรมาสนี้จบแล้วตามปฏิทิน — ค่าหุ้นต่างประเทศที่เก็บไว้คือประวัติของไตรมาสนี้ (แก้ได้) · สร้างไตรมาสใหม่เพื่อให้ตาม AI Portfolio Manager";
 // โหลดเอกสารจาก server ครั้งแรกไม่สำเร็จ → state.data เป็นแค่ไตรมาสว่างของปฏิทิน · PUT ตอนนี้ = ประวัติทุกไตรมาสบน server หาย
 const NOT_LOADED_TH = "ยังโหลดข้อมูลพอร์ตจาก server ไม่สำเร็จ — ยังไม่บันทึกเพื่อกันข้อมูลหาย (ลองรีเฟรชหน้าจอ)";
+// Bitcoin กรอกเป็นจำนวน BTC (2026-11-25 · btc-value.js): มูลค่าบาท = จำนวน × ราคา BTC (Load Latest Data) × USD/THB
+//   เฉพาะไตรมาสล่าสุดที่ยังไม่จบ · ไม่มีราคา = ไม่บันทึกแถวใหม่ (ไม่ใช่บันทึกเป็น 0)
+const BTC_NO_PRICE_TH = "ยังไม่มีราคา BTC — กด Load Latest Data แล้วบันทึกอีกครั้ง";
+// มีราคา BTC แล้วแต่ไม่มี USD/THB (frankfurter.dev ถูกบล็อก / เน็ตหลุด) — Load Latest Data ไม่ได้ดึงอัตราแลกเปลี่ยน จึงบอกตรงเรื่อง
+const BTC_NO_FX_TH = "ยังดึงอัตราแลกเปลี่ยน USD/THB ไม่ได้ — ตรวจการเชื่อมต่อแล้วบันทึกอีกครั้ง";
+const BTC_QTY_INVALID_TH = "กรุณากรอกจำนวน BTC เป็นตัวเลขตั้งแต่ 0 ขึ้นไป";
 
 const state = {
   data: emptyData(),
@@ -60,6 +66,10 @@ const elements = {
   typeInput: document.querySelector("#typeInput"),
   nameInput: document.querySelector("#nameInput"),
   valueInput: document.querySelector("#valueInput"),
+  manualValueField: document.querySelector(".manual-value-field"),
+  btcQtyField: document.querySelector(".btc-qty-field"),
+  btcQtyInput: document.querySelector("#btcQtyInput"),
+  btcQtyNote: document.querySelector("#btcQtyNote"),
   investedPercentInput: document.querySelector("#investedPercentInput"),
   investedPercentField: document.querySelector(".invested-percent-field"),
   netFlowInput: document.querySelector("#netFlowInput"),
@@ -136,6 +146,8 @@ async function loadRemoteData() {
     if (payload.data?.quarters && Object.keys(payload.data.quarters).length) state.data = payload.data;
     // ได้คำตอบจาก server แล้ว (เอกสารว่าง = ผู้ใช้ใหม่ เริ่มกรอกได้) → บันทึก / ซิงก์ได้
     state.loaded = true;
+    // มูลค่า Bitcoin ตามราคาล่าสุดที่เครื่องนี้มี (ในหน่วยความจำ — ไปกับการบันทึกครั้งถัดไป · btc-value.js เขียน server เอง)
+    applyBtcValues();
     state.lastUpdated = new Date();
     elements.statusText.textContent =
       state.storageMode === "local-fallback"
@@ -147,6 +159,8 @@ async function loadRemoteData() {
   } finally {
     state.hydrating = false;
     render();
+    // ไตรมาสที่เปิดอาจไม่ใช่ไตรมาสที่ตามราคา → ช่องจำนวน BTC / ช่องบาท ตามเอกสารที่เพิ่งโหลด
+    updateFormMode();
   }
 }
 
@@ -164,35 +178,87 @@ async function persistRemoteData() {
       ? "กำลังบันทึกลง local fallback..."
       : "กำลังบันทึกลง database...";
   let resynced = false;
+  // GET (adopt) → PUT ทั้งรอบอยู่ในล็อกเอกสารของหน้า (PortfolioCore.withDocLock — btc-value.js เขียนเอกสารเดียวกัน
+  //   หลัง Load Latest Data · 2026-11-25) · ไม่มี PortfolioCore = ทำตรงแบบเดิม
+  const core = window.PortfolioCore;
+  const docLock = core && typeof core.withDocLock === "function" ? (task) => core.withDocLock(task) : (task) => task();
   try {
-    const sleeveBefore = JSON.stringify(state.data.foreignSleeve === undefined ? null : state.data.foreignSleeve);
-    await adoptServerAllocation();
-    const sleeveAfter = JSON.stringify(state.data.foreignSleeve === undefined ? null : state.data.foreignSleeve);
-    // เงินสดรอซื้อเพิ่งเปลี่ยนในหน้า PM (หรือมีซิงก์ค้าง) → ซิงก์แถวหุ้นต่างประเทศก่อนส่ง ไม่งั้นบันทึกค่าตามเงินสดเก่า
-    //   ฟอร์มแก้ไขยังเปิดอยู่ → ไม่ซิงก์ใต้ฟอร์ม จำไว้ทำตอนฟอร์มปิด
-    if (sleeveAfter !== sleeveBefore || state.pmSyncPending) {
-      if (state.editingId) state.pmSyncPending = true;
-      else resynced = syncForeignFromPM();
-    }
-    const response = await fetch("/api/portfolio", {
-      method: "PUT",
-      headers: { "content-type": "application/json", ...portfolioHeaders() },
-      body: JSON.stringify({ data: state.data })
+    await docLock(async () => {
+      const sleeveBefore = JSON.stringify(state.data.foreignSleeve === undefined ? null : state.data.foreignSleeve);
+      await adoptServerAllocation();
+      const sleeveAfter = JSON.stringify(state.data.foreignSleeve === undefined ? null : state.data.foreignSleeve);
+      // เงินสดรอซื้อเพิ่งเปลี่ยนในหน้า PM (หรือมีซิงก์ค้าง) → ซิงก์แถวหุ้นต่างประเทศก่อนส่ง ไม่งั้นบันทึกค่าตามเงินสดเก่า
+      //   ฟอร์มแก้ไขยังเปิดอยู่ → ไม่ซิงก์ใต้ฟอร์ม จำไว้ทำตอนฟอร์มปิด
+      if (sleeveAfter !== sleeveBefore || state.pmSyncPending) {
+        if (state.editingId) state.pmSyncPending = true;
+        else resynced = syncForeignFromPM();
+      }
+      // มูลค่า Bitcoin จากจำนวน × ราคาล่าสุด ก่อนส่งเสมอ (ไม่ส่งมูลค่าตามราคาเก่าทับค่าที่ btc-value.js เพิ่งเขียน)
+      if (typeof applyBtcValues === "function" && applyBtcValues()) resynced = true;
+      const response = await fetch("/api/portfolio", {
+        method: "PUT",
+        headers: { "content-type": "application/json", ...portfolioHeaders() },
+        body: JSON.stringify({ data: state.data })
+      });
+      const payload = await readJsonResponse(response);
+      if (!response.ok) throw new Error(payload.error || "Unable to save portfolio");
+      state.storageMode = payload.mode === "local-fallback" ? "local-fallback" : state.storageMode;
+      state.lastUpdated = new Date();
+      elements.statusText.textContent =
+        state.storageMode === "local-fallback"
+          ? "บันทึกแล้ว (Local fallback mode)"
+          : "บันทึกลง database แล้ว";
+      if (typeof patchSnapshotDoc === "function") patchSnapshotDoc(state.data);
     });
-    const payload = await readJsonResponse(response);
-    if (!response.ok) throw new Error(payload.error || "Unable to save portfolio");
-    state.storageMode = payload.mode === "local-fallback" ? "local-fallback" : state.storageMode;
-    state.lastUpdated = new Date();
-    elements.statusText.textContent =
-      state.storageMode === "local-fallback"
-        ? "บันทึกแล้ว (Local fallback mode)"
-        : "บันทึกลง database แล้ว";
   } catch (error) {
     elements.statusText.textContent = `บันทึกไม่สำเร็จ: ${error.message}`;
   } finally {
     state.saving = false;
     // ซิงก์ใหม่ระหว่างบันทึก = แถวในตารางเปลี่ยน → วาดทั้งหน้า
     if (resynced) render(); else renderSummary();
+  }
+}
+
+// ราคาที่ใช้ประเมิน Bitcoin บน server ใหม่กว่าของหน้านี้ (เครื่อง/แท็บอื่น หรือ btc-value.js ประเมินด้วยราคาที่โหลดทีหลัง)
+//   → ใส่ราคานั้น (btcPriceUsd · usdThb · btcValuedAt) ให้แถวเดียวกันในหน้านี้ (จับคู่ด้วย id · ไตรมาสที่ตามราคา)
+//   แล้ว applyBtcValues คิดจากจำนวน BTC ของหน้านี้ × ราคาที่ใหม่สุด (final review 2026-11-25: ไม่งั้นการบันทึกอะไรก็ตาม
+//   จากแท็บที่เปิดค้างไว้จะดึงมูลค่าบน server กลับเป็นราคาเก่า) · จำนวน / % ลงทุนจริงของหน้านี้คงเดิม · คืน true เมื่อรับราคาใหม่
+function adoptServerBtcPrices(latest) {
+  const BV = window.BtcValue;
+  if (!BV || !latest || !latest.quarters) return false;
+  const key = BV.liveKeyOf(state.data);
+  const mine = key ? state.data.quarters[key] : null;
+  const theirs = key ? latest.quarters[key] : null;
+  if (!mine || !Array.isArray(mine.assets) || !theirs || !Array.isArray(theirs.assets)) return false;
+  let changed = false;
+  mine.assets = mine.assets.map((asset) => {
+    if (!asset || asset.type !== "bitcoin" || !asset.id || !BV.isQty(asset.btcQty)) return asset;
+    const server = theirs.assets.find((row) => row && row.type === "bitcoin" && row.id === asset.id);
+    const serverAt = server ? Date.parse(server.btcValuedAt || "") : NaN;
+    if (!Number.isFinite(serverAt) || !(Number(server.btcPriceUsd) > 0) || !(Number(server.usdThb) > 0)) return asset;
+    const mineAt = Date.parse(asset.btcValuedAt || "");
+    if (Number.isFinite(mineAt) && mineAt >= serverAt) return asset;
+    changed = true;
+    return { ...asset, btcPriceUsd: Number(server.btcPriceUsd), usdThb: Number(server.usdThb), btcValuedAt: server.btcValuedAt };
+  });
+  return changed;
+}
+
+// บันทึกสำเร็จ → สำเนาเอกสารใน snapshot = ฉบับที่เพิ่งบันทึก (2026-11-25): หน้าอื่นในเครื่องนี้ที่อ่านสำเนา + btc-value.js
+//   (แถว BTC ในรายการหุ้น) เห็นจำนวน BTC / มูลค่าใหม่ทันที ไม่ต้องรอ Load Latest Data · แบบเดียวกับหน้า PM หลังเขียนแถว
+//   ยังไม่มี snapshot = ไม่สร้างขึ้นเอง · เป็นสำเนา (หน้านี้แก้ state.data ต่อในที่เดิม)
+function patchSnapshotDoc(doc) {
+  const api = window.PortfolioDataSnapshot;
+  if (!api || typeof api.read !== "function" || typeof api.write !== "function") return;
+  try {
+    const snap = api.read();
+    if (!snap || typeof snap !== "object") return;
+    const ps = snap.portfolioStatus && typeof snap.portfolioStatus === "object" ? { ...snap.portfolioStatus } : {};
+    delete ps.error;
+    ps.data = JSON.parse(JSON.stringify(doc));
+    api.write({ ...snap, portfolioStatus: ps });
+  } catch (error) {
+    // สำเนาในเครื่องอัปเดตไม่ได้ — server บันทึกแล้ว · Load Latest Data ครั้งถัดไปดึงฉบับใหม่เอง
   }
 }
 
@@ -212,6 +278,8 @@ async function adoptServerAllocation() {
     if (latest && Object.prototype.hasOwnProperty.call(latest, "allocationPlan")) state.data.allocationPlan = latest.allocationPlan;
     // เงินสดรอซื้อหุ้นต่างประเทศ (ช่อง cash หน้า AI Portfolio Manager) — หน้านี้ไม่ได้แก้เช่นกัน ใช้ฉบับบน server
     if (latest && Object.prototype.hasOwnProperty.call(latest, "foreignSleeve")) state.data.foreignSleeve = latest.foreignSleeve;
+    // ราคาที่ใช้ประเมิน Bitcoin บน server ใหม่กว่าในหน้านี้ → รับมา (จำนวน BTC ของหน้านี้คงเดิม)
+    if (typeof adoptServerBtcPrices === "function") adoptServerBtcPrices(latest);
   } catch (error) {
     // อ่านไม่ได้ — บันทึกต่อด้วยข้อมูลที่มี
   }
@@ -515,9 +583,11 @@ function renderRows() {
     const fromPM = isPMSyncedAsset(asset);
     const badge = fromPM ? '<a class="pm-source-badge gc-chip gc-chip-flat" href="/portfolio-manager">จาก AI Portfolio Manager</a>' : "";
     const deleteLock = fromPM ? ` disabled title="${escapeHtml(PM_DELETE_TITLE_TH)}"` : "";
+    // แถว Bitcoin ที่กรอกเป็นจำนวน: บอกจำนวน BTC ใต้ชื่อ (ล็อก Privacy = XXX BTC)
+    const qtyLine = asset.type === "bitcoin" && typeof asset.btcQty === "number" && isFinite(asset.btcQty) ? `<span class="btc-qty">${escapeHtml(formatBtcQty(asset.btcQty))}</span>` : "";
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td><div class="asset-name"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(TYPE_LABELS[asset.type] || asset.type)}</span>${badge}</div></td>
+      <td><div class="asset-name"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(TYPE_LABELS[asset.type] || asset.type)}</span>${qtyLine}${badge}</div></td>
       <td>${formatMoney(metrics.gross)}</td>
       <td>${formatNetFlow(asset.netFlow)}</td>
       <td>${formatPercent(metrics.portfolioPercent)}</td>
@@ -847,7 +917,7 @@ function escapeHtml(value) {
 function statusToneOf(text) {
   var s = String(text == null ? "" : text);
   if (/ไม่สำเร็จ|^กรุณากรอก/.test(s)) return "qe-st-bad";
-  if (s.indexOf(PM_QUARTER_ENDED_TH) >= 0 || s === PM_FOREIGN_LOCKED_TH) return "qe-st-warn";
+  if (s.indexOf(PM_QUARTER_ENDED_TH) >= 0 || s === PM_FOREIGN_LOCKED_TH || s === BTC_NO_PRICE_TH || s === BTC_NO_FX_TH) return "qe-st-warn";
   if (/^(บันทึก|โหลดข้อมูล)[^·]*แล้ว/.test(s)) return "qe-st-ok";
   return "";
 }
@@ -898,6 +968,8 @@ function privacyLocked() {
 // ข้อความในช่องเงินของรายการ — ตัวเดียวกับที่ editAsset ใส่ในช่อง (field "value" = มูลค่า · "netFlow" = เงินเติม/ถอน)
 function moneyFieldText(asset, field) {
   if (field === "value") return String(asset.manualValue || "");
+  // จำนวน BTC = ข้อมูลเงินเหมือนกัน (บอกขนาดพอร์ต) · ไม่มีจำนวน = ว่าง
+  if (field === "btcQty") return typeof asset.btcQty === "number" && isFinite(asset.btcQty) && asset.btcQty >= 0 ? String(asset.btcQty) : "";
   return isFinite(Number(asset.netFlow)) && asset.netFlow !== null && asset.netFlow !== "" ? String(asset.netFlow) : "0";
 }
 
@@ -916,7 +988,7 @@ function applyMoneyPrivacy() {
   var assets = state.editingId ? currentQuarter().assets : [];
   for (var i = 0; i < assets.length; i += 1) if (assets[i] && assets[i].id === state.editingId) asset = assets[i];
   var hide = Boolean(asset) && privacyLocked();
-  var fields = [[elements.valueInput, "value", "250000"], [elements.netFlowInput, "netFlow", "0"]];
+  var fields = [[elements.valueInput, "value", "250000"], [elements.netFlowInput, "netFlow", "0"], [elements.btcQtyInput, "btcQty", "0.5"]];
   for (var j = 0; j < fields.length; j += 1) {
     var input = fields[j][0];
     if (!input) continue;
@@ -928,13 +1000,120 @@ function applyMoneyPrivacy() {
 }
 
 // privacy.js ยิง "portfolio-privacy-changed" บน document ตอนล็อก/ปลดล็อก
+//   จำนวน BTC ในตารางไม่ใช่ ฿ (privacy.js ไม่ซ่อนให้) → วาดแถวใหม่ให้เป็น "XXX BTC" / ตัวเลขจริง
 function onEditorPrivacyChanged() {
   applyMoneyPrivacy();
+  renderRows();
+  renderBtcNote();
+}
+
+// ---------------------------------------------------------------- Bitcoin เป็นจำนวน BTC (btc-value.js)
+// แถวที่กำลังแก้ในฟอร์ม (ไตรมาสที่เปิดอยู่) · ไม่ได้แก้ = null
+function editingAsset() {
+  if (!state.editingId) return null;
+  return currentQuarter().assets.find((asset) => asset && asset.id === state.editingId) || null;
+}
+
+// ราคา BTC ล่าสุดที่เครื่องนี้มี: ราคาจาก Load Latest Data + USD/THB ที่แคชไว้ · ขาดอย่างใดอย่างหนึ่ง = null
+function btcLive() {
+  const BV = window.BtcValue;
+  if (!BV) return null;
+  let snapshot = null;
+  try {
+    snapshot = window.PortfolioDataSnapshot && typeof window.PortfolioDataSnapshot.read === "function" ? window.PortfolioDataSnapshot.read() : null;
+  } catch (error) {
+    snapshot = null;
+  }
+  const price = BV.priceOf(snapshot);
+  const fx = BV.lastFx();
+  return price && fx ? { usd: price.usd, fx, at: price.at } : null;
+}
+
+// ทำไมยังคิดมูลค่า Bitcoin ไม่ได้: มีราคา BTC แต่ไม่มี USD/THB = เรื่องเครือข่าย (Load Latest Data ไม่ได้ดึงอัตราแลกเปลี่ยน)
+//   · อย่างอื่น = ยังไม่มีราคา BTC (ต้อง Load Latest Data)
+function btcMissingText() {
+  const BV = window.BtcValue;
+  let snapshot = null;
+  try {
+    snapshot = window.PortfolioDataSnapshot && typeof window.PortfolioDataSnapshot.read === "function" ? window.PortfolioDataSnapshot.read() : null;
+  } catch (error) {
+    snapshot = null;
+  }
+  return BV && BV.priceOf(snapshot) && !BV.lastFx() ? BTC_NO_FX_TH : BTC_NO_PRICE_TH;
+}
+
+// ช่องจำนวน BTC แทนช่องบาท: bitcoin + ไตรมาสที่เปิด = ไตรมาสที่ตามราคา (ไตรมาสล่าสุดที่ยังไม่จบ) · ไม่มีโมดูล = แบบเดิม
+function isBtcQtyMode(type) {
+  const BV = window.BtcValue;
+  return type === "bitcoin" && Boolean(BV) && BV.liveKeyOf(state.data) === state.data.currentQuarter;
+}
+
+// มูลค่าแถว bitcoin ของไตรมาสที่ตามราคา = จำนวน × ราคาที่ใหม่สุด (ในหน่วยความจำ ไม่บันทึกเอง) · คืน true เมื่อเปลี่ยน
+function applyBtcValues() {
+  const BV = window.BtcValue;
+  if (!BV) return false;
+  const result = BV.applyToDoc(state.data, btcLive());
+  if (!result.changes.length) return false;
+  state.data = result.ps;
+  return true;
+}
+
+// "0.5 BTC" (สูงสุด 8 ทศนิยม ตัดศูนย์ท้าย) · ล็อก Privacy → "XXX BTC"
+function formatBtcQty(qty) {
+  if (privacyLocked()) return "XXX BTC";
+  const n = Number(qty);
+  if (!Number.isFinite(n)) return "- BTC";
+  return `${n.toFixed(8).replace(/\.?0+$/, "")} BTC`;
+}
+
+// โน้ตใต้ช่องจำนวน: ≈ มูลค่าบาท · ราคาที่ใช้ · เวลาของราคา (฿ ถูก privacy.js ซ่อนเอง · $ และอัตราแลกเปลี่ยนเป็นข้อมูลตลาด)
+function renderBtcNote() {
+  const note = elements.btcQtyNote;
+  if (!note) return;
+  const BV = window.BtcValue;
+  if (!BV || !isBtcQtyMode(elements.typeInput.value)) {
+    note.textContent = "";
+    return;
+  }
+  const live = btcLive();
+  const raw = String(formMoneyText(elements.btcQtyInput, "btcQty")).trim();
+  const qty = raw === "" ? NaN : Number(raw);
+  const row = Object.assign({}, editingAsset() || {}, { btcQty: qty });
+  const valued = Number.isFinite(qty) && qty >= 0 ? BV.valueOfRow(row, live) : null;
+  const price = valued || live;
+  if (!price) {
+    note.textContent = btcMissingText();
+    return;
+  }
+  const when = new Date(price.at).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  // อัตราแลกเปลี่ยนเขียนแบบ "USD/THB 34.00" — ถ้าเป็น "34.00 บาท" privacy.js จะนับเป็นเงินแล้วซ่อนเป็น XXX
+  note.textContent = `${valued ? `≈ ${formatMoney(valued.value)} · ` : ""}BTC $${Math.round(price.usd).toLocaleString("en-US")} · USD/THB ${price.fx.toFixed(2)} · ราคา ณ ${when}`;
 }
 
 function readAssetFromForm() {
   const type = elements.typeInput.value;
-  const manualValue = Number(formMoneyText(elements.valueInput, "value"));
+  let manualValue;
+  let btc = null;
+  if (isBtcQtyMode(type)) {
+    // Bitcoin: จำนวน BTC (ยอดรวมที่คาดว่าจะมี) × ราคาที่ใหม่สุด (ราคาใน snapshot หรือราคาที่แถวนี้เก็บไว้)
+    const rawQty = String(formMoneyText(elements.btcQtyInput, "btcQty")).trim();
+    const qty = rawQty === "" ? NaN : Number(rawQty);
+    if (!Number.isFinite(qty) || qty < 0) {
+      elements.statusText.textContent = BTC_QTY_INVALID_TH;
+      return null;
+    }
+    const valued = window.BtcValue.valueOfRow(Object.assign({}, editingAsset() || {}, { btcQty: qty }), btcLive());
+    if (!valued) {
+      elements.statusText.textContent = btcMissingText();
+      // อัตราแลกเปลี่ยนอาจกลับมาดึงได้แล้ว — ลองอีกครั้ง (ได้แล้วโน้ตใต้ช่องแสดงมูลค่า กดบันทึกซ้ำได้)
+      if (typeof window.BtcValue.fx === "function") window.BtcValue.fx().then(() => renderBtcNote(), () => {});
+      return null;
+    }
+    manualValue = valued.value;
+    btc = { btcQty: qty, btcPriceUsd: valued.usd, usdThb: valued.fx, btcValuedAt: valued.at };
+  } else {
+    manualValue = Number(formMoneyText(elements.valueInput, "value"));
+  }
   const investedPercent = clamp(Number(elements.investedPercentInput.value), 0, 100);
   if (!Number.isFinite(manualValue) || manualValue < 0) {
     elements.statusText.textContent = "กรุณากรอกมูลค่าปัจจุบันเป็นบาทให้ถูกต้อง";
@@ -946,7 +1125,7 @@ function readAssetFromForm() {
     elements.statusText.textContent = "กรุณากรอกเงินเติม/ถอนเป็นตัวเลข (ติดลบได้ เว้นว่าง = 0)";
     return null;
   }
-  return { type, name: elements.nameInput.value.trim() || TYPE_LABELS[type], manualValue, investedPercent: type === "cash" ? 0 : investedPercent, snapshotValue: manualValue, netFlow };
+  return { type, name: elements.nameInput.value.trim() || TYPE_LABELS[type], manualValue, investedPercent: type === "cash" ? 0 : investedPercent, snapshotValue: manualValue, netFlow, ...(btc || {}) };
 }
 
 function handleFormSubmit(event) {
@@ -969,7 +1148,12 @@ function handleFormSubmit(event) {
   if (state.editingId) {
     // แถวที่ซิงก์: มูลค่ารวม / % ลงทุนจริง / ประเภท คงค่าจาก PM — รับเฉพาะชื่อและเงินเติม/ถอน
     const changes = lockedRow ? { name: elements.nameInput.value.trim() || TYPE_LABELS[existing.type], netFlow: asset.netFlow } : asset;
-    if (index >= 0) quarter.assets[index] = { ...existing, ...changes, id: state.editingId, updatedAt: new Date().toISOString() };
+    if (index >= 0) {
+      const row = { ...existing, ...changes, id: state.editingId, updatedAt: new Date().toISOString() };
+      // เปลี่ยนจาก Bitcoin เป็นประเภทอื่น → ไม่พกจำนวน/ราคา BTC ติดไป
+      if (row.type !== "bitcoin") { delete row.btcQty; delete row.btcPriceUsd; delete row.usdThb; delete row.btcValuedAt; }
+      quarter.assets[index] = row;
+    }
   } else {
     quarter.assets.push({ ...asset, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: null });
   }
@@ -983,6 +1167,7 @@ function editAsset(id) {
   elements.typeInput.value = asset.type;
   elements.nameInput.value = asset.name || "";
   elements.valueInput.value = asset.manualValue || "";
+  if (elements.btcQtyInput) elements.btcQtyInput.value = moneyFieldText(asset, "btcQty");
   elements.investedPercentInput.value = asset.type === "cash" ? "0" : asset.investedPercent;
   if (elements.netFlowInput) elements.netFlowInput.value = Number.isFinite(Number(asset.netFlow)) && asset.netFlow !== null && asset.netFlow !== "" ? String(asset.netFlow) : "0";
   elements.formTitle.textContent = "แก้ไขรายการพอร์ต";
@@ -1033,6 +1218,8 @@ async function saveSnapshot() {
   }
   // แช่ค่าหุ้นต่างประเทศล่าสุดจากหน้า PM เป็นประวัติของไตรมาสนี้ (โหมด editor = ไม่แตะ)
   syncForeignFromPM();
+  // มูลค่า Bitcoin ตามราคาล่าสุดก่อนแช่
+  applyBtcValues();
   const quarter = currentQuarter();
   for (const asset of quarter.assets) asset.snapshotValue = Number(asset.manualValue) || 0;
   quarter.savedAt = new Date().toISOString();
@@ -1085,6 +1272,10 @@ function copyFromPreviousQuarter() {
   const now = new Date().toISOString();
   for (const asset of toCopy) {
     const manualValue = Number(asset.manualValue) || 0;
+    // Bitcoin ที่กรอกเป็นจำนวน: คัดลอกจำนวน + ราคาที่ใช้ไปด้วย → ไตรมาสใหม่ตามราคาต่อได้ทันที
+    const btc = asset.type === "bitcoin" && typeof asset.btcQty === "number" && isFinite(asset.btcQty) && asset.btcQty >= 0
+      ? { btcQty: asset.btcQty, btcPriceUsd: asset.btcPriceUsd, usdThb: asset.usdThb, btcValuedAt: asset.btcValuedAt }
+      : {};
     target.assets.push({
       id: crypto.randomUUID(),
       type: asset.type,
@@ -1095,11 +1286,13 @@ function copyFromPreviousQuarter() {
       netFlow: 0,
       createdAt: now,
       updatedAt: null,
-      copiedFrom: previous.key
+      copiedFrom: previous.key,
+      ...btc
     });
   }
   resetForm();
   syncForeignFromPM();
+  applyBtcValues();
   render();
   saveData();
   elements.quarterStatus.textContent = `คัดลอก ${toCopy.length} รายการจาก ${previous.key} มา ${target.key} แล้ว${skipped ? ` (ข้าม ${skipped} รายการซ้ำ)` : ""} — ปรับมูลค่าแล้วกด “บันทึกไตรมาสนี้”`;
@@ -1119,6 +1312,11 @@ function updateFormMode() {
   elements.investedPercentField.classList.toggle("is-hidden", isCash);
   elements.investedPercentInput.required = !isCash;
   if (isCash) elements.investedPercentInput.value = "0";
+  // Bitcoin ในไตรมาสที่ตามราคา: ช่องจำนวน BTC แทนช่องบาท
+  const btcMode = isBtcQtyMode(elements.typeInput.value);
+  if (elements.manualValueField) elements.manualValueField.classList.toggle("is-hidden", btcMode);
+  if (elements.btcQtyField) elements.btcQtyField.classList.toggle("is-hidden", !btcMode);
+  renderBtcNote();
 }
 
 function setActiveView(view) {
@@ -1163,6 +1361,16 @@ if (growthModeBox) growthModeBox.addEventListener("click", (event) => {
 
 // privacy.js ยิง "portfolio-privacy-changed" บน document → ช่องเงินของฟอร์มแก้ไขตามล็อก
 document.addEventListener("portfolio-privacy-changed", onEditorPrivacyChanged);
+
+// Bitcoin เป็นจำนวน: พิมพ์จำนวน → โน้ตมูลค่าบาท · ราคาใหม่ (Load Latest Data / btc-value.js เขียน snapshot) หรือ USD/THB มาถึง
+//   → มูลค่าในหน่วยความจำตามราคา + วาดใหม่ (ไม่บันทึกเอง — btc-value.js เขียน server · การบันทึกครั้งถัดไปพกไปด้วย)
+function onEditorSnapshot() {
+  if (applyBtcValues()) render();
+  renderBtcNote();
+}
+if (elements.btcQtyInput) elements.btcQtyInput.addEventListener("input", renderBtcNote);
+window.addEventListener("portfolio-data-snapshot", onEditorSnapshot);
+if (window.BtcValue && typeof window.BtcValue.fx === "function") window.BtcValue.fx().then(onEditorSnapshot, () => {});
 
 setDefaultNewQuarterInputs();
 updateFormMode();

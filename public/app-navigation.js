@@ -791,8 +791,9 @@
     // AI Portfolio Manager values follow the daily close (holding-revalue.js) — on every page, so Load
     // Latest Data anywhere moves them once and every page reads the same value. It runs by itself after
     // load / after each new snapshot, waits for window.PortfolioCore, and is a no-op when nothing is due.
-    ensureScript("/portfolio-core.js?v=20261124-core-5");
+    ensureScript("/portfolio-core.js?v=20261125-core-6");
     ensureScript("/holding-revalue.js?v=20261124-hr-1");
+    ensureScript("/btc-value.js?v=20261125-btc-1");
 
     const activePath = window.location.pathname;
 

@@ -226,6 +226,30 @@ function countWrites(I, onWrite) {
   Object.defineProperty(el, "innerHTML", { configurable: true, get: function () { return h; }, set: function (v) { h = String(v); onWrite(); } });
   return el;
 }
+// 2026-11-25 · btc-value.js เขียนเอกสารเดียวกัน → บันทึกผ่าน PortfolioCore.withDocLock
+//   ตัวเขียนอื่นในหน้าเดียวกันถือล็อกอยู่ = ยังไม่ GET/PUT · ปล่อยแล้วบันทึกตามปกติ
+function docLockSection() {
+  console.log("\n[doc lock] บันทึกรอล็อกเอกสารของหน้า");
+  var L = boot();
+  var chain = Promise.resolve();
+  L.win.PortfolioCore = { withDocLock: function (task) { var r = chain.then(function () { return task(); }, function () { return task(); }); chain = r.catch(function () {}); return r; } };
+  var release = null, g0 = 0;
+  return flush(80).then(function () {
+    L.win.PortfolioCore.withDocLock(function () { return new Promise(function (r) { release = r; }); });
+    g0 = L.getsCount();
+    L.win.AssetAllocationPage.assign("bitcoin::Bitcoin", "long");
+    L.win.AssetAllocationPage.persistNow();
+    return flush(80);
+  }).then(function () {
+    var whileGets = L.getsCount() - g0, whilePuts = L.puts.length;
+    release();
+    return flush(90).then(function () {
+      t("ตัวเขียนอื่นถือล็อกเอกสาร → ยังไม่ GET/PUT · ปล่อยแล้วบันทึก (GET → PUT) ตามปกติ",
+        whileGets === 0 && whilePuts === 0 && L.puts.length === 1 && L.getsCount() - g0 >= 1, [whileGets, whilePuts, L.puts.length, L.getsCount() - g0]);
+    });
+  });
+}
+
 function holdingsDeferSection() {
   console.log("\n[11b] holdings มาทีหลังขณะผู้ใช้พิมพ์ในส่วนนี้ — ห้ามวาดทับ");
   var EXTRA = ["portfolio-core.js", "foreign-sleeve.js"];
@@ -772,7 +796,7 @@ function holdingsDeferSection() {
               t("กด 'เอาของฉันทับ' แล้วบันทึกได้จริง", D.puts.length === 1, D.puts.length + " PUT");
               t("และยังรักษา quarters ไว้ครบ", D.puts.length === 1 && JSON.stringify(D.puts[0].data.quarters) === QUARTERS_JSON);
 
-              return pmSection().then(holdingsDeferSection).then(function () {
+              return pmSection().then(holdingsDeferSection).then(docLockSection).then(function () {
                 console.log("\n" + (pass + fail) + " checks · " + pass + " passed · " + fail + " failed");
                 process.exit(fail ? 1 : 0);
               });

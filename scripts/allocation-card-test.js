@@ -339,7 +339,7 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
   // pm-foreign-sleeve Task 3: bump หน้า position (pp-14) + หน้าการ์ด (ac-2) · เอนจินการ์ด ไม่ได้แก้ คงเดิม
   //   final fix wave: หน้า position pp-15 (บรรทัดที่มาของผลตอบแทน) · CSS pp-14 (.pp-src)
   //   editor-follows-pm Task 1: หน้า position pp-16 (ผลตอบแทนจากเอกสารที่แปลงแล้ว · เอาหมายเหตุที่มาออก)
-  t("portfolio.html: acRoot sits between ppRoot and aaRoot · scripts engine→page after position-page · page pp-17 / card page ac-3 (engine ac-1) · css pp-15 (glass cards)", HTML.indexOf('id="acRoot"') > HTML.indexOf('id="ppRoot"') && HTML.indexOf('id="acRoot"') < HTML.indexOf('id="aaRoot"') && /allocation-card-engine\.js\?v=20261107-ac-1"[\s\S]*allocation-card-page\.js\?v=20261122-ac-3"/.test(HTML) && HTML.indexOf("portfolio-position-page.js") < HTML.indexOf("allocation-card-engine.js") && /portfolio-position\.css\?v=20261122-pp-15"/.test(HTML) && /portfolio-position-page\.js\?v=20261122-pp-17"/.test(HTML));
+  t("portfolio.html: acRoot sits between ppRoot and aaRoot · scripts engine→page after position-page · page pp-17 / card page ac-4 (engine ac-1) · css pp-15 (glass cards)", HTML.indexOf('id="acRoot"') > HTML.indexOf('id="ppRoot"') && HTML.indexOf('id="acRoot"') < HTML.indexOf('id="aaRoot"') && /allocation-card-engine\.js\?v=20261107-ac-1"[\s\S]*allocation-card-page\.js\?v=20261125-ac-4"/.test(HTML) && HTML.indexOf("portfolio-position-page.js") < HTML.indexOf("allocation-card-engine.js") && /portfolio-position\.css\?v=20261122-pp-15"/.test(HTML) && /portfolio-position-page\.js\?v=20261122-pp-17"/.test(HTML));
   await flush(80);
   t("position page exposes last {R,data} and dispatched portfolio-position-rendered", !!W.PortfolioPositionPage.last && W.PortfolioPositionPage.last.R.available === true && dispatched.some(function (e) { return e.type === "portfolio-position-rendered"; }));
   t("card rendered from the same R: title + wealth equals the hero's ความมั่งคั่งรวม", /<h2 class="ac-title">Asset allocation<\/h2>/.test(html()) && /ความมั่งคั่งรวม ฿25\.0 ล้าน · 2026-Q3/.test(html()) && ppHtml().indexOf("25,000,000") >= 0);
@@ -778,6 +778,21 @@ function underPct(bh) { var m = /<div class="ac-lbl"><b>[^<]*<\/b>([0-9]+)% ข�
     heroTotal(PQI) === "฿24,000,000" && srcLabels(PQI) === 0 && footOf(PQI) === FOOT_EDITOR && PQI.win.PortfolioPositionPage.last.foreignFromPM === false &&
     /ไตรมาส <b>2026-Q2<\/b>/.test(ppOf(PQI)) && (ppOf(PQI) + PQI.html()).indexOf("AI Portfolio Manager") < 0,
     [heroTotal(PQI), srcLabels(PQI), footOf(PQI)]);
+  // 2026-11-25 · btc-value.js เขียนเอกสารเดียวกัน → บันทึกกรอบเงินสดผ่าน PortfolioCore.withDocLock
+  //   ตัวเขียนอื่นในหน้าเดียวกันถือล็อกอยู่ = ยังไม่ GET · ปล่อยแล้ว GET → PUT ตามปกติ
+  var LKI = boot(); await flush(80);
+  var lkChain = Promise.resolve();
+  LKI.win.PortfolioCore = { withDocLock: function (task) { var r = lkChain.then(function () { return task(); }, function () { return task(); }); lkChain = r.catch(function () {}); return r; } };
+  var lkRelease = null;
+  LKI.win.PortfolioCore.withDocLock(function () { return new Promise(function (r) { lkRelease = r; }); });
+  LKI.click("data-ac-settings", "1"); LKI.setValue("min", "1"); LKI.setValue("max", "3");
+  var lkFrom = LKI.fetches.length;
+  LKI.click("data-ac-save", "1"); await flush(60);
+  var lkWhile = LKI.fetches.slice(lkFrom).filter(function (u) { return u === "/api/portfolio"; }).length;
+  lkRelease(); await flush(80);
+  t("cash band save waits while another writer holds the document lock (no GET) · then GET → PUT",
+    lkWhile === 0 && LKI.puts.length === 1 && LKI.fetches.slice(lkFrom).filter(function (u) { return u === "/api/portfolio"; }).length === 2,
+    [lkWhile, LKI.puts.length, LKI.fetches.slice(lkFrom)]);
   t("CSS: .pp-src muted like .ac-foot (var(--mc-muted))", /\.pp-src \{[^}]*color: var\(--mc-muted\)/.test(css) && /\.ac-foot \{[^}]*color: var\(--mc-muted\)/.test(css));
   // ซอร์ส: ES5 · ไม่มีคำแนะนำซื้อขาย (รวมคอมเมนต์) · หมายเหตุที่มาของผลตอบแทนถูกถอดออกหมด
   var ppSrc = read("portfolio-position-page.js"), acSrc = read("allocation-card-page.js");

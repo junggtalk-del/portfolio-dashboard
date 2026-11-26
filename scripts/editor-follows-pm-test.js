@@ -64,9 +64,11 @@ var FUNCS = [
   // final fix wave: [1] state.loaded (โหลดใหม่แทนรับคีย์) · [4] รอบดึงที่ค้าง (saveSnapshot รอ)
   "loadRemoteData", "reloadRemoteData", "pullPMHoldings", "refreshQuotes",
   // glass batch 2 Task 1: Privacy Lock กับช่องเงินของฟอร์ม (editAsset / resetForm / readAssetFromForm เรียกใช้)
-  "privacyLocked", "moneyFieldText", "formMoneyText", "applyMoneyPrivacy"
+  "privacyLocked", "moneyFieldText", "formMoneyText", "applyMoneyPrivacy",
+  // 2026-11-25 Bitcoin เป็นจำนวน BTC (sandbox นี้ไม่มี window.BtcValue = พฤติกรรมเดิมทุกอย่าง — ช่องบาท · ไม่คำนวณใหม่)
+  "editingAsset", "btcLive", "btcMissingText", "isBtcQtyMode", "applyBtcValues", "formatBtcQty", "renderBtcNote", "adoptServerBtcPrices"
 ];
-var CONSTS = ["TYPE_LABELS", "PM_SYNC_STATUS_TH", "PM_FOREIGN_LOCKED_TH", "PM_DELETE_TITLE_TH", "PM_QUARTER_ENDED_TH", "NOT_LOADED_TH"];
+var CONSTS = ["TYPE_LABELS", "PM_SYNC_STATUS_TH", "PM_FOREIGN_LOCKED_TH", "PM_DELETE_TITLE_TH", "PM_QUARTER_ENDED_TH", "NOT_LOADED_TH", "BTC_NO_PRICE_TH", "BTC_NO_FX_TH", "BTC_QTY_INVALID_TH"];
 var CODE;
 try {
   CODE = CONSTS.map(extractConst).join("\n") + "\n" + FUNCS.map(extract).join("\n");
@@ -263,10 +265,10 @@ function moneyInAttr(html) { return /(?:title|aria-label)="[^"]*฿/.test(html);
 (async function main() {
   // ================= static =================
   console.log("== index.html / styles.css ==");
-  var iFs = HTML.indexOf('/foreign-sleeve.js?v=20261109-fs-4"'), iApp = HTML.indexOf('/app.js?v=20261122-app-15"');
-  t("index.html โหลด foreign-sleeve.js?v=20261109-fs-4 ก่อน app.js?v=20261122-app-15", iFs > 0 && iApp > 0 && iFs < iApp, iFs + " / " + iApp);
+  var iFs = HTML.indexOf('/foreign-sleeve.js?v=20261109-fs-4"'), iApp = HTML.indexOf('/app.js?v=20261125-app-16"');
+  t("index.html โหลด foreign-sleeve.js?v=20261109-fs-4 ก่อน app.js?v=20261125-app-16", iFs > 0 && iApp > 0 && iFs < iApp, iFs + " / " + iApp);
   t("index.html มีบรรทัดอธิบาย #pmLockNote (ซ่อนไว้ก่อน) ในฟอร์ม", /id="pmLockNote"/.test(HTML) && /class="[^"]*is-hidden[^"]*"[^>]*id="pmLockNote"|id="pmLockNote"[^>]*class="[^"]*is-hidden/.test(HTML));
-  t("styles.css bump เป็น 20261122-qe-6 และมีสไตล์ป้าย .pm-source-badge", /\/styles\.css\?v=20261122-qe-6"/.test(HTML) && CSS.indexOf(".pm-source-badge") >= 0);
+  t("styles.css bump เป็น 20261126-qe-7 และมีสไตล์ป้าย .pm-source-badge", /\/styles\.css\?v=20261126-qe-7"/.test(HTML) && CSS.indexOf(".pm-source-badge") >= 0);
   var banned = ["ควรซื้อ", "ควรขาย", "น่าซื้อ", "น่าขาย", "น่าเข้า", "แนะนำซื้อ", "จุดเข้า", "ตัดขาดทุน"].filter(function (w) { return SRC.indexOf(w) >= 0 || HTML.indexOf(w) >= 0; });
   t("app.js / index.html ไม่มีคำแนะนำซื้อขาย", banned.length === 0, banned.join(","));
 

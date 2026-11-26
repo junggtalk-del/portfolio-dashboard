@@ -217,6 +217,14 @@
   // ---------------------------------------------------------------- save
   function thError(msg) { var e = new Error(msg); e.acTh = true; return e; }
 
+  // GET → PUT ของ /api/portfolio ผ่านล็อกเอกสารของหน้า (PortfolioCore.withDocLock — 2026-11-25:
+  //   btc-value.js เขียนมูลค่า Bitcoin ลงเอกสารเดียวกันหลัง Load Latest Data) · ไม่มี PortfolioCore = ทำตรงแบบเดิม
+  function docLock(task) {
+    var core = window.PortfolioCore;
+    if (core && typeof core.withDocLock === "function") return core.withDocLock(task);
+    try { return task(); } catch (e) { return Promise.reject(e); }
+  }
+
   // GET → สำเนาทุกคีย์ → ตั้ง allocationPlan → PUT เสมอ (ไม่ทับ quarters / allocation ที่อีกแท็บเพิ่งบันทึก)
   // plan = { cashBand: { min, max } (บาท) } · form = ฟอร์มที่ต้องปิดเมื่อจบ (null = ไม่ได้มาจากฟอร์ม: ลองใหม่ / ร่างตอนเปิดหน้า)
   function persistPlan(plan, form) {
@@ -232,26 +240,28 @@
     state.saveState = "saving";
     state.saveError = null;
     render();
-    var p;
-    try { p = window.fetch("/api/portfolio", { cache: "no-store" }); }
-    catch (e) { p = Promise.reject(e); }
-    p.then(function (r) {
-      if (!r || !r.ok) throw thError("อ่านข้อมูลพอร์ตก่อนบันทึกไม่ได้ (HTTP " + (r ? r.status : "?") + ")");
-      return r.json();
-    }).then(function (j) {
-      var data = j && (j.data || (j.quarters ? j : null));
-      // กันเคสร้ายแรง: server ตอบเอกสารที่ไม่มีไตรมาส → PUT ทับจะลบพอร์ตทั้งก้อน
-      if (!data || !data.quarters || !Object.keys(data.quarters).length) throw thError(EMPTY_SERVER_TH);
-      var next = {};
-      Object.keys(data).forEach(function (k) { next[k] = data[k]; });   // quarters / allocation คงเดิมทุก byte
-      next.allocationPlan = mine;
-      return window.fetch("/api/portfolio", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ data: next })
-      }).then(function (r2) {
-        if (!r2 || !r2.ok) throw thError("server ตอบ HTTP " + (r2 ? r2.status : "?"));
-        return next;
+    docLock(function () {
+      var p;
+      try { p = window.fetch("/api/portfolio", { cache: "no-store" }); }
+      catch (e) { p = Promise.reject(e); }
+      return p.then(function (r) {
+        if (!r || !r.ok) throw thError("อ่านข้อมูลพอร์ตก่อนบันทึกไม่ได้ (HTTP " + (r ? r.status : "?") + ")");
+        return r.json();
+      }).then(function (j) {
+        var data = j && (j.data || (j.quarters ? j : null));
+        // กันเคสร้ายแรง: server ตอบเอกสารที่ไม่มีไตรมาส → PUT ทับจะลบพอร์ตทั้งก้อน
+        if (!data || !data.quarters || !Object.keys(data.quarters).length) throw thError(EMPTY_SERVER_TH);
+        var next = {};
+        Object.keys(data).forEach(function (k) { next[k] = data[k]; });   // quarters / allocation คงเดิมทุก byte
+        next.allocationPlan = mine;
+        return window.fetch("/api/portfolio", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ data: next })
+        }).then(function (r2) {
+          if (!r2 || !r2.ok) throw thError("server ตอบ HTTP " + (r2 ? r2.status : "?"));
+          return next;
+        });
       });
     }).then(function (next) { onPersisted(next, form); }, function (e) { onPersistFailed(mine, form, e); });
   }

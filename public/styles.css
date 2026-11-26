@@ -521,10 +521,15 @@ table {
   font-weight: 800;
 }
 
+/* ปุ่มท้ายแถว (แก้ไข / ×) อยู่บน <td> โดยตรง → ต้องคงเป็น table-cell: display:flex ทำให้เซลล์ไม่ยืดตามความสูงแถว
+   แล้วเส้นแบ่งแถวของเซลล์นี้เหลื่อมจากแถว (เห็นชัดเมื่อแถวมี 3 บรรทัด — 2026-11-26) · ปุ่มเป็น inline-flex อยู่แล้ว เรียงแถวเดียวด้วย nowrap */
 .row-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.row-actions > * + * {
+  margin-left: 8px;
 }
 
 .pie-layout {

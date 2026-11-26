@@ -271,6 +271,14 @@
     render();
   }
 
+  // GET → PUT ของ /api/portfolio ผ่านล็อกเอกสารของหน้า (PortfolioCore.withDocLock — 2026-11-25:
+  //   btc-value.js เขียนมูลค่า Bitcoin ลงเอกสารเดียวกันหลัง Load Latest Data) · ไม่มี PortfolioCore = ทำตรงแบบเดิม
+  function docLock(task) {
+    var core = window.PortfolioCore;
+    if (core && typeof core.withDocLock === "function") return core.withDocLock(task);
+    try { return task(); } catch (e) { return Promise.reject(e); }
+  }
+
   // GET → merge → PUT เสมอ เพื่อไม่ทับ quarters ที่อีกแท็บเพิ่งบันทึก
   // และเพื่อไม่ทับ allocation ที่ใหม่กว่าของเราเอง
   function persist() {
@@ -281,7 +289,7 @@
     var mine = AA().normalizeAllocation(allocation);
     mine.updatedAt = new Date().toISOString();
 
-    window.fetch("/api/portfolio", { cache: "no-store" })
+    docLock(function () { return window.fetch("/api/portfolio", { cache: "no-store" })
       .then(function (r) {
         if (!r || !r.ok) throw new Error("อ่านข้อมูลก่อนบันทึกไม่สำเร็จ (HTTP " + (r ? r.status : "?") + ")");
         return r.json();
@@ -326,7 +334,7 @@
             }
           } catch (e) {}
         });
-      })
+      }); })
       .catch(function (e) {
         writeDraft();
         setSaveState("failed", (e && e.message) || "บันทึกไม่สำเร็จ");

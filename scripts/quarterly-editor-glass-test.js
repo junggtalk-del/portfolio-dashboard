@@ -60,11 +60,11 @@ var TONES = ["gc-calm", "gc-normal", "gc-warning", "gc-danger", "gc-neutral"];
 
 // ================= static: index.html =================
 console.log("== index.html: stylesheet order · fonts · versions ==");
-var iTheme = HTML.indexOf("/theme.css?v="), iGc = HTML.indexOf('/glass-cards.css?v=20261121-gc-2"'), iPage = HTML.indexOf('/styles.css?v=20261122-qe-6"');
-t("glass-cards.css?v=20261121-gc-2 loaded exactly once · after theme.css · before styles.css?v=20261122-qe-6",
+var iTheme = HTML.indexOf("/theme.css?v="), iGc = HTML.indexOf('/glass-cards.css?v=20261121-gc-2"'), iPage = HTML.indexOf('/styles.css?v=20261126-qe-7"');
+t("glass-cards.css?v=20261121-gc-2 loaded exactly once · after theme.css · before styles.css?v=20261126-qe-7",
   HTML.split("/glass-cards.css").length === 2 && iTheme > 0 && iTheme < iGc && iGc < iPage, [iTheme, iGc, iPage]);
 t("loads Inter 700 + Noto Sans Thai (numbers are Inter 700 tabular)", /fonts\.googleapis\.com\/css2\?family=Inter:wght@[^"&]*700[^"]*family=Noto\+Sans\+Thai/.test(HTML));
-t("app.js bumped to 20261122-app-15", /\/app\.js\?v=20261122-app-15"/.test(HTML));
+t("app.js bumped to 20261125-app-16", /\/app\.js\?v=20261125-app-16"/.test(HTML));
 t("no dot-matrix / LED numeral font in the page files", !/doto|dot-?matrix|DSEG|\bLED\b/i.test(HTML + CSS));
 
 // opening tags with their classes / ids
@@ -127,6 +127,11 @@ t("inside a card the page tokens become glass ink (--ink / --navy / --muted / --
 t("old card surfaces removed (no wealth-card gradient · summary/panel/form/controls no own background)",
   !/linear-gradient\(135deg, #17324d/.test(CSS) &&
   !/\.(summary-card|asset-form|portfolio-panel|controls-bar)\s*(,[^{]*)?\{[^}]*background\s*:/.test(CSS));
+// 2026-11-26 (ผู้ใช้เห็นในภาพ): .row-actions อยู่บน <td> — display:flex ทำให้เซลล์ไม่ใช่ table-cell ไม่ยืดตามแถว
+//   เส้นแบ่งแถวของเซลล์ปุ่มเหลื่อม (แถว 3 บรรทัด เช่น Bitcoin + จำนวน BTC: เซลล์จบที่ 62px ขณะแถวสูง 88px · วัดใน Chrome)
+t("ปุ่มท้ายแถว (.row-actions บน <td>) ไม่ใช้ display:flex — เซลล์ต้องยืดเต็มแถว · เว้นระยะปุ่มด้วย margin แทน gap",
+  !/\.row-actions\s*\{[^}]*display\s*:/.test(CSS) && /\.row-actions\s*>\s*\*\s*\+\s*\*\s*\{[^}]*margin-left\s*:\s*8px/.test(CSS) && /\.row-actions\s*\{[^}]*white-space\s*:\s*nowrap/.test(CSS));
+t("styles.css bumped to 20261126-qe-7", /\/styles\.css\?v=20261126-qe-7"/.test(HTML));
 t("status text colours exist (qe-st-ok / -bad / -warn)", /\.qe-st-ok\b[^{]*\{[^}]*color/.test(CSS) && /\.qe-st-bad\b[^{]*\{[^}]*color/.test(CSS) && /\.qe-st-warn\b[^{]*\{[^}]*color/.test(CSS));
 // fix round 1 [1]: gc-num is nowrap inside an overflow-hidden card → summary amounts were clipped at 981–1100px
 t("summary numbers never clipped: wrap as last resort (white-space normal + overflow-wrap anywhere) and shrink with the tile (clamp + cqi)",
@@ -198,8 +203,9 @@ var ST;
 try {
   var stCtx = { };
   vm.createContext(stCtx);
-  vm.runInContext(code(["PM_SYNC_STATUS_TH", "PM_FOREIGN_LOCKED_TH", "PM_QUARTER_ENDED_TH", "NOT_LOADED_TH"], ["statusToneOf", "paintStatusTone"]) +
-    "\nthis.PM_SYNC_STATUS_TH = PM_SYNC_STATUS_TH; this.PM_FOREIGN_LOCKED_TH = PM_FOREIGN_LOCKED_TH; this.PM_QUARTER_ENDED_TH = PM_QUARTER_ENDED_TH; this.NOT_LOADED_TH = NOT_LOADED_TH;", stCtx);
+  vm.runInContext(code(["PM_SYNC_STATUS_TH", "PM_FOREIGN_LOCKED_TH", "PM_QUARTER_ENDED_TH", "NOT_LOADED_TH", "BTC_NO_PRICE_TH", "BTC_NO_FX_TH", "BTC_QTY_INVALID_TH"], ["statusToneOf", "paintStatusTone"]) +
+    "\nthis.PM_SYNC_STATUS_TH = PM_SYNC_STATUS_TH; this.PM_FOREIGN_LOCKED_TH = PM_FOREIGN_LOCKED_TH; this.PM_QUARTER_ENDED_TH = PM_QUARTER_ENDED_TH; this.NOT_LOADED_TH = NOT_LOADED_TH;" +
+    " this.BTC_NO_PRICE_TH = BTC_NO_PRICE_TH; this.BTC_NO_FX_TH = BTC_NO_FX_TH; this.BTC_QTY_INVALID_TH = BTC_QTY_INVALID_TH;", stCtx);
   ST = stCtx;
 } catch (e) { t("extract statusToneOf / paintStatusTone from app.js", false, e.message); finish(); }
 var CASES = [
@@ -207,6 +213,8 @@ var CASES = [
   ["บันทึกไม่สำเร็จ: boom", "qe-st-bad"], ["โหลดจาก database ไม่สำเร็จ: offline", "qe-st-bad"], [ST.NOT_LOADED_TH, "qe-st-bad"],
   ["กรุณากรอกมูลค่าปัจจุบันเป็นบาทให้ถูกต้อง", "qe-st-bad"], ["กรุณากรอกปีและไตรมาสให้ถูกต้อง", "qe-st-bad"],
   [ST.PM_QUARTER_ENDED_TH, "qe-st-warn"], ["บันทึก 2026-Q3 ล่าสุด 30/9/2569 17:00:00 · " + ST.PM_QUARTER_ENDED_TH, "qe-st-warn"], [ST.PM_FOREIGN_LOCKED_TH, "qe-st-warn"],
+  // 2026-11-25 · Bitcoin เป็นจำนวน BTC: ยังไม่มีราคา = เตือน · กรอกจำนวนผิด = ผิดพลาด
+  [ST.BTC_NO_PRICE_TH, "qe-st-warn"], [ST.BTC_NO_FX_TH, "qe-st-warn"], [ST.BTC_QTY_INVALID_TH, "qe-st-bad"],
   ["กำลังบันทึกลง database...", ""], ["กำลังโหลดข้อมูลจาก database...", ""], [ST.PM_SYNC_STATUS_TH, ""], ["บันทึก 2026-Q4 ล่าสุด 22/11/2569 10:00:00", ""],
   ["2026-Q4 ยังไม่เคยบันทึก snapshot", ""], ["ข้อมูลจะถูกเก็บแยกตามไตรมาสที่เลือก", ""], ["รีเฟรชหน้าจอแล้ว", ""], ["", ""]
 ];
@@ -252,10 +260,12 @@ console.log("== Privacy Lock: ช่องเงินในฟอร์มแ�
 var LOCKED_PH = "ล็อกอยู่ — ใส่ค่าใหม่ได้";
 var PV_CODE;
 try {
-  PV_CODE = code(["TYPE_LABELS", "PM_SYNC_STATUS_TH", "PM_FOREIGN_LOCKED_TH", "PM_DELETE_TITLE_TH", "PM_QUARTER_ENDED_TH", "NOT_LOADED_TH"], [
+  PV_CODE = code(["TYPE_LABELS", "PM_SYNC_STATUS_TH", "PM_FOREIGN_LOCKED_TH", "PM_DELETE_TITLE_TH", "PM_QUARTER_ENDED_TH", "NOT_LOADED_TH", "BTC_NO_PRICE_TH", "BTC_NO_FX_TH", "BTC_QTY_INVALID_TH"], [
     "currentQuarterKey", "currentQuarter", "portfolioHeaders", "readJsonResponse", "adoptServerAllocation", "persistRemoteData", "saveData", "compareQuarter", "clamp",
     "assetKey", "isPMSyncedAsset", "setFormPMLock", "syncForeignFromPM", "applyPMSync", "runPendingPMSync", "readAssetFromForm", "handleFormSubmit", "editAsset", "resetForm",
-    "updateFormMode", "privacyLocked", "moneyFieldText", "formMoneyText", "applyMoneyPrivacy", "onEditorPrivacyChanged"]);
+    "updateFormMode", "privacyLocked", "moneyFieldText", "formMoneyText", "applyMoneyPrivacy", "onEditorPrivacyChanged",
+    // 2026-11-25 Bitcoin เป็นจำนวน BTC (sandbox ไม่มี window.BtcValue = ช่องบาทแบบเดิม)
+    "editingAsset", "btcLive", "btcMissingText", "isBtcQtyMode", "applyBtcValues", "formatBtcQty", "renderBtcNote", "adoptServerBtcPrices"]);
 } catch (e) { t("extract the form path + privacy helpers from app.js", false, e.message); finish(); }
 var DOC = { currentQuarter: "2026-Q4", quarters: { "2026-Q4": { key: "2026-Q4", savedAt: null, assets: [
   { id: "f4", type: "foreign-stock", name: "US", manualValue: 5000000, snapshotValue: 4900000, investedPercent: 92, netFlow: 100000 },
@@ -271,7 +281,7 @@ function bootForm(locked) {
   el.form = { reset: function () { el.typeInput.value = "bitcoin"; el.nameInput.value = ""; el.valueInput.value = ""; el.investedPercentInput.value = "100"; el.netFlowInput.value = "0"; } };
   var ctx = {
     state: { data: clone(DOC), editingId: null, saving: false, hydrating: false, loaded: true, storageMode: "supabase", foreignFromPM: false, pmReason: null, pmHoldings: null, pmSyncPending: false },
-    elements: el, render: function () {}, renderSummary: function () {}, setActiveView: function () {},
+    elements: el, render: function () {}, renderSummary: function () {}, renderRows: function () {}, setActiveView: function () {},
     sessionStorage: { getItem: function () { return "pw"; } },
     fetch: function (url, init) {
       var method = (init && init.method) || "GET";

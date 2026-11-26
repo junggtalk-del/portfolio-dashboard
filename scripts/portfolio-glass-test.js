@@ -50,7 +50,7 @@ function flush(ms) { return new Promise(function (r) { setTimeout(r, ms == null 
 
 var TONES = ["gc-calm", "gc-normal", "gc-warning", "gc-danger", "gc-neutral"];
 var GC_V = "20261121-gc-2";
-var V = { ppCss: "20261122-pp-15", aaCss: "20261122-aa-11", ppJs: "20261122-pp-17", acJs: "20261122-ac-3", aaJs: "20261122-aa-14" };
+var V = { ppCss: "20261122-pp-15", aaCss: "20261122-aa-11", ppJs: "20261122-pp-17", acJs: "20261125-ac-4", aaJs: "20261125-aa-15" };
 var ADVISORY = /ควรซื้อ|ควรขาย|น่าซื้อ|น่าขาย|น่าเข้า|แนะนำซื้อ|จุดเข้า|ตัดขาดทุน/;
 
 // ---------------------------------------------------------------- fixture (ชุดเดียวกับ asset-allocation-view-test + กรอบเงินสด)
@@ -586,7 +586,7 @@ function inputs(h) {
     files.indexOf("theme.css") === 0 && files.indexOf("mission-control.css") < files.indexOf("glass-cards.css") && files.indexOf("glass-cards.css") < files.indexOf("portfolio-position.css") &&
     files.indexOf("glass-cards.css") < files.indexOf("asset-allocation.css") && sheets.filter(function (s) { return s === "glass-cards.css@" + GC_V; }).length === 1 &&
     files.filter(function (f) { return f === "glass-cards.css"; }).length === 1, sheets);
-  t("portfolio.html: เวอร์ชัน bump (css pp-15 · aa-11 · js pp-17 · ac-3 · aa-14)",
+  t("portfolio.html: เวอร์ชัน bump (css pp-15 · aa-11 · js pp-17 · ac-4 · aa-15)",
     HTML.indexOf("/portfolio-position.css?v=" + V.ppCss + '"') > 0 && HTML.indexOf("/asset-allocation.css?v=" + V.aaCss + '"') > 0 &&
     HTML.indexOf("/portfolio-position-page.js?v=" + V.ppJs + '"') > 0 && HTML.indexOf("/allocation-card-page.js?v=" + V.acJs + '"') > 0 && HTML.indexOf("/asset-allocation-page.js?v=" + V.aaJs + '"') > 0);
   var PPC = read("portfolio-position.css"), AAC = read("asset-allocation.css");

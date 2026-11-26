@@ -1360,6 +1360,14 @@
     return out;
   }
 
+  // GET → PUT ของ /api/portfolio ผ่านล็อกเอกสารของหน้า (PortfolioCore.withDocLock — 2026-11-25:
+  //   btc-value.js เขียนมูลค่า Bitcoin ลงเอกสารเดียวกันหลัง Load Latest Data) · ไม่มี PortfolioCore = ทำตรงแบบเดิม
+  function docLock(task) {
+    var core = window.PortfolioCore;
+    if (core && typeof core.withDocLock === "function") return core.withDocLock(task);
+    try { return task(); } catch (e) { return Promise.reject(e); }
+  }
+
   // GET สด → เอกสารไม่มีไตรมาส = ไม่ PUT → สำเนาทุกคีย์ของเอกสารบน server → ตั้ง foreignSleeve → PUT { data }
   // body = เอกสารดิบจาก server เสมอ (ไม่ใช่ psCache / snapshot ที่หน้าใช้วาด) · แถว foreign-stock ของไตรมาสล่าสุดที่ยังไม่จบ
   //   = ค่า PM ตามเงินสดใหม่ (withForeignRow · โหมด pm เท่านั้น) · ไตรมาสอื่น / แถวอื่น / คีย์อื่น คงเดิมทุก byte
@@ -1375,41 +1383,42 @@
     cashUi.saveState = "saving";
     cashUi.error = null;
     render();
-    var getDoc = function () { return window.fetch("/api/portfolio", { cache: "no-store" }); };
-    var p;
-    if (rowSync.promise) p = rowSync.promise.then(getDoc, getDoc);
-    else {
-      try { p = getDoc(); }
+    // GET → PUT ทั้งรอบอยู่ในล็อกเอกสารของหน้า · รอบเขียนแถวที่ค้างอยู่ต้องจบก่อน (รอนอกล็อก — รอบนั้นถือล็อกเอง)
+    var write = function () {
+      var p;
+      try { p = window.fetch("/api/portfolio", { cache: "no-store" }); }
       catch (e) { p = Promise.reject(e); }
-    }
-    p.then(function (r) {
-      if (!r || !r.ok) throw thError("อ่านข้อมูลพอร์ตก่อนบันทึกไม่ได้ (HTTP " + (r ? r.status : "?") + ")");
-      return r.json();
-    }).then(function (j) {
-      var data = j && (j.data || (j.quarters ? j : null));
-      // กันเคสร้ายแรง: server ตอบเอกสารที่ไม่มีไตรมาส → PUT ทับจะลบพอร์ตทั้งก้อน
-      if (!data || !data.quarters || !Object.keys(data.quarters).length) throw thError(CASH_EMPTY_SERVER_TH);
-      if (bootDraft) {
-        var serverAt = sleeveTime(data), draftAt = Date.parse(bootDraft.savedAt);
-        if (serverAt != null && isFinite(draftAt) && serverAt > draftAt) {
-          var sup = new Error("superseded");
-          sup.pmSuperseded = data;
-          throw sup;
+      return p.then(function (r) {
+        if (!r || !r.ok) throw thError("อ่านข้อมูลพอร์ตก่อนบันทึกไม่ได้ (HTTP " + (r ? r.status : "?") + ")");
+        return r.json();
+      }).then(function (j) {
+        var data = j && (j.data || (j.quarters ? j : null));
+        // กันเคสร้ายแรง: server ตอบเอกสารที่ไม่มีไตรมาส → PUT ทับจะลบพอร์ตทั้งก้อน
+        if (!data || !data.quarters || !Object.keys(data.quarters).length) throw thError(CASH_EMPTY_SERVER_TH);
+        if (bootDraft) {
+          var serverAt = sleeveTime(data), draftAt = Date.parse(bootDraft.savedAt);
+          if (serverAt != null && isFinite(draftAt) && serverAt > draftAt) {
+            var sup = new Error("superseded");
+            sup.pmSuperseded = data;
+            throw sup;
+          }
         }
-      }
-      var next = {};
-      Object.keys(data).forEach(function (k) { next[k] = data[k]; });   // quarters / allocation / allocationPlan คงเดิมทุก byte
-      next.foreignSleeve = mine;
-      next = withForeignRow(next);   // โหมด pm: แถวหุ้นต่างประเทศของไตรมาสล่าสุด = หุ้นที่ถือ + เงินสดใหม่
-      return window.fetch("/api/portfolio", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ data: next })
-      }).then(function (r2) {
-        if (!r2 || !r2.ok) throw thError("server ตอบ HTTP " + (r2 ? r2.status : "?"));
-        return next;
+        var next = {};
+        Object.keys(data).forEach(function (k) { next[k] = data[k]; });   // quarters / allocation / allocationPlan คงเดิมทุก byte
+        next.foreignSleeve = mine;
+        next = withForeignRow(next);   // โหมด pm: แถวหุ้นต่างประเทศของไตรมาสล่าสุด = หุ้นที่ถือ + เงินสดใหม่
+        return window.fetch("/api/portfolio", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ data: next })
+        }).then(function (r2) {
+          if (!r2 || !r2.ok) throw thError("server ตอบ HTTP " + (r2 ? r2.status : "?"));
+          return next;
+        });
       });
-    }).then(onCashPersisted, function (e) {
+    };
+    var rowDone = rowSync.promise ? rowSync.promise.then(function () {}, function () {}) : Promise.resolve();
+    rowDone.then(function () { return docLock(write); }).then(onCashPersisted, function (e) {
       if (e && e.pmSuperseded) onDraftSuperseded(e.pmSuperseded);
       else onCashFailed(mine, e);
     });
@@ -1494,27 +1503,29 @@
   function runRowSync() {
     if (rowSync.promise) { rowSync.again = true; return; }
     if (cashUi.saveState === "saving") { scheduleRowSync(); return; }
-    var p;
-    try { p = window.fetch("/api/portfolio", { cache: "no-store" }); }
-    catch (e) { p = Promise.reject(e); }
-    rowSync.promise = p.then(function (r) {
-      if (!r || !r.ok) throw thError("HTTP " + (r ? r.status : "?"));
-      return r.json();
-    }).then(function (j) {
-      var data = j && (j.data || (j.quarters ? j : null));
-      // server ตอบเอกสารที่ไม่มีไตรมาส → PUT ทับจะลบพอร์ตทั้งก้อน → ไม่ส่ง
-      if (!data || !data.quarters || !Object.keys(data.quarters).length) throw thError(CASH_EMPTY_SERVER_TH);
-      var copy = {};
-      Object.keys(data).forEach(function (k) { copy[k] = data[k]; });
-      var next = withForeignRow(copy);
-      if (next === copy || stableJson(next.quarters) === stableJson(data.quarters)) return null;   // ไม่ใช่โหมด pm / ตรงอยู่แล้ว
-      return window.fetch("/api/portfolio", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ data: next })
-      }).then(function (r2) {
-        if (!r2 || !r2.ok) throw thError("HTTP " + (r2 ? r2.status : "?"));
-        return next;
+    rowSync.promise = docLock(function () {
+      var p;
+      try { p = window.fetch("/api/portfolio", { cache: "no-store" }); }
+      catch (e) { p = Promise.reject(e); }
+      return p.then(function (r) {
+        if (!r || !r.ok) throw thError("HTTP " + (r ? r.status : "?"));
+        return r.json();
+      }).then(function (j) {
+        var data = j && (j.data || (j.quarters ? j : null));
+        // server ตอบเอกสารที่ไม่มีไตรมาส → PUT ทับจะลบพอร์ตทั้งก้อน → ไม่ส่ง
+        if (!data || !data.quarters || !Object.keys(data.quarters).length) throw thError(CASH_EMPTY_SERVER_TH);
+        var copy = {};
+        Object.keys(data).forEach(function (k) { copy[k] = data[k]; });
+        var next = withForeignRow(copy);
+        if (next === copy || stableJson(next.quarters) === stableJson(data.quarters)) return null;   // ไม่ใช่โหมด pm / ตรงอยู่แล้ว
+        return window.fetch("/api/portfolio", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ data: next })
+        }).then(function (r2) {
+          if (!r2 || !r2.ok) throw thError("HTTP " + (r2 ? r2.status : "?"));
+          return next;
+        });
       });
     }).then(function (next) {
       if (next) onRowSynced(next);

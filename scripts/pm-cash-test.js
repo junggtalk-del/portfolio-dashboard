@@ -404,10 +404,10 @@ function hasFromPM(body) { return JSON.stringify(body).indexOf("fromPM") >= 0; }
 function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || []).filter(function (a) { return a.type === "foreign-stock"; }); }
 
 (async function main() {
-  t("portfolio-manager.html: page pm-35 (glass cards · PM settings on the server · ?doc=pm · per-change ops · one-row holdings save + values follow the close) · css pm-15 · foreign-sleeve.js before the PM engine/page",
-    /portfolio-manager-page\.js\?v=20261124-pm-35"/.test(HTML) && /portfolio-manager\.css\?v=20261124-pm-15"/.test(HTML) &&
+  t("portfolio-manager.html: page pm-36 (glass cards · PM settings on the server · ?doc=pm · per-change ops · one-row holdings save + values follow the close) · css pm-15 · foreign-sleeve.js before the PM engine/page",
+    /portfolio-manager-page\.js\?v=20261125-pm-36"/.test(HTML) && /portfolio-manager\.css\?v=20261124-pm-15"/.test(HTML) &&
     HTML.indexOf("foreign-sleeve.js") > 0 && HTML.indexOf("foreign-sleeve.js") < HTML.indexOf("portfolio-manager-engine.js"));
-  t("index.html loads app.js?v=20261122-app-15", /\/app\.js\?v=20261122-app-15"/.test(read("index.html")));
+  t("index.html loads app.js?v=20261125-app-16", /\/app\.js\?v=20261125-app-16"/.test(read("index.html")));
 
   // ---------- MAIN: เอกสารไม่มี foreignSleeve → สูตรเดิม (Editor) ----------
   var serverEmpty = false, failPut = false, failGet = false, throwGet = false, holdPut = false;
@@ -851,6 +851,31 @@ function foreignRows(doc, key) { return ((doc.quarters[key] || {}).assets || [])
   t("row write in flight (PUT held) → a cash save waits: no new GET until that PUT answers · then GET,PUT · server ends with cash 900,000 and row 3,026,000 + 900,000 = ฿3,926,000",
     yInflight === "GET,PUT" && yWaiting === "GET,PUT" && YW.portfolioCallsSince() === "GET,PUT,GET,PUT" && YW.serverFixture.foreignSleeve.cash === 900000 &&
     rowOf({ data: YW.serverFixture }).manualValue === 3926000 && rowOf(yLast).manualValue === 3926000, [yInflight, yWaiting, YW.portfolioCallsSince()]);
+
+  // (8) 2026-11-25 · btc-value.js เขียนเอกสารเดียวกัน → การเขียนเอกสารของหน้านี้ถือ PortfolioCore.withDocLock
+  //   ตัวเขียนอื่น (เช่น btc-value) ที่ขอล็อกระหว่างนั้นต้องรอจน PUT ของหน้านี้ตอบ (ไม่สลับ GET→PUT ทับกัน)
+  var lHold = false;
+  var LW = boot({ fixture: SV, snapshot: SNAP(SV), store: HS(), flags: function () { return { holdPut: lHold }; } }); await flush(80);
+  lHold = true;
+  LW.mark(); LW.setValue("data-pm-cash", "1", "910000"); LW.click("data-pm-cash-save", "1"); await flush(80);
+  var lRan = [];
+  var lOther = LW.win.PortfolioCore.withDocLock(function () { lRan.push("other writer"); return Promise.resolve(); });
+  await flush(40);
+  var lWhile = lRan.length;
+  lHold = false; LW.releasePuts(); await flush(80); await lOther;
+  t("cash save holds the document lock: another writer waits until its PUT answers",
+    LW.portfolioCallsSince() === "GET,PUT" && lWhile === 0 && lRan.length === 1, [LW.portfolioCallsSince(), lWhile, lRan.length]);
+  var rHold = false;
+  var RW = boot({ fixture: SV, snapshot: SNAP(SV), store: HS(), flags: function () { return { holdPut: rHold }; } }); await flush(80);
+  rHold = true;
+  RW.mark(); RW.setValue("data-pm-mv", "NVDA", "735000"); RW.change("data-pm-mv", "NVDA"); await flush(1800);
+  var rRan = [];
+  var rOther = RW.win.PortfolioCore.withDocLock(function () { rRan.push("other writer"); return Promise.resolve(); });
+  await flush(40);
+  var rWhile = rRan.length;
+  rHold = false; RW.releasePuts(); await flush(120); await rOther;
+  t("the quarter-row sync holds the document lock too",
+    RW.portfolioCallsSince() === "GET,PUT" && rWhile === 0 && rRan.length === 1, [RW.portfolioCallsSince(), rWhile, rRan.length]);
 
   // ---------- โค้ด ----------
   var SRC = read("portfolio-manager-page.js");
