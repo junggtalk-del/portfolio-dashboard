@@ -194,6 +194,23 @@
     if (!("sopr" in ind)) { ind.sopr = null; meta.sopr = { source: null, date: null, freshness: "missing", referenceLinks: [], value: null }; }
     if (!("rup" in ind)) { ind.rup = null; meta.rup = { source: null, date: null, freshness: "missing", referenceLinks: [], value: null }; }
     if (!("lthSupply" in ind)) { ind.lthSupply = null; meta.lthSupply = { source: null, date: null, freshness: "missing", referenceLinks: [], value: null }; }
+    // ---- long-term on-chain (2026-11-26): the new values live under their OWN keys — computeBuyZone and the
+    //      price chart read ind.lthSopr / ind.lthRealizedPrice (Glassnode/CSV) and must not change behaviour
+    bgeoOverlay("lthSoprLive", "lthSopr", true);
+    if (!("lthSoprLive" in ind)) { ind.lthSoprLive = null; meta.lthSoprLive = { source: null, date: null, freshness: "missing", referenceLinks: [], value: null }; }
+    // Puell Multiple computed from Blockchain.com (miner revenue − fees) ÷ 365-day mean — btc-lt-history.js
+    const ltHist = (window.BtcLtHistory && typeof window.BtcLtHistory.get === "function" && window.BtcLtHistory.get()) || null;
+    const puellRows = ltHist && ltHist.series && Array.isArray(ltHist.series.puell) ? ltHist.series.puell : null;
+    const puellLast = puellRows && puellRows.length ? puellRows[puellRows.length - 1] : null;
+    if (puellLast && fin(puellLast[1]) != null) {
+      ind.puellLive = fin(puellLast[1]);
+      meta.puellLive = { source: "Blockchain.com (คำนวณ: รายได้นักขุด − ค่าธรรมเนียม)", date: puellLast[0], freshness: freshKeyOf(puellLast[0]), referenceLinks: [], value: ind.puellLive, derived: true, proxy: false };
+    } else {
+      ind.puellLive = null;
+      meta.puellLive = { source: null, date: null, freshness: "missing", referenceLinks: [], value: null };
+    }
+    // LTH net position change over 30 days, from the LTH Supply history (BTC)
+    ind.lthNet30 = lthNetChange((((window.BtcOnchainLive && window.BtcOnchainLive.get().series) || {}).lthSupply), 30);
 
     ind._meta = meta;
     ind._hasOnchain = ["mvrvZScore", "mvrvRatio", "nupl", "realizedPriceProxy", "puellMultiple", "sthRealizedPrice", "lthRealizedPrice", "sthSopr", "lthSopr", "fearGreed", "fundingRate", "openInterest", "takerBuySellRatio", "longShortRatio", "ssrProxy", "minerRevenueMultipleProxy", "exchangeNetflow", "estimatedLeverageRatio", "ssr", "stablecoinReserve"].some((k) => ind[k] != null);
@@ -825,6 +842,26 @@
   // คืออะไร / อ่านยังไง / วันนี้ / ข้อจำกัด + gauge bar + link to the full chart.
   const DD_COL = { green: "var(--mc-emerald)", gray: "var(--btc-dd-gray, #64748b)", amber: "var(--mc-amber)", red: "var(--mc-red)", blue: "var(--mc-blue)" }; // gray lifts on the glass (bitcoin-monitor.css)
   function ddFmtM(v) { return dn(v) ? Number((v / 1e6).toFixed(2)) + "M" : "—"; }
+  // LTH net position change: the newest LTH Supply row vs the newest row on/before (newest − days) ·
+  // null when either is missing or the base is more than a week before the cut (not a real 30-day change)
+  function lthNetChange(rows, days) {
+    if (!Array.isArray(rows) || rows.length < 2) return null;
+    const last = rows[rows.length - 1];
+    const cut = Date.parse(last[0] + "T00:00:00Z") - days * 86400000;
+    let base = null;
+    for (let i = rows.length - 2; i >= 0; i--) { if (Date.parse(rows[i][0] + "T00:00:00Z") <= cut) { base = rows[i]; break; } }
+    if (!base || !dn(base[1]) || !dn(last[1]) || !(base[1] > 0)) return null;
+    if (cut - Date.parse(base[0] + "T00:00:00Z") > 7 * 86400000) return null;
+    const btc = last[1] - base[1];
+    return { btc, pct: btc / base[1] * 100, from: base[0], to: last[0], days };
+  }
+  function lthNetText(n) {
+    if (!n) return "";
+    const sign = n.btc > 0 ? "+" : n.btc < 0 ? "−" : "";
+    // the reading = the Long-term Signal's own "LTH Net Position" words (btc-lt-signal.js) — one number, one reading
+    const S = window.BtcLtSignal, read = S && typeof S.zoneText === "function" ? S.zoneText("lthNetPct", n.pct) : null;
+    return ` · ${n.days} วัน ${sign}${Math.round(Math.abs(n.btc)).toLocaleString("en-US")} BTC (${sign}${Math.abs(n.pct).toFixed(2)}%)${read ? " — " + read : ""}`;
+  }
   const DD_CARDS = [
     {
       key: "mvrvZScore", group: "ราคาถูกหรือแพง", title: "MVRV Z-Score",
@@ -904,9 +941,35 @@
       bands: [[15e6, "gray"], [Infinity, "green"]], axisFmt: ddFmtM,
       tag: (v) => v >= 15e6 ? ["ถูกล็อกเยอะ", "green"] : ["ระดับกลาง", "gray"],
       what: "จำนวน Bitcoin ที่อยู่ในมือคนถือเกิน 155 วัน เทียบกับ ~19.9 ล้านเหรียญที่ขุดออกมาแล้วทั้งหมด",
-      how: "ยิ่งสูงแปลว่าเหรียญยิ่งถูกล็อกไว้กับสายยาว เหลือหมุนในตลาดน้อย ดูทิศทางว่าเพิ่มหรือลดสำคัญกว่าตัวเลขนิ่งๆ",
-      today: (v) => (v / 1e6).toFixed(2) + " ล้าน BTC อยู่ในมือสายถือยาว",
+      how: "ยิ่งสูงแปลว่าเหรียญยิ่งถูกล็อกไว้กับสายยาว เหลือหมุนในตลาดน้อย ดูทิศทางว่าเพิ่มหรือลดสำคัญกว่าตัวเลขนิ่งๆ · Net Position Change = ส่วนต่างใน 30 วัน (บวก = สะสม · ลบ = แจกจ่าย)",
+      today: (v, ind2) => (v / 1e6).toFixed(2) + " ล้าน BTC อยู่ในมือสายถือยาว" + lthNetText(ind2.lthNet30),
       chart: "https://charts.bgeometrics.com/supply_lth_sth.html"
+    },
+    {
+      // BGeometrics lth-sopr · new key (lthSoprLive) so the Buy Zone's ind.lthSopr (Glassnode/CSV) is untouched
+      key: "lthSoprLive", group: "พฤติกรรมนักลงทุน", title: "LTH-SOPR",
+      fmt: (v) => num(v, 2),
+      gauge: { lo: 0.5, hi: 10, ticks: [0.5, 1, 3, 6, 10], segs: [[1, "green"], [3, "gray"], [6, "amber"], [10, "red"]] },
+      bands: [[1, "green"], [3, "gray"], [6, "amber"], [Infinity, "red"]],   // = the Long-term Signal anchors (btc-lt-signal.js)
+      tag: (v) => v < 1 ? ["ขายขาดทุน", "green"] : v < 3 ? ["ขายกำไรปกติ", "gray"] : v < 6 ? ["ทำกำไรหนา", "amber"] : ["ทำกำไรสูงมาก", "red"],
+      what: "SOPR เฉพาะเหรียญของคนถือเกิน 155 วัน (Long-Term Holders) — เหรียญที่สายยาวขายวันนี้ ได้ราคาเป็นกี่เท่าของต้นทุนตอนได้มา",
+      how: "ต่ำกว่า 1 = สายยาวยอมขายขาดทุน (มักเกิดช่วงยอมจำนนใกล้ก้น) · 1–3 ขายกำไรปกติ · 3–6 ทยอยขายทำกำไรหนา · เกิน 6 = ช่วงแจกของหนักแบบปลายขาขึ้น",
+      today: (v) => num(v, 2) + " = " + (v < 1 ? "สายยาวที่ขายวันนี้ขาดทุนเฉลี่ย (ยอมจำนน)" : v < 3 ? "สายยาวขายมีกำไรระดับปกติ" : v < 6 ? "สายยาวขายทำกำไรหนา" : "สายยาวขายทำกำไรสูงมาก"),
+      limit: "ค่ารายวันแกว่งแรง ดูทิศทางหลายวันประกอบ · Long-term Signal ใช้ค่าเฉลี่ย 7 วัน · ข้อมูลฟรีช้าราว 7 วัน",
+      chart: "https://charts.bgeometrics.com/", chartLabel: "ดูกราฟอื่นของ BGeometrics ↗"
+    },
+    {
+      // computed in the browser from Blockchain.com (btc-lt-history.js) — multi-cycle, no BGeometrics quota
+      key: "puellLive", group: "นักขุด", title: "Puell Multiple", seriesFrom: "history", seriesKey: "puell", site: "Blockchain.com",
+      fmt: (v) => num(v, 2),
+      gauge: { lo: 0, hi: 4, ticks: [0, 0.6, 1.5, 2.5, 4], segs: [[0.6, "green"], [1.5, "gray"], [2.5, "amber"], [4, "red"]] },
+      bands: [[0.6, "green"], [1.5, "gray"], [2.5, "amber"], [Infinity, "red"]],   // = the Long-term Signal anchors
+      tag: (v) => v < 0.6 ? ["รายได้นักขุดต่ำ", "green"] : v < 1.5 ? ["ปกติ", "gray"] : v < 2.5 ? ["รายได้สูง", "amber"] : ["ร้อนแรง", "red"],
+      what: "รายได้จากเหรียญที่ขุดได้ในวันนั้น (ไม่รวมค่าธรรมเนียม) หารด้วยค่าเฉลี่ย 365 วัน — วัดว่านักขุดได้เงินมากหรือน้อยกว่าปกติ",
+      how: "ต่ำกว่า 0.6 = รายได้นักขุดต่ำมาก มักตรงกับช่วงก้นตลาด · 0.6–1.5 ปกติ · 1.5–2.5 รายได้สูง · สูงกว่านั้น = นักขุดกำไรล้น มักใกล้ยอด",
+      today: (v) => num(v, 2) + " = " + (v < 0.6 ? "รายได้นักขุดต่ำกว่าปกติมาก" : v < 1.5 ? "รายได้นักขุดระดับปกติ" : v < 2.5 ? "รายได้นักขุดสูงกว่าปกติ" : "รายได้นักขุดสูงมาก"),
+      limit: "คำนวณเองจาก Blockchain.com (รายได้นักขุด − ค่าธรรมเนียม) ÷ ค่าเฉลี่ย 365 วัน · ช่วงหนึ่งปีหลัง halving ค่าต่ำผิดปกติเพราะรายได้ลดครึ่งแต่ค่าเฉลี่ยตามช้า · ยอดของแต่ละรอบต่ำลงเรื่อย ๆ · การ์ดนี้แสดงค่ารายวัน ส่วน Long-term Signal ใช้ค่าเฉลี่ย 7 วัน",
+      chart: "https://www.blockchain.com/explorer/charts/miners-revenue", chartLabel: "ดูรายได้นักขุดที่ Blockchain.com ↗"
     }
   ];
 
@@ -929,7 +992,7 @@
 
   // ---- trend charts: daily history from BtcOnchainLive.get().series (BGeometrics, ~4 years, IndexedDB)
   // card key (ind.*) → series key (btc-onchain-live METRICS)
-  const DD_SERIES = { mvrvZScore: "mvrvZScore", realizedPriceProxy: "realizedPrice", nupl: "nupl", rup: "rup", sopr: "sopr", ssrProxy: "ssr", lthSupply: "lthSupply" };
+  const DD_SERIES = { mvrvZScore: "mvrvZScore", realizedPriceProxy: "realizedPrice", nupl: "nupl", rup: "rup", sopr: "sopr", ssrProxy: "ssr", lthSupply: "lthSupply", lthSoprLive: "lthSopr" };
   const DD_RANGES = [["6M", 182, "6 เดือน"], ["1Y", 365, "1 ปี"], ["2Y", 730, "2 ปี"], ["4Y", 1461, "4 ปี"]];
   const DD_RANGE_KEY = "btc_dd_range_v1";   // per-viewer convenience only
   let ddRange = (() => { try { const v = Number(window.localStorage.getItem(DD_RANGE_KEY)); return DD_RANGES.some((r) => r[1] === v) ? v : 365; } catch (e) { return 365; } })();
@@ -940,8 +1003,15 @@
 
   function ddCfg(key) { return DD_CARDS.filter((c) => c.key === key)[0] || null; }
   function ddSeries(cfg) {
-    const all = (window.BtcOnchainLive && window.BtcOnchainLive.get && window.BtcOnchainLive.get().series) || {};
-    const rows = all[DD_SERIES[cfg.key]];
+    let rows;
+    if (cfg.seriesFrom === "history") {
+      // multi-cycle series computed in the browser (btc-lt-history.js: Coin Metrics · Blockchain.com)
+      const h = window.BtcLtHistory && typeof window.BtcLtHistory.get === "function" ? window.BtcLtHistory.get() : null;
+      rows = h && h.series ? h.series[cfg.seriesKey] : null;
+    } else {
+      const all = (window.BtcOnchainLive && window.BtcOnchainLive.get && window.BtcOnchainLive.get().series) || {};
+      rows = all[DD_SERIES[cfg.key]];
+    }
     return Array.isArray(rows) && rows.length > 1 ? rows : null;
   }
   // rows within `days` of the newest row (dates, not row counts — the series may have gaps)
@@ -1073,7 +1143,7 @@
     const more = row("คืออะไร", cfg.what) + row("อ่านยังไง", cfg.how) + (cfg.limit ? row("ข้อจำกัด", cfg.limit, " btc-dd-limit") : "");
     const src = has && M.source
       ? `ที่มา: <b>${esc(M.source)}</b> ${freshBadge(M.freshness)}${M.date ? ` · ${esc(fmtDate(M.date))}` : ""}${M.proxy ? ' · <em>proxy</em>' : ""}`
-      : `${freshBadge("missing")} · ยังไม่มีข้อมูลอัตโนมัติ — ดูกราฟที่ BGeometrics`;
+      : `${freshBadge("missing")} · ยังไม่มีข้อมูลอัตโนมัติ — ดูกราฟที่ ${esc(cfg.site || "BGeometrics")}`;
     // trend chart when the history is in; until then the zone gauge (first day / history not fetched yet)
     const visual = w ? ddDelta(cfg, w, ddRange) + ddChart(cfg, w, false)
       : (has ? ddGauge(cfg.gauge, v) : "") + `<p class="btc-dd-nohist">กราฟย้อนหลังจะขึ้นหลังดึงข้อมูลรายวันครั้งถัดไป</p>`;
@@ -1092,7 +1162,8 @@
   // why some charts are missing + when the page tries again by itself (BtcOnchainLive retries hourly)
   function ddStatus() {
     const live = (window.BtcOnchainLive && window.BtcOnchainLive.get && window.BtcOnchainLive.get()) || {};
-    if (DD_CARDS.every((c) => ddWindow(ddSeries(c), ddRange))) return "";
+    // only the BGeometrics cards — Puell comes from Blockchain.com and has its own source line
+    if (DD_CARDS.filter((c) => c.seriesFrom !== "history").every((c) => ddWindow(ddSeries(c), ddRange))) return "";
     const at = live.retryAt ? new Date(live.retryAt).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) : null;
     const again = at ? ` · หน้านี้จะลองใหม่เองเวลา ${at} น. ไม่ต้องกดอะไร` : "";
     let msg = "";
@@ -1105,13 +1176,79 @@
     return msg ? `<p class="btc-dd-status" role="status">${esc(msg)}</p>` : "";
   }
 
+  // ---- Long-term Signal panel (btc-lt-panel.js + btc-lt-signal.js) — top of the Deep Dive.
+  // The model scores ~15 years of days, so it is rebuilt only when one of its inputs changes;
+  // a view/range click re-draws the panel host alone. A panel error never takes the tab down.
+  const LT_UI_KEY = "btc_lt_ui_v1";   // per-viewer convenience only
+  let ltUiRaw = (() => { try { return JSON.parse(window.localStorage.getItem(LT_UI_KEY) || "null"); } catch (e) { return null; } })();
+  let ltMemo = null;             // { deps, model }
+  let ltWiredEl = null;          // the host element wire() last ran on
+  function ltPanel() { const P = window.BtcLtPanel; return P && typeof P.model === "function" && typeof P.html === "function" ? P : null; }
+  function ltUi() { const P = ltPanel(); return P && typeof P.normUi === "function" ? P.normUi(ltUiRaw) : (ltUiRaw || {}); }
+  // everything the model reads, by reference (the loaders replace arrays on a new load)
+  function ltDeps(onchain, history, live, zone, cycle, today) {
+    const d = [live && live.value, live && live.at, live && live.source, zone && zone.key, cycle, today];
+    [onchain, history].forEach((s) => {
+      if (!s) { d.push(null); return; }
+      d.push(s.fetchedAt, s.at, s.error, s.loading, s.retryAt);
+      ["metrics", "series"].forEach((part) => { const o = s[part] || {}; Object.keys(o).sort().forEach((k) => d.push(part + ":" + k, o[k])); });
+      const so = s.sources || {};
+      Object.keys(so).sort().forEach((k) => { const x = so[k] || {}; d.push(k, x.at, x.ok, x.error, x.asOf); });
+    });
+    return d;
+  }
+  function ltSame(a, b) { return !!a && !!b && a.length === b.length && a.every((v, i) => v === b[i]); }
+  function ltHost(ind) {
+    const P = ltPanel(); if (!P) return "";
+    let inner;
+    try {
+      const onchain = (window.BtcOnchainLive && typeof window.BtcOnchainLive.get === "function" && window.BtcOnchainLive.get()) || null;
+      const history = (window.BtcLtHistory && typeof window.BtcLtHistory.get === "function" && window.BtcLtHistory.get()) || null;
+      const z = computeBuyZone(ind).cycleZone, cy = biCycle(readSnapshot());
+      const zone = z ? { key: z.key, thai: z.thaiLabel } : null;
+      const cycle = cy && cy.current && typeof cy.current.state === "string" ? cy.current.state : null;
+      const today = new Date().toISOString().slice(0, 10);   // the series are UTC days
+      // the price travels with its own day + source (API date, or the snapshot close's day when the API is down)
+      const pm = (ind._meta && ind._meta.price) || {};
+      const live = dn(ind.price) ? { value: ind.price, at: ind.date || null, source: pm.source || null } : null;
+      const deps = ltDeps(onchain, history, live, zone, cycle, today);
+      if (!ltMemo || !ltSame(ltMemo.deps, deps)) ltMemo = { deps, model: P.model({ onchain, history, livePrice: live, valuationZone: zone, intelCycle: cycle, today }) };
+      inner = P.html(ltMemo.model, ltUi());
+    } catch (e) {
+      ltMemo = null;
+      try { console.warn("Long-term Signal:", e && e.message); } catch (x) {}
+      inner = `<p class="btc-dd-status" role="status">แสดง Long-term Signal ไม่สำเร็จ — ตัวชี้วัดรายตัวด้านล่างยังใช้ได้ตามปกติ</p>`;
+    }
+    return `<div class="btc-lt-host" id="btcLtPanel">${inner}</div>`;
+  }
+  function ltWire() {
+    const P = ltPanel(), el = document.getElementById("btcLtPanel");
+    if (!P || !el || typeof P.wire !== "function" || el === ltWiredEl) return;
+    ltWiredEl = el;
+    P.wire(el, (ui) => {
+      ltUiRaw = ui;
+      try { window.localStorage.setItem(LT_UI_KEY, JSON.stringify(ltUi())); } catch (e) {}
+      const host = document.getElementById("btcLtPanel");
+      if (!host || !ltMemo) return;
+      try { host.innerHTML = P.html(ltMemo.model, ltUi()); } catch (e) { try { console.warn("Long-term Signal:", e && e.message); } catch (x) {} }
+    });
+  }
+
   function onchainDeepDive(ind) {
     ddLastInd = ind;
     // one continuous grid (3 cols on wide screens) — the group name renders as a
     // kicker chip on each card instead of separate half-empty group rows
     const body = `<div class="btc-dd-grid">${DD_CARDS.map((c) => ddCard(c, ind)).join("")}</div>`;
+    const cardsSub = "ค่า exact จาก BGeometrics (bitcoin-data.com · ฟรี · ข้อมูลฟรีช้าราว 7 วัน) — MVRV-Z · Realized Price · NUPL · RUP · SOPR · SSR · LTH Supply · LTH-SOPR · Puell (คำนวณจาก Blockchain.com) · กดที่กราฟเพื่อขยาย";
+    const lt = ltHost(ind);
+    // with the Long-term panel on top, the cards' own range bar + description move to a sub-head right above them
+    const head = lt
+      ? `<div class="mc-panel-head"><div><h2>🧬 On-chain Deep Dive</h2><span class="mc-sub">ภาพรวมระยะยาว (Long-term Signal · 5 คำถาม · ต้นทุนแต่ละกลุ่ม · ย้อนหลังหลายรอบ) แล้วตามด้วยตัวชี้วัดรายตัว 9 ตัว</span></div></div>
+      ${lt}
+      <div class="btc-dd-subhead"><div><h3>ตัวชี้วัดรายตัว</h3><span class="mc-sub">${cardsSub}</span></div>${ddRangeBar("btcDdRange")}</div>`
+      : `<div class="mc-panel-head"><div><h2>🧬 On-chain Deep Dive</h2><span class="mc-sub">${cardsSub}</span></div>${ddRangeBar("btcDdRange")}</div>`;
     return `<section class="mc-card mc-panel mc-fade gc-card gc-neutral" id="btcDeepDive">
-      <div class="mc-panel-head"><div><h2>🧬 On-chain Deep Dive</h2><span class="mc-sub">ค่า exact จาก BGeometrics (bitcoin-data.com · ฟรี · ข้อมูลฟรีช้าราว 7 วัน) — MVRV-Z · Realized Price · NUPL · RUP · SOPR · SSR · LTH Supply · กดที่กราฟเพื่อขยาย</span></div>${ddRangeBar("btcDdRange")}</div>
+      ${head}
       ${ddStatus()}
       ${body}
     </section>`;
@@ -1254,6 +1391,7 @@
     });
     sec.querySelectorAll("details[data-dd-more]").forEach((d) => d.addEventListener("toggle", () => { ddOpenMore[d.getAttribute("data-dd-more")] = d.open; }));
     ddWireHover(sec);
+    ltWire();
   }
 
   function cyclePanel(ind, bz) {
@@ -1474,12 +1612,16 @@
 
   window.addEventListener("portfolio-data-snapshot", render);
   window.addEventListener("btc-onchain-live", render);
+  // multi-cycle history (Coin Metrics + Blockchain.com) — re-render only, never load() from this handler (loop)
+  window.addEventListener("btc-lt-history", render);
   function init() {
     apiData = readApiCache();
     render();
     fetchApi();
     // BGeometrics exact on-chain metrics (browser-side, day-cached, 10 req/hr free tier)
     if (window.BtcOnchainLive) window.BtcOnchainLive.load(false);
+    // long-term history: browser-direct, once a UTC day, IndexedDB (btc-lt-history.js)
+    if (window.BtcLtHistory && typeof window.BtcLtHistory.load === "function") window.BtcLtHistory.load(false);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();

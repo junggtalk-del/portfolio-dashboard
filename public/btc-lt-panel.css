@@ -1,0 +1,293 @@
+/* ============================================================
+   Bitcoin Monitor · Long-term On-chain panel (public/btc-lt-panel.js · 2026-11-26)
+   The top block of the On-chain Deep Dive (#btcDeepDive). Load after glass-cards.css and bitcoin-monitor.css.
+
+   Every block is a glass tile (glass-cards.css gc-card gc-tile + the tone the engine computed) or sits on one,
+   so it looks the same in both site themes. Ink = --gc-ink / --gc-ink-2 with the site-theme fallback
+   (--app-text / --app-text-2) for the two plain wrappers (5 คำถาม · แหล่งข้อมูล) in case they render off
+   the glass. Status hues = the page's --mc-* tokens (lifted for the glass by bitcoin-monitor.css #btcRoot .gc-card).
+   Charts copy the Deep Dive cards (bitcoin-monitor.css .btc-dd-chart): SVG stretched to the box, white main
+   line, orange BTC price, HTML labels. Line hues were run through the dataviz palette validator on the dark plot
+   well (#0b1020, all pairs, CVD + normal vision + 3:1): LTH Realized #199e70 · Active Investor #3987e5 · full
+   signal #9085e9 against the page's BTC orange #f7931a (kept for identity across the page's charts);
+   Realized Price is a white dashed reference line. Every class starts with btc-lt-.
+   ============================================================ */
+.btc-lt { display: flex; flex-direction: column; gap: 14px; min-width: 0; margin: 0 0 18px; }
+.btc-lt-h { margin: 0; font-size: 16px; font-weight: 800; line-height: 1.35; color: var(--gc-ink, var(--app-text)); }
+.btc-lt-kicker { font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; color: var(--gc-ink-2, var(--app-text-2)); }
+.btc-lt-sub { margin: 4px 0 0; max-width: 92ch; font-size: 12px; line-height: 1.55; color: var(--gc-ink-2, var(--app-text-2)); }
+.btc-lt-na { color: var(--gc-ink-2, var(--app-text-2)); font-weight: 600; }
+.btc-lt-na-p { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--gc-ink-2, var(--app-text-2)); }
+.btc-lt-note { margin: 0; font-size: 11.5px; line-height: 1.6; color: var(--gc-ink-2, var(--app-text-2)); }
+.btc-lt-status { margin: 0; padding: 8px 12px; border-radius: 10px; background: rgba(0, 0, 0, 0.25); border: 1px dashed rgba(255, 217, 138, 0.55); font-size: 12px; line-height: 1.6; color: var(--gc-ink-2, var(--app-text-2)); overflow-wrap: anywhere; }
+.btc-lt time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---- 1 · Long-term Signal ---- */
+.btc-lt-sig.gc-card { gap: 14px; padding: 16px 18px 16px; }
+.btc-lt-head, .btc-lt-sechead { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px 14px; flex-wrap: wrap; }
+.btc-lt-head > div, .btc-lt-sechead > div:first-child { min-width: 0; flex: 1 1 260px; }
+.btc-lt-cov { flex: none; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); color: var(--gc-ink); font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.btc-lt-hero { display: flex; align-items: center; gap: 12px 22px; flex-wrap: wrap; }
+.btc-lt-score { display: flex; align-items: baseline; gap: 2px; flex: none; }
+.btc-lt-score .gc-num { font-size: 58px; }
+.btc-lt-na-big { font-size: 22px; font-weight: 800; color: var(--gc-ink-2); }
+.btc-lt-hero-side { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; flex: 1 1 260px; min-width: 0; }
+.btc-lt-delta { font: 700 13px var(--gc-num-font, Inter), sans-serif; font-variant-numeric: tabular-nums; color: var(--gc-ink); }
+.btc-lt-delta span { font-weight: 600; color: var(--gc-ink-2); }
+.btc-lt-disc, .btc-lt-why-na { margin: 0; font-size: 12px; line-height: 1.55; color: var(--gc-ink-2); }
+.btc-lt-disc b { color: var(--gc-ink); }
+.btc-lt-asof { margin: 0; font-size: 11px; line-height: 1.55; color: var(--gc-ink-2); }
+.btc-lt-why-na { color: var(--gc-ink); font-weight: 600; }
+
+/* state chips: 5 states, filled / ringed so strong ≠ accumulation and hot ≠ risk even without colour */
+.btc-lt-state, .btc-lt-zone { display: inline-flex; align-items: center; max-width: 100%; border: 1px solid currentColor; border-radius: 999px; background: rgba(0, 0, 0, 0.3); font-weight: 800; line-height: 1.3; }
+.btc-lt-state { padding: 4px 11px; font-size: 12.5px; }
+.btc-lt-zone { padding: 1px 8px; font-size: 10.5px; }
+.btc-lt-st-strong { border-color: transparent; background: var(--mc-emerald, #7cf5c6); color: #03261a; }
+.btc-lt-st-accum { color: var(--mc-emerald, #7cf5c6); }
+.btc-lt-st-neutral { color: var(--gc-ink-2, var(--app-text-2)); }
+.btc-lt-st-risk { color: var(--mc-amber, #ffd98a); }
+.btc-lt-st-hot { border-color: transparent; background: var(--mc-red, #ffcfdb); color: #3b0616; }
+
+/* 3 groups → bar (white, like the Buy Zone component bars on glass) → their indicators */
+.btc-lt-fams { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 10px; }
+.btc-lt-fam { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 11px 12px 12px; border-radius: 16px; background: var(--gc-well, rgba(0, 0, 0, 0.26)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); }
+.btc-lt-fam-head { display: flex; align-items: baseline; gap: 4px 8px; flex-wrap: wrap; }
+.btc-lt-fam-name { font-size: 13px; font-weight: 800; color: var(--gc-ink); }
+.btc-lt-fam-w { font-size: 11px; color: var(--gc-ink-2); }
+.btc-lt-fam-score { margin-left: auto; font: 700 18px var(--gc-num-font, Inter), sans-serif; font-variant-numeric: tabular-nums; color: var(--gc-ink); }
+.btc-lt-fam-score .btc-lt-na { font: 600 12px var(--gc-font, inherit); }
+.btc-lt-bar { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
+.btc-lt-bar i { display: block; height: 100%; border-radius: 999px; background: #fff; box-shadow: 0 0 10px rgba(255, 255, 255, 0.35); }
+.btc-lt-mems { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.btc-lt-mem { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-top: 8px; border-top: 1px dashed var(--gc-line, var(--app-border)); }
+.btc-lt-mem-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.btc-lt-mem-name { min-width: 0; font-size: 12px; font-weight: 700; color: var(--gc-ink); }
+.btc-lt-mem-val { flex: none; font: 700 14px var(--gc-num-font, Inter), sans-serif; font-variant-numeric: tabular-nums; color: var(--gc-ink); white-space: nowrap; }
+.btc-lt-mem-val .btc-lt-na { font: 600 11.5px var(--gc-font, inherit); }
+.btc-lt-mem-mid { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; font-size: 11px; color: var(--gc-ink-2); }
+.btc-lt-mem-score { font-variant-numeric: tabular-nums; }
+.btc-lt-mem-why { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--gc-ink-2); }
+.btc-lt-mem-src { font-size: 10.5px; line-height: 1.45; color: var(--gc-ink-2); }
+.btc-lt-covnote { margin: 0; font-size: 12px; line-height: 1.55; color: var(--mc-amber, #ffd98a); }
+.btc-lt-why > summary { cursor: pointer; list-style: none; padding: 2px 0; font-size: 12px; font-weight: 700; color: var(--gc-ink-2); }
+.btc-lt-why > summary::-webkit-details-marker { display: none; }
+.btc-lt-why > summary::before { content: "ⓘ "; }
+.btc-lt-reasons { margin: 6px 0 0; padding-left: 18px; font-size: 12px; line-height: 1.6; color: var(--gc-ink-2); }
+.btc-lt-limits { margin: 0; padding: 9px 12px 9px 28px; border-radius: 12px; background: var(--gc-well, rgba(0, 0, 0, 0.26)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); font-size: 11.5px; line-height: 1.6; color: var(--gc-ink-2); }
+
+/* ---- 2 · five questions ---- */
+.btc-lt-qs { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+/* a gauge per question (2026-11-26) — 5 across · 3 · 2 on a phone */
+.btc-lt-qgrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1180px) { .btc-lt-qgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .btc-lt-qgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .btc-lt-q-q { min-height: 4.35em; } }
+.btc-lt-q.gc-card { gap: 4px; min-width: 0; align-items: center; text-align: center; padding: 12px 10px; }
+.btc-lt-q-q { margin: 0; min-height: 2.9em; font-size: 12px; font-weight: 600; line-height: 1.45; color: var(--gc-ink-2); }
+.btc-lt-gauge { display: block; width: 100%; max-width: 168px; height: auto; margin: 2px auto 0; overflow: visible; }
+.btc-lt-gz { fill: none; stroke-width: 12; }
+.btc-lt-gz.is-g { stroke: var(--mc-emerald, #10b981); }
+.btc-lt-gz.is-y { stroke: var(--gc-ink-3, rgba(245, 245, 250, 0.5)); }
+.btc-lt-gz.is-a { stroke: var(--mc-amber, #f59e0b); }
+.btc-lt-gz.is-r { stroke: var(--mc-red, #f43f5e); }
+.btc-lt-gn line { stroke: var(--gc-ink, #f5f5fa); stroke-width: 3.5; stroke-linecap: round; }
+.btc-lt-gn circle { fill: var(--gc-ink, #f5f5fa); }
+.btc-lt-gl { font-size: 8px; font-weight: 700; font-family: inherit; }
+.btc-lt-gl.is-g { fill: var(--mc-emerald, #10b981); }
+.btc-lt-gl.is-r { fill: var(--mc-red, #f43f5e); }
+.btc-lt-q-v { margin: 0; font-size: 19px; font-weight: 800; line-height: 1.2; }
+.btc-lt-q-v.is-g, .btc-lt-qsum b.is-g { color: var(--mc-emerald, #10b981); }
+.btc-lt-q-v.is-y, .btc-lt-qsum b.is-y { color: var(--gc-ink-2); }
+.btc-lt-q-v.is-a, .btc-lt-qsum b.is-a { color: var(--mc-amber, #f59e0b); }
+.btc-lt-q-v.is-r, .btc-lt-qsum b.is-r { color: var(--mc-red, #f43f5e); }
+.btc-lt-q-v.is-n, .btc-lt-qsum b.is-n { color: var(--gc-ink-2); }
+.btc-lt-q-a { margin: 0; font-size: 12.5px; font-weight: 600; line-height: 1.4; color: var(--gc-ink); }
+.btc-lt-q-more { width: 100%; margin-top: auto; text-align: left; }
+.btc-lt-q-more > summary { cursor: pointer; padding-top: 6px; font-size: 11.5px; color: var(--gc-ink-2); text-align: center; list-style-position: inside; }
+.btc-lt-q-more > summary:focus-visible, .btc-lt-accfull > summary:focus-visible { outline: 2px solid var(--gc-focus, #fff); outline-offset: 2px; border-radius: 6px; }
+.btc-lt-q-ev { margin: 6px 0 0; padding-top: 7px; border-top: 1px dashed var(--gc-line); font-size: 11.5px; line-height: 1.5; color: var(--gc-ink-2); }
+.btc-lt-qsum { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-size: 13.5px; line-height: 1.5; color: var(--gc-ink); }
+.btc-lt-qdots { display: inline-flex; gap: 5px; }
+.btc-lt-qdots i { display: inline-block; width: 13px; height: 13px; border-radius: 50%; }
+.btc-lt-qdots i.is-g { background: var(--mc-emerald, #10b981); }
+.btc-lt-qdots i.is-y { background: var(--gc-ink-3); }
+.btc-lt-qdots i.is-a { background: var(--mc-amber, #f59e0b); }
+.btc-lt-qdots i.is-r { background: var(--mc-red, #f43f5e); }
+.btc-lt-qdots i.is-n { background: transparent; box-shadow: inset 0 0 0 2px var(--gc-ink-3); }
+
+/* ---- 3 · Cost Basis ---- */
+.btc-lt-cost.gc-card, .btc-lt-hist.gc-card { gap: 12px; padding: 16px 18px; }
+.btc-lt-costrows { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.btc-lt-crow { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; padding: 9px 11px 10px; border-radius: 14px; background: var(--gc-well, rgba(0, 0, 0, 0.26)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); }
+.btc-lt-crow-top { display: flex; align-items: center; gap: 8px; width: 100%; }
+.btc-lt-crow-l { flex: 1; min-width: 0; font-size: 12px; font-weight: 700; color: var(--gc-ink); }
+.btc-lt-crow-v { flex: none; font: 700 16px var(--gc-num-font, Inter), sans-serif; font-variant-numeric: tabular-nums; color: var(--gc-ink); white-space: nowrap; }
+.btc-lt-crow-v .btc-lt-na { font: 600 12px var(--gc-font, inherit); }
+.btc-lt-crow-sub, .btc-lt-crow-src { font-size: 11px; line-height: 1.45; color: var(--gc-ink-2); }
+.btc-lt-pct { padding: 2px 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); color: var(--gc-ink); font: 700 11.5px var(--gc-num-font, Inter), sans-serif; font-variant-numeric: tabular-nums; }
+/* swatches = the line each row / legend entry stands for */
+.btc-lt-sw { display: inline-block; flex: none; width: 18px; height: 3px; border-radius: 2px; vertical-align: middle; background: var(--gc-ink, #fff); }
+.btc-lt-sw.is-price { background: #f7931a; }
+.btc-lt-sw.is-lth { background: #199e70; }
+.btc-lt-sw.is-aip { background: #3987e5; }
+.btc-lt-sw.is-full { background: #9085e9; }
+.btc-lt-sw.is-realized { background: repeating-linear-gradient(90deg, rgba(245, 245, 250, 0.85) 0 5px, transparent 5px 8px); }
+
+/* ---- charts (Deep Dive look: bitcoin-monitor.css .btc-dd-chart) ---- */
+.btc-lt-chart { display: grid; grid-template-columns: 52px minmax(0, 1fr); grid-template-rows: 240px 20px; column-gap: 6px; min-width: 0; }
+.btc-lt-chart.has-right { grid-template-columns: 52px minmax(0, 1fr) 48px; }
+.btc-lt-yl, .btc-lt-yr { position: relative; }
+.btc-lt-yl i, .btc-lt-yr i, .btc-lt-xl i { position: absolute; font: 600 10px var(--gc-num-font, Inter), sans-serif; font-style: normal; font-variant-numeric: tabular-nums; color: var(--gc-ink-2); white-space: nowrap; }
+.btc-lt-yl i { right: 0; transform: translateY(-50%); }
+.btc-lt-yr i { left: 4px; transform: translateY(-50%); color: #ffd3a1; }   /* the orange price axis (same as .btc-dd-yr) */
+.btc-lt-xl { grid-column: 2; position: relative; }
+.btc-lt-xl i { top: 4px; transform: translateX(-50%); }
+.btc-lt-xl i:first-child { transform: none; }
+.btc-lt-xl i:last-child { transform: translateX(-100%); }
+.btc-lt-plot { position: relative; min-width: 0; border-radius: 10px; background: rgba(5, 8, 20, 0.45); cursor: crosshair; }   /* dark well: the orange price reads on every tone */
+.btc-lt-plot svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
+.btc-lt-grid { stroke: rgba(255, 255, 255, 0.1); stroke-width: 1; }
+.btc-lt-ln { fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.btc-lt-ln.is-main { stroke: var(--gc-ink, #f5f5fa); stroke-width: 2; }
+.btc-lt-ln.is-price { stroke: #f7931a; }
+.btc-lt-ln.is-overlay { stroke-width: 1.5; opacity: 0.9; }
+.btc-lt-ln.is-realized { stroke: rgba(245, 245, 250, 0.85); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.btc-lt-ln.is-aip { stroke: #3987e5; }
+.btc-lt-ln.is-lth { stroke: #199e70; }
+.btc-lt-ln.is-full { stroke: #9085e9; }
+/* background bands = the 5 states (score) or where one indicator's own sub-score crosses them */
+.btc-lt-band.is-strong { fill: var(--mc-emerald, #7cf5c6); opacity: 0.22; }
+.btc-lt-band.is-accum { fill: var(--mc-emerald, #7cf5c6); opacity: 0.1; }
+.btc-lt-band.is-neutral { fill: #fff; opacity: 0.04; }
+.btc-lt-band.is-risk { fill: var(--mc-amber, #ffd98a); opacity: 0.14; }
+.btc-lt-band.is-hot { fill: var(--mc-red, #ffcfdb); opacity: 0.18; }
+.btc-lt-dot { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--gc-ink, #fff); box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.18), 0 0 12px rgba(255, 255, 255, 0.6); pointer-events: none; }
+.btc-lt-cross { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed rgba(255, 255, 255, 0.65); pointer-events: none; }
+.btc-lt-tip { position: absolute; top: 6px; z-index: 2; max-width: min(320px, 90%); padding: 5px 9px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; background: rgba(5, 8, 20, 0.92); color: #fff; font: 700 11.5px/1.5 var(--gc-num-font, Inter), sans-serif; white-space: pre-line; transform: translateX(8px); pointer-events: none; }
+.btc-lt-tip.is-left { transform: translateX(calc(-100% - 8px)); }
+.btc-lt-cross[hidden], .btc-lt-tip[hidden] { display: none; }
+/* cycle tops / bottoms: dashed line + label (▲ ยอด top edge · ▼ ก้น bottom edge) + a dot on the price line */
+.btc-lt-mkl { stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.75; }
+.btc-lt-mkl.is-top { stroke: var(--mc-red, #ffcfdb); }
+.btc-lt-mkl.is-bottom { stroke: var(--mc-emerald, #7cf5c6); }
+.btc-lt-mkl.is-prov { opacity: 0.45; }
+.btc-lt-mk { position: absolute; z-index: 1; padding: 1px 6px; border-radius: 999px; background: rgba(5, 8, 20, 0.85); color: var(--gc-ink, #fff); font-size: 10px; font-weight: 800; line-height: 1.4; white-space: nowrap; transform: translateX(-50%); pointer-events: none; }
+.btc-lt-mk.is-top { top: 4px; }
+.btc-lt-mk.is-bottom { bottom: 4px; }
+.btc-lt-mk.is-start { transform: none; }
+.btc-lt-mk.is-end { transform: translateX(-100%); }
+.btc-lt-mk.is-prov { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45); }
+.btc-lt-mk b, .btc-lt-cycles b { margin-right: 2px; font-weight: 800; }
+.btc-lt-mk.is-top b, .btc-lt-cycles b.is-top { color: var(--mc-red, #ffcfdb); }
+.btc-lt-mk.is-bottom b, .btc-lt-cycles b.is-bottom { color: var(--mc-emerald, #7cf5c6); }
+.btc-lt-mkdot { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(5, 8, 20, 0.9); pointer-events: none; }
+.btc-lt-mkdot.is-top { background: var(--mc-red, #ffcfdb); }
+.btc-lt-mkdot.is-bottom { background: var(--mc-emerald, #7cf5c6); }
+.btc-lt-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 12px; color: var(--gc-ink-2); }
+.btc-lt-key { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--gc-ink); }
+.btc-lt-cycles { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--gc-ink-2); }
+.btc-lt-cycles-h { font-weight: 700; }
+.btc-lt-cycles ul { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; }
+.btc-lt-cycles li { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ---- 4 · controls (Deep Dive range pill look: .btc-dd-range) ---- */
+.btc-lt-ctrl { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; }
+.btc-lt-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; max-width: 100%; padding: 3px; border-radius: 18px; background: rgba(255, 255, 255, 0.08); }
+.btc-lt-seg button { min-height: 32px; padding: 6px 11px; border: 0; border-radius: 999px; background: transparent; color: var(--gc-ink-2); font: 700 12px var(--gc-num-font, Inter), sans-serif; cursor: pointer; }
+.btc-lt-seg button:hover { color: var(--gc-ink); }
+.btc-lt-seg button.is-on { background: #fff; color: #0b0b12; }
+.btc-lt-ptog { min-height: 32px; padding: 5px 12px; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 999px; background: rgba(0, 0, 0, 0.2); color: var(--gc-ink); font: 700 12px var(--gc-num-font, Inter), sans-serif; cursor: pointer; }
+.btc-lt-seg button:focus-visible, .btc-lt-ptog:focus-visible, .btc-lt-why > summary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* ---- accuracy tables (glass-cards.css gc-table · the wrap scrolls sideways on a phone, the page does not) ---- */
+/* stacked, not side by side: a 9-column table needs ~730px, half a desktop card is narrower (the 365-day columns
+   would scroll out of sight at 1280px) */
+.btc-lt-acc { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.btc-lt-accb { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.btc-lt-acc-h { margin: 0; font-size: 13px; font-weight: 800; color: var(--gc-ink); }
+.btc-lt-acc-sub { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--gc-ink-2); }
+/* the accuracy picture (2026-11-26) — "N ใน 100 ครั้ง" + one bar per state · the tables fold under ดูตารางเต็ม */
+.btc-lt-accpic { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.btc-lt-accnow { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 18px; align-items: center; padding: 12px; border-radius: 14px; background: var(--gc-well, rgba(0, 0, 0, 0.26)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); }
+.btc-lt-cells { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; width: 200px; }
+.btc-lt-cells i { display: block; aspect-ratio: 1; border-radius: 3px; }
+.btc-lt-cells i.is-up { background: var(--mc-emerald, #10b981); }
+.btc-lt-cells i.is-down { background: transparent; box-shadow: inset 0 0 0 2px var(--mc-red, #f43f5e); }   /* a hollow ring — not colour alone */
+.btc-lt-accnow-t { min-width: 0; }
+.btc-lt-accnow-t p { margin: 0 0 4px; font-size: 13px; line-height: 1.5; color: var(--gc-ink-2); }
+.btc-lt-accnow-t small { color: var(--gc-ink-2); }
+.btc-lt-accnow-t:only-child { grid-column: 1 / -1; }
+.btc-lt-accnow-t .btc-lt-accbig b { font-size: 28px; font-weight: 800; line-height: 1.15; }
+.btc-lt-accbig.is-g b { color: var(--mc-emerald, #10b981); }
+.btc-lt-accbig.is-y b { color: var(--gc-ink); }
+.btc-lt-accbig.is-a b { color: var(--mc-amber, #f59e0b); }
+.btc-lt-accbig.is-r b { color: var(--mc-red, #f43f5e); }
+.btc-lt-accnow-t .btc-lt-accbase { font-size: 12px; color: var(--gc-ink-2); }
+.btc-lt-accnow-t .btc-lt-accalt { font-size: 12px; color: var(--gc-ink-2); }
+.btc-lt-accnow-t .btc-lt-accdd { color: var(--mc-amber, #f59e0b); }
+.btc-lt-acc-k { margin: 6px 0 0; font-size: 12.5px; font-weight: 700; color: var(--gc-ink-2); }
+.btc-lt-accbars { display: flex; flex-direction: column; gap: 6px; }
+.btc-lt-accbar { display: grid; grid-template-columns: 190px minmax(0, 1fr) minmax(0, 300px); gap: 10px; align-items: center; padding: 5px 6px; border-radius: 10px; font-size: 12.5px; }
+.btc-lt-accbar.is-now { box-shadow: inset 0 0 0 2px var(--mc-emerald, #10b981); }
+.btc-lt-accnowtag { color: var(--mc-emerald, #10b981); font-size: 12px; white-space: nowrap; }
+.btc-lt-accbar-t { position: relative; height: 12px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.btc-lt-accbar-t i { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 99px; }
+.btc-lt-accbar-t i.is-g { background: var(--mc-emerald, #10b981); }
+.btc-lt-accbar-t i.is-y { background: var(--gc-ink-3); }
+.btc-lt-accbar-t i.is-a { background: var(--mc-amber, #f59e0b); }
+.btc-lt-accbar-t i.is-r { background: var(--mc-red, #f43f5e); }
+.btc-lt-accbar-x { line-height: 1.4; color: var(--gc-ink-2); }
+.btc-lt-accbar-x b { color: var(--gc-ink); }
+.btc-lt-accbar .btc-lt-none { grid-column: 2 / -1; color: var(--gc-ink-2); }
+.btc-lt-accfull > summary { cursor: pointer; padding: 6px 0; font-size: 12.5px; font-weight: 700; color: var(--gc-ink-2); }
+.btc-lt-accfull[open] > summary { margin-bottom: 8px; }
+.btc-lt-accfull .btc-lt-accb + .btc-lt-accb { margin-top: 14px; }
+@media (max-width: 720px) {
+  .btc-lt-accnow { grid-template-columns: 1fr; }
+  .btc-lt-cells { width: min(100%, 220px); }
+  .btc-lt-accbar { grid-template-columns: 1fr; gap: 4px; }
+  .btc-lt-accbar .btc-lt-none { grid-column: auto; }
+}
+.btc-lt-table { min-width: 600px; }
+.btc-lt-table th[scope="colgroup"] { text-align: center; }
+.btc-lt-table tbody th { white-space: nowrap; }
+/* the state column stays put while the numbers scroll sideways inside the wrap (phone) */
+.btc-lt-table tbody th[scope="row"],
+.btc-lt-table thead tr:first-child th:first-child { position: sticky; left: 0; z-index: 1; background: rgba(13, 16, 28, 0.97); }
+.btc-lt-table .btc-lt-state { padding: 2px 8px; font-size: 11px; }
+.btc-lt-table small { margin-left: 3px; font-size: 10px; font-weight: 600; color: var(--gc-ink-2); }
+.btc-lt-table .btc-lt-none { color: var(--gc-ink-2); text-align: center; }
+
+/* ---- 5 · sources ---- */
+.btc-lt-src { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.btc-lt-h-s { font-size: 13px; }
+.btc-lt-srcs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.btc-lt-srci { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 10px 12px; border-radius: 14px; background: var(--gc-well, var(--app-surface)); box-shadow: inset 0 0 0 1px var(--gc-line, var(--app-border)); font-size: 11.5px; line-height: 1.5; color: var(--gc-ink-2, var(--app-text-2)); overflow-wrap: anywhere; }
+.btc-lt-srci-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.btc-lt-srci-top b { min-width: 0; font-size: 12.5px; color: var(--gc-ink, var(--app-text)); }
+.btc-lt-srcst { flex: none; padding: 1px 8px; border: 1px solid currentColor; border-radius: 999px; background: rgba(0, 0, 0, 0.3); font-size: 10.5px; font-weight: 800; }
+.btc-lt-srci.is-ok .btc-lt-srcst { color: var(--mc-emerald, #7cf5c6); }
+.btc-lt-srci.is-warn .btc-lt-srcst { color: var(--mc-amber, #ffd98a); }
+.btc-lt-srci.is-err .btc-lt-srcst { color: var(--mc-red, #ffcfdb); }
+.btc-lt-srci.is-muted .btc-lt-srcst { color: var(--gc-ink-2, var(--app-text-2)); }
+.btc-lt-srci-note { margin: 0; }
+
+/* a narrow chart (the history card is a gc-card = an inline-size container): marker tags keep only ▲ / ▼ so
+   neighbouring cycles do not overprint each other — the dated list under the chart names every point */
+@container (max-width: 560px) {
+  .btc-lt-mk-t { display: none; }
+  .btc-lt-mk { padding: 1px 4px; }
+}
+
+/* ---- phone ---- */
+@media (max-width: 720px) {
+  .btc-lt-sig.gc-card, .btc-lt-cost.gc-card, .btc-lt-hist.gc-card { padding: 14px; }
+  .btc-lt-score .gc-num { font-size: 48px; }
+  .btc-lt-chart { grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: 210px 20px; }
+  .btc-lt-chart.has-right { grid-template-columns: 44px minmax(0, 1fr) 40px; }
+  .btc-lt-cycles li { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btc-lt * { transition: none !important; }
+}

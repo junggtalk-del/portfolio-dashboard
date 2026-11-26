@@ -203,6 +203,10 @@
 
 /* ---- Deep Dive trend charts + big chart (2026-11-23) — bitcoin-monitor-page.js ddChart / ddModalHtml ---- */
 #btcDeepDive .mc-panel-head { align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+/* the 9 cards' own head when the Long-term panel sits above them (2026-11-26) */
+.btc-dd-subhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 22px 0 14px; padding-top: 18px; border-top: 1px solid var(--gc-line, rgba(255, 255, 255, 0.1)); }
+.btc-dd-subhead h3 { font-size: 16px; font-weight: 700; margin: 0 0 2px; letter-spacing: 0.01em; }
+.btc-dd-subhead .mc-sub { display: block; font-size: 12px; color: var(--mc-muted); }
 .btc-dd-range { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); flex: none; }
 .btc-dd-range button { border: 0; background: transparent; color: var(--mc-muted); font: 700 12px var(--gc-num-font, Inter), sans-serif; padding: 6px 12px; min-height: 32px; border-radius: 999px; cursor: pointer; }
 .btc-dd-range button.is-on { background: #fff; color: #0b0b12; }

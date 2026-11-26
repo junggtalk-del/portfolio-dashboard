@@ -3,13 +3,21 @@
 //
 // What must stay true:
 //   · public/btc-onchain-live.js pulls ~4 years of DAILY HISTORY per metric from BGeometrics — one request per
-//     endpoint (same budget as the old /last calls; free tier 10/hour · 15/day per IP) — 8 a day:
+//     endpoint (same budget as the old /last calls; free tier 10/hour · 15/day per IP) — 11 a day (2026-11-26):
 //       mvrv-zscore · realized-price · nupl · nup (RUP, field nupProfit) · sopr · ssr · supply-profit-lth + supply-loss-lth
-//     (LTH Supply = LTH coins in profit + in loss, summed day by day; a day only one part has is dropped).
+//       (LTH Supply — the live-verified pair; the single long-term-hodler-supply-btc endpoint was never called for real,
+//       so the existing card stays on the pair) · lth-realized-price · lth-sopr · true-market-mean (= Active Investor
+//       Price) — field names of the 3 new ones from the /last schemas of BGeometrics' OpenAPI spec.
+//       - at most 10 REQUESTS per run (the hourly limit): the 11th waits for the next hour by itself — never a 429 of
+//         our own making;
 //       - latest value = the newest row; history goes to IndexedDB (BigCache "btc_bgeo_hist_v1:<key>"), never localStorage;
-//       - a v1 day-cache (/last era) counts as "not fetched today"; today's v2 cache is not re-fetched;
+//       - every row passes PLAUSIBLE (the range the metric can really take): a wrong unit / wrong field is dropped, so it
+//         never becomes the latest value or a chart point — no row left = no value (Data Unavailable), never a wrong number;
+//       - a v1 day-cache (/last era) counts as "not fetched today"; today's v2 cache is not re-fetched — on the day this
+//         ships only the 3 new metrics are requested (8 + 3 = 11 ≤ 15);
 //       - the once-per-hour guard; a rate limit mid-loop leaves the unreached metrics pending for the next hour;
 //       - a metric that answered 404 today is not retried today; null / "" / false never become a real 0.
+//     sumByDate (several parts summed by day) stays for a future multi-part metric; no metric uses it today.
 //   · the Deep Dive shows 7 cards; RUP sits after NUPL with zone tags < 0.25 กำไรบาง (calm) · < 0.5 กำไรปานกลาง (normal) ·
 //     < 0.7 กำไรหนา (warning) · ≥ 0.7 กำไรล้น (danger) and does NOT move the Buy Zone.
 //   · with history each card draws a trend chart (zone bands = the tag thresholds, white line, end dot, y labels at the
@@ -30,6 +38,7 @@ function t(name, cond, extra) {
   else { fail++; console.log("  FAIL  " + name + (extra != null ? " — " + (typeof extra === "string" ? extra : JSON.stringify(extra)) : "")); }
 }
 function toneOf(cls) { var m = String(cls).match(/\bgc-(calm|normal|warning|danger|neutral)\b/g) || []; return m.length === 1 ? m[0] : null; }
+function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 var DAY = 86400000;
 function ymd(ms) { return new Date(ms).toISOString().slice(0, 10); }
 var TODAY = ymd(Date.now()), D1 = ymd(Date.now() - DAY), D2 = ymd(Date.now() - 2 * DAY), D3 = ymd(Date.now() - 3 * DAY);
@@ -37,6 +46,8 @@ var TODAY = ymd(Date.now()), D1 = ymd(Date.now() - DAY), D2 = ymd(Date.now() - 2
 // ------------------------------------------------------------------ loader (btc-onchain-live.js)
 var SRC_LIVE = read("btc-onchain-live.js");
 function rows(field, vals, dates) { return vals.map(function (v, i) { var r = { d: (dates || [D3, D2, D1])[i], unixTs: i }; r[field] = v; r.delayed = false; return r; }); }
+// SIMULATED BGeometrics responses — made-up numbers for this test only (never fetched, not market data). Row shape =
+// the /last response schemas in BGeometrics' OpenAPI spec (d · unixTs · <field> · delayed), field names checked offline.
 var BODY = {
   "mvrv-zscore": rows("mvrvZscore", [1.1, 1.15, 1.2]),
   "realized-price": rows("realizedPrice", [44800, 44900, 45000]),
@@ -44,12 +55,19 @@ var BODY = {
   "nup": rows("nupProfit", [0.5, 0.51, 0.52]),
   "sopr": rows("sopr", [1, 1.005, 1.01]),
   "ssr": rows("ssrStablecoin", [9.2, 9.1, 9]),
+  // LTH Supply = LTH coins in profit + in loss · no D2 loss row → D2 dropped from the sum
   "supply-profit-lth": rows("supplyProfitLthBtc", [12e6, 12.1e6, 12.2e6]),
-  "supply-loss-lth": rows("supplyLossLthBtc", [2.5e6, 2.4e6], [D3, D1])     // no D2 row → D2 dropped from the sum
+  "supply-loss-lth": rows("supplyLossLthBtc", [2.5e6, 2.4e6], [D3, D1]),
+  "lth-realized-price": rows("lthRealizedPrice", [37800, 37900, 38000]),
+  "lth-sopr": rows("lthSopr", [1.8, 1.9, 2.1]),
+  "true-market-mean": rows("trueMarketMean", [52000, 52100, 52200])
 };
-var ORDER = ["mvrv-zscore", "realized-price", "nupl", "nup", "sopr", "ssr", "supply-profit-lth", "supply-loss-lth"];
-function makeLive(store, status, big) {
+// 11 requests a day; one run sends at most 10 (the hourly limit) → the 11th goes an hour later
+var ORDER = ["mvrv-zscore", "realized-price", "nupl", "nup", "sopr", "ssr", "supply-profit-lth", "supply-loss-lth", "lth-realized-price", "lth-sopr", "true-market-mean"];
+var KEYS10 = ["mvrvZScore", "realizedPrice", "nupl", "rup", "sopr", "ssr", "lthSupply", "lthRealizedPrice", "lthSopr", "activeInvestorPrice"];
+function makeLive(store, status, big, body) {
   var calls = [], urls = [];
+  var B = body || BODY;
   var ctx = {
     console: console, JSON: JSON, Promise: Promise, Date: Date, Object: Object, Array: Array,
     localStorage: { getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; }, setItem: function (k, v) { store[k] = String(v); } },
@@ -59,8 +77,8 @@ function makeLive(store, status, big) {
       urls.push(String(url));
       var ep = String(url).replace("https://bitcoin-data.com/v1/", "").split("?")[0];
       calls.push(ep);
-      var st = (status && status[ep]) || (BODY[ep] ? 200 : 404);
-      return Promise.resolve({ status: st, ok: st === 200, json: function () { return Promise.resolve(BODY[ep]); } });
+      var st = (status && status[ep]) || (B[ep] ? 200 : 404);
+      return Promise.resolve({ status: st, ok: st === 200, json: function () { return Promise.resolve(B[ep]); } });
     }
   };
   if (big) ctx.BigCache = { get: function (k) { return Promise.resolve(Object.prototype.hasOwnProperty.call(big, k) ? big[k] : null); }, set: function (k, v) { big[k] = JSON.parse(JSON.stringify(v)); return Promise.resolve(true); } };
@@ -76,9 +94,24 @@ async function loaderTests() {
   console.log("== loader: endpoints · order · parsing ==");
   var L = makeLive({}).live, M = L.METRICS;
   var keys = Object.keys(M);
-  t("7 metrics in order: mvrvZScore · realizedPrice · nupl · rup · sopr · ssr · lthSupply", keys.join() === "mvrvZScore,realizedPrice,nupl,rup,sopr,ssr,lthSupply", keys);
+  t("10 metrics in order: mvrvZScore · realizedPrice · nupl · rup · sopr · ssr · lthSupply · lthRealizedPrice · lthSopr · activeInvestorPrice", keys.join() === KEYS10.join(), keys);
   t("rup = BGeometrics `nup` (field nupProfit)", M.rup.parts.length === 1 && M.rup.parts[0].ep === "nup" && M.rup.parts[0].pick.test("nupProfit"));
-  t("lthSupply = supply-profit-lth + supply-loss-lth", M.lthSupply.parts.map(function (p) { return p.ep; }).join() === "supply-profit-lth,supply-loss-lth" && M.lthSupply.parts[0].pick.test("supplyProfitLthBtc") && M.lthSupply.parts[1].pick.test("supplyLossLthBtc"));
+  function onePart(cfg, ep, field) { return !!cfg && cfg.parts.length === 1 && cfg.parts[0].ep === ep && cfg.parts[0].pick.test(field); }
+  t("lthSupply = supply-profit-lth + supply-loss-lth (the live-verified pair — the existing card keeps its source)", M.lthSupply.parts.map(function (p) { return p.ep; }).join() === "supply-profit-lth,supply-loss-lth" && M.lthSupply.parts[0].pick.test("supplyProfitLthBtc") && M.lthSupply.parts[1].pick.test("supplyLossLthBtc"), M.lthSupply);
+  t("no request to the never-verified long-term-hodler-supply-btc", Object.keys(M).every(function (k) { return M[k].parts.every(function (p) { return p.ep !== "long-term-hodler-supply-btc"; }); }));
+  t("lthRealizedPrice = lth-realized-price (field lthRealizedPrice)", onePart(M.lthRealizedPrice, "lth-realized-price", "lthRealizedPrice"));
+  t("lthSopr = lth-sopr (field lthSopr)", onePart(M.lthSopr, "lth-sopr", "lthSopr"));
+  t("activeInvestorPrice = true-market-mean (BGeometrics' name for the Active Investor Price · field trueMarketMean)", onePart(M.activeInvestorPrice, "true-market-mean", "trueMarketMean"));
+  // a /last-shaped row as the spec documents it — the pick must land on the metric's own field, not on delayed / message
+  t("each new pick reads its own field in a /last-shaped row (d · unixTs · delayed · message · <field>)", [["lthRealizedPrice", "lthRealizedPrice", 38000], ["lthSopr", "lthSopr", 2.1], ["activeInvestorPrice", "trueMarketMean", 52200]].every(function (c) {
+    var row = { d: D1, unixTs: 1, delayed: true, message: "SIMULATED: Real-time data (last 7 days) requires an active subscription" };
+    row[c[1]] = c[2];
+    var p = L.parseLast(row, M[c[0]].parts[0].pick);
+    return !!p && p.value === c[2] && p.field === c[1];
+  }));
+  t("PLAUSIBLE exported: the range each metric can really take", same(L.PLAUSIBLE, { mvrvZScore: [-5, 25], realizedPrice: [1e3, 1e6], nupl: [-1, 1], rup: [0, 1.5], sopr: [0.3, 3], ssr: [0, 500],
+    lthSupply: [5e6, 2.1e7], lthRealizedPrice: [1e3, 1e6], lthSopr: [0.1, 100], activeInvestorPrice: [1e3, 1e6] }), L.PLAUSIBLE);
+  t("keepPlausible: rows outside the metric's range are dropped; a key without a range keeps its rows", same(L.keepPlausible([[D3, 0.5], [D2, 38000], [D1, 2e6]], "lthRealizedPrice"), [[D2, 38000]]) && same(L.keepPlausible([[D1, 1.2]], "notAMetric"), [[D1, 1.2]]));
   var s = L.parseSeries([{ d: D1, nupProfit: 0.5 }, { d: D3, nupProfit: "0.4" }, { d: D2, nupProfit: null, delayed: false }, { d: D1, nupProfit: 0.52 }, { d: "x" }], /nup/i);
   t("parseSeries: ascending, one row per day (last wins), null dropped, numeric strings kept", JSON.stringify(s) === JSON.stringify([[D3, 0.4], [D1, 0.52]]), s);
   t("parseSeries: page object {content:[…]} works too", L.parseSeries({ content: [{ d: D1, sopr: 1.01 }] }, /sopr/i).length === 1);
@@ -97,17 +130,71 @@ async function loaderTests() {
   m = makeLive(store, null, big);
   await m.live.load(false);
   var c = cacheOf(store), g = m.live.get();
-  t("> 1 hour → 8 history requests in order", m.calls.join() === ORDER.join(), m.calls);
+  t("> 1 hour → the first 10 history requests in order — the free tier's hourly limit", m.calls.join() === ORDER.slice(0, 10).join(), m.calls);
   t("each request asks ~4 years: ?startday=<today − 1461 d>&size=2000", m.urls.every(function (u) { return /\?startday=\d{4}-\d\d-\d\d&size=2000$/.test(u); }) && m.urls[0].indexOf("startday=" + ymd(Date.now() - 1461 * DAY)) > 0, m.urls[0]);
   t("latest value = newest row (RUP 0.52 on " + D1 + ")", g.metrics.rup.value === 0.52 && g.metrics.rup.date === D1 && g.metrics.nupl.value === 0.4, g.metrics.rup);
-  t("LTH Supply = profit + loss on shared days (D3, D1) → latest 14.6M", g.metrics.lthSupply.value === 14.6e6 && g.series.lthSupply.length === 2, g.series.lthSupply);
-  t("series kept in memory for all 7 metrics", ["mvrvZScore", "realizedPrice", "nupl", "rup", "sopr", "ssr", "lthSupply"].every(function (k) { return g.series[k] && g.series[k].length >= 2; }));
-  t("history written to BigCache btc_bgeo_hist_v1:<key> — not to localStorage", Object.keys(big).length === 7 && big["btc_bgeo_hist_v1:rup"].rows.length === 3 && store.btc_bgeo_v1.length < 2000, Object.keys(big));
-  t("v2 cache: all 7 tried today", c.v === 2 && c.u === TODAY && c.tried.length === 7, c);
+  t("LTH Supply = profit + loss on shared days (D3, D1) → latest 14.6M on " + D1 + ", 2 chart rows", g.metrics.lthSupply.value === 14.6e6 && g.metrics.lthSupply.date === D1 && g.series.lthSupply.length === 2, g.series.lthSupply);
+  t("the 11th request (true-market-mean) is not sent in the same hour → no 429 of our own making: no error, a retry in ~1 hour, Active Investor Price still owed",
+    m.calls.indexOf("true-market-mean") < 0 && !g.metrics.activeInvestorPrice && g.error === null && c.err === null && g.retryAt > Date.now() + 50 * 60000 && c.tried.length === 9 && c.tried.indexOf("activeInvestorPrice") < 0,
+    { error: g.error, retryAt: g.retryAt, tried: c.tried });
+  store.btc_bgeo_v1 = JSON.stringify(Object.assign(cacheOf(store), { lastAttempt: Date.now() - 2 * 3600000 }));   // the hour passes
+  m = makeLive(store, null, big);
+  await m.live.load(false);
+  c = cacheOf(store); g = m.live.get();
+  t("an hour later → only true-market-mean (11 requests that day ≤ 15)", m.calls.join() === "true-market-mean", m.calls);
+  var forced = makeLive({ btc_bgeo_v1: JSON.stringify({ v: 2, u: TODAY, at: "x", metrics: V1, lastAttempt: Date.now() - 2 * 3600000, tried: KEYS10 }) }, null, {});
+  await forced.live.load(true);
+  t("…load(true) → 10 requests, the rest next hour", forced.calls.join() === ORDER.slice(0, 10).join(), forced.calls);
+  t("the 3 new metrics land: LTH Realized Price 38,000 · LTH-SOPR 2.1 · Active Investor Price 52,200 (" + D1 + ")",
+    g.metrics.lthRealizedPrice.value === 38000 && g.metrics.lthSopr.value === 2.1 && g.metrics.activeInvestorPrice.value === 52200 &&
+    ["lthRealizedPrice", "lthSopr", "activeInvestorPrice"].every(function (k) { return g.metrics[k].date === D1 && g.series[k].length === 3; }), g.metrics);
+  t("series kept in memory for all 10 metrics", KEYS10.every(function (k) { return g.series[k] && g.series[k].length >= 2; }));
+  t("history written to BigCache btc_bgeo_hist_v1:<key> — not to localStorage", Object.keys(big).length === 10 && big["btc_bgeo_hist_v1:rup"].rows.length === 3 && big["btc_bgeo_hist_v1:activeInvestorPrice"].rows.length === 3 && store.btc_bgeo_v1.length < 2000, Object.keys(big));
+  t("v2 cache: all 10 tried today · nothing owed (no retry pending)", c.v === 2 && c.u === TODAY && c.tried.length === 10 && g.retryAt === null, c);
   m = makeLive(store, null, big);
   store.btc_bgeo_v1 = JSON.stringify(Object.assign(cacheOf(store), { lastAttempt: Date.now() - 2 * 3600000 }));
   await m.live.load(false);
   t("page reload the same day → 0 requests, series come back from IndexedDB", m.calls.length === 0 && m.live.get().series.rup && m.live.get().series.rup.length === 3, m.calls);
+
+  console.log("== loader: the day this ships (today's cache came from the 7-metric version) ==");
+  var OLD7 = ["mvrvZScore", "realizedPrice", "nupl", "rup", "sopr", "ssr", "lthSupply"];
+  store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: TODAY, at: "x", metrics: Object.assign({}, V1, { lthSupply: { value: 14.4e6, date: D2 } }), lastAttempt: Date.now() - 2 * 3600000, tried: OLD7 }) };
+  m = makeLive(store, null, {});
+  await m.live.load(false);
+  c = cacheOf(store); g = m.live.get();
+  t("only the 3 new metrics are requested: lth-realized-price · lth-sopr · true-market-mean (8 + 3 = 11 ≤ 15 today)", m.calls.join() === "lth-realized-price,lth-sopr,true-market-mean", m.calls);
+  t("…LTH Supply is not re-requested today (this morning's value stays until tomorrow) · all 10 tried · no retry pending", g.metrics.lthSupply.value === 14.4e6 && c.tried.length === 10 && g.retryAt === null && g.metrics.lthSopr.value === 2.1, { tried: c.tried, retryAt: g.retryAt });
+
+  console.log("== loader: values outside PLAUSIBLE are dropped (wrong unit / wrong field → no value, never a wrong number) ==");
+  var ODD = Object.assign({}, BODY, {
+    "lth-realized-price": rows("lthRealizedPrice", [37800, 37900, 0.42]),                       // newest row is a ratio, not a price
+    "true-market-mean": rows("trueMarketMean", [5.2e9, 5.21e9, 5.22e9]),                        // every row far too big
+    "supply-profit-lth": rows("supplyProfitLthBtc", [1.2e15, 1.21e15, 1.22e15]),               // satoshis, not BTC
+    "supply-loss-lth": rows("supplyLossLthBtc", [2.5e14, 2.45e14, 2.4e14]),
+    "lth-sopr": rows("lthSopr", [0, 1.9, 2.1]),                                                 // 0 is not a SOPR
+    "mvrv-zscore": rows("mvrvZscore", [1.1, 1.15, 99])                                          // the old metrics pass the same gate
+  });
+  store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: D1, at: "x", metrics: V1, lastAttempt: Date.now() - 20 * 3600000, tried: [] }) };
+  big = {};
+  m = makeLive(store, null, big, ODD);
+  await m.live.load(false);
+  store.btc_bgeo_v1 = JSON.stringify(Object.assign(cacheOf(store), { lastAttempt: Date.now() - 2 * 3600000 }));   // the hour passes → the 11th request
+  m = makeLive(store, null, big, ODD);
+  await m.live.load(false);
+  t("(the 11th request, true-market-mean, went an hour later)", m.calls.join() === "true-market-mean", m.calls);
+  g = m.live.get(); c = cacheOf(store);
+  t("LTH Realized Price: the 0.42 row is dropped → latest = 37,900 on " + D2 + ", 2 chart rows", g.metrics.lthRealizedPrice.value === 37900 && g.metrics.lthRealizedPrice.date === D2 && g.series.lthRealizedPrice.length === 2, g.metrics.lthRealizedPrice);
+  t("Active Investor Price all out of range → no value, no series, nothing saved (Data Unavailable)", !g.metrics.activeInvestorPrice && !g.series.activeInvestorPrice && !big["btc_bgeo_hist_v1:activeInvestorPrice"] && !c.metrics.activeInvestorPrice, g.metrics.activeInvestorPrice);
+  t("LTH Supply in satoshis → no value, no series", !g.metrics.lthSupply && !g.series.lthSupply, g.metrics.lthSupply);
+  t("LTH-SOPR 0 dropped → 2 rows · MVRV-Z 99 dropped → latest 1.15 on " + D2, same(g.series.lthSopr, [[D2, 1.9], [D1, 2.1]]) && g.metrics.mvrvZScore.value === 1.15 && g.metrics.mvrvZScore.date === D2, { sopr: g.series.lthSopr, z: g.metrics.mvrvZScore });
+  t("…an answer with no plausible row still counts as tried (not re-requested today)", c.tried.length === 10, c.tried);
+  store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: TODAY, at: "x", metrics: Object.assign({}, V1, { lthSupply: { value: 1.46e15, date: D2 }, ssr: { value: -3, date: D2 } }), lastAttempt: Date.now() - 2 * 3600000, tried: KEYS10 }) };
+  big = { "btc_bgeo_hist_v1:lthSopr": { at: "x", rows: [[D3, 0], [D2, 1.9], [D1, 250]] } };
+  m = makeLive(store, null, big);
+  await m.live.load(false);
+  g = m.live.get();
+  t("values cached before the gate pass it too: LTH Supply 1.46e15 and SSR −3 gone, the rest kept · 0 requests", m.calls.length === 0 && !g.metrics.lthSupply && !g.metrics.ssr && g.metrics.nupl.value === 0.39 && g.metrics.mvrvZScore.value === 1, g.metrics);
+  t("…and so do series restored from IndexedDB (LTH-SOPR 0 and 250 dropped → 1 row)", same(g.series.lthSopr, [[D2, 1.9]]), g.series.lthSopr);
 
   console.log("== loader: a rate limit mid-loop ==");
   store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: D1, at: "x", metrics: V1, lastAttempt: Date.now() - 20 * 3600000, tried: [] }) };
@@ -115,14 +202,14 @@ async function loaderTests() {
   await m.live.load(false);
   c = cacheOf(store);
   t("429 at nup stops the loop there", m.calls.join() === "mvrv-zscore,realized-price,nupl,nup", m.calls);
-  t("3 answered metrics tried; rup · sopr · ssr · lthSupply pending", c.tried.join() === "mvrvZScore,realizedPrice,nupl", c.tried);
+  t("3 answered metrics tried; the other 7 (rup onwards) pending", c.tried.join() === "mvrvZScore,realizedPrice,nupl", c.tried);
   m = makeLive(store, null, {});
   await m.live.load(false);
   t("within the hour → 0 requests", m.calls.length === 0, m.calls);
   store.btc_bgeo_v1 = JSON.stringify(Object.assign(cacheOf(store), { lastAttempt: Date.now() - 2 * 3600000 }));
   m = makeLive(store, null, {});
   await m.live.load(false);
-  t("an hour later → only the pending ones", m.calls.join() === "nup,sopr,ssr,supply-profit-lth,supply-loss-lth", m.calls);
+  t("an hour later → only the pending ones (8 requests ≤ 10)", m.calls.join() === "nup,sopr,ssr,supply-profit-lth,supply-loss-lth,lth-realized-price,lth-sopr,true-market-mean", m.calls);
   t("…and RUP arrives", m.live.get().metrics.rup && m.live.get().metrics.rup.value === 0.52);
 
   console.log("== loader: quota used up → say so, and try again by itself ==");
@@ -161,7 +248,12 @@ async function loaderTests() {
   m = makeLive(store, null, {});
   await m.live.load(false);
   g = m.live.get(); c = cacheOf(store);
-  t("a later full success clears the error and the retry time", g.error === null && g.retryAt === null && c.err === null && c.tried.length === 7, { g: { error: g.error, retryAt: g.retryAt }, c: c.err });
+  t("a later successful run clears the error (the 11th request is simply owed for the next hour)", g.error === null && c.err === null && c.tried.length === 9 && g.retryAt > Date.now(), { g: { error: g.error, retryAt: g.retryAt }, c: c.err });
+  store.btc_bgeo_v1 = JSON.stringify(Object.assign(cacheOf(store), { lastAttempt: Date.now() - 2 * 3600000 }));
+  m = makeLive(store, null, {});
+  await m.live.load(false);
+  g = m.live.get(); c = cacheOf(store);
+  t("…and once it is in, the retry time clears too", g.error === null && g.retryAt === null && c.err === null && c.tried.length === 10 && m.calls.join() === "true-market-mean", { g: { error: g.error, retryAt: g.retryAt }, calls: m.calls });
 
   console.log("== loader: in a browser the 429 has no CORS header → fetch throws → stop at once ==");
   store = { btc_bgeo_v1: JSON.stringify({ u: D1, at: "x", metrics: V1, eps: {}, lastAttempt: Date.now() - 5 * 3600000 }) };
@@ -173,11 +265,11 @@ async function loaderTests() {
   ctx5.window = ctx5; vm.createContext(ctx5); vm.runInContext(SRC_LIVE, ctx5, { filename: "btc-onchain-live.js" });
   await ctx5.BtcOnchainLive.load(false);
   c = cacheOf(store);
-  t("a thrown fetch (CORS-less 429 / offline) → ONE request, not 8 (seen live 2026-11-23)", thrown.join() === "mvrv-zscore", thrown);
+  t("a thrown fetch (CORS-less 429 / offline) → ONE request, not 10 (seen live 2026-11-23)", thrown.join() === "mvrv-zscore", thrown);
   t("…error \"blocked\" kept for the page, retry in an hour, yesterday's values stay", ctx5.BtcOnchainLive.get().error === "blocked" && c.err === "blocked" && ctx5.BtcOnchainLive.get().retryAt > Date.now() + 3500000 && c.metrics.nupl.value === 0.39, c);
 
   console.log("== loader: a metric answers 404 ==");
-  store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: TODAY, at: "x", metrics: V1, lastAttempt: Date.now() - 2 * 3600000, tried: ["mvrvZScore", "realizedPrice", "nupl", "sopr", "ssr", "lthSupply"] }) };
+  store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: TODAY, at: "x", metrics: V1, lastAttempt: Date.now() - 2 * 3600000, tried: KEYS10.filter(function (k) { return k !== "rup"; }) }) };
   m = makeLive(store, { "nup": 404 }, {});
   await m.live.load(false);
   c = cacheOf(store);
@@ -230,8 +322,11 @@ var SERIES = {
   realizedPrice: hist(function (i) { return 50000 - i * 10; }),
   sopr: hist(function (i) { return 1 + 0.02 * Math.sin(i / 9); }),
   ssr: hist(function (i) { return 12 + 3 * Math.sin(i / 50); }),
-  lthSupply: hist(function (i) { return 14e6 + i * 100; })
+  lthSupply: hist(function (i) { return 14e6 + i * 100; }),
+  lthSopr: hist(function (i) { return 1.8 + 0.6 * Math.sin(i / 30); })
 };
+// Puell Multiple's history comes from Blockchain.com (BtcLtHistory, not stubbed here) — covered by btc-lt-integration-test.js
+function bgeoCards(html) { return ddCards(html).filter(function (c) { return c.indexOf('btc-dd-title">Puell Multiple<') < 0; }); }
 
 function pageTests() {
   console.log("== page: the RUP card (no history yet → gauge) ==");
@@ -245,7 +340,8 @@ function pageTests() {
   });
   var html = runMonitor(Object.assign({}, BASE, { rup: 0.52 }));
   var titles = ddCards(html).map(function (c) { return (/btc-dd-title">([^<]*)</.exec(c) || [])[1]; });
-  t("7 Deep Dive cards; RUP sits right after NUPL", titles.length === 7 && titles.indexOf("RUP") === titles.indexOf("NUPL") + 1, titles);
+  t("9 Deep Dive cards; RUP sits right after NUPL; LTH-SOPR + Puell Multiple close the list",
+    titles.join("|") === ["MVRV Z-Score", "Realized Price", "NUPL", "RUP", "SOPR", "SSR", "LTH Supply", "LTH-SOPR", "Puell Multiple"].join("|"), titles);
   var card = cardOf(html, "RUP");
   t("no history → zone gauge + \"กราฟย้อนหลังจะขึ้น…\" note, no chart", /btc-dd-gauge/.test(card) && /btc-dd-nohist/.test(card) && !/btc-dd-chart/.test(card));
   t("วันนี้ visible; คืออะไร · อ่านยังไง · ข้อจำกัด inside อ่านเพิ่ม", (function () {
@@ -279,7 +375,7 @@ function pageTests() {
   t("end dot at the right edge; line keeps its width (non-scaling-stroke)", /class="btc-dd-dot" style="left:100%;top:[\d.]+%"/.test(card) && /<path [^>]*vector-effect="non-scaling-stroke"/.test(card));
   var first = SERIES.rup[SERIES.rup.length - 365] || SERIES.rup[0];
   t("change line: ▲/▼ |last − first| ใน 1 ปี", (function () { var m = /class="btc-dd-delta">([▲▼]) ([^<]*) ใน 1 ปี</.exec(card); return !!m; })());
-  t("all 7 cards draw a chart when every series is in", ddCards(html).every(function (c) { return /class="btc-dd-chart"/.test(c); }));
+  t("all 8 BGeometrics cards draw a chart when every series is in", bgeoCards(html).length === 8 && bgeoCards(html).every(function (c) { return /class="btc-dd-chart"/.test(c); }));
   t("Realized Price axis in $k, LTH axis in M", /\$\d+k<\/i>/.test(cardOf(html, "Realized Price")) && /\d+\.\d\dM<\/i>/.test(cardOf(html, "LTH Supply")));
   t("range buttons 6M · 1Y · 2Y · 4Y in the section head, 1Y pressed", /id="btcDdRange"/.test(html) && /data-dd-range="365" aria-pressed="true" class="is-on">1Y/.test(html) && ["182", "730", "1461"].every(function (d) { return html.indexOf('data-dd-range="' + d + '" aria-pressed="false"') >= 0; }));
   var html6 = runMonitor(Object.assign({}, BASE, { rup: 0.52 }), SERIES, { btc_dd_range_v1: "182" });
@@ -296,7 +392,7 @@ function pageTests() {
   t("blocked (browser-side 429 without CORS) → says it is most likely the free quota", /BGeometrics ไม่ตอบ ส่วนใหญ่เป็นเพราะโควตาฟรี \(ชั่วโมงละ 10 ครั้ง วันละ 15 ครั้ง\) หมด หรือเน็ตหลุด · หน้านี้จะลองใหม่เองเวลา 11:22 น\./.test(runMonitor(BASE, {}, null, { error: "blocked", retryAt: at })));
   t("unreachable → its own wording", /ติดต่อ BGeometrics ไม่สำเร็จ · หน้านี้จะลองใหม่เองเวลา 11:22 น\./.test(runMonitor(BASE, {}, null, { error: "unreachable", retryAt: at })));
   t("loading → \"กำลังดึงข้อมูลย้อนหลัง…\"", /กำลังดึงข้อมูลย้อนหลังจาก BGeometrics…/.test(runMonitor(BASE, {}, null, { loading: true })));
-  t("all 7 charts in → no status line", !/btc-dd-status/.test(runMonitor(Object.assign({}, BASE, { rup: 0.52 }), SERIES, null, { error: "rate-limited", retryAt: at })));
+  t("all 8 BGeometrics charts in → no status line (Puell's history is not BGeometrics')",!/btc-dd-status/.test(runMonitor(Object.assign({}, BASE, { rup: 0.52 }), SERIES, null, { error: "rate-limited", retryAt: at })));
   t("Deep Dive section carries id btcDeepDive + the hint to click the chart", /<section class="mc-card mc-panel mc-fade gc-card gc-neutral" id="btcDeepDive">/.test(html) && /กดที่กราฟเพื่อขยาย/.test(html));
 
   console.log("== page: HTML / CSS ==");
@@ -318,8 +414,14 @@ function pageTests() {
   t("page code: Escape closes, Tab stays inside the dialog, focus returns to the chart", /e\.key === "Escape"/.test(SRC_BM) && /e\.key === "Tab"/.test(SRC_BM) && /again\.focus\(\)/.test(SRC_BM) && /aria-modal="true"/.test(SRC_BM));
 }
 
+// a load() that never settles would let Node exit 0 with the summary unprinted — count that as a failure
+var finished = false;
+process.on("exit", function (code) {
+  if (!finished && code === 0) { console.log("  FAIL  the test chain never finished (a promise hung)"); process.exitCode = 1; }
+});
 loaderTests().then(function () {
   pageTests();
+  finished = true;
   console.log("\n" + (pass + fail) + " checks · " + pass + " passed · " + fail + " failed");
   if (fail) process.exit(1);
-}, function (e) { console.log("  FAIL  loader tests threw — " + (e && e.stack)); process.exit(1); });
+}, function (e) { finished = true; console.log("  FAIL  loader tests threw — " + (e && e.stack)); process.exit(1); });

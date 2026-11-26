@@ -141,7 +141,9 @@ function runMonitor(sc) {
     fetch: function () { return new Promise(function () {}); },   // stays "loading" — no network
     addEventListener: function () {},
     PortfolioDataSnapshot: { read: function () { return snap; } },
-    BtcOnchainLive: { get: function () { return { metrics: bgeo }; }, load: function () {} }
+    BtcOnchainLive: { get: function () { return { metrics: bgeo }; }, load: function () {} },
+    // Puell Multiple comes from Blockchain.com history (btc-lt-history.js), not BGeometrics
+    BtcLtHistory: { get: function () { return sc.puell == null ? null : { series: { puell: [[ymd(Date.now() - 2 * DAY), sc.puell], [ymd(Date.now() - DAY), sc.puell]] }, sources: {} }; }, load: function () { return Promise.resolve(); } }
   };
   ctx.window = ctx;
   vm.createContext(ctx);
@@ -155,23 +157,26 @@ var ZONE_TONE = { "ต่ำกว่ามูลค่า": "gc-calm", "ปก�
 var DD_TONE = { "ถูกสุดขั้ว": "gc-calm", "ต่ำ": "gc-calm", "ยอมแพ้": "gc-calm", "ความหวัง": "gc-calm", "ยอมขายขาดทุน": "gc-calm", "ขายขาดทุนเล็กน้อย": "gc-calm", "แรงซื้อเยอะ": "gc-calm", "ถูกล็อกเยอะ": "gc-calm", "กำไรบาง": "gc-calm",
   "กลาง": "gc-normal", "ลังเล": "gc-normal", "ขายมีกำไร": "gc-normal", "ปกติ": "gc-normal", "ระดับกลาง": "gc-normal", "กำไรปานกลาง": "gc-normal",
   "สูง": "gc-warning", "เชื่อมั่น": "gc-warning", "กำไรหนา ระวัง": "gc-warning", "เริ่มตึง": "gc-warning", "กำไรหนา": "gc-warning",
-  "ยอดดอย": "gc-danger", "ยูโฟเรีย": "gc-danger", "แรงซื้อหมด": "gc-danger", "กำไรล้น": "gc-danger", "เส้นฐาน": "gc-neutral" };
+  "ยอดดอย": "gc-danger", "ยูโฟเรีย": "gc-danger", "แรงซื้อหมด": "gc-danger", "กำไรล้น": "gc-danger", "เส้นฐาน": "gc-neutral",
+  // LTH-SOPR · Puell Multiple (2026-11-26)
+  "ขายขาดทุน": "gc-calm", "ขายกำไรปกติ": "gc-normal", "ทำกำไรหนา": "gc-warning", "ทำกำไรสูงมาก": "gc-danger",
+  "รายได้นักขุดต่ำ": "gc-calm", "รายได้สูง": "gc-warning", "ร้อนแรง": "gc-danger" };
 var COLOR_TONE = { "var(--mc-emerald)": "gc-calm", "var(--mc-blue)": "gc-normal", "var(--mc-amber)": "gc-warning", "var(--mc-red)": "gc-danger" };
 var BZ_TONE = { bull: "gc-calm", neutral: "gc-normal", warn: "gc-warning", bear: "gc-danger" };
 
 var SCENARIOS = {
   cheap: { tech: { latestClose: 60000, ema12: 61000, ema26: 59000, sma200: 55000, rsi14: 45, volumeRatio: 1.1, latestDate: ymd(Date.now()) },
     api: { mvrvRatio: 0.8, puellMultiple: 0.4, fearGreed: 15, fundingRate: -0.01, openInterest: 3e10, takerBuySellRatio: 1.1, longShortRatio: 1.5 },
-    bgeo: { mvrvZScore: -0.5, nupl: -0.1, realizedPrice: 45000, sopr: 0.97, ssr: 5, rup: 0.15, lthSupply: 16e6 } },
+    bgeo: { mvrvZScore: -0.5, nupl: -0.1, realizedPrice: 45000, sopr: 0.97, ssr: 5, rup: 0.15, lthSupply: 16e6, lthSopr: 0.9 }, puell: 0.4 },
   mid: { tech: { latestClose: 70000, ema12: 69000, ema26: 70500, sma200: 72000, rsi14: 50, volumeRatio: 1, latestDate: ymd(Date.now()) },
     api: { mvrvRatio: 1.5, puellMultiple: 1.0, fearGreed: 50, fundingRate: 0.005 },
-    bgeo: { mvrvZScore: 3, nupl: 0.3, realizedPrice: 50000, sopr: 1.02, ssr: 15, rup: 0.35, lthSupply: 14e6 } },
+    bgeo: { mvrvZScore: 3, nupl: 0.3, realizedPrice: 50000, sopr: 1.02, ssr: 15, rup: 0.35, lthSupply: 14e6, lthSopr: 1.8 }, puell: 1.0 },
   warm: { tech: { latestClose: 90000, ema12: 91000, ema26: 88000, sma200: 70000, rsi14: 62, volumeRatio: 1, latestDate: ymd(Date.now()) },
     api: { mvrvRatio: 2.5, puellMultiple: 2, fearGreed: 60, fundingRate: 0.02 },
-    bgeo: { mvrvZScore: 6, nupl: 0.6, realizedPrice: 52000, sopr: 1.05, ssr: 30, rup: 0.6, lthSupply: 14e6 } },
+    bgeo: { mvrvZScore: 6, nupl: 0.6, realizedPrice: 52000, sopr: 1.05, ssr: 30, rup: 0.6, lthSupply: 14e6, lthSopr: 4 }, puell: 2 },
   hot: { tech: { latestClose: 110000, ema12: 112000, ema26: 105000, sma200: 80000, rsi14: 78, volumeRatio: 1.3, latestDate: ymd(Date.now()) },
     api: { mvrvRatio: 3.8, puellMultiple: 4.5, fearGreed: 90, fundingRate: 0.07 },
-    bgeo: { mvrvZScore: 7.5, nupl: 0.8, realizedPrice: 55000, sopr: 1.05, ssr: 45, rup: 0.8, lthSupply: 14e6 } }
+    bgeo: { mvrvZScore: 7.5, nupl: 0.8, realizedPrice: 55000, sopr: 1.05, ssr: 45, rup: 0.8, lthSupply: 14e6, lthSopr: 7 }, puell: 3 }
 };
 var seen = { metric: {}, dd: {}, hero: {}, bz: {} };
 Object.keys(SCENARIOS).forEach(function (name) {
@@ -197,7 +202,7 @@ Object.keys(SCENARIOS).forEach(function (name) {
     seen.dd[got] = 1;
     if (!/\bgc-card\b/.test(cls) || !/\bgc-tile\b/.test(cls) || got !== want) bad.push(title + ": " + tag + " → " + got + " (want " + want + ")");
   });
-  t(name + ": 7 Deep Dive tiles (incl. RUP) — tone = their tag colour", n === 7 && bad.length === 0, bad);
+  t(name + ": 9 Deep Dive tiles (incl. RUP · LTH-SOPR · Puell) — tone = their tag colour", n === 9 && bad.length === 0, bad);
 
   // hero tiles: tone agrees with the colour the tile already paints (price: no status)
   bad = []; n = 0;
