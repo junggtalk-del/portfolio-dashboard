@@ -34,6 +34,10 @@
   // EVENT handler (every load() that is not already running ends with an EVENT).
   // ============================================================
 
+  // 2026-11-27: OUR server is asked first — some networks reset every connection to crypto sites, but our own domain
+  // always answers (api/bitcoin.js ?lt=history pulls both sources with this file's own functions, CDN-cached).
+  // A source the server could not give (or gave unclean) is pulled directly as before. sources.<name>.via says how.
+  var SERVER_URL = "/api/bitcoin?lt=history";
   var CM_HOST = "https://community-api.coinmetrics.io/";
   var CM_URL = CM_HOST + "v4/timeseries/asset-metrics?assets=btc&metrics=CapMVRVCur,CapMrktCurUSD,PriceUSD&frequency=1d&page_size=10000&sort=time";
   function BC_URL(chart) { return "https://api.blockchain.info/charts/" + chart + "?timespan=all&sampled=false&format=json&cors=true"; }
@@ -161,7 +165,7 @@
   }
 
   // ---------------------------------------------------------- loader
-  function blankSource() { return { at: null, ok: null, error: null, asOf: null, tried: null }; }
+  function blankSource() { return { at: null, ok: null, error: null, asOf: null, tried: null, via: null }; }
   var state = { at: null, series: {}, sources: { coinMetrics: blankSource(), blockchain: blankSource() }, error: null, loading: false };
   var hydrated = false;
   var inflight = null;
@@ -215,6 +219,29 @@
     }, function (e) { return { ok: false, error: errText(e) }; });
   }
 
+  // the server's rows are trusted only when clean: [day, finite number], days strictly ascending
+  function cleanRows(rows) {
+    if (!Array.isArray(rows) || !rows.length) return null;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!Array.isArray(r) || typeof r[0] !== "string" || !DATE_RE.test(r[0]) || typeof r[1] !== "number" || !isFinite(r[1])) return null;
+      if (i > 0 && !(rows[i - 1][0] < r[0])) return null;
+    }
+    return rows;
+  }
+  function fromServer(j, name) {
+    var r = j && typeof j === "object" ? j[name] : null;
+    if (!r || r.ok !== true || !r.series || typeof r.series !== "object") return null;
+    var series = {};
+    for (var i = 0; i < SERIES_OF[name].length; i++) {
+      var k = SERIES_OF[name][i], rows = cleanRows(r.series[k]);
+      if (!rows) return null;
+      series[k] = rows;
+    }
+    return { ok: true, series: series, via: "server" };
+  }
+  function viaDirect(p) { return p.then(function (r) { r.via = "direct"; return r; }); }
+
   function summarize() {
     var at = null, errs = [];
     SOURCES.forEach(function (s) {
@@ -236,7 +263,7 @@
       state.series[k] = rows;
       if (!asOf || rows[rows.length - 1][0] > asOf) asOf = rows[rows.length - 1][0];
     });
-    src.at = at; src.ok = true; src.error = null; src.asOf = asOf;
+    src.at = at; src.ok = true; src.error = null; src.asOf = asOf; src.via = r.via || null;
   }
 
   // a source is due unless it was pulled today (UTC) or failed less than RETRY_MS ago
@@ -257,7 +284,7 @@
       SOURCES.forEach(function (s) {
         SERIES_OF[s].forEach(function (k) { var rows = rec.series[k]; if (Array.isArray(rows) && rows.length) state.series[k] = rows; });
         var r = rec.sources && rec.sources[s];
-        if (r && typeof r === "object") state.sources[s] = { at: str(r.at), ok: typeof r.ok === "boolean" ? r.ok : null, error: str(r.error), asOf: str(r.asOf), tried: str(r.tried) };
+        if (r && typeof r === "object") state.sources[s] = { at: str(r.at), ok: typeof r.ok === "boolean" ? r.ok : null, error: str(r.error), asOf: str(r.asOf), tried: str(r.tried), via: str(r.via) };
       });
       summarize();
     }, function () { /* IndexedDB unreadable → start empty */ });
@@ -268,7 +295,7 @@
     if (!bc) return Promise.resolve(false);
     var series = {}, sources = {};
     Object.keys(state.series).forEach(function (k) { series[k] = state.series[k]; });
-    SOURCES.forEach(function (s) { var x = state.sources[s]; sources[s] = { at: x.at, ok: x.ok, error: x.error, asOf: x.asOf, tried: x.tried }; });
+    SOURCES.forEach(function (s) { var x = state.sources[s]; sources[s] = { at: x.at, ok: x.ok, error: x.error, asOf: x.asOf, tried: x.tried, via: x.via }; });
     return Promise.resolve().then(function () {
       return bc.set(CACHE_KEY, { v: CACHE_V, at: state.at, series: series, sources: sources });
     }).then(null, function () { return false; });
@@ -284,7 +311,12 @@
       if (!want.length) return false;
       state.loading = true;
       emit();
-      return Promise.all(want.map(function (s) { return s === "coinMetrics" ? fetchCoinMetrics() : fetchBlockchain(); })).then(function (results) {
+      // our server first (one request, both sources) · what it could not give comes directly from the source
+      return getJson(SERVER_URL).then(null, function () { return null; }).then(function (sj) {
+        return Promise.all(want.map(function (s) {
+          return fromServer(sj, s) || viaDirect(s === "coinMetrics" ? fetchCoinMetrics() : fetchBlockchain());
+        }));
+      }).then(function (results) {
         var at = new Date().toISOString();
         want.forEach(function (s, i) { apply(s, results[i], at); });
         summarize();
@@ -310,7 +342,7 @@
   function get() {
     var series = {};
     Object.keys(state.series).forEach(function (k) { series[k] = state.series[k]; });
-    function pub(s) { return { at: s.at, ok: s.ok, error: s.error, asOf: s.asOf }; }
+    function pub(s) { return { at: s.at, ok: s.ok, error: s.error, asOf: s.asOf, via: s.via }; }
     return { at: state.at, series: series, sources: { coinMetrics: pub(state.sources.coinMetrics), blockchain: pub(state.sources.blockchain) }, error: state.error, loading: state.loading };
   }
 

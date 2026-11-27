@@ -65,8 +65,8 @@ var BODY = {
 // 11 requests a day; one run sends at most 10 (the hourly limit) → the 11th goes an hour later
 var ORDER = ["mvrv-zscore", "realized-price", "nupl", "nup", "sopr", "ssr", "supply-profit-lth", "supply-loss-lth", "lth-realized-price", "lth-sopr", "true-market-mean"];
 var KEYS10 = ["mvrvZScore", "realizedPrice", "nupl", "rup", "sopr", "ssr", "lthSupply", "lthRealizedPrice", "lthSopr", "activeInvestorPrice"];
-function makeLive(store, status, big, body) {
-  var calls = [], urls = [];
+function makeLive(store, status, big, body, srv) {
+  var calls = [], urls = [], server = [];
   var B = body || BODY;
   var ctx = {
     console: console, JSON: JSON, Promise: Promise, Date: Date, Object: Object, Array: Array,
@@ -74,6 +74,14 @@ function makeLive(store, status, big, body) {
     CustomEvent: function (n) { this.type = n; },
     dispatchEvent: function () {},
     fetch: function (url) {
+      // our own server (2026-11-27 fallback): recorded apart from BGeometrics · srv = { metricKey: body | { status } }
+      if (String(url).indexOf("/api/bitcoin?") === 0) {
+        var mk = decodeURIComponent((/[?&]m=([^&]*)/.exec(String(url)) || [])[1] || "");
+        server.push(mk);
+        var sb = srv && Object.prototype.hasOwnProperty.call(srv, mk) ? srv[mk] : { status: 404 };
+        var sst = sb && sb.status ? sb.status : 200;
+        return Promise.resolve({ status: sst, ok: sst === 200, json: function () { return Promise.resolve(JSON.parse(JSON.stringify(sb))); } });
+      }
       urls.push(String(url));
       var ep = String(url).replace("https://bitcoin-data.com/v1/", "").split("?")[0];
       calls.push(ep);
@@ -85,7 +93,7 @@ function makeLive(store, status, big, body) {
   ctx.window = ctx;
   vm.createContext(ctx);
   vm.runInContext(SRC_LIVE, ctx, { filename: "btc-onchain-live.js" });
-  return { live: ctx.BtcOnchainLive, calls: calls, urls: urls };
+  return { live: ctx.BtcOnchainLive, calls: calls, urls: urls, server: server };
 }
 function cacheOf(store) { return JSON.parse(store.btc_bgeo_v1 || "null"); }
 var V1 = { mvrvZScore: { value: 1, date: D2 }, realizedPrice: { value: 44000, date: D2 }, nupl: { value: 0.39, date: D2 }, sopr: { value: 1, date: D2 }, ssr: { value: 9, date: D2 } };
@@ -212,6 +220,46 @@ async function loaderTests() {
   t("an hour later → only the pending ones (8 requests ≤ 10)", m.calls.join() === "nup,sopr,ssr,supply-profit-lth,supply-loss-lth,lth-realized-price,lth-sopr,true-market-mean", m.calls);
   t("…and RUP arrives", m.live.get().metrics.rup && m.live.get().metrics.rup.value === 0.52);
 
+  console.log("== loader: the direct path is cut → our own server gives what is still owed (2026-11-27) ==");
+  function srvOf(key, rows) { var last = rows[rows.length - 1]; return { ok: true, key: key, value: last[1], date: last[0], series: rows }; }
+  var SRV = {
+    rup: srvOf("rup", [[D3, 0.5], [D2, 0.51], [D1, 0.53]]), sopr: srvOf("sopr", [[D2, 1.0], [D1, 1.02]]), ssr: srvOf("ssr", [[D2, 9.5], [D1, 9.4]]),
+    lthSupply: srvOf("lthSupply", [[D2, 14.5e6], [D1, 14.6e6]]), lthRealizedPrice: srvOf("lthRealizedPrice", [[D2, 37900], [D1, 38100]]),
+    lthSopr: srvOf("lthSopr", [[D2, 1.9], [D1, 2.2]]), activeInvestorPrice: srvOf("activeInvestorPrice", [[D2, 52100], [D1, 52300]])
+  };
+  store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: D1, at: "x", metrics: V1, lastAttempt: Date.now() - 20 * 3600000, tried: [] }) };
+  big = {};
+  m = makeLive(store, { "nup": 429 }, big, null, SRV);
+  await m.live.load(false);
+  c = cacheOf(store); g = m.live.get();
+  t("429 at nup → BGeometrics asked 4 times (stops there), then our server for the 7 still owed (rup onwards)",
+    m.calls.join() === "mvrv-zscore,realized-price,nupl,nup" && m.server.join() === "rup,sopr,ssr,lthSupply,lthRealizedPrice,lthSopr,activeInvestorPrice", { calls: m.calls, server: m.server });
+  t("…their values + series land (RUP 0.53 · LTH-SOPR 2.2 · Active Investor 52,300 on " + D1 + ") and go to IndexedDB",
+    g.metrics.rup.value === 0.53 && g.metrics.lthSopr.value === 2.2 && g.metrics.activeInvestorPrice.value === 52300 && g.series.lthSopr.length === 2 && !!big["btc_bgeo_hist_v1:activeInvestorPrice"], g.metrics);
+  t("…nothing owed any more → no quota message, no retry, all 10 tried, the source reads 'via our server'",
+    g.error === null && c.err === null && g.retryAt === null && c.tried.length === 10 && g.via === "server", { error: g.error, retryAt: g.retryAt, tried: c.tried, via: g.via });
+  var half = { rup: SRV.rup, sopr: SRV.sopr };
+  store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: D1, at: "x", metrics: V1, lastAttempt: Date.now() - 20 * 3600000, tried: [] }) };
+  m = makeLive(store, { "nup": 429 }, {}, null, half);
+  await m.live.load(false);
+  c = cacheOf(store); g = m.live.get();
+  t("server has only some → those land, the rest stay owed: the quota message stays and a retry is set",
+    g.metrics.rup.value === 0.53 && g.error === "rate-limited" && g.retryAt > Date.now() && c.tried.indexOf("rup") >= 0 && c.tried.indexOf("ssr") < 0, { error: g.error, tried: c.tried });
+  var odd = { rup: srvOf("rup", [[D2, 7], [D1, -1]]), sopr: srvOf("sopr", [["x", 1], [D1, "1.01"]]) };
+  store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: D1, at: "x", metrics: V1, lastAttempt: Date.now() - 20 * 3600000, tried: [] }) };
+  m = makeLive(store, { "nup": 429 }, {}, null, odd);
+  await m.live.load(false);
+  g = m.live.get();
+  t("server rows pass the same PLAUSIBLE gate (RUP 7 / −1 dropped → no value) · junk rows ignored (SOPR keeps yesterday's value, no series)",
+    !g.metrics.rup && !g.series.rup && !g.series.sopr && g.metrics.sopr.value === V1.sopr.value && g.metrics.sopr.date === V1.sopr.date, { rup: g.metrics.rup, sopr: g.metrics.sopr });
+  store = { btc_bgeo_v1: JSON.stringify({ v: 2, u: D1, at: "x", metrics: V1, lastAttempt: Date.now() - 20 * 3600000, tried: [] }) };
+  m = makeLive(store, null, {}, null, SRV);
+  await m.live.load(false);
+  t("a normal day (BGeometrics answers) → our server is never asked", m.server.length === 0 && m.calls.length === 10, m.server);
+  var capped = makeLive({ btc_bgeo_v1: JSON.stringify({ v: 2, u: TODAY, at: "x", metrics: V1, lastAttempt: Date.now() - 2 * 3600000, tried: KEYS10 }) }, null, {}, null, SRV);
+  await capped.live.load(true);
+  t("the 10-a-run cap is not a cut — the 11th waits for the next hour, our server is not asked", capped.server.length === 0 && capped.calls.length === 10, capped.server);
+
   console.log("== loader: quota used up → say so, and try again by itself ==");
   store = { btc_bgeo_v1: JSON.stringify({ u: D1, at: "x", metrics: V1, eps: {}, lastAttempt: Date.now() - 5 * 3600000 }) };
   var timers = [];
@@ -261,11 +309,11 @@ async function loaderTests() {
   var ctx5 = { console: console, JSON: JSON, Promise: Promise, Date: Date, Object: Object, Array: Array, Math: Math,
     localStorage: { getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; }, setItem: function (k, v) { store[k] = String(v); } },
     CustomEvent: function (n) { this.type = n; }, dispatchEvent: function () {},
-    fetch: function (url) { thrown.push(String(url).split("/v1/")[1].split("?")[0]); return Promise.reject(new TypeError("Failed to fetch")); } };
+    fetch: function (url) { if (String(url).indexOf("/api/") === 0) { thrown.push("server"); return Promise.reject(new TypeError("Failed to fetch")); } thrown.push(String(url).split("/v1/")[1].split("?")[0]); return Promise.reject(new TypeError("Failed to fetch")); } };
   ctx5.window = ctx5; vm.createContext(ctx5); vm.runInContext(SRC_LIVE, ctx5, { filename: "btc-onchain-live.js" });
   await ctx5.BtcOnchainLive.load(false);
   c = cacheOf(store);
-  t("a thrown fetch (CORS-less 429 / offline) → ONE request, not 10 (seen live 2026-11-23)", thrown.join() === "mvrv-zscore", thrown);
+  t("a thrown fetch (CORS-less 429 / offline) → ONE request to BGeometrics, not 10 (seen live 2026-11-23) · then our server is asked", thrown.filter(function (x) { return x !== "server"; }).join() === "mvrv-zscore" && thrown.indexOf("server") > 0, thrown);
   t("…error \"blocked\" kept for the page, retry in an hour, yesterday's values stay", ctx5.BtcOnchainLive.get().error === "blocked" && c.err === "blocked" && ctx5.BtcOnchainLive.get().retryAt > Date.now() + 3500000 && c.metrics.nupl.value === 0.39, c);
 
   console.log("== loader: a metric answers 404 ==");

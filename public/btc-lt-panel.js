@@ -247,6 +247,8 @@
       asOf: v != null ? dayOf(asOf) : null, source: v != null ? source : null };
   }
 
+  // the network blocked the source, our server pulled it (api/bitcoin.js ?lt=…) — say so, it explains a working page
+  var VIA_SERVER = "ผ่านเซิร์ฟเวอร์ของเว็บ";
   function srcBg(oc, sm) {
     var have = BG_KEYS.filter(function (k) { return !!sm[k]; }), miss = BG_KEYS.filter(function (k) { return !sm[k]; });
     var err = typeof oc.error === "string" && oc.error ? oc.error : null;
@@ -254,6 +256,7 @@
     var note = "กลุ่มผู้ถือระยะยาว + Active Investor · ฟรี ข้อมูลช้าราว 7 วัน";
     if (have.length && miss.length) note += " · ขาด: " + miss.map(function (k) { return SERIES_LABEL[k]; }).join(", ");
     if (err) note += " · " + (has(BG_ERR, err) ? BG_ERR[err] : "ผิดพลาด: " + err) + (have.length ? " — ใช้ข้อมูลล่าสุดที่เก็บไว้" : "");
+    if (oc.via === "server") note += " · " + VIA_SERVER;
     return { key: "bgeometrics", name: "BGeometrics (bitcoin-data.com)", at: typeof oc.fetchedAt === "string" ? oc.fetchedAt : null,
       latest: edgeDay(sm, BG_KEYS, true, "max"), ok: status === "ok", status: status, note: note };
   }
@@ -262,7 +265,8 @@
     var have = keys.some(function (k) { return !!sm[k]; });
     var err = typeof s.error === "string" && s.error ? s.error : null;
     var status = have ? (s.ok === false ? "stale" : "ok") : hi.loading ? "loading" : s.ok === false ? "error" : "none";
-    var note = what + (status === "stale" ? " · ใช้ข้อมูลเดิม" + (err ? ": " + err : "") : status === "error" ? " · ดึงไม่สำเร็จ" + (err ? ": " + err : "") : "");
+    var note = what + (status === "stale" ? " · ใช้ข้อมูลเดิม" + (err ? ": " + err : "") : status === "error" ? " · ดึงไม่สำเร็จ" + (err ? ": " + err : "") : "") +
+      (s.via === "server" && have ? " · " + VIA_SERVER : "");
     return { key: key, name: name, at: typeof s.at === "string" && s.at ? s.at : null, latest: edgeDay(sm, keys, true, "max"), ok: status === "ok", status: status, note: note };
   }
 

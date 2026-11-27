@@ -20,19 +20,44 @@ const { fetchFearGreed } = require("../lib/data-providers/alternativeFearGreedPr
 const { fetchGlassnodeBtc } = require("../lib/data-providers/glassnodeBtcProvider");
 const { fetchCryptoQuantBtc } = require("../lib/data-providers/cryptoquantBtcProvider");
 const { mergeFreeBitcoinData } = require("../lib/data-providers/freeBitcoinDataMerger");
+const { fetchLongTermHistory, fetchBgeoMetric } = require("../lib/data-providers/btcLongTermProvider");
 
-function send(res, status, payload) {
+function send(res, status, payload, cacheControl) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json; charset=utf-8");
-  res.setHeader("cache-control", "s-maxage=120, stale-while-revalidate=600");
+  res.setHeader("cache-control", cacheControl || "s-maxage=120, stale-while-revalidate=600");
   res.end(JSON.stringify(payload));
 }
 
+const NO_STORE = "no-store";
+// Long-term Signal data through our server (2026-11-27) — networks that block crypto sites can still reach us.
+//   ?lt=history       Coin Metrics + Blockchain.com (CDN 6 h · stale up to 7 days · one source down = 15 min · both = 502)
+//   ?lt=bgeo&m=<key>  one BGeometrics metric (CDN 1 day · stale 7 days) — Vercel only: the local dev server would
+//                     spend the user's own IP quota (15/day), which the browser already uses directly
+async function longTerm(mode, params, res) {
+  if (mode === "history") {
+    const out = await fetchLongTermHistory();
+    const okCm = out.coinMetrics.ok, okBc = out.blockchain.ok;
+    if (!okCm && !okBc) return send(res, 502, out, NO_STORE);
+    return send(res, 200, out, okCm && okBc ? "public, s-maxage=21600, stale-while-revalidate=604800" : "public, s-maxage=900, stale-while-revalidate=3600");
+  }
+  if (mode === "bgeo") {
+    if (!process.env.VERCEL) return send(res, 503, { ok: false, error: "BGeometrics through the server runs on Vercel only (keeps this IP's free quota for the browser)" }, NO_STORE);
+    const r = await fetchBgeoMetric(String(params.get("m") || ""));
+    if (!r.ok) return send(res, r.status || 502, r, NO_STORE);
+    return send(res, 200, r, "public, s-maxage=86400, stale-while-revalidate=604800");
+  }
+  return send(res, 400, { ok: false, error: "unknown lt mode" }, NO_STORE);
+}
+
 module.exports = async function handler(req, res) {
+  let params = null;
+  try { params = new URL(req.url, "http://local").searchParams; } catch (e) { params = new URLSearchParams(""); }
+  if (params.get("lt")) return longTerm(params.get("lt"), params, res);
+
   const fetchedAt = new Date().toISOString();
   const nowMs = Date.now();
-  let interval = "24h";
-  try { interval = new URL(req.url, "http://local").searchParams.get("interval") === "1h" ? "1h" : "24h"; } catch (e) {}
+  const interval = params.get("interval") === "1h" ? "1h" : "24h";
 
   const hasGlass = !!process.env.GLASSNODE_API_KEY;
   const hasCq = !!process.env.CRYPTOQUANT_API_KEY;

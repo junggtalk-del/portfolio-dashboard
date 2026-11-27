@@ -128,7 +128,7 @@
       .map(function (r) { return [r[0], maps.reduce(function (s, m) { return s + m[r[0]]; }, 0)]; });
   }
 
-  var state = { loading: false, metrics: {}, series: {}, fetchedAt: null, error: null, retryAt: null };
+  var state = { loading: false, metrics: {}, series: {}, fetchedAt: null, error: null, retryAt: null, via: null };
   var RETRY_MS = 3600000;          // once per hour at most (free tier 10/hour)
   var RUN_MAX_REQ = 10;            // requests in one run (= the hourly allowance) — the rest wait for the next hour
   var retryTimer = null;
@@ -184,6 +184,29 @@
     return { value: last[1], date: last[0], series: series };
   }
 
+  // 2026-11-27: when the direct path is cut (this IP's quota used up, or a network that blocks the site), OUR server
+  // gives what is still owed — api/bitcoin.js ?lt=bgeo&m=<key>, CDN-cached for a day: one pull for everyone, from
+  // Vercel's side, never this IP's quota. Its rows pass the same PLAUSIBLE gate. Never asked on a normal day.
+  var SERVER_URL = "/api/bitcoin?lt=bgeo&m=";
+  function cleanRows(rows) {
+    var out = [], prev = "";
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      if (Array.isArray(r) && typeof r[0] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r[0]) && typeof r[1] === "number" && isFinite(r[1]) && r[0] > prev) { out.push([r[0], r[1]]); prev = r[0]; }
+    });
+    return out;
+  }
+  async function fetchViaServer(key) {
+    try {
+      var res = await window.fetch(SERVER_URL + encodeURIComponent(key), { cache: "no-store" });
+      if (!res || !res.ok) return null;
+      var json = await res.json();
+      var rows = keepPlausible(cleanRows(json && json.series), key);
+      if (!rows.length) return null;
+      var last = rows[rows.length - 1];
+      return { value: last[1], date: last[0], series: rows };
+    } catch (e) { return null; }
+  }
+
   async function load(force) {
     var cache = readCache() || {};
     if (cache.metrics) cache.metrics = plausibleMetrics(cache.metrics);
@@ -195,7 +218,7 @@
     var tried = fresh ? (cache.tried || []) : [];
     var pending = keys.filter(function (k) { return tried.indexOf(k) < 0; });
     if (!force && fresh && pending.length === 0) {
-      state.metrics = cache.metrics; state.fetchedAt = cache.at || null;
+      state.metrics = cache.metrics; state.fetchedAt = cache.at || null; state.via = cache.via || null;
       state.error = null; state.retryAt = null;
       await loadSeries(keys);
       emit(); return state;
@@ -203,7 +226,7 @@
     // budget guard: never attempt more than once per hour (free tier = 10 req/hr)
     var nowH = Date.now();
     if (!force && cache.lastAttempt && nowH - cache.lastAttempt < RETRY_MS) {
-      state.metrics = cache.metrics || {}; state.fetchedAt = cache.at || null;
+      state.metrics = cache.metrics || {}; state.fetchedAt = cache.at || null; state.via = cache.via || null;
       state.error = cache.err || null;              // why the last attempt came back short (kept across reloads)
       scheduleRetry(cache.lastAttempt, nowH - cache.lastAttempt < 180000 ? 120000 : 0);
       await loadSeries(keys);
@@ -229,15 +252,29 @@
         state.series[k] = r.series; saveSeries(k, r.series);
       }
     }
-    var triedNow = (fresh && !force ? tried : []).concat(done);   // pending ∩ tried = ∅
+    // the direct path was cut → our server for what is still owed (the 10-a-run cap is not a cut)
+    var viaServer = [];
+    if (limited) {
+      var owed = toFetch.filter(function (k) { return done.indexOf(k) < 0; });
+      for (var j = 0; j < owed.length; j++) {
+        var sv = await fetchViaServer(owed[j]);
+        if (!sv) continue;
+        out[owed[j]] = { value: sv.value, date: sv.date };
+        state.series[owed[j]] = sv.series; saveSeries(owed[j], sv.series);
+        viaServer.push(owed[j]);
+      }
+      if (owed.length && viaServer.length === owed.length) limited = false;   // nothing owed any more — no quota message
+    }
+    var triedNow = (fresh && !force ? tried : []).concat(done, viaServer);   // pending ∩ tried = ∅
     var err = limited || (got < done.length ? "unreachable" : null);
 
-    if (got > 0) {
+    if (got + viaServer.length > 0) {
       // merge over yesterday's values so a partial day never loses metrics
       var merged = Object.assign({}, cache.metrics || {}, out);
-      cache = { v: CACHE_V, u: today(), at: new Date().toISOString(), metrics: merged, lastAttempt: nowH, tried: triedNow, err: limited ? err : null };
+      cache = { v: CACHE_V, u: today(), at: new Date().toISOString(), metrics: merged, lastAttempt: nowH, tried: triedNow, err: limited ? err : null,
+        via: viaServer.length ? "server" : null };
       writeCache(cache);
-      state.metrics = merged; state.fetchedAt = cache.at;
+      state.metrics = merged; state.fetchedAt = cache.at; state.via = cache.via;
       state.error = cache.err;
     } else if (fresh) {
       // today's values stay; the new metric answered nothing (404 / no value) — not again today
@@ -260,7 +297,7 @@
     return state;
   }
 
-  function get() { return { metrics: state.metrics || {}, series: state.series || {}, fetchedAt: state.fetchedAt, error: state.error, retryAt: state.retryAt, loading: state.loading }; }
+  function get() { return { metrics: state.metrics || {}, series: state.series || {}, fetchedAt: state.fetchedAt, error: state.error, retryAt: state.retryAt, loading: state.loading, via: state.via || null }; }
 
   var BtcOnchainLive = { load: load, get: get, parseLast: parseLast, parseSeries: parseSeries, sumByDate: sumByDate,
     keepPlausible: keepPlausible, METRICS: METRICS, PLAUSIBLE: PLAUSIBLE, EVENT: EVENT, CACHE_KEY: CACHE_KEY, SERIES_KEY: SERIES_KEY };

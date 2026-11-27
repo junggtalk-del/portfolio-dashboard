@@ -763,6 +763,13 @@ tog("q:lthFlow", true);
 t("M6: a question's รายละเอียด keeps its open state too", /<details class="btc-lt-q-more" data-lt-open="q:lthFlow" open>/.test(BP.html(LG, {})));
 tog("q:lthFlow", false);
 
+// 2026-11-27: data that came through our own server says so in the sources row (networks that block crypto sites)
+var OCV = JSON.parse(JSON.stringify(OC)); OCV.via = "server";
+var HIV = JSON.parse(JSON.stringify(HI)); HIV.sources.coinMetrics.via = "server"; HIV.sources.blockchain.via = "direct";
+var MV = BP.model({ onchain: OCV, history: HIV, livePrice: 100000, valuationZone: VZ, intelCycle: "Accumulation", today: TODAY });
+var SRCV = (MV.sources || []).reduce(function (o, s) { o[s.key] = s.note || ""; return o; }, {});
+t("a source that came through our server says ผ่านเซิร์ฟเวอร์ของเว็บ (BGeometrics · Coin Metrics) · a direct one does not (Blockchain.com)",
+  /ผ่านเซิร์ฟเวอร์ของเว็บ/.test(SRCV.bgeometrics) && /ผ่านเซิร์ฟเวอร์ของเว็บ/.test(SRCV.coinMetrics) && !/ผ่านเซิร์ฟเวอร์ของเว็บ/.test(SRCV.blockchain), SRCV);
 var oddM = LIT(); oddM.signal.families.valuation.members.push({ key: "mysteryKey", label: "X", value: 1, score: 50, zone: "กลาง", reason: "<b>x</b> เหตุผลของตัวที่ไม่รู้จัก" });
 var HO = BP.html(oddM, {});
 t("a member the panel does not know keeps the engine's reason (escaped)", HO.indexOf("&lt;b&gt;x&lt;/b&gt; เหตุผลของตัวที่ไม่รู้จัก") >= 0 && HO.indexOf("<b>x</b>") < 0);

@@ -277,7 +277,17 @@ function blockchainTests() {
 // ------------------------------------------------------------------ load(): cache · failures · events
 var cmNew = P.deriveCm(P.parseCoinMetrics(SIM_CM));
 var puNew = P.puell(P.parseBlockchain(SIM_REV), P.parseBlockchain(SIM_FEE));
-var BLANK = { at: null, series: {}, sources: { coinMetrics: { at: null, ok: null, error: null, asOf: null }, blockchain: { at: null, ok: null, error: null, asOf: null } }, error: null, loading: false };
+// 2026-11-27: our own server is asked first (networks that block crypto sites can still reach our domain)
+var SERVER_URL = "/api/bitcoin?lt=history";
+function direct(calls) { return calls.filter(function (u) { return u !== SERVER_URL; }); }
+function serverBody(over) {
+  var b = { at: new Date().toISOString(),
+    coinMetrics: { ok: true, asOf: cmNew.price[cmNew.price.length - 1][0], series: { price: cmNew.price, mvrv: cmNew.mvrv, realizedPrice: cmNew.realizedPrice, mvrvZ: cmNew.mvrvZ } },
+    blockchain: { ok: true, asOf: puNew[puNew.length - 1][0], series: { puell: puNew } } };
+  Object.keys(over || {}).forEach(function (k) { b[k] = over[k]; });
+  return b;
+}
+var BLANK = { at: null, series: {}, sources: { coinMetrics: { at: null, ok: null, error: null, asOf: null, via: null }, blockchain: { at: null, ok: null, error: null, asOf: null, via: null } }, error: null, loading: false };
 
 function loadFirst() {
   console.log("== load(): the first pull ==");
@@ -286,8 +296,8 @@ function loadFirst() {
   t("before load(): empty state (no keys in series, sources not tried), nothing fetched", same(e.H.get(), BLANK) && e.calls.length === 0, e.H.get());
   return e.H.load().then(function (st) {
     var g = e.H.get();
-    t("3 requests: Coin Metrics once + Blockchain.com miners-revenue + transaction-fees-usd", e.calls.slice().sort().join() === [CM_URL, FEE_URL, REV_URL].sort().join(), e.calls);
-    t("only Coin Metrics and Blockchain.com hosts were asked (never bitcoin-data.com)", e.calls.every(function (u) { return u.indexOf("https://community-api.coinmetrics.io/") === 0 || u.indexOf("https://api.blockchain.info/") === 0; }));
+    t("our server first (it has nothing here), then 3 direct requests: Coin Metrics once + Blockchain.com miners-revenue + transaction-fees-usd", e.calls[0] === SERVER_URL && direct(e.calls).slice().sort().join() === [CM_URL, FEE_URL, REV_URL].sort().join(), e.calls);
+    t("only our server, Coin Metrics and Blockchain.com were asked (never bitcoin-data.com)", e.calls.every(function (u) { return u === SERVER_URL || u.indexOf("https://community-api.coinmetrics.io/") === 0 || u.indexOf("https://api.blockchain.info/") === 0; }));
     t("series = deriveCm(parseCoinMetrics(CM)) + puell(parseBlockchain(revenue), parseBlockchain(fees))", Object.keys(g.series).sort().join() === "mvrv,mvrvZ,price,puell,realizedPrice" &&
       same(g.series.price, cmNew.price) && same(g.series.mvrv, cmNew.mvrv) && same(g.series.realizedPrice, cmNew.realizedPrice) && same(g.series.mvrvZ, cmNew.mvrvZ) && same(g.series.puell, puNew), Object.keys(g.series));
     t("every series: [\"YYYY-MM-DD\", number] ascending, one row per day", ["price", "mvrv", "realizedPrice", "mvrvZ", "puell"].every(function (k) { return seriesOk(g.series[k]); }));
@@ -316,12 +326,12 @@ function loadSameDay(big) {
     t("load() again in the same page view → still 0 requests", e.calls.length === 0, e.calls);
     return e.H.load({ force: true });
   }).then(function () {
-    t("load({ force: true }) → both sources pulled again (3 requests)", e.calls.length === 3, e.calls);
+    t("load({ force: true }) → both sources pulled again (3 direct requests after the server said no)", direct(e.calls).length === 3, e.calls);
     var y = clone(big);
     ageRecord(y, YESTERDAY_ISO);
     var e2 = env({ big: y });
     return e2.H.load().then(function () {
-      t("the next UTC day → pulled again (3 requests), at moves to today", e2.calls.length === 3 && e2.H.get().sources.coinMetrics.at.slice(0, 10) === TODAY, e2.calls);
+      t("the next UTC day → pulled again (3 direct requests), at moves to today", direct(e2.calls).length === 3 && e2.H.get().sources.coinMetrics.at.slice(0, 10) === TODAY, e2.calls);
     });
   });
 }
@@ -349,7 +359,7 @@ function loadFailures() {
         var e3 = env({ big: big });
         return e3.H.load().then(function () {
           var g3 = e3.H.get();
-          t("11 minutes later → only Coin Metrics is asked again · success clears the error", e3.calls.join() === CM_URL && g3.sources.coinMetrics.ok === true && g3.error === null && same(g3.series.mvrvZ, cmNew.mvrvZ), e3.calls);
+          t("11 minutes later → only Coin Metrics is asked again (after our server) · success clears the error", direct(e3.calls).join() === CM_URL && g3.sources.coinMetrics.ok === true && g3.error === null && same(g3.series.mvrvZ, cmNew.mvrvZ), e3.calls);
         });
       });
     });
@@ -400,13 +410,13 @@ function loadPagesAndTimeouts() {
   }).then(function () {
     var e = env({});   // no window.BigCache
     return e.H.load().then(function (st) {
-      t("no BigCache (private mode / old page) → still loads, nothing persisted, no throw", e.calls.length === 3 && same(st.series.puell, puNew) && e.lsWrites.length === 0);
+      t("no BigCache (private mode / old page) → still loads, nothing persisted, no throw", direct(e.calls).length === 3 && same(st.series.puell, puNew) && e.lsWrites.length === 0);
     });
   }).then(function () {
     var e = env({ big: {} });
     var a = e.H.load(), b = e.H.load({ force: true });
     return Promise.all([a, b]).then(function () {
-      t("two load() calls at once share one pull (3 requests, the same promise)", a === b && e.calls.length === 3, e.calls.length);
+      t("two load() calls at once share one pull (3 direct requests, the same promise)", a === b && direct(e.calls).length === 3, e.calls.length);
     });
   }).then(function () {
     var over = {}; over[CM_URL] = { hang: true };
@@ -414,7 +424,7 @@ function loadPagesAndTimeouts() {
     var p = e.H.load();
     return tick().then(tick).then(function () {
       var open = e.timers.filter(function (x) { return !x.cleared; });
-      t("every request carries a timeout; the answered ones cleared theirs, the hung one's is still running", e.timers.length === 3 && open.length === 1 && open[0].ms >= 30000, e.timers.map(function (x) { return [x.ms, x.cleared]; }));
+      t("every request carries a timeout (ours too); the answered ones cleared theirs, the hung one's is still running", e.timers.length === 4 && open.length === 1 && open[0].ms >= 30000, e.timers.map(function (x) { return [x.ms, x.cleared]; }));
       if (open.length !== 1) return null;   // nothing to fire → do not wait on a request that never ends
       open.forEach(function (x) { x.fn(); });
       return p;
@@ -425,6 +435,46 @@ function loadPagesAndTimeouts() {
 }
 
 // a promise that never settles would let Node exit 0 with the summary unprinted — count that as a failure
+function loadViaServer() {
+  console.log("== load(): our own server first (2026-11-27 — some networks reset connections to crypto sites) ==");
+  var sv = {}; sv[SERVER_URL] = ok(serverBody());
+  var e = env({ big: {}, routes: sv });   // the direct sources are NOT routed — as on a network that blocks them
+  return e.H.load().then(function (st) {
+    t("server answers both → 1 request (ours) · nothing asked of Coin Metrics / Blockchain.com", e.calls.length === 1 && e.calls[0] === SERVER_URL, e.calls);
+    t("…the series are the server's (same derivation as here) and both sources read ok, via the server",
+      same(st.series.mvrvZ, cmNew.mvrvZ) && same(st.series.puell, puNew) && same(st.series.price, cmNew.price) && st.sources.coinMetrics.ok === true && st.sources.blockchain.ok === true &&
+      st.sources.coinMetrics.via === "server" && st.sources.blockchain.via === "server" && st.error === null, st.sources);
+    var part = {}; part[SERVER_URL] = ok(serverBody({ coinMetrics: { ok: false, error: "HTTP 503" } }));
+    part[CM_URL] = ok(SIM_CM);
+    var e2 = env({ big: {}, routes: part });
+    return e2.H.load().then(function (s2) {
+      t("server has Blockchain.com but not Coin Metrics → only Coin Metrics is pulled directly", same(direct(e2.calls), [CM_URL]) && s2.sources.coinMetrics.via === "direct" && s2.sources.blockchain.via === "server" && same(s2.series.mvrvZ, cmNew.mvrvZ) && s2.error === null, { calls: e2.calls, src: s2.sources });
+    });
+  }).then(function () {
+    var junk = {}; junk[SERVER_URL] = ok(serverBody({ blockchain: { ok: true, asOf: "x", series: { puell: [["2024-01-02", 1], ["2024-01-01", 2], ["bad", "NaN"]] } } }));
+    junk[REV_URL] = ok(SIM_REV); junk[FEE_URL] = ok(SIM_FEE);
+    var e3 = env({ big: {}, routes: junk });
+    return e3.H.load().then(function (s3) {
+      t("a server series that is not clean (out of order · not a date · not a number) is not trusted → that source is pulled directly",
+        direct(e3.calls).length === 2 && same(s3.series.puell, puNew) && s3.sources.blockchain.via === "direct" && s3.sources.coinMetrics.via === "server", { calls: e3.calls });
+    });
+  }).then(function () {
+    var e4 = env({ big: {}, routes: routes() });   // server not routed (404) → the old way
+    return e4.H.load().then(function (s4) {
+      t("server down (404) → both pulled directly as before (1 + 3 requests)", e4.calls.length === 4 && e4.calls[0] === SERVER_URL && same(s4.series.puell, puNew) && s4.sources.coinMetrics.via === "direct", e4.calls);
+    });
+  }).then(function () {
+    var y = {}, eOld = env({ big: y, routes: routes() });
+    return eOld.H.load().then(function () {
+      ageRecord(y, YESTERDAY_ISO);
+      var e5 = env({ big: y, routes: {} });   // next day, nothing reachable at all
+      return e5.H.load().then(function (s5) {
+        t("server AND direct both unreachable → yesterday's series stay, the error names it", same(s5.series.mvrvZ, cmNew.mvrvZ) && s5.sources.coinMetrics.ok === false && /Coin Metrics/.test(s5.error || ""), s5.error);
+      });
+    });
+  });
+}
+
 var finished = false;
 process.on("exit", function (code) {
   if (!finished && code === 0) { console.log("  FAIL  the test chain never finished (a promise hung)"); process.exitCode = 1; }
@@ -432,7 +482,7 @@ process.on("exit", function (code) {
 constantTests();
 coinMetricsTests();
 blockchainTests();
-loadFirst().then(loadSameDay).then(loadFailures).then(loadPagesAndTimeouts).then(function () {
+loadFirst().then(loadSameDay).then(loadFailures).then(loadPagesAndTimeouts).then(loadViaServer).then(function () {
   finished = true;
   console.log("\n" + (pass + fail) + " checks · " + pass + " passed · " + fail + " failed");
   if (fail) process.exit(1);
